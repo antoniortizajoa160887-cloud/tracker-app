@@ -68,6 +68,14 @@
     .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.3s; }
+
+    /* Two-level nav: Logistics / HR & Payroll / Administration, each expands
+       its own row of tabs below when tapped. */
+    .tab-groups { display: flex; flex-wrap: nowrap; overflow-x: auto; background: var(--navy); border-radius: 8px 8px 0 0; padding: 0 0.5rem; -webkit-overflow-scrolling: touch; }
+    .group-btn { background: none; border: none; padding: 0.85rem 1rem; min-height: 44px; font-size: 0.88rem; font-weight: 800; color: rgba(255,255,255,0.65); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+    .group-btn.active { color: #fff; border-bottom-color: #fff; }
+    .tabs.sub-tabs { display: none; border-radius: 0; margin-bottom: 1rem; }
+    .tabs.sub-tabs.open { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     /* Layouts & Forms */
@@ -304,15 +312,24 @@
         <button class="btn-small" onclick="toggleChangePasswordCard()">Cancel</button>
     </div>
 
-<div class="tabs">
+<div class="tab-groups" id="tab-groups">
+    <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics">Logistics</button>
+    <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr">HR &amp; Payroll</button>
+    <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin">Administration</button>
+</div>
+<div class="tabs sub-tabs open" id="grp-logistics">
     <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker">Route Tracker</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report">Daily Report</button>
+</div>
+<div class="tabs sub-tabs" id="grp-hr">
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees">Employees</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims">Claims</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges">Charges &amp; Income</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay">Daily Pay</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll">Payroll</button>
+</div>
+<div class="tabs sub-tabs" id="grp-admin">
     <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings">Settings</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;">Users</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;">Companies</button>
@@ -977,8 +994,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.0';
+    const APP_VERSION = 'v1.1';
     const CHANGELOG = [
+        { version: 'v1.1', date: '2026-08-03', notes: 'Grouped the tab bar into three sections to cut down on top-level clutter: Logistics (Route Tracker, Daily Report), HR & Payroll (Employees, Claims, Charges & Income, Daily Pay, Statement, Payroll), and Administration (Settings, Users, Companies, Approvals, Log, Data Sync). Tap a group to reveal its tabs below. Each role sees only the groups that contain at least one tab it has access to.' },
         { version: 'v1.0', date: '2026-08-03', notes: 'Version tracking introduced (this badge + changelog). Snapshot of the app at this point: multi-company payroll/HR dashboard — Route Tracker, Daily Report, Employees, Claims (rate-change & pause history), Charges & Income (merged tab, feeds Payroll), Statement (collapsible, historical week selector), Daily Pay (mobile card view, historical weeks), Payroll (historical week selector, expandable per-person breakdown), Settings, Users (role management, employee-link uniqueness), Companies, Approvals, role-scoped Log, Data Sync, and a 5-minute idle session timeout.' }
     ];
     function renderVersionBadge() {
@@ -1239,6 +1257,69 @@
         if(tabName === 'tab-settings') renderSettingsLists();
     }
 
+    // ===== Two-level nav: which tabs live under which group =====
+    const TAB_GROUPS = {
+        'grp-logistics': ['tab-tracker', 'tab-report'],
+        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll'],
+        'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data']
+    };
+
+    // Open a group: show its sub-tab row, hide the others, and switch to its
+    // first tab that's actually visible for this role.
+    function openGroup(groupId) {
+        document.querySelectorAll('.tabs.sub-tabs').forEach(g => g.classList.remove('open'));
+        document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+        const g = document.getElementById(groupId);
+        if (g) g.classList.add('open');
+        const gbtn = document.getElementById('btn-' + groupId);
+        if (gbtn) gbtn.classList.add('active');
+
+        const tabs = TAB_GROUPS[groupId] || [];
+        const firstVisible = tabs.find(t => {
+            const b = document.getElementById('btn-' + t);
+            return b && b.style.display !== 'none';
+        });
+        if (firstVisible) {
+            const btnEl = document.getElementById('btn-' + firstVisible);
+            openTab({ currentTarget: btnEl }, firstVisible);
+        }
+    }
+
+    // Run after role-based tab visibility is decided: hide any group with no
+    // visible tabs, and expand whichever group holds the currently active tab
+    // (so a role-driven landing tab, like View Only's Employees, opens under
+    // the right group automatically).
+    function refreshGroupVisibility() {
+        let activeGroup = null;
+        Object.keys(TAB_GROUPS).forEach(groupId => {
+            const tabs = TAB_GROUPS[groupId];
+            const anyVisible = tabs.some(t => {
+                const b = document.getElementById('btn-' + t);
+                return b && b.style.display !== 'none';
+            });
+            const gbtn = document.getElementById('btn-' + groupId);
+            if (gbtn) gbtn.style.display = anyVisible ? 'inline-block' : 'none';
+            tabs.forEach(t => {
+                const content = document.getElementById(t);
+                if (content && content.classList.contains('active')) activeGroup = groupId;
+            });
+        });
+        if (!activeGroup) {
+            activeGroup = Object.keys(TAB_GROUPS).find(gid => {
+                const b = document.getElementById('btn-' + gid);
+                return b && b.style.display !== 'none';
+            });
+        }
+        if (activeGroup) {
+            document.querySelectorAll('.tabs.sub-tabs').forEach(g => g.classList.remove('open'));
+            document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+            const g = document.getElementById(activeGroup);
+            if (g) g.classList.add('open');
+            const gbtn = document.getElementById('btn-' + activeGroup);
+            if (gbtn) gbtn.classList.add('active');
+        }
+    }
+
     async function handleLoginClick() {
         const usernameInput = document.getElementById('login-username').value.trim().toLowerCase();
         const passwordInput = document.getElementById('login-password').value;
@@ -1321,6 +1402,8 @@
         const todayStr = new Date().toISOString().split('T')[0];
         const stmtDate = document.getElementById('statement-date');
         if(stmtDate) stmtDate.value = todayStr;
+
+        refreshGroupVisibility();
 
         fetchAllDataFromCloud().catch(function(err) {
             console.error('Data sync failed:', err);
