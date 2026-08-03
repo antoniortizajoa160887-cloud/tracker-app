@@ -1000,7 +1000,7 @@
 
 <!-- TAB: COMPANIES -->
 <div id="tab-companies" class="tab-content">
-    <div class="panel" style="margin-bottom:12px;">
+    <div class="panel" id="company-form-panel" style="margin-bottom:12px;">
         <h2 id="company-form-titletext">Add Company</h2>
         <div class="form-section-label">Company</div>
         <div class="grid-form">
@@ -1114,8 +1114,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.9';
+    const APP_VERSION = 'v2.0';
     const CHANGELOG = [
+        { version: 'v2.0', date: '2026-08-03', notes: 'Administrators can now see the Companies tab, scoped to only their own company — they never see or can switch to another company\'s data there. They can edit their company\'s contact info (Owner, Phone, Email, Manager, Manager Phone); the Company Name and Code stay Super Admin-only to change, and Administrators never see the "Add Company" form (creating and deleting companies remain Super Admin-only actions). Enforced on the database side too, not just hidden in the UI — tested directly that one Administrator cannot edit another company\'s record even by calling the save function directly.' },
         { version: 'v1.9', date: '2026-08-03', notes: 'Added a "Changelog" tab under Administration, showing this same version history (version, date, what changed) as collapsible cards instead of just the tap-to-open badge popup. Visible only to Super Admin and Administrator users — Medium and View-only accounts don\'t see it.' },
         { version: 'v1.8', date: '2026-08-03', notes: 'Fixed the "one pale row" bug in both dark themes: on a touchscreen, tapping a table row keeps its :hover style active until you tap elsewhere, and several :hover states (table rows, the Daily Report\'s slicer filters) were still hardcoded to a light color — so whatever you\'d just tapped showed as a stuck white patch, mismatched from the row before this fix confirmed it was the true cause. Also fixed: the Daily Report slicer panels, active input/select focus state, Daily Report\'s Expand/Collapse toggle buttons, Daily Pay\'s OFF-day styling, note boxes, and the CSV drop-zone — all were still hardcoded light and are now properly dark in both Ocean and Emerald.' },
         { version: 'v1.7', date: '2026-08-03', notes: 'Added a second Dark theme option — "Emerald" — inspired by a black dashboard mockup with a green-to-teal gradient accent, distinct from the first ("Ocean," the navy/wave theme). Appearance is now a 3-way choice: Light, Ocean, or Emerald, available from Settings and now also from the login screen itself, so you can preview or pick a look before signing in. The choice still lives only on this device (localStorage) — it\'s never tied to a user account or written to the shared database, so it never becomes a global default for anyone else.' },
@@ -1554,6 +1555,7 @@
             document.getElementById('admin-danger-zone').style.display = 'block';
             document.getElementById('btn-tab-approvals').style.display = 'inline-block';
             document.getElementById('btn-tab-changelog').style.display = 'inline-block';
+            document.getElementById('btn-tab-companies').style.display = 'inline-block';
         }
         populateUserRoleOptions();
 
@@ -1758,11 +1760,18 @@
     function renderCompanies() {
         const container = document.getElementById('companies-tbody');
         if (!container) return;
+        // Administrators only ever see their own company here (loadCompanies
+        // already scopes the list), and never get the create-new-company form.
+        const formPanel = document.getElementById('company-form-panel');
+        if (formPanel) formPanel.style.display = (currentUserRole === 'SuperAdmin' || editingCompanyCode) ? 'block' : 'none';
+
         container.innerHTML = companies.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>';
         companies.forEach(c => {
             const open = recExpanded.companies ? recExpanded.companies.has(c.code) : false;
-            const actions = currentUserRole === 'SuperAdmin'
-                ? `<div class="rec-actions"><button class="btn-small" style="background:var(--navy);margin:0;" onclick="editCompany('${c.code}')">Edit</button><button class="del-btn" onclick="deleteCompany('${c.code}')">✕ Delete</button></div>` : '';
+            const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === c.code);
+            let actions = '';
+            if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editCompany('${c.code}')">Edit</button>`;
+            if (currentUserRole === 'SuperAdmin') actions += `<button class="del-btn" onclick="deleteCompany('${c.code}')">✕ Delete</button>`;
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-companies-${c.code}">
                     <div class="rec-card-head" onclick="toggleRecCard('companies','${c.code}')">
@@ -1779,20 +1788,23 @@
                             <div><div class="k">Manager phone</div><div class="v">${c.manager_phone || '-'}</div></div>
                             <div><div class="k">Created</div><div class="v">${new Date(c.created_at).toLocaleDateString()}</div></div>
                         </div>
-                        ${actions}
+                        ${actions ? `<div class="rec-actions">${actions}</div>` : ''}
                     </div>
                 </div>`);
         });
     }
 
     function editCompany(code) {
-        if (currentUserRole !== 'SuperAdmin') return;
+        const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === code);
+        if (!canEditThis) return;
         const c = companies.find(x => x.code === code);
         if (!c) return;
         editingCompanyCode = code;
+        document.getElementById('company-form-panel').style.display = 'block';
         document.getElementById('new-company-code').value = c.code;
         document.getElementById('new-company-code').disabled = true; // code can't change once created
         document.getElementById('new-company-name').value = c.name || '';
+        document.getElementById('new-company-name').disabled = (currentUserRole !== 'SuperAdmin'); // name changes are Super Admin-only
         document.getElementById('new-company-owner').value = c.owner || '';
         document.getElementById('new-company-phone').value = c.phone || '';
         document.getElementById('new-company-email').value = c.email || '';
@@ -1810,9 +1822,11 @@
             const el = document.getElementById(id); if (el) el.value = '';
         });
         document.getElementById('new-company-code').disabled = false;
+        document.getElementById('new-company-name').disabled = false;
         document.getElementById('company-form-titletext').textContent = 'Add Company';
         document.getElementById('company-save-btn').textContent = '+ Add Company';
         document.getElementById('company-cancel-btn').style.display = 'none';
+        if (currentUserRole !== 'SuperAdmin') document.getElementById('company-form-panel').style.display = 'none';
     }
 
     async function createCompany() {
