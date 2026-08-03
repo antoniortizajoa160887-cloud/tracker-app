@@ -301,8 +301,8 @@
 <div class="container" id="app-container">
     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 0.75rem;">
         <div>
-            <h1>Unified Logistics & HR Claims Dashboard</h1>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;">User: <strong id="user-name-display"></strong> | Role: <strong id="user-role-display" style="color:var(--primary);"></strong></p>
+            <h1 id="app-title">Unified Logistics &amp; HR Claims Dashboard</h1>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;">Welcome, <strong id="user-name-display"></strong> · Role: <strong id="user-role-display" style="color:var(--primary);"></strong> · Company: <strong id="user-company-display"></strong></p>
         </div>
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -766,18 +766,8 @@
 
     <div class="panel">
         <div class="stat-grid" id="payroll-stats-grid"></div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th><th>Name</th><th>Type</th><th>Base Pay (wk)</th>
-                        <th>Route Pay (wk)</th><th>Gross</th><th>Weekly Deductions</th><th>Net Pay</th>
-                    </tr>
-                </thead>
-                <tbody id="payroll-tbody"></tbody>
-                <tfoot id="payroll-foot"></tfoot>
-            </table>
-        </div>
+        <div id="payroll-tbody" class="record-grid"></div>
+        <div id="payroll-foot"></div>
     </div>
 </div>
 
@@ -860,19 +850,14 @@
     </div>
     <div class="panel">
         <h2>System Users</h2>
-        <div class="table-wrapper">
-            <table>
-                <thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Action</th></tr></thead>
-                <tbody id="users-table-body"></tbody>
-            </table>
-        </div>
+        <div id="users-table-body" class="record-grid"></div>
     </div>
 </div>
 
 <!-- TAB: COMPANIES -->
 <div id="tab-companies" class="tab-content">
     <div class="panel" style="margin-bottom:12px;">
-        <h2>Add Company</h2>
+        <h2 id="company-form-titletext">Add Company</h2>
         <div class="form-section-label">Company</div>
         <div class="grid-form">
             <div class="field"><label>Company Code (3–4 chars)</label><input type="text" id="new-company-code" maxlength="4" placeholder="e.g. 3FL" style="text-transform:uppercase;"></div>
@@ -886,7 +871,8 @@
             <div class="field"><label>Manager</label><input type="text" id="new-company-manager" placeholder="Manager name"></div>
             <div class="field"><label>Manager Phone #</label><input type="tel" id="new-company-manager-phone" placeholder="(555) 555-5555"></div>
         </div>
-        <button class="btn" style="margin-top:0.75rem;" onclick="createCompany()">+ Add Company</button>
+        <button class="btn" style="margin-top:0.75rem;" id="company-save-btn" onclick="createCompany()">+ Add Company</button>
+        <button type="button" class="btn-small" id="company-cancel-btn" style="display:none;background:#64748b;margin-top:0.75rem;" onclick="cancelCompanyEdit()">Cancel</button>
     </div>
     <div class="panel">
         <h2>Companies</h2>
@@ -899,14 +885,7 @@
     <div class="panel">
         <h2>Pending Approvals</h2>
         <div class="note-box">Locked financial changes (base pay rate, claim amount, weekly deduction) requested by Medium users appear here for Administrator approval.</div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>Requested By</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th><th>Requested</th><th>Action</th></tr>
-                </thead>
-                <tbody id="approvals-tbody"></tbody>
-            </table>
-        </div>
+        <div id="approvals-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -915,14 +894,7 @@
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Change Log <span class="caret">&#9662;</span></h2>
         <div class="note-box">Every applied change to employees, claims, charges, and routes is recorded here.</div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>When</th><th>Who</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th></tr>
-                </thead>
-                <tbody id="log-tbody"></tbody>
-            </table>
-        </div>
+        <div id="log-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -981,7 +953,7 @@
     let currentWeekDaily = {};  // employee_id -> number (this week's daily total, for Payroll)
     let currentWeekDailyDetail = {}; // employee_id -> [{date, amount, is_off}] (this week, for Payroll expand)
     let currentWeekLabel = '';  // human label for the current pay week
-    let payrollExpanded = new Set(); // employee_ids whose payroll detail row is open
+    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set() };
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
 
     // ===== Version tracking =====
@@ -989,8 +961,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.3';
+    const APP_VERSION = 'v1.4';
     const CHANGELOG = [
+        { version: 'v1.4', date: '2026-08-03', notes: 'Payroll, Users, Approvals, and Log are now the same collapsible-card layout as Employees/Claims/Charges/Income/Companies — every table in the app now uses it except Route Tracker\'s log. Companies can now be edited after creation (SuperAdmin only), so the Owner/Phone/Email/Manager/Manager Phone fields can be filled in for companies created before those fields existed. Employees now show document numbers and their expiration dates as separate, always-visible fields instead of combined text. The header now reads "Welcome, [your name]" instead of "User: [username]", adds a "Company:" line showing your assigned company, and the page title becomes "[Company Name] / Logistics & HR Claims Dashboard" instead of "Unified..." for anyone tied to a specific company (Super Admins viewing all companies still see the original title).' },
         { version: 'v1.3', date: '2026-08-03', notes: 'Fixed a real bug where the Users list could render completely blank with no explanation — it now shows Loading/error/empty states and isolates failures so one bad row or a network hiccup can\'t blank the whole table. Cleaned up the Employees card layout: Edit/Delete and the Pay-type/Status quick controls are now in clearly separated, labeled rows instead of one cramped line. Added Phone and Email to Employees (shown in the card, included in CSV export/import and search). Document expiration dates (driver license, work permit, medical card) are now shown explicitly, not just as a countdown badge. Companies gained five new fields — Owner, Phone, Email, Manager, Manager Phone — and the Companies list now uses the same collapsible card layout as Employees/Claims/Charges/Income. Verified Payroll\'s calculation logic directly against the database: it is working correctly — a $0.00 base pay reflects an employee whose weekly pay rate has not been entered yet, not a bug.' },
         { version: 'v1.2', date: '2026-08-03', notes: 'Employees, Claims, Charges & Income now display as collapsible cards instead of wide tables — each record shows a compact summary (name, ID, balance/status) and expands on tap for full details. The card grid reflows automatically to fit the screen: one column on a phone, several side by side on a tablet or desktop, so nothing requires horizontal scrolling anymore. Column-header sorting was replaced with a "Sort by" dropdown + direction toggle above each list. Daily Pay\'s collapsible card view (previously mobile-only) now applies on desktop too, using the same responsive multi-column grid instead of reverting to the old spreadsheet table.' },
         { version: 'v1.1', date: '2026-08-03', notes: 'Grouped the tab bar into three sections to cut down on top-level clutter: Logistics (Route Tracker, Daily Report), HR & Payroll (Employees, Claims, Charges & Income, Daily Pay, Statement, Payroll), and Administration (Settings, Users, Companies, Approvals, Log, Data Sync). Tap a group to reveal its tabs below. Each role sees only the groups that contain at least one tab it has access to.' },
@@ -1041,7 +1014,6 @@
     // ===== Shared collapsible record-card list (Employees, Claims, Charges,
     // Income): expand state per table, and a Sort-by dropdown + direction
     // toggle that stands in for the old clickable column headers. =====
-    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set() };
 
     function toggleRecCard(table, id) {
         const set = recExpanded[table];
@@ -1360,8 +1332,19 @@
     function initAppSession() {
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
-        document.getElementById('user-name-display').textContent = currentUsername;
+        const welcomeName = (currentUser && currentUser.first_name)
+            ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim()
+            : currentUsername;
+        document.getElementById('user-name-display').textContent = welcomeName;
         document.getElementById('user-role-display').textContent = currentUserRole;
+        const companyLabel = (currentUser && currentUser.company_name) ? currentUser.company_name : (currentUserRole === 'SuperAdmin' ? 'All companies' : (currentUser && currentUser.company_code) || '—');
+        document.getElementById('user-company-display').textContent = companyLabel;
+        const titleEl = document.getElementById('app-title');
+        if (titleEl) {
+            titleEl.textContent = (currentUser && currentUser.company_name)
+                ? `${currentUser.company_name} / Logistics & HR Claims Dashboard`
+                : 'Unified Logistics & HR Claims Dashboard';
+        }
 
         // Company scope: non-super users are locked to their own company.
         // SuperAdmin starts on "All" (null) and can switch via the dropdown.
@@ -1585,14 +1568,16 @@
         if (idisp) idisp.textContent = idPrefix() ? `${idPrefix()}${String(additionalIncome.length + 1).padStart(settings.chargeDigits, '0')}I` : '— select company —';
     }
 
+    let editingCompanyCode = null;
+
     function renderCompanies() {
         const container = document.getElementById('companies-tbody');
         if (!container) return;
         container.innerHTML = companies.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>';
         companies.forEach(c => {
             const open = recExpanded.companies ? recExpanded.companies.has(c.code) : false;
-            const del = currentUserRole === 'SuperAdmin'
-                ? `<div class="rec-actions"><button class="del-btn" onclick="deleteCompany('${c.code}')">✕ Delete</button></div>` : '';
+            const actions = currentUserRole === 'SuperAdmin'
+                ? `<div class="rec-actions"><button class="btn-small" style="background:var(--navy);margin:0;" onclick="editCompany('${c.code}')">Edit</button><button class="del-btn" onclick="deleteCompany('${c.code}')">✕ Delete</button></div>` : '';
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-companies-${c.code}">
                     <div class="rec-card-head" onclick="toggleRecCard('companies','${c.code}')">
@@ -1609,10 +1594,40 @@
                             <div><div class="k">Manager phone</div><div class="v">${c.manager_phone || '-'}</div></div>
                             <div><div class="k">Created</div><div class="v">${new Date(c.created_at).toLocaleDateString()}</div></div>
                         </div>
-                        ${del}
+                        ${actions}
                     </div>
                 </div>`);
         });
+    }
+
+    function editCompany(code) {
+        if (currentUserRole !== 'SuperAdmin') return;
+        const c = companies.find(x => x.code === code);
+        if (!c) return;
+        editingCompanyCode = code;
+        document.getElementById('new-company-code').value = c.code;
+        document.getElementById('new-company-code').disabled = true; // code can't change once created
+        document.getElementById('new-company-name').value = c.name || '';
+        document.getElementById('new-company-owner').value = c.owner || '';
+        document.getElementById('new-company-phone').value = c.phone || '';
+        document.getElementById('new-company-email').value = c.email || '';
+        document.getElementById('new-company-manager').value = c.manager || '';
+        document.getElementById('new-company-manager-phone').value = c.manager_phone || '';
+        document.getElementById('company-form-titletext').textContent = `Editing ${c.name} — ${c.code}`;
+        document.getElementById('company-save-btn').textContent = 'Save changes';
+        document.getElementById('company-cancel-btn').style.display = 'inline-block';
+        document.getElementById('tab-companies').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelCompanyEdit() {
+        editingCompanyCode = null;
+        ['new-company-code','new-company-name','new-company-owner','new-company-phone','new-company-email','new-company-manager','new-company-manager-phone'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('new-company-code').disabled = false;
+        document.getElementById('company-form-titletext').textContent = 'Add Company';
+        document.getElementById('company-save-btn').textContent = '+ Add Company';
+        document.getElementById('company-cancel-btn').style.display = 'none';
     }
 
     async function createCompany() {
@@ -1625,6 +1640,19 @@
         const managerPhone = document.getElementById('new-company-manager-phone').value.trim();
         if (code.length < 3 || code.length > 4) { alert('Company code must be 3 or 4 characters.'); return; }
         if (!name) { alert('Enter a company name.'); return; }
+
+        if (editingCompanyCode) {
+            const { error } = await supabaseClient.rpc('edit_company', {
+                p_actor: currentUsername, p_code: editingCompanyCode, p_name: name,
+                p_owner: owner || null, p_phone: phone || null, p_email: email || null,
+                p_manager: manager || null, p_manager_phone: managerPhone || null
+            });
+            if (error) { alert('Error: ' + error.message); return; }
+            cancelCompanyEdit();
+            loadCompanies();
+            return;
+        }
+
         const { error } = await supabaseClient.rpc('create_company', {
             p_actor: currentUsername, p_code: code, p_name: name,
             p_owner: owner || null, p_phone: phone || null, p_email: email || null,
@@ -2003,14 +2031,12 @@
                        <option value="Inactive" ${emp.status !== 'Active' ? 'selected' : ''}>Inactive</option>
                    </select>`
                 : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
-            const dlExpTxt = d.dl_expiration ? d.dl_expiration + expBadge(d.dl_expiration, 30) : '';
-            const dl = d.driver_license ? `${escHtml(d.driver_license)}${dlExpTxt ? ' <span style="color:var(--text-muted);">· exp ' + dlExpTxt + '</span>' : ''}` : '—';
-            const wpExpTxt = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '';
-            const wp = d.work_permit ? `${escHtml(d.work_permit)}${wpExpTxt ? ' <span style="color:var(--text-muted);">· exp ' + wpExpTxt + '</span>' : ''}` : '—';
-            const medExpTxt = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '';
-            const med = (d.medical_card === 'Yes')
-                ? `Yes${medExpTxt ? ' <span style="color:var(--text-muted);">· exp ' + medExpTxt + '</span>' : ''}`
-                : '<span style="color:var(--text-muted);">No</span>';
+            const dl = d.driver_license ? escHtml(d.driver_license) : '—';
+            const dlExp = d.dl_expiration ? d.dl_expiration + expBadge(d.dl_expiration, 30) : '—';
+            const wp = d.work_permit ? escHtml(d.work_permit) : '—';
+            const wpExp = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '—';
+            const med = (d.medical_card === 'Yes') ? 'Yes' : '<span style="color:var(--text-muted);">No</span>';
+            const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
             const open = recExpanded.employees.has(emp.id);
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}">
@@ -2029,8 +2055,11 @@
                             <div><div class="k">Email</div><div class="v">${d.email ? escHtml(d.email) : '-'}</div></div>
                             <div><div class="k">SSN / ITIN (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
                             <div><div class="k">Driver License / State ID</div><div class="v">${dl}</div></div>
-                            <div><div class="k">Work Permit</div><div class="v">${wp}</div></div>
+                            <div><div class="k">DL Expiration</div><div class="v">${dlExp}</div></div>
+                            <div><div class="k">Work Permit #</div><div class="v">${wp}</div></div>
+                            <div><div class="k">Work Permit Expiration</div><div class="v">${wpExp}</div></div>
                             <div><div class="k">Medical Card</div><div class="v">${med}</div></div>
+                            <div><div class="k">Medical Card Expiration</div><div class="v">${medExp}</div></div>
                             ${emp.role_title ? `<div><div class="k">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
                             ${d.notes ? `<div><div class="k">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
                         </div>
@@ -3194,8 +3223,8 @@
         });
 
         let totBase = 0, totRoute = 0, totIncome = 0, totGross = 0, totDed = 0, totNet = 0;
-        const tbody = document.getElementById('payroll-tbody');
-        tbody.innerHTML = list.length ? '' : '<tr><td colspan="8" style="text-align:center;">No people match these filters.</td></tr>';
+        const container = document.getElementById('payroll-tbody');
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>';
 
         list.forEach(emp => {
             const isDaily = getPayType(emp.id) === 'Daily';
@@ -3208,34 +3237,36 @@
 
             totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
 
-            const open = payrollExpanded.has(emp.id);
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr class="payroll-main" onclick="togglePayrollRow('${emp.id}')">
-                    <td class="id-cell"><span class="pay-caret" id="pc-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
-                    <td>${emp.first_name} ${emp.last_name}</td>
-                    <td><span class="type-pill">${emp.person_type}</span></td>
-                    <td class="money">${formatMoney(base)}${isDaily ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : ''}</td>
-                    <td class="money">${formatMoney(routePay)}</td>
-                    <td class="money">${formatMoney(gross)}</td>
-                    <td class="money" style="color:#dc2626;">${ded > 0 ? '−' + formatMoney(ded) : formatMoney(0)}</td>
-                    <td class="money" style="font-weight:700;">${formatMoney(net)}</td>
-                </tr>
-                <tr class="payroll-detail-row" id="pd-${emp.id}" style="display:${open ? '' : 'none'};">
-                    <td colspan="8" style="background:#F8FAFC; padding:0;">${payrollDetailHtml(emp, isDaily, base, routePay, ded, income)}</td>
-                </tr>`);
+            const open = recExpanded.payroll.has(emp.id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-payroll-${emp.id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('payroll','${emp.id}')">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${emp.first_name} ${emp.last_name}</span>
+                        <span class="rec-sub">${emp.id}</span>
+                        <span class="rec-right" style="font-weight:700;">${formatMoney(net)}</span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Type</div><div class="v">${emp.person_type}</div></div>
+                            <div><div class="k">Base pay (wk)</div><div class="v">${formatMoney(base)}${isDaily ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : ''}</div></div>
+                            <div><div class="k">Route pay (wk)</div><div class="v">${formatMoney(routePay)}</div></div>
+                            <div><div class="k">Gross</div><div class="v">${formatMoney(gross)}</div></div>
+                            <div><div class="k">Weekly deductions</div><div class="v" style="color:#dc2626;">${ded > 0 ? '−' + formatMoney(ded) : formatMoney(0)}</div></div>
+                            <div><div class="k">Net pay</div><div class="v" style="font-weight:700;">${formatMoney(net)}</div></div>
+                        </div>
+                        ${payrollDetailHtml(emp, isDaily, base, routePay, ded, income)}
+                    </div>
+                </div>`);
         });
 
         const foot = document.getElementById('payroll-foot');
         if (foot) {
             foot.innerHTML = list.length ? `
-                <tr style="font-weight:700; background:#f1f5f9;">
-                    <td colspan="3" style="text-align:right;">Totals (${list.length})</td>
-                    <td class="money">${formatMoney(totBase)}</td>
-                    <td class="money">${formatMoney(totRoute)}</td>
-                    <td class="money">${formatMoney(totGross)}</td>
-                    <td class="money" style="color:#dc2626;">${totDed > 0 ? '−' + formatMoney(totDed) : formatMoney(0)}</td>
-                    <td class="money">${formatMoney(totNet)}</td>
-                </tr>` : '';
+                <div style="text-align:right; font-weight:700; padding:8px 4px; border-top:1px solid var(--border); margin-top:6px; font-size:13px;">
+                    Totals (${list.length}) · Base ${formatMoney(totBase)} · Route ${formatMoney(totRoute)} · Gross ${formatMoney(totGross)} ·
+                    Deductions ${totDed > 0 ? '−' + formatMoney(totDed) : formatMoney(0)} · Net ${formatMoney(totNet)}
+                </div>` : '';
         }
 
         const grid = document.getElementById('payroll-stats-grid');
@@ -3247,15 +3278,6 @@
                 <div class="stat-card"><div class="stat-label">Net Pay (wk)</div><div class="stat-value">${formatMoney(totNet)}</div></div>
             `;
         }
-    }
-
-    function togglePayrollRow(empId) {
-        const row = document.getElementById('pd-' + empId);
-        if (!row) return;
-        if (payrollExpanded.has(empId)) { payrollExpanded.delete(empId); row.style.display = 'none'; }
-        else { payrollExpanded.add(empId); row.style.display = ''; }
-        const car = document.getElementById('pc-' + empId);
-        if (car) car.textContent = payrollExpanded.has(empId) ? '▾' : '▸';
     }
 
     // Expanded breakdown for one payroll row: paid days / base pay (+ route
@@ -3493,27 +3515,37 @@
 
     // --- APPROVALS & AUDIT LOG ------------------------------------------
     async function renderApprovals() {
-        const tbody = document.getElementById('approvals-tbody');
-        if (!tbody) return;
+        const container = document.getElementById('approvals-tbody');
+        if (!container) return;
         const { data, error } = await supabaseClient.rpc('list_pending_changes', { p_actor: currentUsername, p_company: currentCompany });
-        tbody.innerHTML = '';
-        if (error) { tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="8" style="text-align:center;color:#ef4444;">${error.message}</td></tr>`); return; }
-        if (!data || !data.length) { tbody.insertAdjacentHTML('beforeend', '<tr><td colspan="8" style="text-align:center;">No pending requests.</td></tr>'); return; }
+        container.innerHTML = '';
+        if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
+        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No pending requests.</div>'; return; }
         data.forEach(p => {
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td>${p.requested_by}</td>
-                    <td>${p.table_name}</td>
-                    <td class="id-cell">${p.record_id}</td>
-                    <td>${p.field_name}</td>
-                    <td class="money">${p.old_value ?? '-'}</td>
-                    <td class="money">${p.new_value ?? '-'}</td>
-                    <td>${new Date(p.requested_at).toLocaleString()}</td>
-                    <td style="text-align:center; white-space:nowrap;">
-                        <button class="btn-small" style="background:var(--primary); padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="approveChange(${p.id})">Approve</button>
-                        <button class="del-btn" onclick="rejectChange(${p.id})">✕</button>
-                    </td>
-                </tr>`);
+            const open = recExpanded.approvals ? recExpanded.approvals.has(p.id) : false;
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-approvals-${p.id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('approvals','${p.id}')">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${p.requested_by}</span>
+                        <span class="rec-sub">${p.record_id}</span>
+                        <span class="rec-right">${p.field_name}</span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Table</div><div class="v">${p.table_name}</div></div>
+                            <div><div class="k">Record</div><div class="v id-cell">${p.record_id}</div></div>
+                            <div><div class="k">Field</div><div class="v">${p.field_name}</div></div>
+                            <div><div class="k">Old value</div><div class="v">${p.old_value ?? '-'}</div></div>
+                            <div><div class="k">New value</div><div class="v">${p.new_value ?? '-'}</div></div>
+                            <div><div class="k">Requested</div><div class="v">${new Date(p.requested_at).toLocaleString()}</div></div>
+                        </div>
+                        <div class="rec-actions">
+                            <button class="btn-small" style="background:var(--primary);margin:0;" onclick="approveChange(${p.id})">Approve</button>
+                            <button class="del-btn" onclick="rejectChange(${p.id})">✕ Reject</button>
+                        </div>
+                    </div>
+                </div>`);
         });
     }
 
@@ -3563,18 +3595,29 @@
             });
         }
 
-        if (!rows.length) { tbody.insertAdjacentHTML('beforeend', '<tr><td colspan="7" style="text-align:center;">No changes logged yet.</td></tr>'); return; }
-        rows.forEach(a => {
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td>${new Date(a.changed_at).toLocaleString()}</td>
-                    <td>${a.actor}</td>
-                    <td>${a.table_name}</td>
-                    <td class="id-cell">${a.record_id}</td>
-                    <td>${a.field_name}</td>
-                    <td>${a.old_value ?? '-'}</td>
-                    <td>${a.new_value ?? '-'}</td>
-                </tr>`);
+        const container = document.getElementById('log-tbody');
+        if (!rows.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No changes logged yet.</div>'; return; }
+        container.innerHTML = '';
+        rows.forEach((a, i) => {
+            const open = recExpanded.log ? recExpanded.log.has(i) : false;
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-log-${i}">
+                    <div class="rec-card-head" onclick="toggleRecCard('log',${i})">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${a.actor}</span>
+                        <span class="rec-sub">${new Date(a.changed_at).toLocaleString()}</span>
+                        <span class="rec-right">${a.field_name}</span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Table</div><div class="v">${a.table_name}</div></div>
+                            <div><div class="k">Record</div><div class="v id-cell">${a.record_id}</div></div>
+                            <div><div class="k">Field</div><div class="v">${a.field_name}</div></div>
+                            <div><div class="k">Old value</div><div class="v">${a.old_value ?? '-'}</div></div>
+                            <div><div class="k">New value</div><div class="v">${a.new_value ?? '-'}</div></div>
+                        </div>
+                    </div>
+                </div>`);
         });
     }
 
@@ -3695,21 +3738,21 @@
     }
 
     async function fetchUsersList() {
-        const tbody = document.getElementById('users-table-body');
-        if(!tbody) return;
+        const container = document.getElementById('users-table-body');
+        if(!container) return;
 
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Loading…</td></tr>';
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
 
         let data, error;
         try {
             ({ data, error } = await supabaseClient.rpc('list_users', { p_actor: currentUsername, p_company: currentCompany }));
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444;">Could not load users: ${e && e.message ? e.message : e}</td></tr>`;
+            container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">Could not load users: ${e && e.message ? e.message : e}</div>`;
             console.error('fetchUsersList (network/client):', e);
             return;
         }
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444;">${error.message}</td></tr>`;
+            container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`;
             return;
         }
 
@@ -3727,32 +3770,41 @@
         } catch (e) { console.error('assign-to-employee dropdown:', e); }
 
         if (!data || !data.length) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No users found.</td></tr>';
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No users found.</div>';
             return;
         }
 
-        tbody.innerHTML = '';
+        container.innerHTML = '';
         data.forEach(u => {
             try {
                 const canManage = u.can_manage && (currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator');
-                // Role cell: editable dropdown when the actor may manage this user.
                 let roleCell = `<span class="type-pill">${u.role}</span>`;
                 if (canManage) {
                     const roles = allowedRolesForActor();
                     const opts = roles.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`).join('');
                     roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
                 }
-                let actionHtml = u.can_manage
-                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
-                    : '<span style="color:#94a3b8; font-size:11px;">Restricted</span>';
+                const actionHtml = u.can_manage
+                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset password</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕ Delete</button>`
+                    : '<span style="color:#94a3b8; font-size:11px;">Restricted — outside your scope</span>';
+                const open = recExpanded.users ? recExpanded.users.has(u.username) : false;
 
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr>
-                        <td>${u.username}${u.employee_id ? ' <span style="color:#94a3b8;font-size:10px;">('+u.employee_id+')</span>' : ''}</td>
-                        <td>${roleCell}</td>
-                        <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                        <td style="text-align:center;">${actionHtml}</td>
-                    </tr>`);
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="rec-card${open ? ' open' : ''}" id="rec-users-${u.username}">
+                        <div class="rec-card-head" onclick="toggleRecCard('users','${u.username}')">
+                            <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                            <span class="rec-title">${u.username}</span>
+                            <span class="rec-sub">${u.employee_id || ''}</span>
+                            <span class="rec-right"><span class="type-pill">${u.role}</span></span>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-detail-grid">
+                                <div><div class="k">Role</div><div class="v">${roleCell}</div></div>
+                                <div><div class="k">Created</div><div class="v">${new Date(u.created_at).toLocaleDateString()}</div></div>
+                            </div>
+                            <div class="rec-actions">${actionHtml}</div>
+                        </div>
+                    </div>`);
             } catch (e) {
                 console.error('user row render failed for', u && u.username, e);
             }
