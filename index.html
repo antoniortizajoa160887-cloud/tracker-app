@@ -93,6 +93,20 @@
     [data-theme="dark"] .setup-banner { background: rgba(245,158,11,0.14); }
     [data-theme="dark"] #version-badge { background: rgba(255,255,255,0.14); }
     [data-theme="dark"] #idle-warning-overlay > div, [data-theme="dark"] #version-log-overlay > div { background: var(--surface) !important; color: var(--text); }
+    /* The base rules below hardcoded a light color instead of a variable —
+       harmless in light mode, but in dark mode the text color already flips
+       to a light shade while these stayed light too, so it read as
+       pale-text-on-white: illegible. Give each an explicit dark value. */
+    [data-theme="dark"] .rec-card { background: var(--surface); }
+    [data-theme="dark"] .rec-card-head { background: var(--surface-2); }
+    [data-theme="dark"] .dp-day { background: var(--surface-2); }
+    [data-theme="dark"] tr:nth-child(even) { background-color: var(--surface-2); }
+    [data-theme="dark"] .row-year { background-color: #1c2f42 !important; }
+    [data-theme="dark"] .row-week { background-color: #172838 !important; }
+    [data-theme="dark"] .row-date { background-color: var(--surface) !important; }
+    [data-theme="dark"] input, [data-theme="dark"] select { background: var(--surface-2); color: var(--text); }
+    [data-theme="dark"] .status-quit, [data-theme="dark"] .status-Absorbed,
+    [data-theme="dark"] .status-Stopped, [data-theme="dark"] .status-Queued { background: rgba(255,255,255,0.10); color: #b8c4cf; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
     body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0.75rem; line-height: 1.4; overflow-x: hidden; width: 100%; }
@@ -1014,8 +1028,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.5';
+    const APP_VERSION = 'v1.6';
     const CHANGELOG = [
+        { version: 'v1.6', date: '2026-08-03', notes: 'Fixed a real readability bug in Dark theme: collapsed cards (Employees, Claims, Charges, Income, Payroll, Users, Companies, Approvals, Log), striped table rows (Route Tracker, Daily Report, Settings lists), and form inputs had stayed on their light-mode background color while the text color had already switched to the light shade meant for dark backgrounds — pale text on a near-white background, very hard to read. All of those now get proper dark backgrounds, so text is fully legible everywhere in Dark mode.' },
         { version: 'v1.5', date: '2026-08-03', notes: 'Added an optional Dark theme (Settings → Appearance), built from the blue wave/mesh reference image — deep navy background with teal-cyan accents, applied to every panel, card, table, and button. Light stays the default; switching is one tap and remembered per device (localStorage), so it doesn\'t affect other people signed in elsewhere. Nothing else changed — all data, calculations, and features work identically in either theme.' },
         { version: 'v1.4', date: '2026-08-03', notes: 'Payroll, Users, Approvals, and Log are now the same collapsible-card layout as Employees/Claims/Charges/Income/Companies — every table in the app now uses it except Route Tracker\'s log. Companies can now be edited after creation (SuperAdmin only), so the Owner/Phone/Email/Manager/Manager Phone fields can be filled in for companies created before those fields existed. Employees now show document numbers and their expiration dates as separate, always-visible fields instead of combined text. The header now reads "Welcome, [your name]" instead of "User: [username]", adds a "Company:" line showing your assigned company, and the page title becomes "[Company Name] / Logistics & HR Claims Dashboard" instead of "Unified..." for anyone tied to a specific company (Super Admins viewing all companies still see the original title).' },
         { version: 'v1.3', date: '2026-08-03', notes: 'Fixed a real bug where the Users list could render completely blank with no explanation — it now shows Loading/error/empty states and isolates failures so one bad row or a network hiccup can\'t blank the whole table. Cleaned up the Employees card layout: Edit/Delete and the Pay-type/Status quick controls are now in clearly separated, labeled rows instead of one cramped line. Added Phone and Email to Employees (shown in the card, included in CSV export/import and search). Document expiration dates (driver license, work permit, medical card) are now shown explicitly, not just as a countdown badge. Companies gained five new fields — Owner, Phone, Email, Manager, Manager Phone — and the Companies list now uses the same collapsible card layout as Employees/Claims/Charges/Income. Verified Payroll\'s calculation logic directly against the database: it is working correctly — a $0.00 base pay reflects an employee whose weekly pay rate has not been entered yet, not a bug.' },
