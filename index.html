@@ -429,6 +429,28 @@
     </div>
 </div>
 
+<!-- Shown once, right after a company is created — the generated Administrator
+     login for that company. No background-tap dismiss: this is the only time
+     the password is ever shown, so closing requires the explicit button. -->
+<div id="new-admin-credentials-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--surface); border-radius:12px; padding:22px 20px; max-width:400px; width:100%; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+        <div id="new-admin-title" style="font-weight:700; font-size:16px; color:var(--secondary); margin-bottom:4px;">✅ Company created</div>
+        <div id="new-admin-company-line" style="font-size:12px; color:var(--text-muted); margin-bottom:14px;"></div>
+        <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:10px;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700; margin-bottom:2px;">Username</div>
+            <div id="new-admin-username" style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--secondary);"></div>
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700; margin:10px 0 2px;">Password</div>
+            <div id="new-admin-password" style="font-family:var(--mono); font-size:15px; font-weight:700; color:var(--secondary);"></div>
+        </div>
+        <div id="new-admin-links" style="font-size:11px; color:var(--text-muted); margin-bottom:12px;"></div>
+        <div class="note-box" style="margin-bottom:12px;">This password is shown only once and isn't recoverable later. Save or share it now — from the Users tab you can always reset it to a new one, but not view this one again.</div>
+        <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-small" style="margin:0;" onclick="copyNewAdminCredentials()">📋 Copy</button>
+            <button type="button" class="btn" style="margin:0; flex:1;" onclick="closeNewAdminCredentials()">I've saved these — Close</button>
+        </div>
+    </div>
+</div>
+
 <datalist id="employee-options-list"></datalist>
 
 <!-- MAIN APP CONTAINER -->
@@ -580,7 +602,7 @@
             <div class="grid-form">
                 <div class="field"><label>First Name</label><input type="text" id="emp-first" required></div>
                 <div class="field"><label>Last Name</label><input type="text" id="emp-last" required></div>
-                <div class="field"><label>Person Type</label><select id="emp-type" onchange="updateNextEmpId()"><option value="Employee">Employee (E)</option><option value="Staff">Staff (S)</option><option value="Contractor">Contractor (C)</option><option value="Provider">Provider (P)</option></select></div>
+                <div class="field"><label>Person Type</label><select id="emp-type" onchange="updateNextEmpId()"><option value="Employee">Employee (E)</option><option value="Staff">Staff (S)</option><option value="Contractor">Contractor (C)</option><option value="Provider">Provider (P)</option><option value="Owner">Owner (O)</option><option value="Manager">Manager (M)</option></select></div>
                 <div class="field"><label>Department</label><input type="text" id="emp-dept"></div>
                 <div class="field"><label>Role / Title</label><input type="text" id="emp-role"></div>
                 <div class="field"><label>Start Date</label><input type="date" id="emp-start"></div>
@@ -1114,8 +1136,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.0';
+    const APP_VERSION = 'v2.2';
     const CHANGELOG = [
+        { version: 'v2.2', date: '2026-08-03', notes: 'Adding an employee (one at a time, via the Employees tab form) now also auto-creates their login, shown once in the same on-screen panel companies use, with the same duplicate-proof username policy. Role follows Person Type: Owner or Manager → Administrator, Staff → Medium, Employee/Contractor/Provider → View Only. Bulk CSV import intentionally skips this — importing many rows at once can\'t sanely display many one-time passwords, so add logins individually afterward for anyone imported that way. Also fixed a real bug found while testing this: company creation (v2.0/v2.1) has been failing outright since it shipped due to a mismatched internal logging call — confirmed and corrected; creating a company should now work end-to-end rather than error out.' },
+        { version: 'v2.1', date: '2026-08-03', notes: 'Creating a company now automatically sets it up end to end: if an Owner name is given, an Owner-type employee is created for that company (ID ending in "O"); same for Manager ("M"). An Administrator account is always auto-created for the new company too, with a generated username (based on the company code, guaranteed unique system-wide) and a random password — shown once in an on-screen panel right after creation, since it can\'t be retrieved again later (it can still be reset from the Users tab). "Owner" and "Manager" are now selectable Person Types on the Employees tab too, so if the info wasn\'t provided when the company was created, a Super Admin can add that employee afterward — doing so links their name back to the company\'s Owner/Manager field automatically, both when creating and when editing an employee.' },
         { version: 'v2.0', date: '2026-08-03', notes: 'Administrators can now see the Companies tab, scoped to only their own company — they never see or can switch to another company\'s data there. They can edit their company\'s contact info (Owner, Phone, Email, Manager, Manager Phone); the Company Name and Code stay Super Admin-only to change, and Administrators never see the "Add Company" form (creating and deleting companies remain Super Admin-only actions). Enforced on the database side too, not just hidden in the UI — tested directly that one Administrator cannot edit another company\'s record even by calling the save function directly.' },
         { version: 'v1.9', date: '2026-08-03', notes: 'Added a "Changelog" tab under Administration, showing this same version history (version, date, what changed) as collapsible cards instead of just the tap-to-open badge popup. Visible only to Super Admin and Administrator users — Medium and View-only accounts don\'t see it.' },
         { version: 'v1.8', date: '2026-08-03', notes: 'Fixed the "one pale row" bug in both dark themes: on a touchscreen, tapping a table row keeps its :hover style active until you tap elsewhere, and several :hover states (table rows, the Daily Report\'s slicer filters) were still hardcoded to a light color — so whatever you\'d just tapped showed as a stuck white patch, mismatched from the row before this fix confirmed it was the true cause. Also fixed: the Daily Report slicer panels, active input/select focus state, Daily Report\'s Expand/Collapse toggle buttons, Daily Pay\'s OFF-day styling, note boxes, and the CSV drop-zone — all were still hardcoded light and are now properly dark in both Ocean and Emerald.' },
@@ -1852,17 +1876,56 @@
             return;
         }
 
-        const { error } = await supabaseClient.rpc('create_company', {
+        const { data, error } = await supabaseClient.rpc('create_company', {
             p_actor: currentUsername, p_code: code, p_name: name,
             p_owner: owner || null, p_phone: phone || null, p_email: email || null,
             p_manager: manager || null, p_manager_phone: managerPhone || null
         });
-        if (error) alert('Error: ' + error.message);
-        else {
-            ['new-company-code','new-company-name','new-company-owner','new-company-phone','new-company-email','new-company-manager','new-company-manager-phone'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.value = '';
-            });
-            loadCompanies();
+        if (error) { alert('Error: ' + error.message); return; }
+        ['new-company-code','new-company-name','new-company-owner','new-company-phone','new-company-email','new-company-manager','new-company-manager-phone'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        loadCompanies();
+        // create_company always provisions an Administrator account for the
+        // new company (and an Owner/Manager employee record if those names
+        // were given) — show the generated login once, right now.
+        const result = (data && data[0]) ? data[0] : null;
+        if (result && result.admin_username) showNewAdminCredentials(name, code, result);
+    }
+
+    function showNewAdminCredentials(companyName, companyCode, result) {
+        document.getElementById('new-admin-title').textContent = '✅ Company created';
+        document.getElementById('new-admin-company-line').textContent = `${companyName} (${companyCode})`;
+        document.getElementById('new-admin-username').textContent = result.admin_username;
+        document.getElementById('new-admin-password').textContent = result.admin_password;
+        const linkParts = [];
+        if (result.owner_employee_id) linkParts.push(`Linked to the new Owner employee (${result.owner_employee_id})`);
+        else if (result.manager_employee_id) linkParts.push(`Linked to the new Manager employee (${result.manager_employee_id})`);
+        else linkParts.push('Not linked to an employee yet — link one later from the Users tab if needed.');
+        document.getElementById('new-admin-links').textContent = linkParts.join(' ');
+        document.getElementById('new-admin-credentials-overlay').style.display = 'flex';
+    }
+    // Same overlay, reused for the login auto-created alongside a new employee.
+    function showNewEmployeeCredentials(empName, empId, role, username, password) {
+        document.getElementById('new-admin-title').textContent = '✅ Employee added';
+        document.getElementById('new-admin-company-line').textContent = `${empName} (${empId})`;
+        document.getElementById('new-admin-username').textContent = username;
+        document.getElementById('new-admin-password').textContent = password;
+        document.getElementById('new-admin-links').textContent = `Role: ${role}`;
+        document.getElementById('new-admin-credentials-overlay').style.display = 'flex';
+    }
+    function closeNewAdminCredentials() {
+        document.getElementById('new-admin-credentials-overlay').style.display = 'none';
+    }
+    async function copyNewAdminCredentials() {
+        const u = document.getElementById('new-admin-username').textContent;
+        const p = document.getElementById('new-admin-password').textContent;
+        const text = `Username: ${u}\nPassword: ${p}`;
+        try {
+            await navigator.clipboard.writeText(text);
+            alert('Copied to clipboard.');
+        } catch (e) {
+            alert(text); // clipboard unavailable — show it plainly so it can be copied by hand
         }
     }
 
@@ -2074,7 +2137,7 @@
     }
 
     function computeNextEmpId(type) {
-        const letter = type === 'Staff' ? 'S' : type === 'Contractor' ? 'C' : type === 'Provider' ? 'P' : 'E';
+        const letter = type === 'Staff' ? 'S' : type === 'Contractor' ? 'C' : type === 'Provider' ? 'P' : type === 'Owner' ? 'O' : type === 'Manager' ? 'M' : 'E';
         const count = employees.filter(emp => emp.person_type === type).length + 1;
         return `${idPrefix()}${String(count).padStart(settings.empDigits, '0')}${letter}`;
     }
@@ -2126,7 +2189,7 @@
         } else {
             // ----- CREATE -----
             const id = computeNextEmpId(f.type);
-            const { error } = await supabaseClient.rpc('create_employee', {
+            const { data, error } = await supabaseClient.rpc('create_employee', {
                 p_actor: currentUsername, p_company: co, p_id: id,
                 p_first: f.first, p_last: f.last, p_type: f.type,
                 p_dept: f.dept, p_role_title: f.role, p_start: f.start,
@@ -2138,6 +2201,13 @@
             document.getElementById('employee-form').reset();
             updateNextEmpId();
             fetchEmployeesFromCloud();
+            // create_employee also auto-provisions a login for this employee
+            // (Owner/Manager -> Administrator, Staff -> Medium, else View Only).
+            const result = (data && data[0]) ? data[0] : null;
+            if (result && result.new_username) {
+                const autoRole = (f.type === 'Owner' || f.type === 'Manager') ? 'Administrator' : (f.type === 'Staff' ? 'Medium' : 'User');
+                showNewEmployeeCredentials(`${f.first} ${f.last}`.trim(), id, ROLE_LABELS[autoRole] || autoRole, result.new_username, result.new_password);
+            }
         }
     });
 
@@ -2400,7 +2470,8 @@
                 p_dept: get(r, idx.dept), p_role_title: get(r, idx.role),
                 p_start: get(r, idx.start) || null,
                 p_pay: parseFloat(get(r, idx.pay)) || 0,
-                p_ssn: get(r, idx.ssn)
+                p_ssn: get(r, idx.ssn),
+                p_auto_account: false // bulk import: N one-time passwords can't be shown sanely — add logins individually afterward if needed
             });
             if (error) { fail++; console.error('import row failed:', error.message); continue; }
             employees.push({ id, person_type: type, first_name: first, last_name: last, status: 'Active', pay_rate: parseFloat(get(r, idx.pay)) || 0 });
