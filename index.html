@@ -177,13 +177,10 @@
     .save-flash.show { opacity: 1; }
     .setup-banner { background: var(--amber-bg); color: var(--amber); border: 1px solid #e6c983; border-radius: 6px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; }
 
-    /* Daily Pay — mobile card layout (shown instead of the wide grid on phones) */
-    #dailypay-cards { display: none; }
-    @media (max-width: 599px) {
-        #dailypay-table-wrap { display: none; }
-        #dailypay-cards { display: block; }
-    }
-    .dp-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+    /* Daily Pay — always the collapsible card layout; a CSS grid gives desktop
+       multiple columns instead of falling back to a spreadsheet table. */
+    #dailypay-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
+    .dp-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .dp-card-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; background: var(--excel-blue); color: #fff; padding: 8px 10px; cursor: pointer; }
     .dp-card.collapsed .dp-days { display: none; }
     .dp-caret { color: #fff; opacity: 0.9; font-size: 12px; align-self: center; }
@@ -195,7 +192,7 @@
     .dp-day-label { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
     .dp-day .day-input { width: 100%; text-align: right; font-size: 15px; padding: 8px; }
     .dp-day .off-btn { margin-top: 5px; font-size: 11px; padding: 5px 0; }
-    .dp-grand { text-align: right; font-weight: 700; padding: 8px 4px; font-family: var(--mono); }
+    .dp-grand { text-align: right; font-weight: 700; padding: 8px 4px; font-family: var(--mono); grid-column: 1 / -1; }
 
     /* Collapsible input / log sections */
     .panel-head { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -211,10 +208,29 @@
     .id-banner .id-banner-value { font-family: var(--mono); font-size: 18px; font-weight: 700; }
     #employee-form.editing { outline: 2px solid var(--navy); outline-offset: 6px; border-radius: 8px; }
     .form-section-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin: 6px 0 2px; }
-    .emp-detail-row > td { background: #FAFBFC !important; padding-top: 4px; padding-bottom: 8px; }
-    .emp-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 18px; font-size: 11px; }
-    .emp-detail-grid .k { color: var(--text-muted); text-transform: uppercase; font-size: 9px; letter-spacing: 0.04em; }
-    .emp-detail-grid .v { color: var(--text); font-weight: 600; }
+    /* ===== Shared collapsible record-card list (Employees, Claims, Charges,
+       Income) — a responsive grid: 1 column on phones, more as the screen
+       widens, same collapsible pattern on every device. ===== */
+    .rec-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
+    .rec-toolbar label { font-size: 11px; color: var(--text-muted); font-weight: 700; }
+    .rec-toolbar select { width: auto; min-height: 36px; padding: 5px 8px; font-size: 12px; }
+    .rec-toolbar .rec-dir-btn { min-height: 36px; padding: 5px 10px; font-size: 12px; margin: 0; }
+    .record-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
+    .rec-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+    .rec-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 11px; cursor: pointer; background: #F8FAFC; }
+    .rec-card-head:hover { background: #F1F5F9; }
+    .rec-card.open .rec-card-head { background: var(--excel-blue); color: #fff; }
+    .rec-caret { font-size: 11px; color: var(--text-muted); width: 10px; flex-shrink: 0; }
+    .rec-card.open .rec-caret { color: #fff; }
+    .rec-card-head .rec-title { font-weight: 700; font-size: 13px; }
+    .rec-card-head .rec-sub { font-size: 10px; opacity: 0.85; font-family: var(--mono); }
+    .rec-card-head .rec-right { margin-left: auto; display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; font-family: var(--mono); }
+    .rec-card-body { display: none; padding: 10px 11px 12px; border-top: 1px solid var(--border); }
+    .rec-card.open .rec-card-body { display: block; }
+    .rec-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px 16px; font-size: 11px; margin-bottom: 10px; }
+    .rec-detail-grid .k { color: var(--text-muted); text-transform: uppercase; font-size: 9px; letter-spacing: 0.04em; }
+    .rec-detail-grid .v { color: var(--text); font-weight: 600; }
+    .rec-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .exp-pill { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 4px; }
     .exp-soon { background: var(--amber-bg); color: var(--amber); }
     .exp-over { background: var(--quit-bg); color: var(--quit); }
@@ -462,23 +478,19 @@
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()">Import CSV</button>
             <input type="file" id="emp-csv-input" accept=".csv,text/csv" style="display:none;" onchange="importEmployeesCsv(event)">
         </div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="sortable" onclick="toggleSort('employees','id')">ID <span class="sort-arrow" id="sort-employees-id"></span></th>
-                        <th class="sortable" onclick="toggleSort('employees','name')">Name <span class="sort-arrow" id="sort-employees-name"></span></th>
-                        <th class="sortable" onclick="toggleSort('employees','type')">Type <span class="sort-arrow" id="sort-employees-type"></span></th>
-                        <th>Pay</th>
-                        <th class="sortable" onclick="toggleSort('employees','department')">Department <span class="sort-arrow" id="sort-employees-department"></span></th>
-                        <th class="sortable" onclick="toggleSort('employees','start')">Start Date <span class="sort-arrow" id="sort-employees-start"></span></th>
-                        <th class="sortable" onclick="toggleSort('employees','status')">Status <span class="sort-arrow" id="sort-employees-status"></span></th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="employees-tbody"></tbody>
-            </table>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-employees" onchange="setSortField('employees', this.value)">
+                <option value="name">Name</option>
+                <option value="id">ID</option>
+                <option value="type">Type</option>
+                <option value="department">Department</option>
+                <option value="start">Start date</option>
+                <option value="status">Status</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-employees" onclick="flipSortDir('employees')">▲</button>
         </div>
+        <div id="employees-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -549,28 +561,22 @@
             <div class="field"><select id="filter-claim-damage" onchange="filterClaims()"><option value="">All damage types</option></select></div>
             <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
         </div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="sortable" onclick="toggleSort('claims','claimant')">Claimant Acct <span class="sort-arrow" id="sort-claims-claimant"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','claim_id')">Claim ID <span class="sort-arrow" id="sort-claims-claim_id"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','company')">Company <span class="sort-arrow" id="sort-claims-company"></span></th>
-                        <th>Carrier Claim #</th><th>Customer Claim #</th>
-                        <th class="sortable" onclick="toggleSort('claims','employee_id')">Employee ID <span class="sort-arrow" id="sort-claims-employee_id"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','employee')">Employee <span class="sort-arrow" id="sort-claims-employee"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','damage')">Type of damage <span class="sort-arrow" id="sort-claims-damage"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','amount')">Claim Amount <span class="sort-arrow" id="sort-claims-amount"></span></th>
-                        <th>Weeks</th>
-                        <th class="sortable" onclick="toggleSort('claims','balance')">Balance <span class="sort-arrow" id="sort-claims-balance"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','status')">Status <span class="sort-arrow" id="sort-claims-status"></span></th>
-                        <th class="sortable" onclick="toggleSort('claims','start')">Start Ded. <span class="sort-arrow" id="sort-claims-start"></span></th>
-                        <th>End Ded.</th><th>Absorbed</th><th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="claims-tbody"></tbody>
-            </table>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-claims" onchange="setSortField('claims', this.value)">
+                <option value="employee">Employee</option>
+                <option value="claim_id">Claim ID</option>
+                <option value="claimant">Claimant Acct</option>
+                <option value="company">Company</option>
+                <option value="damage">Type of damage</option>
+                <option value="amount">Claim amount</option>
+                <option value="balance">Balance</option>
+                <option value="status">Status</option>
+                <option value="start">Start ded.</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-claims" onclick="flipSortDir('claims')">▲</button>
         </div>
+        <div id="claims-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -607,25 +613,20 @@
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()"></div>
         </div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="sortable" onclick="toggleSort('charges','charge_id')">Charge ID <span class="sort-arrow" id="sort-charges-charge_id"></span></th>
-                        <th class="sortable" onclick="toggleSort('charges','employee_id')">Employee ID <span class="sort-arrow" id="sort-charges-employee_id"></span></th>
-                        <th class="sortable" onclick="toggleSort('charges','employee')">Employee <span class="sort-arrow" id="sort-charges-employee"></span></th>
-                        <th class="sortable" onclick="toggleSort('charges','type')">Charge type <span class="sort-arrow" id="sort-charges-type"></span></th>
-                        <th class="sortable" onclick="toggleSort('charges','amount')">Amount <span class="sort-arrow" id="sort-charges-amount"></span></th>
-                        <th>Weeks</th>
-                        <th class="sortable" onclick="toggleSort('charges','balance')">Balance <span class="sort-arrow" id="sort-charges-balance"></span></th>
-                        <th class="sortable" onclick="toggleSort('charges','status')">Status <span class="sort-arrow" id="sort-charges-status"></span></th>
-                        <th class="sortable" onclick="toggleSort('charges','start')">Start Ded. <span class="sort-arrow" id="sort-charges-start"></span></th>
-                        <th>End Ded.</th><th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="charges-tbody"></tbody>
-            </table>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-charges" onchange="setSortField('charges', this.value)">
+                <option value="employee">Employee</option>
+                <option value="charge_id">Charge ID</option>
+                <option value="type">Charge type</option>
+                <option value="amount">Amount</option>
+                <option value="balance">Balance</option>
+                <option value="status">Status</option>
+                <option value="start">Start ded.</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-charges" onclick="flipSortDir('charges')">▲</button>
         </div>
+        <div id="charges-tbody" class="record-grid"></div>
     </div>
 
     <div style="height:1px;background:var(--border);margin:18px 2px 4px;"></div>
@@ -657,25 +658,20 @@
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()"></div>
         </div>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="sortable" onclick="toggleSort('income','income_id')">Income ID <span class="sort-arrow" id="sort-income-income_id"></span></th>
-                        <th class="sortable" onclick="toggleSort('income','employee_id')">Employee ID <span class="sort-arrow" id="sort-income-employee_id"></span></th>
-                        <th class="sortable" onclick="toggleSort('income','employee')">Employee <span class="sort-arrow" id="sort-income-employee"></span></th>
-                        <th class="sortable" onclick="toggleSort('income','type')">Income type <span class="sort-arrow" id="sort-income-type"></span></th>
-                        <th class="sortable" onclick="toggleSort('income','amount')">Amount <span class="sort-arrow" id="sort-income-amount"></span></th>
-                        <th>Weeks</th>
-                        <th class="sortable" onclick="toggleSort('income','remaining')">Remaining <span class="sort-arrow" id="sort-income-remaining"></span></th>
-                        <th class="sortable" onclick="toggleSort('income','status')">Status <span class="sort-arrow" id="sort-income-status"></span></th>
-                        <th class="sortable" onclick="toggleSort('income','start')">Start <span class="sort-arrow" id="sort-income-start"></span></th>
-                        <th>Ends</th><th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="income-tbody"></tbody>
-            </table>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-income" onchange="setSortField('income', this.value)">
+                <option value="employee">Employee</option>
+                <option value="income_id">Income ID</option>
+                <option value="type">Income type</option>
+                <option value="amount">Amount</option>
+                <option value="remaining">Remaining</option>
+                <option value="status">Status</option>
+                <option value="start">Start</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-income" onclick="flipSortDir('income')">▲</button>
         </div>
+        <div id="income-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -720,19 +716,6 @@
         </div>
     </div>
     <div class="panel">
-        <div id="dailypay-table-wrap" class="table-wrapper">
-            <table class="daily-grid">
-                <thead>
-                    <tr id="dailypay-head">
-                        <th class="name-col">Name</th>
-                        <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
-                        <th>Week Total</th>
-                    </tr>
-                </thead>
-                <tbody id="dailypay-body"></tbody>
-                <tfoot id="dailypay-foot"></tfoot>
-            </table>
-        </div>
         <div id="dailypay-cards"></div>
     </div>
 </div>
@@ -994,8 +977,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.1';
+    const APP_VERSION = 'v1.2';
     const CHANGELOG = [
+        { version: 'v1.2', date: '2026-08-03', notes: 'Employees, Claims, Charges & Income now display as collapsible cards instead of wide tables — each record shows a compact summary (name, ID, balance/status) and expands on tap for full details. The card grid reflows automatically to fit the screen: one column on a phone, several side by side on a tablet or desktop, so nothing requires horizontal scrolling anymore. Column-header sorting was replaced with a "Sort by" dropdown + direction toggle above each list. Daily Pay\'s collapsible card view (previously mobile-only) now applies on desktop too, using the same responsive multi-column grid instead of reverting to the old spreadsheet table.' },
         { version: 'v1.1', date: '2026-08-03', notes: 'Grouped the tab bar into three sections to cut down on top-level clutter: Logistics (Route Tracker, Daily Report), HR & Payroll (Employees, Claims, Charges & Income, Daily Pay, Statement, Payroll), and Administration (Settings, Users, Companies, Approvals, Log, Data Sync). Tap a group to reveal its tabs below. Each role sees only the groups that contain at least one tab it has access to.' },
         { version: 'v1.0', date: '2026-08-03', notes: 'Version tracking introduced (this badge + changelog). Snapshot of the app at this point: multi-company payroll/HR dashboard — Route Tracker, Daily Report, Employees, Claims (rate-change & pause history), Charges & Income (merged tab, feeds Payroll), Statement (collapsible, historical week selector), Daily Pay (mobile card view, historical weeks), Payroll (historical week selector, expandable per-person breakdown), Settings, Users (role management, employee-link uniqueness), Companies, Approvals, role-scoped Log, Data Sync, and a 5-minute idle session timeout.' }
     ];
@@ -1027,15 +1011,6 @@
     let expandedState = {};
     let sortState = { employees: { key: null, dir: 1 }, claims: { key: null, dir: 1 }, charges: { key: null, dir: 1 }, income: { key: null, dir: 1 } };
 
-    function toggleSort(table, key) {
-        const s = sortState[table];
-        if (s.key === key) s.dir *= -1; else { s.key = key; s.dir = 1; }
-        if (table === 'employees') renderEmployees();
-        else if (table === 'claims') renderClaims();
-        else if (table === 'charges') renderCharges();
-        else if (table === 'income') renderIncome();
-    }
-
     function applySort(list, table, getters) {
         const s = sortState[table];
         if (!s.key || !getters[s.key]) return list;
@@ -1050,13 +1025,38 @@
         });
     }
 
-    function updateSortIndicators(table, keys) {
+    // ===== Shared collapsible record-card list (Employees, Claims, Charges,
+    // Income): expand state per table, and a Sort-by dropdown + direction
+    // toggle that stands in for the old clickable column headers. =====
+    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set() };
+
+    function toggleRecCard(table, id) {
+        const set = recExpanded[table];
+        if (set.has(id)) set.delete(id); else set.add(id);
+        const el = document.getElementById(`rec-${table}-${id}`);
+        if (el) el.classList.toggle('open', set.has(id));
+    }
+
+    function reRenderRecTable(table) {
+        if (table === 'employees') renderEmployees();
+        else if (table === 'claims') renderClaims();
+        else if (table === 'charges') renderCharges();
+        else if (table === 'income') renderIncome();
+    }
+    function setSortField(table, key) {
+        sortState[table].key = key; sortState[table].dir = 1;
+        reRenderRecTable(table);
+    }
+    function flipSortDir(table) {
+        sortState[table].dir *= -1;
+        reRenderRecTable(table);
+    }
+    function updateRecSortUI(table) {
         const s = sortState[table];
-        keys.forEach(k => {
-            const el = document.getElementById(`sort-${table}-${k}`);
-            if (!el) return;
-            el.textContent = s.key === k ? (s.dir === 1 ? '▲' : '▼') : '';
-        });
+        const sel = document.getElementById('sort-select-' + table);
+        if (sel && s.key) sel.value = s.key;
+        const dirBtn = document.getElementById('sort-dir-' + table);
+        if (dirBtn) dirBtn.textContent = s.dir === 1 ? '▲' : '▼';
     }
 
     const formatMoney = (num) => '$ ' + parseFloat(num || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -1945,15 +1945,14 @@
             start: e => e.start_date || '',
             status: e => e.status || ''
         });
-        const tbody = document.getElementById('employees-tbody');
-        tbody.innerHTML = list.length ? '' : '<tr><td colspan="8" style="text-align:center;">No employees found.</td></tr>';
+        const container = document.getElementById('employees-tbody');
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No employees found.</div>';
         const editable = canEdit();
         list.forEach(emp => {
             const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
             const d = getEmpDetail(emp.id);
             const pt = getPayType(emp.id);
-            const payCell = `<span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : 'pay-weekly'}">${pt === 'Daily' ? 'Daily' : 'Weekly'}</span>` +
-                (editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '');
+            const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '';
             const statusCell = editable
                 ? `<select onchange="setEmployeeStatus('${emp.id}', this.value)" style="padding:3px 4px;font-size:11px;border-radius:5px;">
                        <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
@@ -1965,21 +1964,20 @@
             const med = (d.medical_card === 'Yes')
                 ? 'Yes' + expBadge(d.medical_card_exp, 60)
                 : '<span style="color:var(--text-muted);">No</span>';
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td class="id-cell">${emp.id}</td>
-                    <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
-                    <td><span class="type-pill">${emp.person_type}</span></td>
-                    <td>${payCell}</td>
-                    <td>${escHtml(emp.department) || '-'}</td>
-                    <td>${emp.start_date || '-'}</td>
-                    <td>${statusCell}</td>
-                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
-                </tr>
-                <tr class="emp-detail-row">
-                    <td></td>
-                    <td colspan="7">
-                        <div class="emp-detail-grid">
+            const open = recExpanded.employees.has(emp.id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('employees','${emp.id}')">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
+                        <span class="rec-sub">${emp.id}</span>
+                        <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : 'pay-weekly'}">${pt === 'Daily' ? 'Daily' : 'Weekly'}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span></span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Type</div><div class="v">${emp.person_type}</div></div>
+                            <div><div class="k">Department</div><div class="v">${escHtml(emp.department) || '-'}</div></div>
+                            <div><div class="k">Start date</div><div class="v">${emp.start_date || '-'}</div></div>
                             <div><div class="k">SSN / ITIN (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
                             <div><div class="k">Driver License / State ID</div><div class="v">${dl}</div></div>
                             <div><div class="k">Work Permit</div><div class="v">${wp}</div></div>
@@ -1987,10 +1985,16 @@
                             ${emp.role_title ? `<div><div class="k">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
                             ${d.notes ? `<div><div class="k">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
                         </div>
-                    </td>
-                </tr>`);
+                        ${editable ? `
+                        <div class="rec-actions">
+                            <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editEmployee('${emp.id}')">Edit</button>
+                            <button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕ Delete</button>
+                            <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px;">Pay:${payToggle} &nbsp; Status: ${statusCell}</span>
+                        </div>` : ''}
+                    </div>
+                </div>`);
         });
-        updateSortIndicators('employees', ['id','name','type','department','start','status']);
+        updateRecSortUI('employees');
     }
 
     async function setEmployeeStatus(id, newStatus) {
@@ -2260,14 +2264,15 @@
             start: c => c.start_date || ''
         });
         renderClaimsTable(sorted);
-        updateSortIndicators('claims', ['claimant','claim_id','company','employee_id','employee','damage','amount','balance','status','start']);
+        updateRecSortUI('claims');
     }
 
     function renderClaims() { filterClaims(); }
 
     function renderClaimsTable(list) {
-        const tbody = document.getElementById('claims-tbody');
-        tbody.innerHTML = list.length ? '' : '<tr><td colspan="16" style="text-align:center;">No claims found.</td></tr>';
+        const container = document.getElementById('claims-tbody');
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>';
+        const editable = canEdit();
         list.forEach(c => {
             const emp = employees.find(e => e.id === c.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
@@ -2275,25 +2280,35 @@
             const weeks = sched.rows.filter(r => !r.paused).length;
             const bal = claimBalance(c);
             const endDate = sched.endDate || (c.end_date || '—');
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td>${c.claimant_account || '-'}</td>
-                    <td class="id-cell">${c.claim_id}</td>
-                    <td>${c.company_name || '-'}</td>
-                    <td>${c.carrier_claim_number || '-'}</td>
-                    <td>${c.customer_claim_number || '-'}</td>
-                    <td class="id-cell">${c.employee_id}</td>
-                    <td>${empName}</td>
-                    <td>${c.damage_type}</td>
-                    <td class="money">${formatMoney(c.claim_amount)}</td>
-                    <td>${weeks}</td>
-                    <td class="money">${formatMoney(bal)}</td>
-                    <td><span class="status-badge status-${c.status}">${c.status}</span></td>
-                    <td>${c.start_date || '-'}</td>
-                    <td>${endDate}</td>
-                    <td class="money">${formatMoney(c.absorbed_amount)}</td>
-                    <td style="text-align:center; white-space:nowrap;">${canEdit() ? `<button class="btn-small" style="padding:0.3rem 0.5rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editClaim('${c.claim_id}')">✎</button><button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕</button>` : ''}</td>
-                </tr>`);
+            const open = recExpanded.claims.has(c.claim_id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('claims','${c.claim_id}')">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${empName}</span>
+                        <span class="rec-sub">${c.claim_id}</span>
+                        <span class="rec-right">${formatMoney(bal)} <span class="status-badge status-${c.status}">${c.status}</span></span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
+                            <div><div class="k">Claimant acct</div><div class="v">${c.claimant_account || '-'}</div></div>
+                            <div><div class="k">Company</div><div class="v">${c.company_name || '-'}</div></div>
+                            <div><div class="k">Carrier claim #</div><div class="v">${c.carrier_claim_number || '-'}</div></div>
+                            <div><div class="k">Customer claim #</div><div class="v">${c.customer_claim_number || '-'}</div></div>
+                            <div><div class="k">Type of damage</div><div class="v">${c.damage_type}</div></div>
+                            <div><div class="k">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
+                            <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
+                            <div><div class="k">Absorbed</div><div class="v">${formatMoney(c.absorbed_amount)}</div></div>
+                            <div><div class="k">Start ded.</div><div class="v">${c.start_date || '-'}</div></div>
+                            <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
+                        </div>
+                        ${editable ? `<div class="rec-actions">
+                            <button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
+                            <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>
+                        </div>` : ''}
+                    </div>
+                </div>`);
         });
     }
 
@@ -2355,30 +2370,42 @@
             status: c => c.status || '',
             start: c => c.start_date || ''
         });
-        const tbody = document.getElementById('charges-tbody');
-        tbody.innerHTML = list.length ? '' : '<tr><td colspan="11" style="text-align:center;">No charges found.</td></tr>';
+        const container = document.getElementById('charges-tbody');
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>';
+        const editable = canEdit();
         list.forEach(ch => {
             const emp = employees.find(e => e.id === ch.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
             const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
             const bal = remainingBalance(ch.amount, 0, ch.weekly_deduction, ch.start_date, ch.status);
             const endDate = projectedEndDate(ch.start_date, ch.amount, ch.weekly_deduction) || (ch.end_date || '-');
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td class="id-cell">${ch.charge_id}</td>
-                    <td class="id-cell">${ch.employee_id}</td>
-                    <td>${empName}</td>
-                    <td><span class="type-pill">${ch.charge_type}</span></td>
-                    <td class="money">${formatMoney(ch.amount)}</td>
-                    <td>${weeks}</td>
-                    <td class="money">${formatMoney(bal)}</td>
-                    <td><span class="status-badge status-${ch.status}">${ch.status}</span></td>
-                    <td>${ch.start_date || '-'}</td>
-                    <td>${endDate}</td>
-                    <td style="text-align:center; white-space:nowrap;">${canEdit() ? `<button class="btn-small" style="padding:0.3rem 0.5rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editCharge('${ch.charge_id}')">✎</button><button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕</button>` : ''}</td>
-                </tr>`);
+            const open = recExpanded.charges.has(ch.charge_id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('charges','${ch.charge_id}')">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${empName}</span>
+                        <span class="rec-sub">${ch.charge_id}</span>
+                        <span class="rec-right" style="color:#dc2626;">${formatMoney(bal)} <span class="status-badge status-${ch.status}">${ch.status}</span></span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
+                            <div><div class="k">Charge type</div><div class="v">${ch.charge_type}</div></div>
+                            <div><div class="k">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
+                            <div><div class="k">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
+                            <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
+                            <div><div class="k">Start ded.</div><div class="v">${ch.start_date || '-'}</div></div>
+                            <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
+                        </div>
+                        ${editable ? `<div class="rec-actions">
+                            <button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
+                            <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>
+                        </div>` : ''}
+                    </div>
+                </div>`);
         });
-        updateSortIndicators('charges', ['charge_id','employee_id','employee','type','amount','balance','status','start']);
+        updateRecSortUI('charges');
     }
 
     async function deleteCharge(id) {
@@ -2475,32 +2502,44 @@
             status: i => i.status || '',
             start: i => i.start_date || ''
         });
-        const tbody = document.getElementById('income-tbody');
-        if (!tbody) return;
-        if (incomeTableMissing) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#b45309;">Run the income setup SQL (the <strong>additional_income</strong> table) to start logging additional income.</td></tr>'; return; }
-        tbody.innerHTML = list.length ? '' : '<tr><td colspan="11" style="text-align:center;">No additional income found.</td></tr>';
+        const container = document.getElementById('income-tbody');
+        if (!container) return;
+        if (incomeTableMissing) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#b45309; padding:1rem;">Run the income setup SQL (the <strong>additional_income</strong> table) to start logging additional income.</div>'; return; }
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>';
+        const editable = canEdit();
         list.forEach(i => {
             const emp = employees.find(e => e.id === i.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
             const weeks = weeksNeeded(i.amount, i.weekly_amount);
             const rem = incomeRemaining(i);
             const endDate = projectedEndDate(i.start_date, i.amount, i.weekly_amount) || (i.end_date || '-');
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td class="id-cell">${i.income_id}</td>
-                    <td class="id-cell">${i.employee_id}</td>
-                    <td>${empName}</td>
-                    <td><span class="type-pill">${i.income_type}</span></td>
-                    <td class="money">${formatMoney(i.amount)}</td>
-                    <td>${weeks}</td>
-                    <td class="money" style="color:#059669;">${formatMoney(rem)}</td>
-                    <td><span class="status-badge status-${i.status}">${i.status}</span></td>
-                    <td>${i.start_date || '-'}</td>
-                    <td>${endDate}</td>
-                    <td style="text-align:center; white-space:nowrap;">${canEdit() ? `<button class="btn-small" style="padding:0.3rem 0.5rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editIncome('${i.income_id}')">✎</button><button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕</button>` : ''}</td>
-                </tr>`);
+            const open = recExpanded.income.has(i.income_id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-income-${i.income_id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('income','${i.income_id}')">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${empName}</span>
+                        <span class="rec-sub">${i.income_id}</span>
+                        <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${i.status}</span></span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
+                            <div><div class="k">Income type</div><div class="v">${i.income_type}</div></div>
+                            <div><div class="k">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
+                            <div><div class="k">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
+                            <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
+                            <div><div class="k">Start</div><div class="v">${i.start_date || '-'}</div></div>
+                            <div><div class="k">Ends</div><div class="v">${endDate}</div></div>
+                        </div>
+                        ${editable ? `<div class="rec-actions">
+                            <button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
+                            <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>
+                        </div>` : ''}
+                    </div>
+                </div>`);
         });
-        updateSortIndicators('income', ['income_id','employee_id','employee','type','amount','remaining','status','start']);
+        updateRecSortUI('income');
     }
 
     async function editIncome(id) {
@@ -2896,16 +2935,9 @@
         // Header dates + week label
         document.getElementById('dailypay-week-label').textContent = fmtWeekLabel(sun);
         const dates = weekDatesFromSunday(sun);
-        const head = document.getElementById('dailypay-head');
-        if (head) {
-            head.innerHTML = `<th class="name-col">Name</th>` +
-                dates.map((d, i) => `<th>${DAY_LABELS[i]}<span class="day-sub">${fmtMD(d)}</span></th>`).join('') +
-                `<th>Week Total</th>`;
-        }
 
         const setup = document.getElementById('dailypay-setup');
-        const body = document.getElementById('dailypay-body');
-        const foot = document.getElementById('dailypay-foot');
+        const cardsWrap = document.getElementById('dailypay-cards');
 
         // Which employees use Daily Rate?
         const dailyEmps = employees
@@ -2924,20 +2956,14 @@
         }
 
         if (!dailyEmps.length) {
-            body.innerHTML = `<tr><td class="name-col" colspan="9" style="text-align:center; padding:1.5rem;">No one is set to <strong>Daily Rate</strong> yet. Go to the Employees tab and switch a person's Pay to <em>Daily</em> (the ↺ button in the Pay column).</td></tr>`;
-            foot.innerHTML = '';
+            cardsWrap.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:var(--text-muted);">No one is set to <strong>Daily Rate</strong> yet. Go to the Employees tab and switch a person's Pay to <em>Daily</em> (the ↺ button in the Pay column).</div>`;
             return;
         }
 
         const editable = canEdit();
-        const mobile = window.matchMedia('(max-width: 599px)').matches;
-        const cardsWrap = document.getElementById('dailypay-cards');
-        body.innerHTML = '';
-        if (cardsWrap) cardsWrap.innerHTML = '';
+        cardsWrap.innerHTML = '';
 
-        // Shared markup for one day's amount input + OFF toggle (same IDs in
-        // both layouts, so onDailyInput / toggleDailyOff work either way — only
-        // one layout is ever in the DOM at a time).
+        // One day's amount input + OFF toggle.
         const cellInner = (emp, i, cell) => {
             const off = !!cell.is_off;
             const val = (cell.amount === 0 || cell.amount === null || cell.amount === undefined) ? '' : cell.amount;
@@ -2955,48 +2981,25 @@
             for (let i = 0; i < 7; i++) { const c = row[i]; if (c && !c.is_off) rowTotal += parseFloat(c.amount) || 0; }
             grand += rowTotal;
 
-            if (mobile) {
-                let days = '';
-                for (let i = 0; i < 7; i++) {
-                    const cell = row[i] || { amount: 0, is_off: false };
-                    days += `<div class="dp-day"><div class="dp-day-label">${DAY_LABELS[i]} ${fmtMD(dates[i])}</div>${cellInner(emp, i, cell)}</div>`;
-                }
-                const dOpen = dailyExpanded.has(emp.id);
-                cardsWrap.insertAdjacentHTML('beforeend', `
-                    <div class="dp-card${dOpen ? '' : ' collapsed'}" id="dpcard-${emp.id}">
-                        <div class="dp-card-head" onclick="toggleDailyCard('${emp.id}')">
-                            <span class="dp-caret">${dOpen ? '▾' : '▸'}</span>
-                            <span class="dp-name">${emp.first_name} ${emp.last_name}</span>
-                            <span class="dp-id">${emp.id}</span>
-                            <span class="dp-total">Week: <span id="dp-total-${emp.id}">${formatMoney(rowTotal)}</span></span>
-                        </div>
-                        <div class="dp-days">${days}</div>
-                    </div>`);
-            } else {
-                let cells = '';
-                for (let i = 0; i < 7; i++) {
-                    const cell = row[i] || { amount: 0, is_off: false };
-                    cells += `<td class="day-cell">${cellInner(emp, i, cell)}</td>`;
-                }
-                body.insertAdjacentHTML('beforeend', `
-                    <tr>
-                        <td class="name-col">${emp.first_name} ${emp.last_name}<div style="font-size:10px;color:var(--text-muted);">${emp.id}</div></td>
-                        ${cells}
-                        <td class="wk-total" id="dp-total-${emp.id}">${formatMoney(rowTotal)}</td>
-                    </tr>`);
+            let days = '';
+            for (let i = 0; i < 7; i++) {
+                const cell = row[i] || { amount: 0, is_off: false };
+                days += `<div class="dp-day"><div class="dp-day-label">${DAY_LABELS[i]} ${fmtMD(dates[i])}</div>${cellInner(emp, i, cell)}</div>`;
             }
+            const dOpen = dailyExpanded.has(emp.id);
+            cardsWrap.insertAdjacentHTML('beforeend', `
+                <div class="dp-card${dOpen ? '' : ' collapsed'}" id="dpcard-${emp.id}">
+                    <div class="dp-card-head" onclick="toggleDailyCard('${emp.id}')">
+                        <span class="dp-caret">${dOpen ? '▾' : '▸'}</span>
+                        <span class="dp-name">${emp.first_name} ${emp.last_name}</span>
+                        <span class="dp-id">${emp.id}</span>
+                        <span class="dp-total">Week: <span id="dp-total-${emp.id}">${formatMoney(rowTotal)}</span></span>
+                    </div>
+                    <div class="dp-days">${days}</div>
+                </div>`);
         });
 
-        if (mobile) {
-            foot.innerHTML = '';
-            cardsWrap.insertAdjacentHTML('beforeend', `<div class="dp-grand">Total (${dailyEmps.length}): <span id="dailypay-grand">${formatMoney(grand)}</span></div>`);
-        } else {
-            foot.innerHTML = `<tr style="font-weight:700; background:#f1f5f9;">
-                <td class="name-col" style="text-align:right;">Total (${dailyEmps.length})</td>
-                <td colspan="7"></td>
-                <td class="wk-total" id="dailypay-grand">${formatMoney(grand)}</td>
-            </tr>`;
-        }
+        cardsWrap.insertAdjacentHTML('beforeend', `<div class="dp-grand">Total (${dailyEmps.length}): <span id="dailypay-grand">${formatMoney(grand)}</span></div>`);
     }
 
     async function loadDailyPayForWeek(year, week) {
