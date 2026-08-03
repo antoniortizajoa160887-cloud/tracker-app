@@ -489,6 +489,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;">Approvals</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;">Log</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data">Data Sync</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;">Changelog</button>
 </div>
 
 <!-- TAB 1: ROUTE TRACKER -->
@@ -1067,6 +1068,15 @@
         </div>
     </div>
 </div>
+
+<!-- TAB: CHANGELOG (SuperAdmin + Administrator only) -->
+<div id="tab-changelog" class="tab-content">
+    <div class="panel">
+        <h2>Version History</h2>
+        <div class="note-box">Every change delivered to this app, newest first. Only visible to Super Admin and Administrator users.</div>
+        <div id="changelog-tbody" class="record-grid"></div>
+    </div>
+</div>
 </div>
 
 <script>
@@ -1096,7 +1106,7 @@
     let currentWeekDaily = {};  // employee_id -> number (this week's daily total, for Payroll)
     let currentWeekDailyDetail = {}; // employee_id -> [{date, amount, is_off}] (this week, for Payroll expand)
     let currentWeekLabel = '';  // human label for the current pay week
-    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set() };
+    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set(), changelog: new Set() };
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
 
     // ===== Version tracking =====
@@ -1104,8 +1114,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.8';
+    const APP_VERSION = 'v1.9';
     const CHANGELOG = [
+        { version: 'v1.9', date: '2026-08-03', notes: 'Added a "Changelog" tab under Administration, showing this same version history (version, date, what changed) as collapsible cards instead of just the tap-to-open badge popup. Visible only to Super Admin and Administrator users — Medium and View-only accounts don\'t see it.' },
         { version: 'v1.8', date: '2026-08-03', notes: 'Fixed the "one pale row" bug in both dark themes: on a touchscreen, tapping a table row keeps its :hover style active until you tap elsewhere, and several :hover states (table rows, the Daily Report\'s slicer filters) were still hardcoded to a light color — so whatever you\'d just tapped showed as a stuck white patch, mismatched from the row before this fix confirmed it was the true cause. Also fixed: the Daily Report slicer panels, active input/select focus state, Daily Report\'s Expand/Collapse toggle buttons, Daily Pay\'s OFF-day styling, note boxes, and the CSV drop-zone — all were still hardcoded light and are now properly dark in both Ocean and Emerald.' },
         { version: 'v1.7', date: '2026-08-03', notes: 'Added a second Dark theme option — "Emerald" — inspired by a black dashboard mockup with a green-to-teal gradient accent, distinct from the first ("Ocean," the navy/wave theme). Appearance is now a 3-way choice: Light, Ocean, or Emerald, available from Settings and now also from the login screen itself, so you can preview or pick a look before signing in. The choice still lives only on this device (localStorage) — it\'s never tied to a user account or written to the shared database, so it never becomes a global default for anyone else.' },
         { version: 'v1.6', date: '2026-08-03', notes: 'Fixed a real readability bug in Dark theme: collapsed cards (Employees, Claims, Charges, Income, Payroll, Users, Companies, Approvals, Log), striped table rows (Route Tracker, Daily Report, Settings lists), and form inputs had stayed on their light-mode background color while the text color had already switched to the light shade meant for dark backgrounds — pale text on a near-white background, very hard to read. All of those now get proper dark backgrounds, so text is fully legible everywhere in Dark mode.' },
@@ -1133,6 +1144,30 @@
                 </div>`).join('');
         }
         ov.style.display = 'flex';
+    }
+
+    // Administration > Changelog tab — same data as the version-badge popup,
+    // laid out as the same collapsible cards used everywhere else in the app.
+    function renderChangelogTab() {
+        const container = document.getElementById('changelog-tbody');
+        if (!container) return;
+        container.innerHTML = CHANGELOG.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No versions logged yet.</div>';
+        CHANGELOG.forEach((c, i) => {
+            const open = recExpanded.changelog.has(i);
+            const isCurrent = i === 0;
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-changelog-${i}">
+                    <div class="rec-card-head" onclick="toggleRecCard('changelog',${i})">
+                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${c.version}</span>
+                        <span class="rec-sub">${c.date}</span>
+                        <span class="rec-right">${isCurrent ? '<span class="status-badge status-active">Current</span>' : ''}</span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div style="font-size:12px; line-height:1.5;">${c.notes}</div>
+                    </div>
+                </div>`);
+        });
     }
     let dailyView = null;       // { sunday: Date(UTC), year, week }
     let payrollView = null;     // { sunday } — Payroll week selector
@@ -1387,13 +1422,14 @@
         if(tabName === 'tab-approvals') renderApprovals();
         if(tabName === 'tab-log') renderLog();
         if(tabName === 'tab-settings') renderSettingsLists();
+        if(tabName === 'tab-changelog') renderChangelogTab();
     }
 
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report'],
         'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll'],
-        'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data']
+        'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
 
     // Open a group: show its sub-tab row, hide the others, and switch to its
@@ -1502,6 +1538,7 @@
             document.getElementById('btn-tab-users').style.display = 'inline-block';
             document.getElementById('btn-tab-log').style.display = 'inline-block';
             document.getElementById('btn-tab-approvals').style.display = 'inline-block';
+            document.getElementById('btn-tab-changelog').style.display = 'inline-block';
             document.getElementById('admin-danger-zone').style.display = 'block';
             loadCompanies();
         } else {
@@ -1516,6 +1553,7 @@
         if (currentUserRole === 'Administrator') {
             document.getElementById('admin-danger-zone').style.display = 'block';
             document.getElementById('btn-tab-approvals').style.display = 'inline-block';
+            document.getElementById('btn-tab-changelog').style.display = 'inline-block';
         }
         populateUserRoleOptions();
 
