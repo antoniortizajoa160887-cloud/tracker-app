@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Logistics & HR Claims Dashboard</title>
-    <script>(function(){try{if(localStorage.getItem('tracker_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+    <script>(function(){try{var t=localStorage.getItem('tracker_theme');if(t==='dark'||t==='dark-emerald'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
     <script>
@@ -85,28 +85,79 @@
         background-repeat: no-repeat;
         background-attachment: fixed;
     }
-    [data-theme="dark"] table { background: var(--surface); }
-    [data-theme="dark"] .type-pill { background: var(--surface-2); }
+    [data-theme="dark"] table, [data-theme="dark-emerald"] table { background: var(--surface); }
+    [data-theme="dark"] .type-pill, [data-theme="dark-emerald"] .type-pill { background: var(--surface-2); }
     [data-theme="dark"] .id-cell { color: #7dd3fc; }
     [data-theme="dark"] ::placeholder { color: #5b7387; opacity: 1; }
     [data-theme="dark"] .rec-card-head:hover { background: #1c3145; }
-    [data-theme="dark"] .setup-banner { background: rgba(245,158,11,0.14); }
-    [data-theme="dark"] #version-badge { background: rgba(255,255,255,0.14); }
-    [data-theme="dark"] #idle-warning-overlay > div, [data-theme="dark"] #version-log-overlay > div { background: var(--surface) !important; color: var(--text); }
+    [data-theme="dark"] .setup-banner, [data-theme="dark-emerald"] .setup-banner { background: rgba(245,158,11,0.14); }
+    [data-theme="dark"] #version-badge, [data-theme="dark-emerald"] #version-badge { background: rgba(255,255,255,0.14); }
+    [data-theme="dark"] #idle-warning-overlay > div, [data-theme="dark"] #version-log-overlay > div,
+    [data-theme="dark-emerald"] #idle-warning-overlay > div, [data-theme="dark-emerald"] #version-log-overlay > div { background: var(--surface) !important; color: var(--text); }
     /* The base rules below hardcoded a light color instead of a variable —
        harmless in light mode, but in dark mode the text color already flips
        to a light shade while these stayed light too, so it read as
        pale-text-on-white: illegible. Give each an explicit dark value. */
-    [data-theme="dark"] .rec-card { background: var(--surface); }
-    [data-theme="dark"] .rec-card-head { background: var(--surface-2); }
-    [data-theme="dark"] .dp-day { background: var(--surface-2); }
-    [data-theme="dark"] tr:nth-child(even) { background-color: var(--surface-2); }
+    [data-theme="dark"] .rec-card, [data-theme="dark-emerald"] .rec-card { background: var(--surface); }
+    [data-theme="dark"] .rec-card-head, [data-theme="dark-emerald"] .rec-card-head { background: var(--surface-2); }
+    [data-theme="dark"] .dp-day, [data-theme="dark-emerald"] .dp-day { background: var(--surface-2); }
+    [data-theme="dark"] tr:nth-child(even), [data-theme="dark-emerald"] tr:nth-child(even) { background-color: var(--surface-2); }
     [data-theme="dark"] .row-year { background-color: #1c2f42 !important; }
     [data-theme="dark"] .row-week { background-color: #172838 !important; }
-    [data-theme="dark"] .row-date { background-color: var(--surface) !important; }
-    [data-theme="dark"] input, [data-theme="dark"] select { background: var(--surface-2); color: var(--text); }
+    [data-theme="dark"] .row-date, [data-theme="dark-emerald"] .row-date { background-color: var(--surface) !important; }
+    [data-theme="dark"] input, [data-theme="dark"] select,
+    [data-theme="dark-emerald"] input, [data-theme="dark-emerald"] select { background: var(--surface-2); color: var(--text); }
     [data-theme="dark"] .status-quit, [data-theme="dark"] .status-Absorbed,
     [data-theme="dark"] .status-Stopped, [data-theme="dark"] .status-Queued { background: rgba(255,255,255,0.10); color: #b8c4cf; }
+    [data-theme="dark-emerald"] .status-quit, [data-theme="dark-emerald"] .status-Absorbed,
+    [data-theme="dark-emerald"] .status-Stopped, [data-theme="dark-emerald"] .status-Queued { background: rgba(255,255,255,0.10); color: #b8c4cf; }
+
+    /* ===== Dark theme, option 2 ("Emerald") — inspired by a black dashboard
+       mockup with a green-to-teal gradient accent. Same approach as the first
+       dark theme: redefine the shared variables, then a few theme-specific
+       touches (this one has no background photo — solid near-black with a
+       soft glow, plus the signature gradient on the top nav bar and buttons). ===== */
+    [data-theme="dark-emerald"] {
+        --primary: #22c55e;
+        --primary-hover: #16a34a;
+        --secondary: #f2f4f3;
+        --excel-blue: #14361f;
+        --slicer-bg: #161616;
+        --bg: #0a0a0a;
+        --surface: #141414;
+        --surface-2: #1c1c1c;
+        --text: #f0f0f0;
+        --text-muted: #9a9a9a;
+        --border: #2a2a2a;
+        --navy: #14532d;
+        --navy-dark: #0f3d21;
+        --active: #4ade80;
+        --active-bg: rgba(34,197,94,0.16);
+        --quit: #f87171;
+        --quit-bg: rgba(239,68,68,0.16);
+        --amber: #fbbf24;
+        --amber-bg: rgba(245,158,11,0.16);
+        --purple: #67e8f9;
+        --purple-bg: rgba(6,182,212,0.16);
+    }
+    [data-theme="dark-emerald"] body {
+        background-color: var(--bg);
+        background-image: radial-gradient(circle at 15% -5%, rgba(34,197,94,0.13), transparent 40%),
+                           radial-gradient(circle at 90% 105%, rgba(6,182,212,0.11), transparent 40%);
+        background-attachment: fixed;
+    }
+    [data-theme="dark-emerald"] .id-cell { color: #5eead4; }
+    [data-theme="dark-emerald"] ::placeholder { color: #6b7280; opacity: 1; }
+    [data-theme="dark-emerald"] .rec-card-head:hover { background: #202b23; }
+    [data-theme="dark-emerald"] .row-year { background-color: #16241c !important; }
+    [data-theme="dark-emerald"] .row-week { background-color: #121f18 !important; }
+    /* the signature green-to-teal gradient, used sparingly on the top nav and
+       primary buttons to match the reference image's accent style */
+    [data-theme="dark-emerald"] .tab-groups { background: linear-gradient(90deg, #15803d, #0e7490); }
+    [data-theme="dark-emerald"] .btn { background: linear-gradient(135deg, #22c55e, #06b6d4); color: #fff; border: none; }
+    [data-theme="dark-emerald"] .btn:hover { background: linear-gradient(135deg, #16a34a, #0891b2); }
+    [data-theme="dark-emerald"] #version-badge { background: linear-gradient(135deg, #22c55e, #06b6d4); color: #05210f; font-weight: 700; }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
     body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0.75rem; line-height: 1.4; overflow-x: hidden; width: 100%; }
@@ -328,6 +379,14 @@
     <button type="button" class="btn" style="width: 100%;" id="login-btn" onclick="handleLoginClick()">Sign In</button>
     <p id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem;"></p>
     <p id="login-timeout-notice" style="color: #b45309; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
+    <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Appearance</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+            <button type="button" class="btn-small" id="login-theme-btn-light" onclick="setTheme('light')" style="margin:0;">☀ Light (current)</button>
+            <button type="button" class="btn-small" id="login-theme-btn-ocean" onclick="setTheme('dark')" style="margin:0;">🌊 Ocean</button>
+            <button type="button" class="btn-small" id="login-theme-btn-emerald" onclick="setTheme('dark-emerald')" style="margin:0;">🟢 Emerald</button>
+        </div>
+    </div>
 </div>
 
 <!-- Inactivity warning — shown 30s before an idle auto-logout -->
@@ -834,10 +893,11 @@
 <div id="tab-settings" class="tab-content">
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Appearance <span class="caret">&#9662;</span></h2>
-        <div class="note-box">Choose how the app looks. This is saved on this device only, so other people signed in elsewhere keep their own preference.</div>
-        <div style="display:flex; gap:8px; margin-top:8px;">
+        <div class="note-box">Choose how the app looks. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
             <button type="button" class="btn-small" id="theme-btn-light" onclick="setTheme('light')" style="margin:0;">☀ Light (current)</button>
-            <button type="button" class="btn-small" id="theme-btn-dark" onclick="setTheme('dark')" style="margin:0;">🌙 Dark</button>
+            <button type="button" class="btn-small" id="theme-btn-ocean" onclick="setTheme('dark')" style="margin:0;">🌊 Ocean</button>
+            <button type="button" class="btn-small" id="theme-btn-emerald" onclick="setTheme('dark-emerald')" style="margin:0;">🟢 Emerald</button>
         </div>
     </div>
     <div class="panel">
@@ -1028,8 +1088,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v1.6';
+    const APP_VERSION = 'v1.7';
     const CHANGELOG = [
+        { version: 'v1.7', date: '2026-08-03', notes: 'Added a second Dark theme option — "Emerald" — inspired by a black dashboard mockup with a green-to-teal gradient accent, distinct from the first ("Ocean," the navy/wave theme). Appearance is now a 3-way choice: Light, Ocean, or Emerald, available from Settings and now also from the login screen itself, so you can preview or pick a look before signing in. The choice still lives only on this device (localStorage) — it\'s never tied to a user account or written to the shared database, so it never becomes a global default for anyone else.' },
         { version: 'v1.6', date: '2026-08-03', notes: 'Fixed a real readability bug in Dark theme: collapsed cards (Employees, Claims, Charges, Income, Payroll, Users, Companies, Approvals, Log), striped table rows (Route Tracker, Daily Report, Settings lists), and form inputs had stayed on their light-mode background color while the text color had already switched to the light shade meant for dark backgrounds — pale text on a near-white background, very hard to read. All of those now get proper dark backgrounds, so text is fully legible everywhere in Dark mode.' },
         { version: 'v1.5', date: '2026-08-03', notes: 'Added an optional Dark theme (Settings → Appearance), built from the blue wave/mesh reference image — deep navy background with teal-cyan accents, applied to every panel, card, table, and button. Light stays the default; switching is one tap and remembered per device (localStorage), so it doesn\'t affect other people signed in elsewhere. Nothing else changed — all data, calculations, and features work identically in either theme.' },
         { version: 'v1.4', date: '2026-08-03', notes: 'Payroll, Users, Approvals, and Log are now the same collapsible-card layout as Employees/Claims/Charges/Income/Companies — every table in the app now uses it except Route Tracker\'s log. Companies can now be edited after creation (SuperAdmin only), so the Owner/Phone/Email/Manager/Manager Phone fields can be filled in for companies created before those fields existed. Employees now show document numbers and their expiration dates as separate, always-visible fields instead of combined text. The header now reads "Welcome, [your name]" instead of "User: [username]", adds a "Company:" line showing your assigned company, and the page title becomes "[Company Name] / Logistics & HR Claims Dashboard" instead of "Unified..." for anyone tied to a specific company (Super Admins viewing all companies still see the original title).' },
@@ -3691,25 +3752,31 @@
     }
 
     // ===== Appearance (Light / Dark theme) =====
-    function setTheme(theme) {
+    // Applies to whichever selector set is passed in — lets both the Settings
+    // panel and the login screen (different button IDs) share this logic.
+    function setTheme(theme, idPrefix) {
         try {
-            if (theme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                localStorage.setItem('tracker_theme', 'dark');
+            if (theme === 'dark' || theme === 'dark-emerald') {
+                document.documentElement.setAttribute('data-theme', theme);
             } else {
                 document.documentElement.removeAttribute('data-theme');
-                localStorage.setItem('tracker_theme', 'light');
+                theme = 'light';
             }
+            localStorage.setItem('tracker_theme', theme);
         } catch (e) { /* storage unavailable — theme still applies for this session */ }
         updateThemeButtons();
     }
     function updateThemeButtons() {
         let cur = 'light';
         try { cur = localStorage.getItem('tracker_theme') || 'light'; } catch (e) {}
-        const lb = document.getElementById('theme-btn-light');
-        const db = document.getElementById('theme-btn-dark');
-        if (lb) { lb.style.background = cur === 'light' ? 'var(--navy)' : '#64748b'; lb.textContent = cur === 'light' ? '☀ Light (current)' : '☀ Light'; }
-        if (db) { db.style.background = cur === 'dark' ? 'var(--navy)' : '#64748b'; db.textContent = cur === 'dark' ? '🌙 Dark (current)' : '🌙 Dark'; }
+        [ '', 'login-' ].forEach(prefix => {
+            const lb = document.getElementById(prefix + 'theme-btn-light');
+            const ob = document.getElementById(prefix + 'theme-btn-ocean');
+            const eb = document.getElementById(prefix + 'theme-btn-emerald');
+            if (lb) { lb.style.background = cur === 'light' ? 'var(--navy)' : '#64748b'; lb.textContent = cur === 'light' ? '☀ Light (current)' : '☀ Light'; }
+            if (ob) { ob.style.background = cur === 'dark' ? 'var(--navy)' : '#64748b'; ob.textContent = cur === 'dark' ? '🌊 Ocean (current)' : '🌊 Ocean'; }
+            if (eb) { eb.style.background = cur === 'dark-emerald' ? 'var(--navy)' : '#64748b'; eb.textContent = cur === 'dark-emerald' ? '🟢 Emerald (current)' : '🟢 Emerald'; }
+        });
     }
 
     function renderSettingsLists() {
@@ -4360,6 +4427,7 @@
     }
 
     renderVersionBadge();
+    updateThemeButtons();
     if (sessionStorage.getItem('logout_reason') === 'idle') {
         sessionStorage.removeItem('logout_reason');
         const notice = document.getElementById('login-timeout-notice');
