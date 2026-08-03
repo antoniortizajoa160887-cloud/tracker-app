@@ -241,6 +241,31 @@
     </div>
     <button type="button" class="btn" style="width: 100%;" id="login-btn" onclick="handleLoginClick()">Sign In</button>
     <p id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem;"></p>
+    <p id="login-timeout-notice" style="color: #b45309; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
+</div>
+
+<!-- Inactivity warning — shown 30s before an idle auto-logout -->
+<div id="idle-warning-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; border-radius:10px; padding:22px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+        <div style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:8px;">Still there?</div>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            You'll be signed out in <span id="idle-countdown" style="font-weight:700; color:#b45309;">30</span>s due to inactivity. Any unsaved changes could be lost.
+        </div>
+        <button type="button" class="btn" style="width:100%;" onclick="staySignedIn()">Stay signed in</button>
+    </div>
+</div>
+
+<!-- Version badge — always visible, tap to see the changelog -->
+<div id="version-badge" onclick="toggleVersionLog()" style="position:fixed; bottom:8px; right:8px; background:rgba(15,23,42,0.82); color:#fff; font-size:10px; font-family:var(--mono); padding:4px 9px; border-radius:12px; z-index:9998; cursor:pointer; letter-spacing:0.02em; box-shadow:0 2px 6px rgba(0,0,0,0.2);">v0.0</div>
+
+<div id="version-log-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:flex-end; justify-content:center;" onclick="if(event.target===this) toggleVersionLog()">
+    <div style="background:#fff; border-radius:14px 14px 0 0; padding:18px 18px 26px; max-width:480px; width:100%; max-height:70vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-weight:700; font-size:15px; color:var(--secondary);">Version history</div>
+            <span style="font-size:22px; color:var(--text-muted); cursor:pointer; line-height:1; padding:2px 6px;" onclick="toggleVersionLog()">&times;</span>
+        </div>
+        <div id="version-log-list"></div>
+    </div>
 </div>
 
 <datalist id="employee-options-list"></datalist>
@@ -946,6 +971,34 @@
     let currentWeekLabel = '';  // human label for the current pay week
     let payrollExpanded = new Set(); // employee_ids whose payroll detail row is open
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
+
+    // ===== Version tracking =====
+    // This array is the source of truth for the app's version history — it
+    // lives in the file itself so it's correct even across sessions/devices.
+    // Newest entry first. Bump APP_VERSION and prepend an entry on every
+    // delivered change.
+    const APP_VERSION = 'v1.0';
+    const CHANGELOG = [
+        { version: 'v1.0', date: '2026-08-03', notes: 'Version tracking introduced (this badge + changelog). Snapshot of the app at this point: multi-company payroll/HR dashboard — Route Tracker, Daily Report, Employees, Claims (rate-change & pause history), Charges & Income (merged tab, feeds Payroll), Statement (collapsible, historical week selector), Daily Pay (mobile card view, historical weeks), Payroll (historical week selector, expandable per-person breakdown), Settings, Users (role management, employee-link uniqueness), Companies, Approvals, role-scoped Log, Data Sync, and a 5-minute idle session timeout.' }
+    ];
+    function renderVersionBadge() {
+        const b = document.getElementById('version-badge');
+        if (b) b.textContent = APP_VERSION;
+    }
+    function toggleVersionLog() {
+        const ov = document.getElementById('version-log-overlay');
+        if (!ov) return;
+        if (ov.style.display === 'flex') { ov.style.display = 'none'; return; }
+        const list = document.getElementById('version-log-list');
+        if (list) {
+            list.innerHTML = CHANGELOG.map(c => `
+                <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+                    <div style="font-weight:700; font-size:13px; color:var(--secondary);">${c.version} <span style="font-weight:400; color:var(--text-muted); font-size:11px;">· ${c.date}</span></div>
+                    <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.4;">${c.notes}</div>
+                </div>`).join('');
+        }
+        ov.style.display = 'flex';
+    }
     let dailyView = null;       // { sunday: Date(UTC), year, week }
     let payrollView = null;     // { sunday } — Payroll week selector
     let statementView = null;   // { sunday } — Statement week selector
@@ -1273,6 +1326,8 @@
             console.error('Data sync failed:', err);
             showDiagBanner('could not sync data (' + (err && err.message ? err.message : err) + ')');
         });
+
+        startIdleWatch();
     }
 
     function checkExistingSession() {
@@ -1290,9 +1345,52 @@
         }
     }
 
-    function logout() {
+    function logout(reason) {
+        stopIdleWatch();
         localStorage.removeItem('unified_user');
+        if (reason === 'idle') sessionStorage.setItem('logout_reason', 'idle');
         location.reload();
+    }
+
+    // ===== Idle session timeout: 5 minutes of no activity signs the user out,
+    // with a 30s warning first so in-progress form entries aren't lost silently. =====
+    const IDLE_LIMIT_MS = 5 * 60 * 1000;
+    const IDLE_WARNING_MS = 30 * 1000;
+    let idleTimer = null, idleWarnTimer = null, idleCountdownInt = null;
+
+    function resetIdleTimer() {
+        if (!currentUsername) return; // only runs while signed in
+        clearTimeout(idleTimer); clearTimeout(idleWarnTimer); clearInterval(idleCountdownInt);
+        const overlay = document.getElementById('idle-warning-overlay');
+        if (overlay) overlay.style.display = 'none';
+        idleWarnTimer = setTimeout(showIdleWarning, IDLE_LIMIT_MS - IDLE_WARNING_MS);
+        idleTimer = setTimeout(() => logout('idle'), IDLE_LIMIT_MS);
+    }
+
+    function showIdleWarning() {
+        const overlay = document.getElementById('idle-warning-overlay');
+        const cd = document.getElementById('idle-countdown');
+        if (!overlay || !cd) return;
+        let secsLeft = Math.round(IDLE_WARNING_MS / 1000);
+        cd.textContent = secsLeft;
+        overlay.style.display = 'flex';
+        idleCountdownInt = setInterval(() => {
+            secsLeft -= 1;
+            if (cd) cd.textContent = Math.max(secsLeft, 0);
+            if (secsLeft <= 0) clearInterval(idleCountdownInt);
+        }, 1000);
+    }
+
+    function staySignedIn() { resetIdleTimer(); }
+
+    function startIdleWatch() {
+        ['click', 'keydown', 'touchstart', 'scroll', 'input'].forEach(evt =>
+            document.addEventListener(evt, resetIdleTimer, { passive: true })
+        );
+        resetIdleTimer();
+    }
+    function stopIdleWatch() {
+        clearTimeout(idleTimer); clearTimeout(idleWarnTimer); clearInterval(idleCountdownInt);
     }
 
     function toggleChangePasswordCard() {
@@ -3955,6 +4053,12 @@
         XLSX.writeFile(wb, "Unified_Dashboard_Backup.xlsx");
     }
 
+    renderVersionBadge();
+    if (sessionStorage.getItem('logout_reason') === 'idle') {
+        sessionStorage.removeItem('logout_reason');
+        const notice = document.getElementById('login-timeout-notice');
+        if (notice) notice.style.display = 'block';
+    }
     checkExistingSession();
 </script>
 
