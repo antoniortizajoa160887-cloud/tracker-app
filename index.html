@@ -639,6 +639,13 @@
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px; align-items:center; gap:8px;">
             <div class="field field-wide"><input type="text" id="employee-search" placeholder="Search name, ID, department, type..." oninput="renderEmployees()"></div>
+            <div class="field">
+                <select id="employee-status-filter" onchange="renderEmployees()">
+                    <option value="">All statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()">Export CSV</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()">Import CSV</button>
             <input type="file" id="emp-csv-input" accept=".csv,text/csv" style="display:none;" onchange="importEmployeesCsv(event)">
@@ -1089,6 +1096,11 @@
             <button class="btn" style="background: #991b1b;" onclick="adminResetAllDataExceptUsers()">⚠️ Reset All Data (Except Users)</button>
         </div>
     </div>
+    <div class="panel" id="superadmin-danger-zone" style="border-color: #7f1d1d; display: none; background: rgba(127,29,29,0.04);">
+        <h2 style="color: #7f1d1d; border-bottom-color: #7f1d1d;">System Reset — Super Admin Only</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Removes every user account except Super Admins, and clears the audit Log and pending Approvals. Companies and everything that belongs to them — employees, claims, charges, routes, income — are <strong>not</strong> touched. Cannot be undone.</p>
+        <button class="btn" style="background: #7f1d1d; margin-top: 0.75rem;" onclick="superAdminResetSystem()">☢️ Reset System (Keep Companies & Super Admin)</button>
+    </div>
 </div>
 
 <!-- TAB: CHANGELOG (SuperAdmin + Administrator only) -->
@@ -1136,8 +1148,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.3';
+    const APP_VERSION = 'v2.5';
     const CHANGELOG = [
+        { version: 'v2.5', date: '2026-08-04', notes: 'Fixed a real bug behind "expand/collapse doesn\'t work on desktop until I switch screens": the detail row\'s hide/show relied on a style that was only ever set once, at render time, so tapping it on desktop silently did nothing until something else (like resizing past the mobile/desktop breakpoint) forced a full re-render — now fixed at the root so every expandable list responds immediately. Employees\' desktop view now also collapses down to a compact row (ID, Name, Type, Department, Start, Pay, Status) per person instead of one very wide table — collapsed by default, tap a row to see the rest (phone, email, SSN/ITIN, license, work permit, medical card, role, notes). Added a Status filter (Active / Inactive / All statuses) next to the Employees search box. Every Active↔Inactive change is now recorded with who changed it and when — visible via a "Status history" button inside each employee\'s expanded detail — laying the groundwork for prorating payroll around status changes later.' },
+        { version: 'v2.4', date: '2026-08-04', notes: 'Fixed a real bug in the Employees CSV import: rows with Person Type "Contractor" were silently being saved as the invalid type "Company" instead, due to a typo in the import code — this broke both the record\'s Type and its ID suffix. Contractors now import correctly. Added a new Super Admin-only "Reset System" action (Data Sync tab): removes every user account except Super Admins and clears the audit Log and pending Approvals, while leaving companies and everything that belongs to them — employees, claims, charges, routes, income — completely untouched. Requires typing an exact confirmation phrase before running, since it can\'t be undone.' },
         { version: 'v2.3', date: '2026-08-04', notes: 'Every card-based list (Employees, Claims, Charges, Income, Payroll, Companies, Users, Approvals, Log) now shows as a real horizontal table on desktop browsers — same columns as before cards existed — while staying the collapsible card layout on mobile. The two switch automatically based on screen width, including if you rotate a tablet mid-session. Payroll\'s desktop table keeps the same expandable per-person breakdown as its card, just as a row you tap to expand instead. Also fixed a small pre-existing display bug in the Log tab\'s error state.' },
         { version: 'v2.2', date: '2026-08-03', notes: 'Adding an employee (one at a time, via the Employees tab form) now also auto-creates their login, shown once in the same on-screen panel companies use, with the same duplicate-proof username policy. Role follows Person Type: Owner or Manager → Administrator, Staff → Medium, Employee/Contractor/Provider → View Only. Bulk CSV import intentionally skips this — importing many rows at once can\'t sanely display many one-time passwords, so add logins individually afterward for anyone imported that way. Also fixed a real bug found while testing this: company creation (v2.0/v2.1) has been failing outright since it shipped due to a mismatched internal logging call — confirmed and corrected; creating a company should now work end-to-end rather than error out.' },
         { version: 'v2.1', date: '2026-08-03', notes: 'Creating a company now automatically sets it up end to end: if an Owner name is given, an Owner-type employee is created for that company (ID ending in "O"); same for Manager ("M"). An Administrator account is always auto-created for the new company too, with a generated username (based on the company code, guaranteed unique system-wide) and a random password — shown once in an on-screen panel right after creation, since it can\'t be retrieved again later (it can still be reset from the Users tab). "Owner" and "Manager" are now selectable Person Types on the Employees tab too, so if the info wasn\'t provided when the company was created, a Super Admin can add that employee afterward — doing so links their name back to the company\'s Owner/Manager field automatically, both when creating and when editing an employee.' },
@@ -1184,7 +1198,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-changelog-${i}">
                     <div class="rec-card-head" onclick="toggleRecCard('changelog',${i})">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="changelog-${i}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${c.version}</span>
                         <span class="rec-sub">${c.date}</span>
                         <span class="rec-right">${isCurrent ? '<span class="status-badge status-active">Current</span>' : ''}</span>
@@ -1248,9 +1262,21 @@
 
     function toggleRecCard(table, id) {
         const set = recExpanded[table];
-        if (set.has(id)) set.delete(id); else set.add(id);
+        const nowOpen = !set.has(id);
+        if (nowOpen) set.add(id); else set.delete(id);
         const el = document.getElementById(`rec-${table}-${id}`);
-        if (el) el.classList.toggle('open', set.has(id));
+        if (el) {
+            el.classList.toggle('open', nowOpen);
+            // Desktop detail rows are real <tr> elements whose visibility is
+            // driven by an inline display style set at render time (needed
+            // so a hidden row doesn't still occupy space in the table) —
+            // the 'open' class alone doesn't affect a <tr>, so flip it here too.
+            if (el.tagName === 'TR') el.style.display = nowOpen ? 'table-row' : 'none';
+        }
+        // Caret glyph is plain text set at render time, not CSS-driven, so it
+        // has to be updated by hand wherever it appears for this record (a
+        // mobile card head and/or a desktop summary row both use the same id).
+        document.querySelectorAll(`[data-caret="${table}-${id}"]`).forEach(c => { c.textContent = nowOpen ? '▾' : '▸'; });
     }
 
     function reRenderRecTable(table) {
@@ -1589,6 +1615,7 @@
             document.getElementById('btn-tab-approvals').style.display = 'inline-block';
             document.getElementById('btn-tab-changelog').style.display = 'inline-block';
             document.getElementById('admin-danger-zone').style.display = 'block';
+            document.getElementById('superadmin-danger-zone').style.display = 'block';
             loadCompanies();
         } else {
             currentCompany = currentUser ? currentUser.company_code : null;
@@ -1851,7 +1878,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-companies-${c.code}">
                     <div class="rec-card-head" onclick="toggleRecCard('companies','${c.code}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="companies-${c.code}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${c.name}</span>
                         <span class="rec-sub">${c.code}</span>
                     </div>
@@ -2319,9 +2346,54 @@
         return '';
     }
 
+    // Shared block of extra fields shown once an employee is expanded —
+    // used by BOTH the desktop detail <tr> and the mobile card body so the
+    // two views never drift apart.
+    function employeeDetailHtml(emp, d, ssn) {
+        const dl = d.driver_license ? escHtml(d.driver_license) : '—';
+        const dlExp = d.dl_expiration ? d.dl_expiration + expBadge(d.dl_expiration, 30) : '—';
+        const wp = d.work_permit ? escHtml(d.work_permit) : '—';
+        const wpExp = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '—';
+        const med = (d.medical_card === 'Yes') ? 'Yes' : '<span style="color:var(--text-muted);">No</span>';
+        const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
+        return `<div class="rec-detail-grid">
+                <div><div class="k">Phone</div><div class="v">${d.phone ? escHtml(d.phone) : '-'}</div></div>
+                <div><div class="k">Email</div><div class="v">${d.email ? escHtml(d.email) : '-'}</div></div>
+                <div><div class="k">SSN / ITIN (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
+                <div><div class="k">Driver License / State ID</div><div class="v">${dl}</div></div>
+                <div><div class="k">DL Expiration</div><div class="v">${dlExp}</div></div>
+                <div><div class="k">Work Permit #</div><div class="v">${wp}</div></div>
+                <div><div class="k">Work Permit Expiration</div><div class="v">${wpExp}</div></div>
+                <div><div class="k">Medical Card</div><div class="v">${med}</div></div>
+                <div><div class="k">Medical Card Expiration</div><div class="v">${medExp}</div></div>
+                ${emp.role_title ? `<div><div class="k">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
+                ${d.notes ? `<div><div class="k">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
+            </div>
+            <div style="margin-top:10px;">
+                <button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); loadEmployeeStatusHistory('${emp.id}')">Status history</button>
+                <div id="stathist-${emp.id}" style="margin-top:6px;font-size:12px;"></div>
+            </div>`;
+    }
+
+    async function loadEmployeeStatusHistory(empId) {
+        const box = document.getElementById(`stathist-${empId}`);
+        if (!box) return;
+        box.innerHTML = '<span style="color:var(--text-muted);">Loading…</span>';
+        const { data, error } = await supabaseClient.rpc('list_employee_status_history', {
+            p_actor: currentUsername, p_company: currentCompany, p_employee_id: empId, p_limit: 50
+        });
+        if (error) { box.innerHTML = `<span style="color:#dc2626;">Error: ${error.message}</span>`; return; }
+        if (!data || !data.length) { box.innerHTML = '<span style="color:var(--text-muted);">No status changes recorded yet.</span>'; return; }
+        box.innerHTML = `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Change</th><th style="text-align:left;">By</th></tr></thead><tbody>${
+            data.map(h => `<tr><td>${new Date(h.changed_at).toLocaleString()}</td><td>${h.old_status || '—'} → ${h.new_status}</td><td>${escHtml(h.changed_by || '—')}</td></tr>`).join('')
+        }</tbody></table>`;
+    }
+
     function renderEmployees() {
         const query = (document.getElementById('employee-search')?.value || '').toLowerCase();
+        const statusFilter = document.getElementById('employee-status-filter')?.value || '';
         let list = employees.filter(emp => {
+            if (statusFilter && emp.status !== statusFilter) return false;
             if (!query) return true;
             const name = `${emp.first_name} ${emp.last_name}`.toLowerCase();
             const d = getEmpDetail(emp.id);
@@ -2349,41 +2421,30 @@
                 const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
                 const d = getEmpDetail(emp.id);
                 const pt = getPayType(emp.id);
-                const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '';
+                const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="event.stopPropagation(); togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '';
                 const statusCell = editable
-                    ? `<select onchange="setEmployeeStatus('${emp.id}', this.value)" style="padding:3px 4px;font-size:11px;border-radius:5px;">
+                    ? `<select onclick="event.stopPropagation();" onchange="event.stopPropagation(); setEmployeeStatus('${emp.id}', this.value)" style="padding:3px 4px;font-size:11px;border-radius:5px;">
                            <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
                            <option value="Inactive" ${emp.status !== 'Active' ? 'selected' : ''}>Inactive</option>
                        </select>`
                     : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
-                const dlExp = d.dl_expiration ? d.dl_expiration + expBadge(d.dl_expiration, 30) : '—';
-                const wpExp = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '—';
-                const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
-                rows += `<tr>
-                    <td class="id-cell">${emp.id}</td>
+                const open = recExpanded.employees.has(emp.id);
+                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('employees','${emp.id}')">
+                    <td class="id-cell"><span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
                     <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
                     <td>${emp.person_type}</td>
                     <td>${escHtml(emp.department) || '-'}</td>
                     <td>${emp.start_date || '-'}</td>
-                    <td>${d.phone ? escHtml(d.phone) : '-'}</td>
-                    <td>${d.email ? escHtml(d.email) : '-'}</td>
-                    <td class="id-cell">${ssn}</td>
-                    <td>${d.driver_license ? escHtml(d.driver_license) : '—'}</td>
-                    <td>${dlExp}</td>
-                    <td>${d.work_permit ? escHtml(d.work_permit) : '—'}</td>
-                    <td>${wpExp}</td>
-                    <td>${d.medical_card === 'Yes' ? 'Yes' : 'No'}</td>
-                    <td>${medExp}</td>
-                    <td>${escHtml(emp.role_title) || '-'}</td>
                     <td>${pt}${payToggle}</td>
                     <td>${statusCell}</td>
-                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
+                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
+                </tr>
+                <tr class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}" style="display:${open ? 'table-row' : 'none'};">
+                    <td colspan="8" style="padding:12px; background:var(--surface-2);">${employeeDetailHtml(emp, d, ssn)}</td>
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Name</th><th>Type</th><th>Department</th><th>Start</th><th>Phone</th><th>Email</th>
-                <th>SSN/ITIN</th><th>Driver License</th><th>DL Exp.</th><th>Work Permit</th><th>WP Exp.</th>
-                <th>Medical Card</th><th>Med. Exp.</th><th>Role/Title</th><th>Pay</th><th>Status</th><th>Action</th>
+                <th>ID</th><th>Name</th><th>Type</th><th>Department</th><th>Start</th><th>Pay</th><th>Status</th><th>Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             return;
         }
@@ -2401,17 +2462,11 @@
                        <option value="Inactive" ${emp.status !== 'Active' ? 'selected' : ''}>Inactive</option>
                    </select>`
                 : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
-            const dl = d.driver_license ? escHtml(d.driver_license) : '—';
-            const dlExp = d.dl_expiration ? d.dl_expiration + expBadge(d.dl_expiration, 30) : '—';
-            const wp = d.work_permit ? escHtml(d.work_permit) : '—';
-            const wpExp = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '—';
-            const med = (d.medical_card === 'Yes') ? 'Yes' : '<span style="color:var(--text-muted);">No</span>';
-            const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
             const open = recExpanded.employees.has(emp.id);
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('employees','${emp.id}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="rec-sub">${emp.id}</span>
                         <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : 'pay-weekly'}">${pt === 'Daily' ? 'Daily' : 'Weekly'}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span></span>
@@ -2421,18 +2476,8 @@
                             <div><div class="k">Type</div><div class="v">${emp.person_type}</div></div>
                             <div><div class="k">Department</div><div class="v">${escHtml(emp.department) || '-'}</div></div>
                             <div><div class="k">Start date</div><div class="v">${emp.start_date || '-'}</div></div>
-                            <div><div class="k">Phone</div><div class="v">${d.phone ? escHtml(d.phone) : '-'}</div></div>
-                            <div><div class="k">Email</div><div class="v">${d.email ? escHtml(d.email) : '-'}</div></div>
-                            <div><div class="k">SSN / ITIN (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
-                            <div><div class="k">Driver License / State ID</div><div class="v">${dl}</div></div>
-                            <div><div class="k">DL Expiration</div><div class="v">${dlExp}</div></div>
-                            <div><div class="k">Work Permit #</div><div class="v">${wp}</div></div>
-                            <div><div class="k">Work Permit Expiration</div><div class="v">${wpExp}</div></div>
-                            <div><div class="k">Medical Card</div><div class="v">${med}</div></div>
-                            <div><div class="k">Medical Card Expiration</div><div class="v">${medExp}</div></div>
-                            ${emp.role_title ? `<div><div class="k">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
-                            ${d.notes ? `<div><div class="k">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
                         </div>
+                        ${employeeDetailHtml(emp, d, ssn)}
                         ${editable ? `
                         <div class="rec-actions">
                             <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editEmployee('${emp.id}')">Edit</button>
@@ -2551,7 +2596,7 @@
         const normType = t => {
             t = (t || '').toLowerCase();
             if (t.startsWith('staff')) return 'Staff';
-            if (t.startsWith('contract')) return 'Company';
+            if (t.startsWith('contract')) return 'Contractor';
             if (t.startsWith('provid')) return 'Provider';
             return 'Employee';
         };
@@ -2778,7 +2823,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}">
                     <div class="rec-card-head" onclick="toggleRecCard('claims','${c.claim_id}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${empName}</span>
                         <span class="rec-sub">${c.claim_id}</span>
                         <span class="rec-right">${formatMoney(bal)} <span class="status-badge status-${c.status}">${c.status}</span></span>
@@ -2911,7 +2956,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}">
                     <div class="rec-card-head" onclick="toggleRecCard('charges','${ch.charge_id}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${empName}</span>
                         <span class="rec-sub">${ch.charge_id}</span>
                         <span class="rec-right" style="color:#dc2626;">${formatMoney(bal)} <span class="status-badge status-${ch.status}">${ch.status}</span></span>
@@ -3079,7 +3124,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-income-${i.income_id}">
                     <div class="rec-card-head" onclick="toggleRecCard('income','${i.income_id}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${empName}</span>
                         <span class="rec-sub">${i.income_id}</span>
                         <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${i.status}</span></span>
@@ -3718,7 +3763,7 @@
                 totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
                 const open = recExpanded.payroll.has(emp.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('payroll','${emp.id}')">
-                    <td class="id-cell"><span class="rec-caret">${open ? '▾' : '▸'}</span> ${emp.id}</td>
+                    <td class="id-cell"><span class="rec-caret" data-caret="payroll-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
                     <td>${emp.first_name} ${emp.last_name}</td>
                     <td>${emp.person_type}</td>
                     <td>${formatMoney(base)}${isDaily ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : ''}</td>
@@ -3757,7 +3802,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-payroll-${emp.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('payroll','${emp.id}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="payroll-${emp.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${emp.first_name} ${emp.last_name}</span>
                         <span class="rec-sub">${emp.id}</span>
                         <span class="rec-right" style="font-weight:700;">${formatMoney(net)}</span>
@@ -4072,7 +4117,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-approvals-${p.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('approvals','${p.id}')">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="approvals-${p.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${p.requested_by}</span>
                         <span class="rec-sub">${p.record_id}</span>
                         <span class="rec-right">${p.field_name}</span>
@@ -4171,7 +4216,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-log-${i}">
                     <div class="rec-card-head" onclick="toggleRecCard('log',${i})">
-                        <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                        <span class="rec-caret" data-caret="log-${i}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${a.actor}</span>
                         <span class="rec-sub">${new Date(a.changed_at).toLocaleString()}</span>
                         <span class="rec-right">${a.field_name}</span>
@@ -4420,7 +4465,7 @@
                 container.insertAdjacentHTML('beforeend', `
                     <div class="rec-card${open ? ' open' : ''}" id="rec-users-${u.username}">
                         <div class="rec-card-head" onclick="toggleRecCard('users','${u.username}')">
-                            <span class="rec-caret">${open ? '▾' : '▸'}</span>
+                            <span class="rec-caret" data-caret="users-${u.username}">${open ? '▾' : '▸'}</span>
                             <span class="rec-title">${u.username}</span>
                             <span class="rec-sub">${u.employee_id || ''}</span>
                             <span class="rec-right"><span class="type-pill">${u.role}</span></span>
@@ -4564,6 +4609,26 @@
             } catch (err) {
                 alert('Error resetting data: ' + err.message);
             }
+        }
+    }
+
+    // System-wide reset, Super Admin only. Every user account except Super
+    // Admins, the audit Log, and pending Approvals are cleared; companies and
+    // everything that belongs to them are untouched. Requires typing a exact
+    // phrase to confirm, given the scale of what this removes.
+    async function superAdminResetSystem() {
+        if (currentUserRole !== 'SuperAdmin') return;
+        const typed = prompt('This removes every user account except Super Admins, and clears the Log and Approvals. Companies and their data are kept.\n\nType RESET SYSTEM to confirm:');
+        if (typed !== 'RESET SYSTEM') { if (typed !== null) alert('Not confirmed — nothing was changed.'); return; }
+        try {
+            const { error } = await supabaseClient.rpc('reset_system_data', { p_actor: currentUsername });
+            if (error) { alert('Error: ' + error.message); return; }
+            alert('System reset complete. Every non-Super Admin account was removed; the Log and Approvals are cleared. Company data is untouched.');
+            fetchUsersList();
+            renderLog();
+            renderApprovals();
+        } catch (err) {
+            alert('Error: ' + err.message);
         }
     }
 
