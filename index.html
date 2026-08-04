@@ -305,7 +305,7 @@
 
     /* Daily Pay — always the collapsible card layout; a CSS grid gives desktop
        multiple columns instead of falling back to a spreadsheet table. */
-    #dailypay-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
+    #dailypay-cards.dp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; align-items: start; }
     .dp-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .dp-card-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; background: var(--excel-blue); color: #fff; padding: 8px 10px; cursor: pointer; }
     .dp-card.collapsed .dp-days { display: none; }
@@ -1194,8 +1194,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.6';
+    const APP_VERSION = 'v2.7';
     const CHANGELOG = [
+        { version: 'v2.7', date: '2026-08-04', notes: 'Daily Pay now shows as a real horizontal table on desktop browsers — ID, Name, all 7 days, and Week Total as columns — matching the pattern every other list in the app already uses (Employees, Claims, Charges, Income, Payroll, Companies, Users, Approvals, Log). Stays the collapsible card layout on mobile, and switches automatically based on screen width, including on rotation.' },
         { version: 'v2.6', date: '2026-08-04', notes: 'Daily Pay and Statement now have the same Person type / Status / Search filter row as Payroll. Daily Pay\'s Status filter (Active / Inactive / All statuses, defaulting to Active like Payroll) narrows down who shows up in the timesheet — previously everyone on Daily Rate showed regardless of status. Statement\'s filters narrow the Employee dropdown itself, so finding one person in a long roster no longer means scrolling a 126-name list. Hardened every place the app deletes a record directly (income entries, claim rate-change/pause history, and the Damage/Charge/Income Type lists in Settings) against ever sending a delete with no target — each now checks it has a real ID/name before touching the database and shows a clear message if not, instead of the confusing native "DELETE requires a WHERE clause" error. Also fixed a real related bug: Damage/Charge/Income Type names were being inserted unescaped into their delete buttons\' click handlers, so a name containing an apostrophe (e.g. "Driver\'s fault") could break the button entirely — now properly escaped.' },
         { version: 'v2.5', date: '2026-08-04', notes: 'Fixed a real bug behind "expand/collapse doesn\'t work on desktop until I switch screens": the detail row\'s hide/show relied on a style that was only ever set once, at render time, so tapping it on desktop silently did nothing until something else (like resizing past the mobile/desktop breakpoint) forced a full re-render — now fixed at the root so every expandable list responds immediately. Employees\' desktop view now also collapses down to a compact row (ID, Name, Type, Department, Start, Pay, Status) per person instead of one very wide table — collapsed by default, tap a row to see the rest (phone, email, SSN/ITIN, license, work permit, medical card, role, notes). Added a Status filter (Active / Inactive / All statuses) next to the Employees search box. Every Active↔Inactive change is now recorded with who changed it and when — visible via a "Status history" button inside each employee\'s expanded detail — laying the groundwork for prorating payroll around status changes later.' },
         { version: 'v2.4', date: '2026-08-04', notes: 'Fixed a real bug in the Employees CSV import: rows with Person Type "Contractor" were silently being saved as the invalid type "Company" instead, due to a typo in the import code — this broke both the record\'s Type and its ID suffix. Contractors now import correctly. Added a new Super Admin-only "Reset System" action (Data Sync tab): removes every user account except Super Admins and clears the audit Log and pending Approvals, while leaving companies and everything that belongs to them — employees, claims, charges, routes, income — completely untouched. Requires typing an exact confirmation phrase before running, since it can\'t be undone.' },
@@ -3667,7 +3668,6 @@
         }
 
         const editable = canEdit();
-        cardsWrap.innerHTML = '';
 
         // One day's amount input + OFF toggle.
         const cellInner = (emp, i, cell) => {
@@ -3680,13 +3680,46 @@
                     ${editable ? `<button class="off-btn ${off ? 'is-off' : ''}" id="dpoff-${emp.id}-${i}" onclick="toggleDailyOff('${emp.id}', ${i})">${off ? 'OFF' : 'off'}</button>` : (off ? '<div class="off-btn is-off">OFF</div>' : '')}`;
         };
 
+        // Pre-compute each row's total once, shared by both the desktop
+        // table and the mobile card layout below.
         let grand = 0;
+        const rowTotals = {};
         dailyEmps.forEach(emp => {
             const row = dailyGrid[emp.id] || {};
             let rowTotal = 0;
             for (let i = 0; i < 7; i++) { const c = row[i]; if (c && !c.is_off) rowTotal += parseFloat(c.amount) || 0; }
+            rowTotals[emp.id] = rowTotal;
             grand += rowTotal;
+        });
 
+        if (isDesktopView()) {
+            cardsWrap.className = '';
+            let rows = '';
+            dailyEmps.forEach(emp => {
+                const row = dailyGrid[emp.id] || {};
+                let dayCells = '';
+                for (let i = 0; i < 7; i++) {
+                    const cell = row[i] || { amount: 0, is_off: false };
+                    dayCells += `<td><div class="dp-day-label">${DAY_LABELS[i]} ${fmtMD(dates[i])}</div>${cellInner(emp, i, cell)}</td>`;
+                }
+                rows += `<tr>
+                    <td class="id-cell">${emp.id}</td>
+                    <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
+                    ${dayCells}
+                    <td style="font-weight:700;">Week: <span id="dp-total-${emp.id}">${formatMoney(rowTotals[emp.id])}</span></td>
+                </tr>`;
+            });
+            cardsWrap.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>ID</th><th>Name</th>${DAY_LABELS.map((d, i) => `<th>${d} ${fmtMD(dates[i])}</th>`).join('')}<th>Week Total</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>
+            <div class="dp-grand">Total (${dailyEmps.length}): <span id="dailypay-grand">${formatMoney(grand)}</span></div>`;
+            return;
+        }
+
+        cardsWrap.className = 'dp-grid';
+        cardsWrap.innerHTML = '';
+        dailyEmps.forEach(emp => {
+            const row = dailyGrid[emp.id] || {};
             let days = '';
             for (let i = 0; i < 7; i++) {
                 const cell = row[i] || { amount: 0, is_off: false };
@@ -3699,7 +3732,7 @@
                         <span class="dp-caret">${dOpen ? '▾' : '▸'}</span>
                         <span class="dp-name">${emp.first_name} ${emp.last_name}</span>
                         <span class="dp-id">${emp.id}</span>
-                        <span class="dp-total">Week: <span id="dp-total-${emp.id}">${formatMoney(rowTotal)}</span></span>
+                        <span class="dp-total">Week: <span id="dp-total-${emp.id}">${formatMoney(rowTotals[emp.id])}</span></span>
                     </div>
                     <div class="dp-days">${days}</div>
                 </div>`);
