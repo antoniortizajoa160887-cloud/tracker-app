@@ -850,7 +850,30 @@
 <!-- TAB 6: STATEMENT -->
 <div id="tab-statement" class="tab-content">
     <div class="panel" style="margin-bottom:12px;">
-        <div class="form-row" style="margin-bottom:0;">
+        <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
+            <div class="field">
+                <label>Person type</label>
+                <select id="statement-type-filter" onchange="populateStatementEmployeeDropdown()">
+                    <option value="">All types</option>
+                    <option value="Contractor">Contractor</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Provider">Provider</option>
+                    <option value="Staff">Staff</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select id="statement-status-filter" onchange="populateStatementEmployeeDropdown()">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="">All statuses</option>
+                </select>
+            </div>
+            <div class="field field-wide">
+                <input type="text" id="statement-search" placeholder="Search name or ID..." oninput="populateStatementEmployeeDropdown()">
+            </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0; margin-top:8px;">
             <div class="field" style="flex:1 1 300px;">
                 <label>Employee</label>
                 <select id="statement-emp-select" onchange="renderStatement()"><option value="">— Select employee —</option></select>
@@ -883,7 +906,30 @@
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayWeek()">This week</button>
             <span class="save-flash" id="dailypay-saveflash">Saved ✓</span>
         </div>
-        <div class="note-box">
+        <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
+            <div class="field">
+                <label>Person type</label>
+                <select id="dailypay-type-filter" onchange="renderDailyPay()">
+                    <option value="">All types</option>
+                    <option value="Contractor">Contractor</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Provider">Provider</option>
+                    <option value="Staff">Staff</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select id="dailypay-status-filter" onchange="renderDailyPay()">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="">All statuses</option>
+                </select>
+            </div>
+            <div class="field field-wide">
+                <input type="text" id="dailypay-search" placeholder="Search name or ID..." oninput="renderDailyPay()">
+            </div>
+        </div>
+        <div class="note-box" style="margin-top:10px;">
             Enter each person's pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person's pay type in the Employees tab).
         </div>
     </div>
@@ -1148,8 +1194,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.5';
+    const APP_VERSION = 'v2.6';
     const CHANGELOG = [
+        { version: 'v2.6', date: '2026-08-04', notes: 'Daily Pay and Statement now have the same Person type / Status / Search filter row as Payroll. Daily Pay\'s Status filter (Active / Inactive / All statuses, defaulting to Active like Payroll) narrows down who shows up in the timesheet — previously everyone on Daily Rate showed regardless of status. Statement\'s filters narrow the Employee dropdown itself, so finding one person in a long roster no longer means scrolling a 126-name list. Hardened every place the app deletes a record directly (income entries, claim rate-change/pause history, and the Damage/Charge/Income Type lists in Settings) against ever sending a delete with no target — each now checks it has a real ID/name before touching the database and shows a clear message if not, instead of the confusing native "DELETE requires a WHERE clause" error. Also fixed a real related bug: Damage/Charge/Income Type names were being inserted unescaped into their delete buttons\' click handlers, so a name containing an apostrophe (e.g. "Driver\'s fault") could break the button entirely — now properly escaped.' },
         { version: 'v2.5', date: '2026-08-04', notes: 'Fixed a real bug behind "expand/collapse doesn\'t work on desktop until I switch screens": the detail row\'s hide/show relied on a style that was only ever set once, at render time, so tapping it on desktop silently did nothing until something else (like resizing past the mobile/desktop breakpoint) forced a full re-render — now fixed at the root so every expandable list responds immediately. Employees\' desktop view now also collapses down to a compact row (ID, Name, Type, Department, Start, Pay, Status) per person instead of one very wide table — collapsed by default, tap a row to see the rest (phone, email, SSN/ITIN, license, work permit, medical card, role, notes). Added a Status filter (Active / Inactive / All statuses) next to the Employees search box. Every Active↔Inactive change is now recorded with who changed it and when — visible via a "Status history" button inside each employee\'s expanded detail — laying the groundwork for prorating payroll around status changes later.' },
         { version: 'v2.4', date: '2026-08-04', notes: 'Fixed a real bug in the Employees CSV import: rows with Person Type "Contractor" were silently being saved as the invalid type "Company" instead, due to a typo in the import code — this broke both the record\'s Type and its ID suffix. Contractors now import correctly. Added a new Super Admin-only "Reset System" action (Data Sync tab): removes every user account except Super Admins and clears the audit Log and pending Approvals, while leaving companies and everything that belongs to them — employees, claims, charges, routes, income — completely untouched. Requires typing an exact confirmation phrase before running, since it can\'t be undone.' },
         { version: 'v2.3', date: '2026-08-04', notes: 'Every card-based list (Employees, Claims, Charges, Income, Payroll, Companies, Users, Approvals, Log) now shows as a real horizontal table on desktop browsers — same columns as before cards existed — while staying the collapsible card layout on mobile. The two switch automatically based on screen width, including if you rotate a tablet mid-session. Payroll\'s desktop table keeps the same expandable per-person breakdown as its card, just as a row you tap to expand instead. Also fixed a small pre-existing display bug in the Log tab\'s error state.' },
@@ -2148,6 +2195,15 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+    // For free-text values interpolated into an inline onclick="...('${x}')"
+    // attribute: escapes the JS string-literal delimiter (') AND the
+    // surrounding HTML double-quoted attribute delimiter, so a name like
+    // "Driver's fault" can't break the inline handler and (depending on
+    // browser) send a malformed/undefined argument through to a delete call.
+    function escJsAttr(s) {
+        s = String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
     function getEmpDetail(id) { return employeeDetails[id] || {}; }
 
     // Companion table for the non-secret ID fields. Direct-access, like
@@ -2657,13 +2713,14 @@
         );
         const opts = '<option value="">— Select employee —</option>' +
             sorted.map(emp => `<option value="${emp.id}">${employeeOptionLabel(emp)}</option>`).join('');
-        ['cEmployee', 'ci-employee', 'statement-emp-select'].forEach(id => {
+        ['cEmployee', 'ci-employee'].forEach(id => {
             const sel = document.getElementById(id);
             if (!sel) return;
             const prev = sel.value;
             sel.innerHTML = opts;
             sel.value = prev || '';
         });
+        populateStatementEmployeeDropdown();
     }
 
     // --- CLAIMS ---
@@ -3170,6 +3227,7 @@
 
     async function deleteIncome(id) {
         if (!canEdit()) return;
+        if (!id) { alert('Error: could not identify which income entry to delete — try refreshing the page.'); return; }
         if (confirm('Delete income ' + id + '?')) {
             const { error } = await supabaseClient.from('additional_income').delete().eq('income_id', id);
             if (error) alert('Error: ' + error.message);
@@ -3179,7 +3237,35 @@
 
     // --- STATEMENT LOGIC ---
     function populateStatementDropdown() {
-        // Employee combobox is populated centrally by populateEmployeeDropdowns().
+        // Kept for the existing tab-open call site; the real work (and the
+        // Person type / Status / Search filtering) lives below.
+        populateStatementEmployeeDropdown();
+    }
+
+    function populateStatementEmployeeDropdown() {
+        const sel = document.getElementById('statement-emp-select');
+        if (!sel) return;
+        const typeFilter = document.getElementById('statement-type-filter')?.value || '';
+        const statusFilter = document.getElementById('statement-status-filter')?.value || '';
+        const query = (document.getElementById('statement-search')?.value || '').toLowerCase();
+        const filtered = employees.filter(emp => {
+            if (typeFilter && emp.person_type !== typeFilter) return false;
+            if (statusFilter && emp.status !== statusFilter) return false;
+            if (query) {
+                const hay = `${emp.id} ${emp.first_name} ${emp.last_name}`.toLowerCase();
+                if (!hay.includes(query)) return false;
+            }
+            return true;
+        }).sort((a, b) =>
+            `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' })
+        );
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">— Select employee —</option>' +
+            filtered.map(emp => `<option value="${emp.id}">${employeeOptionLabel(emp)}</option>`).join('');
+        // Keep the current selection if it still matches the filters; otherwise
+        // clear it rather than silently keep showing a now-filtered-out person's statement.
+        if (prev && filtered.some(e => e.id === prev)) { sel.value = prev; }
+        else if (prev) { sel.value = ''; renderStatement(); }
     }
 
     function renderStatement() {
@@ -3546,9 +3632,22 @@
         const setup = document.getElementById('dailypay-setup');
         const cardsWrap = document.getElementById('dailypay-cards');
 
-        // Which employees use Daily Rate?
+        // Which employees use Daily Rate? (further narrowed by the Person
+        // type / Status / Search filters above, same pattern as Payroll)
+        const typeFilter = document.getElementById('dailypay-type-filter')?.value || '';
+        const statusFilter = document.getElementById('dailypay-status-filter') ? document.getElementById('dailypay-status-filter').value : 'Active';
+        const query = (document.getElementById('dailypay-search')?.value || '').toLowerCase();
         const dailyEmps = employees
             .filter(e => getPayType(e.id) === 'Daily')
+            .filter(e => {
+                if (typeFilter && e.person_type !== typeFilter) return false;
+                if (statusFilter && e.status !== statusFilter) return false;
+                if (query) {
+                    const hay = `${e.id} ${e.first_name} ${e.last_name}`.toLowerCase();
+                    if (!hay.includes(query)) return false;
+                }
+                return true;
+            })
             .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
 
         // Load this week's saved entries
@@ -4020,6 +4119,7 @@
     }
 
     async function deleteRateChange(rid) {
+        if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
         if (!confirm('Remove this rate change?')) return;
         const { error } = await supabaseClient.from('claim_rate_changes').delete().eq('id', rid);
         if (error) { alert('Error: ' + error.message); return; }
@@ -4027,6 +4127,7 @@
     }
 
     async function deletePause(pid) {
+        if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
         if (!confirm('Remove this pause record?')) return;
         const { error } = await supabaseClient.from('claim_pauses').delete().eq('id', pid);
         if (error) { alert('Error: ' + error.message); return; }
@@ -4268,7 +4369,7 @@
         if(dBody) {
             dBody.innerHTML = '';
             damageTypes.forEach(d => {
-                dBody.insertAdjacentHTML('beforeend', `<tr><td>${d}</td><td style="text-align:center;"><button class="del-btn" onclick="removeDamageType('${d}')">✕</button></td></tr>`);
+                dBody.insertAdjacentHTML('beforeend', `<tr><td>${escHtml(d)}</td><td style="text-align:center;"><button class="del-btn" onclick="removeDamageType('${escJsAttr(d)}')">✕</button></td></tr>`);
             });
         }
 
@@ -4276,7 +4377,7 @@
         if(cBody) {
             cBody.innerHTML = '';
             chargeTypes.forEach(ct => {
-                cBody.insertAdjacentHTML('beforeend', `<tr><td>${ct}</td><td style="text-align:center;"><button class="del-btn" onclick="removeChargeType('${ct}')">✕</button></td></tr>`);
+                cBody.insertAdjacentHTML('beforeend', `<tr><td>${escHtml(ct)}</td><td style="text-align:center;"><button class="del-btn" onclick="removeChargeType('${escJsAttr(ct)}')">✕</button></td></tr>`);
             });
         }
 
@@ -4284,7 +4385,7 @@
         if(iBody) {
             iBody.innerHTML = '';
             incomeTypes.forEach(it => {
-                iBody.insertAdjacentHTML('beforeend', `<tr><td>${it}</td><td style="text-align:center;"><button class="del-btn" onclick="removeIncomeType('${it}')">✕</button></td></tr>`);
+                iBody.insertAdjacentHTML('beforeend', `<tr><td>${escHtml(it)}</td><td style="text-align:center;"><button class="del-btn" onclick="removeIncomeType('${escJsAttr(it)}')">✕</button></td></tr>`);
             });
         }
     }
@@ -4302,7 +4403,9 @@
     });
 
     async function removeDamageType(name) {
-        await supabaseClient.from('damage_types').delete().eq('name', name);
+        if (!name) { alert('Error: could not identify which damage type to delete — try refreshing the page.'); return; }
+        const { error } = await supabaseClient.from('damage_types').delete().eq('name', name);
+        if (error) { alert('Error: ' + error.message); return; }
         damageTypes = damageTypes.filter(d => d !== name);
         renderSettingsLists();
         populateDropdowns();
@@ -4321,7 +4424,9 @@
     });
 
     async function removeChargeType(name) {
-        await supabaseClient.from('charge_types').delete().eq('name', name);
+        if (!name) { alert('Error: could not identify which charge type to delete — try refreshing the page.'); return; }
+        const { error } = await supabaseClient.from('charge_types').delete().eq('name', name);
+        if (error) { alert('Error: ' + error.message); return; }
         chargeTypes = chargeTypes.filter(ct => ct !== name);
         renderSettingsLists();
         populateDropdowns();
@@ -4340,7 +4445,9 @@
     });
 
     async function removeIncomeType(name) {
-        await supabaseClient.from('income_types').delete().eq('name', name);
+        if (!name) { alert('Error: could not identify which income type to delete — try refreshing the page.'); return; }
+        const { error } = await supabaseClient.from('income_types').delete().eq('name', name);
+        if (error) { alert('Error: ' + error.message); return; }
         incomeTypes = incomeTypes.filter(it => it !== name);
         renderSettingsLists();
         populateDropdowns();
