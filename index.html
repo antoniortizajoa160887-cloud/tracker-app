@@ -1194,8 +1194,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.7';
+    const APP_VERSION = 'v2.9';
     const CHANGELOG = [
+        { version: 'v2.9', date: '2026-08-04', notes: 'Database-only fix, no app screens changed: deleting a claim (single delete, bulk "delete all claims", or a full company reset) now also removes that claim\'s rate-change history, pause history, and any still-pending approval request tied to it — previously only the claim record itself was deleted, leaving those behind as orphaned rows invisible in the app but still sitting in the database. Verified directly against the database with a throwaway test claim (rate change + pause + pending approval attached) before and after deletion.' },
+        { version: 'v2.8', date: '2026-08-04', notes: 'Fixed Payroll showing negative net pay: claim/charge deductions were being taken at their full scheduled weekly amount even in a week where someone had $0 gross pay (e.g. a Daily-rate person with no Daily Pay entered that week), pushing Net below zero. Deductions are now capped at that week\'s actual gross pay, so Net can never go negative — the expanded per-person breakdown shows a note (and the original scheduled amount) whenever a deduction was reduced this way. Worth knowing: the claim/charge balance itself still follows its own calendar schedule regardless of pay, so it won\'t automatically know a week wasn\'t actually collected — for a week you already know will have $0 pay, pausing that claim (Claims tab) keeps its running balance accurate too, the same way pausing already works today.' },
         { version: 'v2.7', date: '2026-08-04', notes: 'Daily Pay now shows as a real horizontal table on desktop browsers — ID, Name, all 7 days, and Week Total as columns — matching the pattern every other list in the app already uses (Employees, Claims, Charges, Income, Payroll, Companies, Users, Approvals, Log). Stays the collapsible card layout on mobile, and switches automatically based on screen width, including on rotation.' },
         { version: 'v2.6', date: '2026-08-04', notes: 'Daily Pay and Statement now have the same Person type / Status / Search filter row as Payroll. Daily Pay\'s Status filter (Active / Inactive / All statuses, defaulting to Active like Payroll) narrows down who shows up in the timesheet — previously everyone on Daily Rate showed regardless of status. Statement\'s filters narrow the Employee dropdown itself, so finding one person in a long roster no longer means scrolling a 126-name list. Hardened every place the app deletes a record directly (income entries, claim rate-change/pause history, and the Damage/Charge/Income Type lists in Settings) against ever sending a delete with no target — each now checks it has a real ID/name before touching the database and shows a clear message if not, instead of the confusing native "DELETE requires a WHERE clause" error. Also fixed a real related bug: Damage/Charge/Income Type names were being inserted unescaped into their delete buttons\' click handlers, so a name containing an apostrophe (e.g. "Driver\'s fault") could break the button entirely — now properly escaped.' },
         { version: 'v2.5', date: '2026-08-04', notes: 'Fixed a real bug behind "expand/collapse doesn\'t work on desktop until I switch screens": the detail row\'s hide/show relied on a style that was only ever set once, at render time, so tapping it on desktop silently did nothing until something else (like resizing past the mobile/desktop breakpoint) forced a full re-render — now fixed at the root so every expandable list responds immediately. Employees\' desktop view now also collapses down to a compact row (ID, Name, Type, Department, Start, Pay, Status) per person instead of one very wide table — collapsed by default, tap a row to see the rest (phone, email, SSN/ITIN, license, work permit, medical card, role, notes). Added a Status filter (Active / Inactive / All statuses) next to the Employees search box. Every Active↔Inactive change is now recorded with who changed it and when — visible via a "Status history" button inside each employee\'s expanded detail — laying the groundwork for prorating payroll around status changes later.' },
@@ -3380,41 +3382,53 @@
     }
 
     // --- PAYROLL ---------------------------------------------------------
-    // Sum of weekly deductions for one employee from claims + charges that
-    // are actively being deducted (status 'Deducting') and still have a
-    // remaining balance.
-    function activeWeeklyDeductions(empId) {
-        const asOf = payrollAsOf();
-        let total = 0;
-        claims.filter(c => c.employee_id === empId && c.status === 'Deducting').forEach(c => {
-            const bal = claimBalance(c, asOf);
-            if (bal > 0 && !isPausedOn(c, asOf)) total += Math.min(rateOn(c, asOf), bal);
-        });
-        charges.filter(ch => ch.employee_id === empId && ch.status === 'Deducting').forEach(ch => {
-            const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
-            if (bal > 0) total += Math.min(parseFloat(ch.weekly_deduction) || 0, bal);
-        });
-        return total;
-    }
-
-    // Itemized version of activeWeeklyDeductions — the individual claims and
-    // charges (with this week's amount + remaining balance) for the expand row.
-    function deductionBreakdown(empId) {
+    // Itemized weekly deductions for one employee — the individual claims and
+    // charges (with this week's scheduled amount + remaining balance).
+    // capAmount (optional) caps the TOTAL taken this week at that amount —
+    // used to make sure a week's deductions can never exceed that week's
+    // gross pay (so net pay can't go negative). Items are capped in order,
+    // each item's `.weekly` becomes what's actually taken; `.scheduled` keeps
+    // the original uncapped amount so the UI can show what was skipped and why.
+    // NOTE: capping here only affects what's shown/paid THIS payroll week —
+    // it does not rewrite the claim/charge's balance schedule (still a
+    // calendar-based projection, unaware of actual weekly gross pay). If a
+    // week is expected to have $0 gross pay in advance, pausing the claim
+    // (Claims tab) for that week — same as already done here for 8/8–8/22 —
+    // is the way to keep the balance schedule accurate too.
+    function deductionBreakdown(empId, capAmount) {
         const asOf = payrollAsOf();
         const items = [];
         claims.filter(c => c.employee_id === empId && c.status === 'Deducting').forEach(c => {
             const bal = claimBalance(c, asOf);
             if (bal > 0 && !isPausedOn(c, asOf)) {
-                items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', weekly: Math.min(rateOn(c, asOf), bal), balance: bal });
+                const weekly = Math.min(rateOn(c, asOf), bal);
+                items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', weekly, scheduled: weekly, balance: bal });
             }
         });
         charges.filter(ch => ch.employee_id === empId && ch.status === 'Deducting').forEach(ch => {
             const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
             if (bal > 0) {
-                items.push({ kind: 'Charge', id: ch.charge_id, label: ch.charge_type || 'Charge', weekly: Math.min(parseFloat(ch.weekly_deduction) || 0, bal), balance: bal });
+                const weekly = Math.min(parseFloat(ch.weekly_deduction) || 0, bal);
+                items.push({ kind: 'Charge', id: ch.charge_id, label: ch.charge_type || 'Charge', weekly, scheduled: weekly, balance: bal });
             }
         });
+        if (capAmount !== undefined && capAmount !== null) {
+            let remaining = Math.max(0, capAmount);
+            items.forEach(it => {
+                const take = Math.min(it.weekly, remaining);
+                it.weekly = +take.toFixed(2);
+                remaining = +(remaining - take).toFixed(2);
+            });
+        }
         return items;
+    }
+
+    // Sum of weekly deductions for one employee from claims + charges that
+    // are actively being deducted (status 'Deducting') and still have a
+    // remaining balance. Pass capAmount (that week's gross pay) to make sure
+    // deductions can never exceed what's actually being paid out.
+    function activeWeeklyDeductions(empId, capAmount) {
+        return deductionBreakdown(empId, capAmount).reduce((sum, it) => sum + it.weekly, 0);
     }
 
     // Individual routes that make up this week's route pay for a driver.
@@ -3890,7 +3904,7 @@
                 const routePay = currentWeekRoutePay(emp);
                 const income = activeWeeklyIncome(emp.id);
                 const gross = base + routePay + income;
-                const ded = activeWeeklyDeductions(emp.id);
+                const ded = activeWeeklyDeductions(emp.id, gross);
                 const net = gross - ded;
                 totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
                 const open = recExpanded.payroll.has(emp.id);
@@ -3925,7 +3939,7 @@
             const routePay = currentWeekRoutePay(emp);
             const income = activeWeeklyIncome(emp.id);
             const gross = base + routePay + income;
-            const ded = activeWeeklyDeductions(emp.id);
+            const ded = activeWeeklyDeductions(emp.id, gross);
             const net = gross - ded;
 
             totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
@@ -4000,9 +4014,12 @@
             ? `<div style="margin-top:12px;"><div class="detail-subhead">Additional income</div><table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Item</th><th style="text-align:right;">This week</th><th style="text-align:right;">Remaining</th></tr></thead><tbody>${ib.map(it => `<tr><td>${it.id} · ${it.label}</td><td style="text-align:right;color:#059669;">+${formatMoney(it.weekly)}</td><td style="text-align:right;">${formatMoney(it.remaining)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td>Income total</td><td style="text-align:right;color:#059669;">+${formatMoney(income || 0)}</td><td></td></tr></tbody></table></div>`
             : '';
 
-        const items = deductionBreakdown(emp.id);
+        const gross = base + routePay + income;
+        const items = deductionBreakdown(emp.id, gross);
+        const scheduledTotal = items.reduce((s, it) => s + it.scheduled, 0);
+        const wasCapped = scheduledTotal - ded > 0.004;
         const dedHtml = items.length
-            ? `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Item</th><th style="text-align:right;">This week</th><th style="text-align:right;">Balance left</th></tr></thead><tbody>${items.map(it => `<tr><td><span class="type-pill">${it.kind}</span> ${it.id} · ${it.label}</td><td style="text-align:right;color:#dc2626;">−${formatMoney(it.weekly)}</td><td style="text-align:right;">${formatMoney(it.balance)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td>Total deductions</td><td style="text-align:right;color:#dc2626;">−${formatMoney(ded)}</td><td></td></tr></tbody></table>`
+            ? `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Item</th><th style="text-align:right;">This week</th><th style="text-align:right;">Balance left</th></tr></thead><tbody>${items.map(it => `<tr><td><span class="type-pill">${it.kind}</span> ${it.id} · ${it.label}${it.weekly < it.scheduled ? ` <span style="color:var(--text-muted);">(scheduled ${formatMoney(it.scheduled)})</span>` : ''}</td><td style="text-align:right;color:#dc2626;">−${formatMoney(it.weekly)}</td><td style="text-align:right;">${formatMoney(it.balance)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td>Total deductions</td><td style="text-align:right;color:#dc2626;">−${formatMoney(ded)}</td><td></td></tr></tbody></table>${wasCapped ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Capped at this week's gross pay (${formatMoney(gross)}) — the full scheduled amount is ${formatMoney(scheduledTotal)}. Net pay can't go below $0.00. The claim/charge balance still follows its own calendar schedule regardless of pay, so if a week is known in advance to have no pay, pausing it (Claims tab) keeps the balance accurate too.</div>` : ''}`
             : `<div style="color:var(--text-muted);font-size:12px;">No active weekly deductions.</div>`;
 
         return `<div style="display:flex;flex-wrap:wrap;gap:16px;padding:12px 12px;">
