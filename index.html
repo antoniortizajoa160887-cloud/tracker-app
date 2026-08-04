@@ -1136,8 +1136,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.2';
+    const APP_VERSION = 'v2.3';
     const CHANGELOG = [
+        { version: 'v2.3', date: '2026-08-04', notes: 'Every card-based list (Employees, Claims, Charges, Income, Payroll, Companies, Users, Approvals, Log) now shows as a real horizontal table on desktop browsers — same columns as before cards existed — while staying the collapsible card layout on mobile. The two switch automatically based on screen width, including if you rotate a tablet mid-session. Payroll\'s desktop table keeps the same expandable per-person breakdown as its card, just as a row you tap to expand instead. Also fixed a small pre-existing display bug in the Log tab\'s error state.' },
         { version: 'v2.2', date: '2026-08-03', notes: 'Adding an employee (one at a time, via the Employees tab form) now also auto-creates their login, shown once in the same on-screen panel companies use, with the same duplicate-proof username policy. Role follows Person Type: Owner or Manager → Administrator, Staff → Medium, Employee/Contractor/Provider → View Only. Bulk CSV import intentionally skips this — importing many rows at once can\'t sanely display many one-time passwords, so add logins individually afterward for anyone imported that way. Also fixed a real bug found while testing this: company creation (v2.0/v2.1) has been failing outright since it shipped due to a mismatched internal logging call — confirmed and corrected; creating a company should now work end-to-end rather than error out.' },
         { version: 'v2.1', date: '2026-08-03', notes: 'Creating a company now automatically sets it up end to end: if an Owner name is given, an Owner-type employee is created for that company (ID ending in "O"); same for Manager ("M"). An Administrator account is always auto-created for the new company too, with a generated username (based on the company code, guaranteed unique system-wide) and a random password — shown once in an on-screen panel right after creation, since it can\'t be retrieved again later (it can still be reset from the Users tab). "Owner" and "Manager" are now selectable Person Types on the Employees tab too, so if the info wasn\'t provided when the company was created, a Super Admin can add that employee afterward — doing so links their name back to the company\'s Owner/Manager field automatically, both when creating and when editing an employee.' },
         { version: 'v2.0', date: '2026-08-03', notes: 'Administrators can now see the Companies tab, scoped to only their own company — they never see or can switch to another company\'s data there. They can edit their company\'s contact info (Owner, Phone, Email, Manager, Manager Phone); the Company Name and Code stay Super Admin-only to change, and Administrators never see the "Add Company" form (creating and deleting companies remain Super Admin-only actions). Enforced on the database side too, not just hidden in the UI — tested directly that one Administrator cannot edit another company\'s record even by calling the save function directly.' },
@@ -1221,6 +1222,29 @@
     // ===== Shared collapsible record-card list (Employees, Claims, Charges,
     // Income): expand state per table, and a Sort-by dropdown + direction
     // toggle that stands in for the old clickable column headers. =====
+
+    // Cards on phones, a real table on wider screens — every list in the app
+    // that uses this pattern checks this before rendering.
+    function isDesktopView() { return window.matchMedia('(min-width: 600px)').matches; }
+
+    // Re-render whichever of the 9 card/table tabs is currently open, used
+    // when the viewport crosses the mobile/desktop breakpoint (e.g. rotating
+    // a tablet) so the layout switches without needing a manual refresh.
+    function reRenderActiveCardTable() {
+        const active = document.querySelector('.tab-content.active');
+        if (!active) return;
+        if (active.id === 'tab-charges') { renderCharges(); renderIncome(); return; }
+        const map = {
+            'tab-employees': renderEmployees, 'tab-claims': renderClaims,
+            'tab-payroll': renderPayroll, 'tab-users': fetchUsersList,
+            'tab-companies': renderCompanies, 'tab-approvals': renderApprovals, 'tab-log': renderLog
+        };
+        const fn = map[active.id];
+        if (fn) fn();
+    }
+    try {
+        window.matchMedia('(min-width: 600px)').addEventListener('change', reRenderActiveCardTable);
+    } catch (e) { /* older browsers: ignore */ }
 
     function toggleRecCard(table, id) {
         const set = recExpanded[table];
@@ -1789,6 +1813,34 @@
         const formPanel = document.getElementById('company-form-panel');
         if (formPanel) formPanel.style.display = (currentUserRole === 'SuperAdmin' || editingCompanyCode) ? 'block' : 'none';
 
+        if (isDesktopView()) {
+            container.className = '';
+            if (!companies.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>'; return; }
+            let rows = '';
+            companies.forEach(c => {
+                const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === c.code);
+                let actions = '';
+                if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0 3px 0 0;" onclick="editCompany('${c.code}')">Edit</button>`;
+                if (currentUserRole === 'SuperAdmin') actions += `<button class="del-btn" onclick="deleteCompany('${c.code}')">✕</button>`;
+                rows += `<tr>
+                    <td class="id-cell">${c.code}</td>
+                    <td>${c.name}</td>
+                    <td>${c.owner || '-'}</td>
+                    <td>${c.phone || '-'}</td>
+                    <td>${c.email || '-'}</td>
+                    <td>${c.manager || '-'}</td>
+                    <td>${c.manager_phone || '-'}</td>
+                    <td>${new Date(c.created_at).toLocaleDateString()}</td>
+                    <td style="text-align:center; white-space:nowrap;">${actions}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>Code</th><th>Name</th><th>Owner</th><th>Phone</th><th>Email</th><th>Manager</th><th>Manager Phone</th><th>Created</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            return;
+        }
+
+        container.className = 'record-grid';
         container.innerHTML = companies.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>';
         companies.forEach(c => {
             const open = recExpanded.companies ? recExpanded.companies.has(c.code) : false;
@@ -2287,8 +2339,57 @@
             status: e => e.status || ''
         });
         const container = document.getElementById('employees-tbody');
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No employees found.</div>';
         const editable = canEdit();
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No employees found.</div>'; return; }
+            let rows = '';
+            list.forEach(emp => {
+                const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
+                const d = getEmpDetail(emp.id);
+                const pt = getPayType(emp.id);
+                const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '';
+                const statusCell = editable
+                    ? `<select onchange="setEmployeeStatus('${emp.id}', this.value)" style="padding:3px 4px;font-size:11px;border-radius:5px;">
+                           <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
+                           <option value="Inactive" ${emp.status !== 'Active' ? 'selected' : ''}>Inactive</option>
+                       </select>`
+                    : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
+                const dlExp = d.dl_expiration ? d.dl_expiration + expBadge(d.dl_expiration, 30) : '—';
+                const wpExp = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '—';
+                const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
+                rows += `<tr>
+                    <td class="id-cell">${emp.id}</td>
+                    <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
+                    <td>${emp.person_type}</td>
+                    <td>${escHtml(emp.department) || '-'}</td>
+                    <td>${emp.start_date || '-'}</td>
+                    <td>${d.phone ? escHtml(d.phone) : '-'}</td>
+                    <td>${d.email ? escHtml(d.email) : '-'}</td>
+                    <td class="id-cell">${ssn}</td>
+                    <td>${d.driver_license ? escHtml(d.driver_license) : '—'}</td>
+                    <td>${dlExp}</td>
+                    <td>${d.work_permit ? escHtml(d.work_permit) : '—'}</td>
+                    <td>${wpExp}</td>
+                    <td>${d.medical_card === 'Yes' ? 'Yes' : 'No'}</td>
+                    <td>${medExp}</td>
+                    <td>${escHtml(emp.role_title) || '-'}</td>
+                    <td>${pt}${payToggle}</td>
+                    <td>${statusCell}</td>
+                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>ID</th><th>Name</th><th>Type</th><th>Department</th><th>Start</th><th>Phone</th><th>Email</th>
+                <th>SSN/ITIN</th><th>Driver License</th><th>DL Exp.</th><th>Work Permit</th><th>WP Exp.</th>
+                <th>Medical Card</th><th>Med. Exp.</th><th>Role/Title</th><th>Pay</th><th>Status</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            return;
+        }
+
+        container.className = 'record-grid';
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No employees found.</div>';
         list.forEach(emp => {
             const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
             const d = getEmpDetail(emp.id);
@@ -2625,8 +2726,47 @@
 
     function renderClaimsTable(list) {
         const container = document.getElementById('claims-tbody');
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>';
         const editable = canEdit();
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>'; return; }
+            let rows = '';
+            list.forEach(c => {
+                const emp = employees.find(e => e.id === c.employee_id);
+                const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+                const sched = buildClaimSchedule(c, null);
+                const weeks = sched.rows.filter(r => !r.paused).length;
+                const bal = claimBalance(c);
+                const endDate = sched.endDate || (c.end_date || '—');
+                rows += `<tr>
+                    <td class="id-cell">${c.claim_id}</td>
+                    <td>${empName}</td>
+                    <td class="id-cell">${c.employee_id}</td>
+                    <td>${c.claimant_account || '-'}</td>
+                    <td>${c.company_name || '-'}</td>
+                    <td>${c.carrier_claim_number || '-'}</td>
+                    <td>${c.customer_claim_number || '-'}</td>
+                    <td>${c.damage_type}</td>
+                    <td>${formatMoney(c.claim_amount)}</td>
+                    <td>${weeks}</td>
+                    <td>${formatMoney(bal)}</td>
+                    <td>${formatMoney(c.absorbed_amount)}</td>
+                    <td>${c.start_date || '-'}</td>
+                    <td>${endDate}</td>
+                    <td><span class="status-badge status-${c.status}">${c.status}</span></td>
+                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editClaim('${c.claim_id}')">✎</button><button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕</button>` : ''}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>Claim ID</th><th>Employee</th><th>Emp. ID</th><th>Claimant Acct</th><th>Company</th><th>Carrier #</th><th>Customer #</th>
+                <th>Damage Type</th><th>Amount</th><th>Weeks</th><th>Balance</th><th>Absorbed</th><th>Start</th><th>Ends</th><th>Status</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            return;
+        }
+
+        container.className = 'record-grid';
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>';
         list.forEach(c => {
             const emp = employees.find(e => e.id === c.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
@@ -2725,8 +2865,42 @@
             start: c => c.start_date || ''
         });
         const container = document.getElementById('charges-tbody');
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>';
         const editable = canEdit();
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>'; return; }
+            let rows = '';
+            list.forEach(ch => {
+                const emp = employees.find(e => e.id === ch.employee_id);
+                const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+                const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
+                const bal = remainingBalance(ch.amount, 0, ch.weekly_deduction, ch.start_date, ch.status);
+                const endDate = projectedEndDate(ch.start_date, ch.amount, ch.weekly_deduction) || (ch.end_date || '-');
+                rows += `<tr>
+                    <td class="id-cell">${ch.charge_id}</td>
+                    <td>${empName}</td>
+                    <td class="id-cell">${ch.employee_id}</td>
+                    <td>${ch.charge_type}</td>
+                    <td>${formatMoney(ch.amount)}</td>
+                    <td>${formatMoney(ch.weekly_deduction)}</td>
+                    <td>${weeks}</td>
+                    <td>${formatMoney(bal)}</td>
+                    <td>${ch.start_date || '-'}</td>
+                    <td>${endDate}</td>
+                    <td><span class="status-badge status-${ch.status}">${ch.status}</span></td>
+                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editCharge('${ch.charge_id}')">✎</button><button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕</button>` : ''}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>Charge ID</th><th>Employee</th><th>Emp. ID</th><th>Type</th><th>Amount</th><th>Weekly</th><th>Weeks</th><th>Balance</th><th>Start</th><th>Ends</th><th>Status</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            updateRecSortUI('charges');
+            return;
+        }
+
+        container.className = 'record-grid';
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>';
         list.forEach(ch => {
             const emp = employees.find(e => e.id === ch.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
@@ -2859,8 +3033,42 @@
         const container = document.getElementById('income-tbody');
         if (!container) return;
         if (incomeTableMissing) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#b45309; padding:1rem;">Run the income setup SQL (the <strong>additional_income</strong> table) to start logging additional income.</div>'; return; }
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>';
         const editable = canEdit();
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>'; return; }
+            let rows = '';
+            list.forEach(i => {
+                const emp = employees.find(e => e.id === i.employee_id);
+                const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+                const weeks = weeksNeeded(i.amount, i.weekly_amount);
+                const rem = incomeRemaining(i);
+                const endDate = projectedEndDate(i.start_date, i.amount, i.weekly_amount) || (i.end_date || '-');
+                rows += `<tr>
+                    <td class="id-cell">${i.income_id}</td>
+                    <td>${empName}</td>
+                    <td class="id-cell">${i.employee_id}</td>
+                    <td>${i.income_type}</td>
+                    <td>${formatMoney(i.amount)}</td>
+                    <td>${formatMoney(i.weekly_amount)}</td>
+                    <td>${weeks}</td>
+                    <td>${formatMoney(rem)}</td>
+                    <td>${i.start_date || '-'}</td>
+                    <td>${endDate}</td>
+                    <td><span class="status-badge status-${i.status}">${i.status}</span></td>
+                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editIncome('${i.income_id}')">✎</button><button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕</button>` : ''}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>Income ID</th><th>Employee</th><th>Emp. ID</th><th>Type</th><th>Amount</th><th>Weekly</th><th>Weeks</th><th>Remaining</th><th>Start</th><th>Ends</th><th>Status</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            updateRecSortUI('income');
+            return;
+        }
+
+        container.className = 'record-grid';
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>';
         list.forEach(i => {
             const emp = employees.find(e => e.id === i.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
@@ -3494,6 +3702,44 @@
 
         let totBase = 0, totRoute = 0, totIncome = 0, totGross = 0, totDed = 0, totNet = 0;
         const container = document.getElementById('payroll-tbody');
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>'; renderPayrollFoot(0, 0, 0, 0, 0, 0); return; }
+            let rows = '';
+            list.forEach(emp => {
+                const isDaily = getPayType(emp.id) === 'Daily';
+                const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
+                const routePay = currentWeekRoutePay(emp);
+                const income = activeWeeklyIncome(emp.id);
+                const gross = base + routePay + income;
+                const ded = activeWeeklyDeductions(emp.id);
+                const net = gross - ded;
+                totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
+                const open = recExpanded.payroll.has(emp.id);
+                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('payroll','${emp.id}')">
+                    <td class="id-cell"><span class="rec-caret">${open ? '▾' : '▸'}</span> ${emp.id}</td>
+                    <td>${emp.first_name} ${emp.last_name}</td>
+                    <td>${emp.person_type}</td>
+                    <td>${formatMoney(base)}${isDaily ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : ''}</td>
+                    <td>${formatMoney(routePay)}</td>
+                    <td>${formatMoney(income)}</td>
+                    <td>${formatMoney(gross)}</td>
+                    <td style="color:#dc2626;">${ded > 0 ? '−' + formatMoney(ded) : formatMoney(0)}</td>
+                    <td style="font-weight:700;">${formatMoney(net)}</td>
+                </tr>
+                <tr class="rec-card${open ? ' open' : ''}" id="rec-payroll-${emp.id}" style="display:${open ? 'table-row' : 'none'};">
+                    <td colspan="9" style="padding:0; background:var(--surface-2);">${payrollDetailHtml(emp, isDaily, base, routePay, ded, income)}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>ID</th><th>Name</th><th>Type</th><th>Base (wk)</th><th>Route (wk)</th><th>Income (wk)</th><th>Gross</th><th>Deductions</th><th>Net</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            renderPayrollFoot(list.length, totBase, totRoute, totGross, totDed, totNet);
+            return;
+        }
+
+        container.className = 'record-grid';
         container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>';
 
         list.forEach(emp => {
@@ -3530,11 +3776,15 @@
                 </div>`);
         });
 
+        renderPayrollFoot(list.length, totBase, totRoute, totGross, totDed, totNet);
+    }
+
+    function renderPayrollFoot(count, totBase, totRoute, totGross, totDed, totNet) {
         const foot = document.getElementById('payroll-foot');
         if (foot) {
-            foot.innerHTML = list.length ? `
+            foot.innerHTML = count ? `
                 <div style="text-align:right; font-weight:700; padding:8px 4px; border-top:1px solid var(--border); margin-top:6px; font-size:13px;">
-                    Totals (${list.length}) · Base ${formatMoney(totBase)} · Route ${formatMoney(totRoute)} · Gross ${formatMoney(totGross)} ·
+                    Totals (${count}) · Base ${formatMoney(totBase)} · Route ${formatMoney(totRoute)} · Gross ${formatMoney(totGross)} ·
                     Deductions ${totDed > 0 ? '−' + formatMoney(totDed) : formatMoney(0)} · Net ${formatMoney(totNet)}
                 </div>` : '';
         }
@@ -3542,7 +3792,7 @@
         const grid = document.getElementById('payroll-stats-grid');
         if (grid) {
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">People</div><div class="stat-value">${list.length}</div></div>
+                <div class="stat-card"><div class="stat-label">People</div><div class="stat-value">${count}</div></div>
                 <div class="stat-card"><div class="stat-label">Gross (wk)</div><div class="stat-value">${formatMoney(totGross)}</div></div>
                 <div class="stat-card"><div class="stat-label">Deductions (wk)</div><div class="stat-value">${formatMoney(totDed)}</div></div>
                 <div class="stat-card"><div class="stat-label">Net Pay (wk)</div><div class="stat-value">${formatMoney(totNet)}</div></div>
@@ -3791,6 +4041,32 @@
         container.innerHTML = '';
         if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
         if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No pending requests.</div>'; return; }
+
+        if (isDesktopView()) {
+            container.className = '';
+            let rows = '';
+            data.forEach(p => {
+                rows += `<tr>
+                    <td>${p.requested_by}</td>
+                    <td>${p.table_name}</td>
+                    <td class="id-cell">${p.record_id}</td>
+                    <td>${p.field_name}</td>
+                    <td>${p.old_value ?? '-'}</td>
+                    <td>${p.new_value ?? '-'}</td>
+                    <td>${new Date(p.requested_at).toLocaleString()}</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button class="btn-small" style="background:var(--primary); margin:0 3px 0 0;" onclick="approveChange(${p.id})">Approve</button>
+                        <button class="del-btn" onclick="rejectChange(${p.id})">✕</button>
+                    </td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>Requested By</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th><th>Requested</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            return;
+        }
+
+        container.className = 'record-grid';
         data.forEach(p => {
             const open = recExpanded.approvals ? recExpanded.approvals.has(p.id) : false;
             container.insertAdjacentHTML('beforeend', `
@@ -3849,7 +4125,7 @@
         }
 
         const { data, error } = await supabaseClient.rpc('list_audit_log', { p_actor: currentUsername, p_company: currentCompany, p_limit: 300 });
-        if (error) { tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="7" style="text-align:center;color:#ef4444;">${error.message}</td></tr>`); return; }
+        if (error) { tbody.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
 
         let rows = data || [];
         if (currentUserRole !== 'SuperAdmin') {
@@ -3867,6 +4143,28 @@
 
         const container = document.getElementById('log-tbody');
         if (!rows.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No changes logged yet.</div>'; return; }
+
+        if (isDesktopView()) {
+            container.className = '';
+            let trs = '';
+            rows.forEach(a => {
+                trs += `<tr>
+                    <td>${new Date(a.changed_at).toLocaleString()}</td>
+                    <td>${a.actor}</td>
+                    <td>${a.table_name}</td>
+                    <td class="id-cell">${a.record_id}</td>
+                    <td>${a.field_name}</td>
+                    <td>${a.old_value ?? '-'}</td>
+                    <td>${a.new_value ?? '-'}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>When</th><th>Who</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th>
+            </tr></thead><tbody>${trs}</tbody></table></div>`;
+            return;
+        }
+
+        container.className = 'record-grid';
         container.innerHTML = '';
         rows.forEach((a, i) => {
             const open = recExpanded.log ? recExpanded.log.has(i) : false;
@@ -4073,6 +4371,37 @@
             return;
         }
 
+        if (isDesktopView()) {
+            container.className = '';
+            let rows = '';
+            data.forEach(u => {
+                try {
+                    const canManage = u.can_manage && (currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator');
+                    let roleCell = `<span class="type-pill">${u.role}</span>`;
+                    if (canManage) {
+                        const roles = allowedRolesForActor();
+                        const opts = roles.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`).join('');
+                        roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
+                    }
+                    const actionHtml = u.can_manage
+                        ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
+                        : '<span style="color:#94a3b8; font-size:11px;">Restricted</span>';
+                    rows += `<tr>
+                        <td>${u.username}</td>
+                        <td class="id-cell">${u.employee_id || '-'}</td>
+                        <td>${roleCell}</td>
+                        <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                        <td style="text-align:center; white-space:nowrap;">${actionHtml}</td>
+                    </tr>`;
+                } catch (e) { console.error('user row render failed for', u && u.username, e); }
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>Username</th><th>Employee ID</th><th>Role</th><th>Created</th><th>Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            return;
+        }
+
+        container.className = 'record-grid';
         container.innerHTML = '';
         data.forEach(u => {
             try {
