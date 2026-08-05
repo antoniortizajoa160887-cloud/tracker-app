@@ -641,9 +641,9 @@
             <div class="field field-wide"><input type="text" id="employee-search" placeholder="Search name, ID, department, type..." oninput="renderEmployees()"></div>
             <div class="field">
                 <select id="employee-status-filter" onchange="renderEmployees()">
-                    <option value="">All statuses</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
+                    <option value="">All statuses</option>
                 </select>
             </div>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()">Export CSV</button>
@@ -978,6 +978,20 @@
 
     <div class="panel">
         <div class="stat-grid" id="payroll-stats-grid"></div>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-payroll" onchange="setSortField('payroll', this.value)">
+                <option value="employee">Employee</option>
+                <option value="id">ID</option>
+                <option value="type">Type</option>
+                <option value="base">Base (wk)</option>
+                <option value="gross">Gross</option>
+                <option value="deductions">Deductions</option>
+                <option value="net">Net</option>
+                <option value="status">Status</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-payroll" onclick="flipSortDir('payroll')">▲</button>
+        </div>
         <div id="payroll-tbody" class="record-grid"></div>
         <div id="payroll-foot"></div>
     </div>
@@ -1071,6 +1085,16 @@
     </div>
     <div class="panel">
         <h2>System Users</h2>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-users" onchange="setSortField('users', this.value)">
+                <option value="username">Username</option>
+                <option value="employee_id">Employee ID</option>
+                <option value="role">Role</option>
+                <option value="created">Created</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-users" onclick="flipSortDir('users')">▲</button>
+        </div>
         <div id="users-table-body" class="record-grid"></div>
     </div>
 </div>
@@ -1097,6 +1121,17 @@
     </div>
     <div class="panel">
         <h2>Companies</h2>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-companies" onchange="setSortField('companies', this.value)">
+                <option value="name">Name</option>
+                <option value="code">Code</option>
+                <option value="owner">Owner</option>
+                <option value="manager">Manager</option>
+                <option value="created">Created</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-companies" onclick="flipSortDir('companies')">▲</button>
+        </div>
         <div id="companies-tbody" class="record-grid"></div>
     </div>
 </div>
@@ -1106,6 +1141,16 @@
     <div class="panel">
         <h2>Pending Approvals</h2>
         <div class="note-box">Locked financial changes (base pay rate, claim amount, weekly deduction) requested by Medium users appear here for Administrator approval.</div>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-approvals" onchange="setSortField('approvals', this.value)">
+                <option value="requested">Requested</option>
+                <option value="requestedby">Requested by</option>
+                <option value="table">Table</option>
+                <option value="field">Field</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-approvals" onclick="flipSortDir('approvals')">▲</button>
+        </div>
         <div id="approvals-tbody" class="record-grid"></div>
     </div>
 </div>
@@ -1115,6 +1160,16 @@
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Change Log <span class="caret">&#9662;</span></h2>
         <div class="note-box">Every applied change to employees, claims, charges, and routes is recorded here.</div>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-log" onchange="setSortField('log', this.value)">
+                <option value="changed">When</option>
+                <option value="who">Who</option>
+                <option value="table">Table</option>
+                <option value="field">Field</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-log" onclick="flipSortDir('log')">▲</button>
+        </div>
         <div id="log-tbody" class="record-grid"></div>
     </div>
 </div>
@@ -1196,8 +1251,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.15';
+    const APP_VERSION = 'v2.17';
     const CHANGELOG = [
+        { version: 'v2.17', date: '2026-08-04', notes: 'Fixed the sort direction (▲/▼) button doing nothing on first tap, needing a dropdown change first to "wake up" — every "Sort by" list defaulted to no sort field selected internally even though its dropdown visually showed one, so flipping direction had nothing to apply itself to until the dropdown was touched. Every sortable list now starts properly sorted by its dropdown\'s default option, so the direction button works immediately. Audited every list in the app for sorting as asked: Payroll, Companies, Users, and the Approvals and Log tabs had no sorting controls at all before this — added the same "Sort by" dropdown + direction button to all five, matching the pattern already used by Employees/Claims/Charges/Income (Payroll: Employee/ID/Type/Base/Gross/Deductions/Net/Status; Companies: Name/Code/Owner/Manager/Created; Users: Username/Employee ID/Role/Created; Approvals: Requested/Requested by/Table/Field; Log: When/Who/Table/Field, defaulting newest-first same as before). Employees now defaults to showing Active only, matching Payroll/Daily Pay/Statement\'s existing default — switch to Inactive or All statuses anytime from the same dropdown.' },
+        { version: 'v2.16', date: '2026-08-04', notes: 'Fixed Charges (and occasionally Claims) sometimes showing an employee as "Unlinked" even though the charge/claim is correctly linked in the database — confirmed on a real example (charge 3OFL00001D → employee 3OFL0031E, Jesus Gonzales Perez) that the data itself was byte-for-byte correct; the problem was purely a display timing issue. Employees, Claims, and Charges all load at the same time on refresh, and Employees now does more work per person (details + user-account links) — so if Employees happens to finish loading last, Charges/Claims can render one beat too early, before the employee list they need to look names up in is actually ready, and every row shows Unlinked. Claims already had a quiet fix for this (a second render once everything settles); Charges never got the same treatment. Added the same fix for Charges (and Additional Income, which has the identical issue), and also made opening the Claims or Charges & Income tab directly always re-render with current data, matching how every other tab already behaves. Nothing to fix in your data — once this update is live, any "Unlinked" row still showing was just stale on screen and will read correctly on the next load.' },
         { version: 'v2.15', date: '2026-08-04', notes: 'Database-only change, no visible app difference: the "auto-switch a claim to Paid a week after it hits $0" feature (added last version) now runs as a true server-side job on Supabase — a scheduled task that checks every "Deducting" claim once a day (06:00 UTC) and settles any that qualify, using the exact same schedule math the app itself displays (weekly deductions from the start date, honoring recorded rate changes and pauses). This means it now works even when nobody has the app open, instead of only checking whenever someone loads the Claims/Payroll data. Removed the version of this check that ran in the browser, since the server job replaces it. Verified live against real claims before turning it on for real: 2 already qualified (paid off with their last scheduled deduction more than a week ago) and were correctly flipped to Paid, with the usual audit trail entry. Worth flagging: one of those two (claim 3OFL00003) was originally imported with status "Paused" from the Excel tracker back in the Claims-import work, and its notes say it still needs a real pause entry added — since that was never added, this claim\'s schedule was calculated as if it deducted continuously with no pause, so it\'s worth double-checking that one specifically rather than just trusting the auto-resolved "Paid" status.' },
         { version: 'v2.14', date: '2026-08-04', notes: 'Carrier claim # and Customer claim # now show alongside Company and Claimant account in the same two spots added last version: Payroll\'s expanded deduction breakdown, and Statement\'s per-claim panel.' },
         { version: 'v2.13', date: '2026-08-04', notes: 'Three additions. (1) Employees without a login now show a "Generate User" button in their expanded detail — mainly for the 126 people brought in through CSV import, which never auto-creates accounts. Uses the same role mapping as adding a new employee (Owner/Manager → Administrator, Staff → Medium, everyone else → View Only) and shows the new username/password once, same as the existing flow. Found and fixed a real problem while building this: the username generator (shared with the existing new-employee flow) builds a username from "first initial + last name" — but most employees here have their whole name in one field with nothing in last name, so it was generating single-letter usernames like "a". Fixed specifically for this new button by splitting the full name on spaces instead when last name is empty, without touching the already-shipped new-employee flow. (2) Claim deductions in Payroll and Statement now also show Company and Claimant Account beneath the claim, when the claim has them set. (3) A claim still marked "Deducting" now automatically switches to "Paid" once its own payment schedule has shown a $0.00 balance for a full week — not the instant it hits zero, so it settles rather than flipping the moment the last dollar clears. This checks quietly on every data refresh; nothing to click.' },
@@ -1275,7 +1332,13 @@
     let settings = { prefix: '3OFL', empDigits: 4, claimDigits: 5, chargeDigits: 5, chargeSuffix: 'D' };
     let filters = { contractor: new Set(), year: new Set(), week: new Set(), date: new Set(), thirdMan: new Set() };
     let expandedState = {};
-    let sortState = { employees: { key: null, dir: 1 }, claims: { key: null, dir: 1 }, charges: { key: null, dir: 1 }, income: { key: null, dir: 1 } };
+    let sortState = {
+        employees: { key: 'name', dir: 1 }, claims: { key: 'employee', dir: 1 },
+        charges: { key: 'employee', dir: 1 }, income: { key: 'employee', dir: 1 },
+        payroll: { key: 'employee', dir: 1 }, companies: { key: 'name', dir: 1 },
+        users: { key: 'username', dir: 1 }, approvals: { key: 'requested', dir: 1 },
+        log: { key: 'changed', dir: -1 }
+    };
 
     function applySort(list, table, getters) {
         const s = sortState[table];
@@ -1342,6 +1405,11 @@
         else if (table === 'claims') renderClaims();
         else if (table === 'charges') renderCharges();
         else if (table === 'income') renderIncome();
+        else if (table === 'payroll') renderPayroll();
+        else if (table === 'companies') renderCompanies();
+        else if (table === 'users') fetchUsersList();
+        else if (table === 'approvals') renderApprovals();
+        else if (table === 'log') renderLog();
     }
     function setSortField(table, key) {
         sortState[table].key = key; sortState[table].dir = 1;
@@ -1549,6 +1617,8 @@
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(tabName).classList.add('active');
         if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        if(tabName === 'tab-claims') renderClaims();
+        if(tabName === 'tab-charges') { renderCharges(); renderIncome(); }
         if(tabName === 'tab-report') renderDailyReport();
         if(tabName === 'tab-users') fetchUsersList();
         if(tabName === 'tab-statement') populateStatementDropdown();
@@ -1902,11 +1972,17 @@
         const formPanel = document.getElementById('company-form-panel');
         if (formPanel) formPanel.style.display = (currentUserRole === 'SuperAdmin' || editingCompanyCode) ? 'block' : 'none';
 
+        const list = applySort(companies, 'companies', {
+            name: c => c.name || '', code: c => c.code || '',
+            owner: c => c.owner || '', manager: c => c.manager || '',
+            created: c => c.created_at || ''
+        });
+
         if (isDesktopView()) {
             container.className = '';
-            if (!companies.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>'; return; }
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>'; return; }
             let rows = '';
-            companies.forEach(c => {
+            list.forEach(c => {
                 const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === c.code);
                 let actions = '';
                 if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0 3px 0 0;" onclick="editCompany('${c.code}')">Edit</button>`;
@@ -1926,12 +2002,13 @@
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th>Code</th><th>Name</th><th>Owner</th><th>Phone</th><th>Email</th><th>Manager</th><th>Manager Phone</th><th>Created</th><th>Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
+            updateRecSortUI('companies');
             return;
         }
 
         container.className = 'record-grid';
-        container.innerHTML = companies.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>';
-        companies.forEach(c => {
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>';
+        list.forEach(c => {
             const open = recExpanded.companies ? recExpanded.companies.has(c.code) : false;
             const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === c.code);
             let actions = '';
@@ -1957,6 +2034,7 @@
                     </div>
                 </div>`);
         });
+        updateRecSortUI('companies');
     }
 
     function editCompany(code) {
@@ -2089,7 +2167,17 @@
         await loadCurrentWeekDaily();    // for Payroll base pay of Daily people
         await loadClaimHistory();        // rate changes + pauses for balances
         await fetchIncomeFromCloud();    // additional income for Payroll
+        // Claims/Charges/Income are fetched concurrently with Employees just
+        // above — if Employees happens to finish loading last (it does more
+        // work per employee now: details + user-account links), Claims/
+        // Charges/Income can render against a still-empty/stale employees
+        // array and every row shows as "Unlinked" until something else
+        // happens to re-render them. Re-render all three now that every
+        // fetch above is guaranteed complete, so nothing is ever left
+        // showing a stale Unlinked.
         if (typeof renderClaims === 'function') renderClaims();
+        if (typeof renderCharges === 'function') renderCharges();
+        if (typeof renderIncome === 'function') renderIncome();
     }
 
     async function fetchRoutesFromCloud() {
@@ -4171,21 +4259,37 @@
             return true;
         });
 
+        // Compute each person's numbers once so both the sort and the two
+        // render branches below can reuse them instead of recalculating.
+        let calc = list.map(emp => {
+            const isDaily = getPayType(emp.id) === 'Daily';
+            const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
+            const routePay = currentWeekRoutePay(emp);
+            const income = activeWeeklyIncome(emp.id);
+            const gross = base + routePay + income;
+            const ded = activeWeeklyDeductions(emp.id, gross);
+            const net = gross - ded;
+            return { emp, isDaily, base, routePay, income, gross, ded, net };
+        });
+        calc = applySort(calc, 'payroll', {
+            employee: c => `${c.emp.first_name} ${c.emp.last_name}`,
+            id: c => c.emp.id,
+            type: c => c.emp.person_type || '',
+            base: c => c.base,
+            gross: c => c.gross,
+            deductions: c => c.ded,
+            net: c => c.net,
+            status: c => c.emp.status || ''
+        });
+
         let totBase = 0, totRoute = 0, totIncome = 0, totGross = 0, totDed = 0, totNet = 0;
         const container = document.getElementById('payroll-tbody');
 
         if (isDesktopView()) {
             container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>'; renderPayrollFoot(0, 0, 0, 0, 0, 0); return; }
+            if (!calc.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>'; renderPayrollFoot(0, 0, 0, 0, 0, 0); return; }
             let rows = '';
-            list.forEach(emp => {
-                const isDaily = getPayType(emp.id) === 'Daily';
-                const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
-                const routePay = currentWeekRoutePay(emp);
-                const income = activeWeeklyIncome(emp.id);
-                const gross = base + routePay + income;
-                const ded = activeWeeklyDeductions(emp.id, gross);
-                const net = gross - ded;
+            calc.forEach(({ emp, isDaily, base, routePay, income, gross, ded, net }) => {
                 totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
                 const open = recExpanded.payroll.has(emp.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('payroll','${emp.id}')">
@@ -4206,22 +4310,15 @@
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th>ID</th><th>Name</th><th>Type</th><th>Base (wk)</th><th>Route (wk)</th><th>Income (wk)</th><th>Gross</th><th>Deductions</th><th>Net</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
-            renderPayrollFoot(list.length, totBase, totRoute, totGross, totDed, totNet);
+            renderPayrollFoot(calc.length, totBase, totRoute, totGross, totDed, totNet);
+            updateRecSortUI('payroll');
             return;
         }
 
         container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>';
+        container.innerHTML = calc.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>';
 
-        list.forEach(emp => {
-            const isDaily = getPayType(emp.id) === 'Daily';
-            const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
-            const routePay = currentWeekRoutePay(emp);
-            const income = activeWeeklyIncome(emp.id);
-            const gross = base + routePay + income;
-            const ded = activeWeeklyDeductions(emp.id, gross);
-            const net = gross - ded;
-
+        calc.forEach(({ emp, isDaily, base, routePay, income, gross, ded, net }) => {
             totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
 
             const open = recExpanded.payroll.has(emp.id);
@@ -4247,7 +4344,8 @@
                 </div>`);
         });
 
-        renderPayrollFoot(list.length, totBase, totRoute, totGross, totDed, totNet);
+        renderPayrollFoot(calc.length, totBase, totRoute, totGross, totDed, totNet);
+        updateRecSortUI('payroll');
     }
 
     function renderPayrollFoot(count, totBase, totRoute, totGross, totDed, totNet) {
@@ -4554,10 +4652,15 @@
         if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
         if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No pending requests.</div>'; return; }
 
+        const list = applySort(data, 'approvals', {
+            requested: p => p.requested_at || '', requestedby: p => p.requested_by || '',
+            table: p => p.table_name || '', field: p => p.field_name || ''
+        });
+
         if (isDesktopView()) {
             container.className = '';
             let rows = '';
-            data.forEach(p => {
+            list.forEach(p => {
                 rows += `<tr>
                     <td>${p.requested_by}</td>
                     <td>${p.table_name}</td>
@@ -4575,11 +4678,12 @@
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th>Requested By</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th><th>Requested</th><th>Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
+            updateRecSortUI('approvals');
             return;
         }
 
         container.className = 'record-grid';
-        data.forEach(p => {
+        list.forEach(p => {
             const open = recExpanded.approvals ? recExpanded.approvals.has(p.id) : false;
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-approvals-${p.id}">
@@ -4605,6 +4709,7 @@
                     </div>
                 </div>`);
         });
+        updateRecSortUI('approvals');
     }
 
     async function approveChange(id) {
@@ -4656,6 +4761,11 @@
         const container = document.getElementById('log-tbody');
         if (!rows.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No changes logged yet.</div>'; return; }
 
+        rows = applySort(rows, 'log', {
+            changed: a => a.changed_at || '', who: a => a.actor || '',
+            table: a => a.table_name || '', field: a => a.field_name || ''
+        });
+
         if (isDesktopView()) {
             container.className = '';
             let trs = '';
@@ -4673,6 +4783,7 @@
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th>When</th><th>Who</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th>
             </tr></thead><tbody>${trs}</tbody></table></div>`;
+            updateRecSortUI('log');
             return;
         }
 
@@ -4699,6 +4810,7 @@
                     </div>
                 </div>`);
         });
+        updateRecSortUI('log');
     }
 
     // ===== Appearance (Light / Dark theme) =====
@@ -4889,6 +5001,11 @@
             return;
         }
 
+        data = applySort(data, 'users', {
+            username: u => u.username || '', employee_id: u => u.employee_id || '',
+            role: u => u.role || '', created: u => u.created_at || ''
+        });
+
         if (isDesktopView()) {
             container.className = '';
             let rows = '';
@@ -4916,6 +5033,7 @@
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th>Username</th><th>Employee ID</th><th>Role</th><th>Created</th><th>Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
+            updateRecSortUI('users');
             return;
         }
 
@@ -4955,6 +5073,7 @@
                 console.error('user row render failed for', u && u.username, e);
             }
         });
+        updateRecSortUI('users');
     }
 
     async function resetUserPassword(usernameToReset) {
