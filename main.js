@@ -3,13 +3,23 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
+// Uses the GitHub Contents API (not raw.githubusercontent.com) because that
+// raw host sits behind a CDN that can serve a stale cached copy for a while
+// after a push. The API's cache is much shorter-lived (~60s).
 const REMOTE_HTML_URL =
-  'https://raw.githubusercontent.com/antoniortizajoa160887-cloud/tracker-app/main/index.html';
+  'https://api.github.com/repos/antoniortizajoa160887-cloud/tracker-app/contents/index.html?ref=main';
 const FETCH_TIMEOUT_MS = 8000;
 
 function fetchRemoteHtml(url, redirectsLeft = 3) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { timeout: FETCH_TIMEOUT_MS }, (res) => {
+    const options = {
+      timeout: FETCH_TIMEOUT_MS,
+      headers: {
+        Accept: 'application/vnd.github.raw',
+        'User-Agent': 'unified-logistics-hr-dashboard-desktop',
+      },
+    };
+    const req = https.get(url, options, (res) => {
       if (
         [301, 302, 307, 308].includes(res.statusCode) &&
         res.headers.location &&
