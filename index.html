@@ -1223,14 +1223,9 @@
 <!-- TAB: CHANGELOG (SuperAdmin + Administrator only) -->
 <div id="tab-changelog" class="tab-content">
     <div class="panel">
-        <h2>Version History</h2>
-        <div class="note-box">Every change delivered to this app, newest first. Only visible to Super Admin.</div>
+        <h2>Changelog</h2>
+        <div class="note-box">Every change delivered to this app, newest first — stored server-side so this history survives even across app file changes. Only visible to Super Admin.</div>
         <div id="changelog-tbody" class="record-grid"></div>
-    </div>
-    <div class="panel">
-        <h2>System Changelog</h2>
-        <div class="note-box">Database-level changes (schema, security, data resets), stored server-side so this history survives even across app file changes. Only visible to Super Admin.</div>
-        <div id="system-changelog-tbody" class="record-grid"></div>
     </div>
 </div>
 </div>
@@ -1270,8 +1265,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.23';
+    const APP_VERSION = 'v2.24';
     const CHANGELOG = [
+        { version: 'v2.24', date: '2026-08-05', notes: 'Fixed Daily Pay not saving — the exact same underlying issue as last version\'s Weekly/Daily pay-type bug, just on a different table: the security fix before that had removed direct read access to the daily pay table, which broke the kind of save this screen uses the same way. Moved it to the same kind of dedicated database function. Checked every other screen in the app for this same pattern and confirmed nothing else is affected. Also merged the Changelog tab\'s two lists (Version History and System Changelog) into one, since they were showing the same information twice — it now reads entirely from the database-backed list, including the full history back to v1.0, so this record survives independently of whatever app file is deployed. Still Super Admin only.' },
         { version: 'v2.23', date: '2026-08-05', notes: 'Full database reset and security hardening, at your request. Wiped every operational table clean (companies, employees, claims, charges, routes, income, daily pay, and everything tied to them) — reused the existing Damage Type / Charge Type / Income Type lists rather than losing them. Every table connected to a company, employee, or claim now has a real enforced connection at the database level, so deleting something always takes everything that belongs to it with it — verified directly, not just assumed. SSN/ITIN, driver license, and work permit numbers are now encrypted in storage — previously they were kept as plain readable text; confirmed the raw stored values are now unreadable without going through the app\'s own access controls. Created the Super Admin account. New: a database-backed System Changelog (Changelog tab, second panel) that survives independently of this app file — visible to Super Admin only, same as the regular Version History above it, which is no longer visible to Administrators. Also closed a smaller gap found while doing this: the Damage/Charge/Income Type lists in Settings could previously be edited by anyone logged in, including View Only accounts — now requires Medium role or above, same as everything else that changes shared data.' },
         { version: 'v2.22', date: '2026-08-05', notes: 'Fixed switching an employee between Weekly and Daily pay — it started failing right after last version\'s security fix. That fix (correctly) removed direct read access to the pay-type table, but Postgres needs that same read access internally to process the kind of save this screen uses, so every attempt started failing outright the moment the security fix went live. Moved the save itself to a dedicated database function that doesn\'t hit that limitation, and fixed a related issue: a failed save was still showing the attempted new value on screen instead of the real one, so it looked like it worked right up until the page was reloaded — a failed save now visibly reverts immediately instead of silently lying. Checked the underlying data directly: it\'s accurate — 118 of 127 people are correctly Daily and the other 9 are Staff roles that are genuinely Weekly-salary, not a mistake. If anyone still shows the wrong pay type after this update, it should now be safe to correct and have it actually stick.' },
         { version: 'v2.21', date: '2026-08-05', notes: '"Delete All Users" (Data Sync) is fixed — it was calling a database function that had never actually been created, so every click failed outright. Now works the same way deleting one user at a time already does (Administrators can only remove non-SuperAdmin accounts in their own company; Super Admin can remove anyone but themselves). Users can now have their linked Employee ID changed or cleared directly (🪪 Edit ID button, Users tab) instead of needing the account deleted and recreated — an employee can never be linked to more than one account at the same time, enforced at the database level, and the employee must belong to that user\'s own company. Also revised claim rate-change and pause/resume: a new weekly amount can no longer be negative or duplicate an existing effective date for the same claim, and a pause\'s expected resume date must actually be after its start date and can no longer overlap an existing pause window for that claim — all of these were previously accepted without any check.' },
@@ -1328,45 +1324,30 @@
 
     // Administration > Changelog tab — same data as the version-badge popup,
     // laid out as the same collapsible cards used everywhere else in the app.
-    function renderChangelogTab() {
+    // Administration > Changelog tab — now sourced entirely from the
+    // DB-backed system_changelog table (Super Admin only), so this history
+    // persists independently of whatever app file happens to be deployed.
+    // The version-badge popup (tap bottom-right) still uses the local
+    // CHANGELOG array above — that's a quick glance for any user, unrelated
+    // to this SuperAdmin-only tab.
+    async function renderChangelogTab() {
         const container = document.getElementById('changelog-tbody');
-        if (!container) return;
-        container.innerHTML = CHANGELOG.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No versions logged yet.</div>';
-        CHANGELOG.forEach((c, i) => {
-            const open = recExpanded.changelog.has(i);
-            const isCurrent = i === 0;
-            container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card${open ? ' open' : ''}" id="rec-changelog-${i}">
-                    <div class="rec-card-head" onclick="toggleRecCard('changelog',${i})">
-                        <span class="rec-caret" data-caret="changelog-${i}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${c.version}</span>
-                        <span class="rec-sub">${c.date}</span>
-                        <span class="rec-right">${isCurrent ? '<span class="status-badge status-active">Current</span>' : ''}</span>
-                    </div>
-                    <div class="rec-card-body">
-                        <div style="font-size:12px; line-height:1.5;">${c.notes}</div>
-                    </div>
-                </div>`);
-        });
-        renderSystemChangelog();
-    }
-
-    async function renderSystemChangelog() {
-        const container = document.getElementById('system-changelog-tbody');
         if (!container || currentUserRole !== 'SuperAdmin') return;
         container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
         const { data, error } = await supabaseClient.rpc('list_system_changelog', { p_actor: currentUsername });
         if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${escHtml(error.message)}</div>`; return; }
-        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No entries yet.</div>'; return; }
+        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No versions logged yet.</div>'; return; }
         container.innerHTML = '';
-        data.forEach(c => {
-            const open = recExpanded.changelog.has('sys-' + c.id);
+        data.forEach((c, i) => {
+            const open = recExpanded.changelog.has(c.id);
+            const isCurrent = i === 0;
             container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card${open ? ' open' : ''}" id="rec-changelog-sys-${c.id}">
-                    <div class="rec-card-head" onclick="toggleRecCard('changelog','sys-${c.id}')">
-                        <span class="rec-caret" data-caret="changelog-sys-${c.id}">${open ? '▾' : '▸'}</span>
+                <div class="rec-card${open ? ' open' : ''}" id="rec-changelog-${c.id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('changelog',${c.id})">
+                        <span class="rec-caret" data-caret="changelog-${c.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${escHtml(c.version)}</span>
-                        <span class="rec-sub">${c.entry_date}${c.created_by ? ' · ' + escHtml(c.created_by) : ''}</span>
+                        <span class="rec-sub">${c.entry_date}</span>
+                        <span class="rec-right">${isCurrent ? '<span class="status-badge status-active">Current</span>' : ''}</span>
                     </div>
                     <div class="rec-card-body">
                         <div style="font-size:12px; line-height:1.5;">${escHtml(c.notes)}</div>
@@ -4255,27 +4236,18 @@
     } catch (e) { /* older browsers: ignore */ }
     function saveDailyCell(empId, dayIndex, amount, isOff) {
         if (dailyTableMissing) return;
-        const co = requireWriteCompany();
-        if (!co) return;
         const key = `${empId}-${dayIndex}`;
         clearTimeout(_dailySaveTimers[key]);
         _dailySaveTimers[key] = setTimeout(async () => {
-            const payload = {
-                company_code: co,
-                employee_id: empId,
-                year: dailyView.year,
-                week: dailyView.week,
-                day_index: dayIndex,
-                amount: amount,
-                is_off: isOff
-            };
             try {
-                const { error } = await supabaseClient
-                    .from('daily_pay')
-                    .upsert(payload, { onConflict: 'employee_id,year,week,day_index' });
+                const { error } = await supabaseClient.rpc('save_daily_pay', {
+                    p_actor: currentUsername, p_employee_id: empId,
+                    p_year: dailyView.year, p_week: dailyView.week, p_day_index: dayIndex,
+                    p_amount: amount, p_is_off: isOff
+                });
                 if (error) {
                     if (isMissingTable(error)) { dailyTableMissing = true; renderDailyPay(); }
-                    else console.error('saveDailyCell:', error);
+                    else { console.error('saveDailyCell:', error); alert('Could not save: ' + error.message); }
                     return;
                 }
                 flashSaved();
