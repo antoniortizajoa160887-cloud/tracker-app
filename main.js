@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
+const { execFileSync } = require('child_process');
 
 const DEFAULT_APP_NAME = 'Unified Logistics HR Claims Dashboard';
 
@@ -118,25 +119,44 @@ function deriveDialogTitle(message) {
   return DEFAULT_APP_NAME;
 }
 
+// Electron never implemented window.prompt() (alert/confirm map to real
+// native dialogs; prompt() just rejects with "prompt() is and will not be
+// supported."). This shows a genuine native Windows input box instead,
+// blocking synchronously just like a real prompt() would.
+function showNativePrompt(message, defaultValue) {
+  const title = deriveDialogTitle(message);
+  const escape = (s) => String(s == null ? '' : s).replace(/'/g, "''");
+  const script = `Add-Type -AssemblyName Microsoft.VisualBasic; [Console]::Out.Write([Microsoft.VisualBasic.Interaction]::InputBox('${escape(
+    message
+  )}', '${escape(title)}', '${escape(defaultValue)}'))`;
+  try {
+    return execFileSync(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
+      { encoding: 'utf8' }
+    );
+  } catch (err) {
+    return '';
+  }
+}
+
 function injectDialogTitleOverride(win) {
   win.webContents
     .executeJavaScript(
       `(function(){
         if (window.__dialogTitleOverrideInstalled) return;
         window.__dialogTitleOverrideInstalled = true;
-        var bridge = window.__dialogTitleBridge;
-        if (!bridge) return;
+        var titleBridge = window.__dialogTitleBridge;
+        var promptBridge = window.__nativePromptBridge;
         var origConfirm = window.confirm;
-        var origPrompt = window.prompt;
         window.confirm = function(message) {
-          bridge.setTitle(message);
+          if (titleBridge) titleBridge.setTitle(message);
           try { return origConfirm.call(window, message); }
-          finally { bridge.setTitle(null); }
+          finally { if (titleBridge) titleBridge.setTitle(null); }
         };
         window.prompt = function(message, defaultValue) {
-          bridge.setTitle(message);
-          try { return origPrompt.call(window, message, defaultValue); }
-          finally { bridge.setTitle(null); }
+          if (!promptBridge) return null;
+          return promptBridge.prompt(message, defaultValue);
         };
       })();`
     )
@@ -163,10 +183,11 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // sandbox:true blocks window.prompt() (used by several admin actions,
-      // e.g. the "Delete All ..." confirmations) — it rejects instead of
-      // showing a dialog. nodeIntegration:false + contextIsolation:true
-      // already keep the page from touching Node/Electron internals.
+      // sandbox:true blocked window.confirm() dialogs entirely (used by the
+      // "Delete All ..." admin actions). window.prompt() is a separate story
+      // — see showNativePrompt below, Electron never implements it at all.
+      // nodeIntegration:false + contextIsolation:true already keep the page
+      // from touching Node/Electron internals, sandbox:false doesn't change that.
       sandbox: false,
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -188,6 +209,10 @@ async function createWindow() {
 ipcMain.on('set-dialog-title', (event, message) => {
   app.setName(message ? deriveDialogTitle(message) : DEFAULT_APP_NAME);
   event.returnValue = true;
+});
+
+ipcMain.on('native-prompt', (event, message, defaultValue) => {
+  event.returnValue = showNativePrompt(message, defaultValue);
 });
 
 app.whenReady().then(() => {
