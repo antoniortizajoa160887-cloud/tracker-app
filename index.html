@@ -1224,8 +1224,13 @@
 <div id="tab-changelog" class="tab-content">
     <div class="panel">
         <h2>Version History</h2>
-        <div class="note-box">Every change delivered to this app, newest first. Only visible to Super Admin and Administrator users.</div>
+        <div class="note-box">Every change delivered to this app, newest first. Only visible to Super Admin.</div>
         <div id="changelog-tbody" class="record-grid"></div>
+    </div>
+    <div class="panel">
+        <h2>System Changelog</h2>
+        <div class="note-box">Database-level changes (schema, security, data resets), stored server-side so this history survives even across app file changes. Only visible to Super Admin.</div>
+        <div id="system-changelog-tbody" class="record-grid"></div>
     </div>
 </div>
 </div>
@@ -1265,8 +1270,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.22';
+    const APP_VERSION = 'v2.23';
     const CHANGELOG = [
+        { version: 'v2.23', date: '2026-08-05', notes: 'Full database reset and security hardening, at your request. Wiped every operational table clean (companies, employees, claims, charges, routes, income, daily pay, and everything tied to them) — reused the existing Damage Type / Charge Type / Income Type lists rather than losing them. Every table connected to a company, employee, or claim now has a real enforced connection at the database level, so deleting something always takes everything that belongs to it with it — verified directly, not just assumed. SSN/ITIN, driver license, and work permit numbers are now encrypted in storage — previously they were kept as plain readable text; confirmed the raw stored values are now unreadable without going through the app\'s own access controls. Created the Super Admin account. New: a database-backed System Changelog (Changelog tab, second panel) that survives independently of this app file — visible to Super Admin only, same as the regular Version History above it, which is no longer visible to Administrators. Also closed a smaller gap found while doing this: the Damage/Charge/Income Type lists in Settings could previously be edited by anyone logged in, including View Only accounts — now requires Medium role or above, same as everything else that changes shared data.' },
         { version: 'v2.22', date: '2026-08-05', notes: 'Fixed switching an employee between Weekly and Daily pay — it started failing right after last version\'s security fix. That fix (correctly) removed direct read access to the pay-type table, but Postgres needs that same read access internally to process the kind of save this screen uses, so every attempt started failing outright the moment the security fix went live. Moved the save itself to a dedicated database function that doesn\'t hit that limitation, and fixed a related issue: a failed save was still showing the attempted new value on screen instead of the real one, so it looked like it worked right up until the page was reloaded — a failed save now visibly reverts immediately instead of silently lying. Checked the underlying data directly: it\'s accurate — 118 of 127 people are correctly Daily and the other 9 are Staff roles that are genuinely Weekly-salary, not a mistake. If anyone still shows the wrong pay type after this update, it should now be safe to correct and have it actually stick.' },
         { version: 'v2.21', date: '2026-08-05', notes: '"Delete All Users" (Data Sync) is fixed — it was calling a database function that had never actually been created, so every click failed outright. Now works the same way deleting one user at a time already does (Administrators can only remove non-SuperAdmin accounts in their own company; Super Admin can remove anyone but themselves). Users can now have their linked Employee ID changed or cleared directly (🪪 Edit ID button, Users tab) instead of needing the account deleted and recreated — an employee can never be linked to more than one account at the same time, enforced at the database level, and the employee must belong to that user\'s own company. Also revised claim rate-change and pause/resume: a new weekly amount can no longer be negative or duplicate an existing effective date for the same claim, and a pause\'s expected resume date must actually be after its start date and can no longer overlap an existing pause window for that claim — all of these were previously accepted without any check.' },
         { version: 'v2.20', date: '2026-08-04', notes: 'Security fix — the "Unlinked" name on that income row turned out to be a symptom of something bigger: Additional Income, Employee Details (phone/email/driver\'s license/medical card), Daily Pay, employee pay-type, and claim rate-change/pause history were all readable directly by any logged-in account, with no scoping by company or role at all. In practice this meant a View Only account could see every coworker\'s bonus amounts, personal contact and license info, and daily earnings — not just their own — and it wasn\'t scoped to one company either. All six now go through the same properly-scoped access every other part of the app already uses (a View Only account sees only their own record; other roles see their own company). The reported symptom is also gone as a side effect: a View Only account now simply doesn\'t see other people\'s records at all, so there\'s nothing left to show as "Unlinked."' },
@@ -1339,6 +1345,31 @@
                     </div>
                     <div class="rec-card-body">
                         <div style="font-size:12px; line-height:1.5;">${c.notes}</div>
+                    </div>
+                </div>`);
+        });
+        renderSystemChangelog();
+    }
+
+    async function renderSystemChangelog() {
+        const container = document.getElementById('system-changelog-tbody');
+        if (!container || currentUserRole !== 'SuperAdmin') return;
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
+        const { data, error } = await supabaseClient.rpc('list_system_changelog', { p_actor: currentUsername });
+        if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${escHtml(error.message)}</div>`; return; }
+        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No entries yet.</div>'; return; }
+        container.innerHTML = '';
+        data.forEach(c => {
+            const open = recExpanded.changelog.has('sys-' + c.id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-changelog-sys-${c.id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('changelog','sys-${c.id}')">
+                        <span class="rec-caret" data-caret="changelog-sys-${c.id}">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${escHtml(c.version)}</span>
+                        <span class="rec-sub">${c.entry_date}${c.created_by ? ' · ' + escHtml(c.created_by) : ''}</span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div style="font-size:12px; line-height:1.5;">${escHtml(c.notes)}</div>
                     </div>
                 </div>`);
         });
@@ -1779,7 +1810,6 @@
         if (currentUserRole === 'Administrator') {
             document.getElementById('admin-danger-zone').style.display = 'block';
             document.getElementById('btn-tab-approvals').style.display = 'inline-block';
-            document.getElementById('btn-tab-changelog').style.display = 'inline-block';
             document.getElementById('btn-tab-companies').style.display = 'inline-block';
         }
         populateUserRoleOptions();
@@ -2373,12 +2403,17 @@
         };
         employeeDetails[empId] = payload; // optimistic
         try {
-            const { error } = await supabaseClient.from('employee_details')
-                .upsert(payload, { onConflict: 'employee_id' });
+            const { error } = await supabaseClient.rpc('save_employee_details', {
+                p_actor: currentUsername, p_employee_id: empId, p_company: payload.company_code,
+                p_id_type: payload.id_type, p_driver_license: payload.driver_license, p_dl_expiration: payload.dl_expiration,
+                p_work_permit: payload.work_permit, p_work_permit_exp: payload.work_permit_exp,
+                p_medical_card: payload.medical_card, p_medical_card_exp: payload.medical_card_exp,
+                p_notes: payload.notes, p_phone: payload.phone, p_email: payload.email
+            });
             if (error && isMissingTable(error)) {
                 empDetailsMissing = true;
                 alert('The employee_details table is not set up yet — the extra ID fields (license, permit, medical card, notes) were not saved. Run the provided SQL setup once, then re-save.');
-            } else if (error) { console.error('saveEmployeeDetails:', error); }
+            } else if (error) { console.error('saveEmployeeDetails:', error); alert('Could not save: ' + error.message); }
         } catch (e) { console.error('saveEmployeeDetails:', e); }
     }
 
@@ -2822,7 +2857,15 @@
                 medical_card: (get(r, idx.med).toLowerCase() === 'yes') ? 'Yes' : 'No',
                 medical_card_exp: get(r, idx.medExp) || null, notes: get(r, idx.notes)
             };
-            try { await supabaseClient.from('employee_details').upsert(details, { onConflict: 'employee_id' }); } catch (e) {}
+            try {
+                await supabaseClient.rpc('save_employee_details', {
+                    p_actor: currentUsername, p_employee_id: id, p_company: co,
+                    p_id_type: details.id_type, p_driver_license: details.driver_license, p_dl_expiration: details.dl_expiration,
+                    p_work_permit: details.work_permit, p_work_permit_exp: details.work_permit_exp,
+                    p_medical_card: details.medical_card, p_medical_card_exp: details.medical_card_exp,
+                    p_notes: details.notes, p_phone: details.phone, p_email: details.email
+                });
+            } catch (e) {}
             const ptv = (get(r, idx.payType).toLowerCase() === 'daily') ? 'Daily' : 'Weekly';
             await setPayType(id, ptv, co);
             ok++;
@@ -3260,7 +3303,7 @@
             if (!newClaims.length) { alert(`Found ${rows.length} row(s) in "${sheetName}" but none had data in the Employee or Internal RefClaim columns — double-check the sheet has those column headers.`); return; }
 
             if (newDamageTypes.length) {
-                await supabaseClient.from('damage_types').insert(newDamageTypes.map(name => ({ name })));
+                await Promise.all(newDamageTypes.map(name => supabaseClient.rpc('add_type_value', { p_actor: currentUsername, p_kind: 'damage', p_value: name })));
                 damageTypes.push(...newDamageTypes);
             }
 
@@ -4903,7 +4946,7 @@
         e.preventDefault();
         const val = document.getElementById('new-damage-input').value.trim();
         if(!val || damageTypes.includes(val)) return;
-        await supabaseClient.from('damage_types').insert([{ name: val }]);
+        await supabaseClient.rpc('add_type_value', { p_actor: currentUsername, p_kind: 'damage', p_value: val });
         damageTypes.push(val);
         document.getElementById('new-damage-input').value = '';
         renderSettingsLists();
@@ -4913,7 +4956,7 @@
 
     async function removeDamageType(name) {
         if (!name) { alert('Error: could not identify which damage type to delete — try refreshing the page.'); return; }
-        const { error } = await supabaseClient.from('damage_types').delete().eq('name', name);
+        const { error } = await supabaseClient.rpc('remove_type_value', { p_actor: currentUsername, p_kind: 'damage', p_value: name });
         if (error) { alert('Error: ' + error.message); return; }
         damageTypes = damageTypes.filter(d => d !== name);
         renderSettingsLists();
@@ -4925,7 +4968,7 @@
         e.preventDefault();
         const val = document.getElementById('new-charge-type-input').value.trim();
         if(!val || chargeTypes.includes(val)) return;
-        await supabaseClient.from('charge_types').insert([{ name: val }]);
+        await supabaseClient.rpc('add_type_value', { p_actor: currentUsername, p_kind: 'charge', p_value: val });
         chargeTypes.push(val);
         document.getElementById('new-charge-type-input').value = '';
         renderSettingsLists();
@@ -4934,7 +4977,7 @@
 
     async function removeChargeType(name) {
         if (!name) { alert('Error: could not identify which charge type to delete — try refreshing the page.'); return; }
-        const { error } = await supabaseClient.from('charge_types').delete().eq('name', name);
+        const { error } = await supabaseClient.rpc('remove_type_value', { p_actor: currentUsername, p_kind: 'charge', p_value: name });
         if (error) { alert('Error: ' + error.message); return; }
         chargeTypes = chargeTypes.filter(ct => ct !== name);
         renderSettingsLists();
@@ -4945,7 +4988,7 @@
         e.preventDefault();
         const val = document.getElementById('new-income-type-input').value.trim();
         if(!val || incomeTypes.includes(val)) return;
-        const { error } = await supabaseClient.from('income_types').insert([{ name: val }]);
+        const { error } = await supabaseClient.rpc('add_type_value', { p_actor: currentUsername, p_kind: 'income', p_value: val });
         if (error) { alert(isMissingTable(error) ? 'Run the income setup SQL first (the income_types table).' : ('Error: ' + error.message)); return; }
         incomeTypes.push(val);
         document.getElementById('new-income-type-input').value = '';
@@ -4955,7 +4998,7 @@
 
     async function removeIncomeType(name) {
         if (!name) { alert('Error: could not identify which income type to delete — try refreshing the page.'); return; }
-        const { error } = await supabaseClient.from('income_types').delete().eq('name', name);
+        const { error } = await supabaseClient.rpc('remove_type_value', { p_actor: currentUsername, p_kind: 'income', p_value: name });
         if (error) { alert('Error: ' + error.message); return; }
         incomeTypes = incomeTypes.filter(it => it !== name);
         renderSettingsLists();
