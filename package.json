@@ -1,6 +1,6 @@
 {
   "name": "unified-logistics-hr-dashboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Unified Logistics & HR Claims Dashboard desktop app",
   "main": "main.js",
   "private": true,
@@ -18,7 +18,9 @@
     "files": [
       "index.html",
       "main.js",
-      "preload.js"
+      "preload.js",
+      "package.json",
+      "node_modules/**/*"
     ],
     "directories": {
       "output": "dist"
@@ -38,6 +40,16 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://raw.githubusercontent.com/antoniortizajoa160887-cloud/tracker-app/main/installer/",
+        "channel": "latest"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }

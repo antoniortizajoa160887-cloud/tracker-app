@@ -3,8 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const { execFileSync } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 
 const DEFAULT_APP_NAME = 'Unified Logistics HR Claims Dashboard';
+const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 // Uses the GitHub Contents API (not raw.githubusercontent.com) because that
 // raw host sits behind a CDN that can serve a stale cached copy for a while
@@ -83,16 +85,7 @@ function injectStatusBanner(win) {
       : 'Showing the version bundled with the installer — could not reach GitHub';
   const detail = error ? ` (${error})` : '';
   const message = `${label}${detail} — press Ctrl+Shift+R to retry`;
-  win.webContents
-    .executeJavaScript(
-      `(function(){
-        var b = document.createElement('div');
-        b.textContent = ${JSON.stringify(message)};
-        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#b45309;color:#fff;font:12px/1.4 sans-serif;padding:6px 12px;text-align:center;';
-        document.body.appendChild(b);
-      })();`
-    )
-    .catch(() => {});
+  showBanner(win, message, '#b45309');
 }
 
 // Electron's native confirm()/prompt() dialogs title themselves after
@@ -174,6 +167,8 @@ async function forceRefresh(win) {
   await win.loadFile(htmlPath);
 }
 
+let mainWindow = null;
+
 async function createWindow() {
   const htmlPath = await resolveAppHtmlPath();
   const win = new BrowserWindow({
@@ -191,6 +186,11 @@ async function createWindow() {
       sandbox: false,
       preload: path.join(__dirname, 'preload.js'),
     },
+  });
+
+  mainWindow = win;
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null;
   });
 
   win.webContents.on('did-finish-load', () => {
@@ -215,10 +215,59 @@ ipcMain.on('native-prompt', (event, message, defaultValue) => {
   event.returnValue = showNativePrompt(message, defaultValue);
 });
 
+function showBanner(win, message, background) {
+  win.webContents
+    .executeJavaScript(
+      `(function(){
+        var b = document.createElement('div');
+        b.textContent = ${JSON.stringify(message)};
+        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:${background};color:#fff;font:12px/1.4 sans-serif;padding:6px 12px;text-align:center;';
+        document.body.appendChild(b);
+      })();`
+    )
+    .catch(() => {});
+}
+
+// Updates the app itself (this main.js/preload.js/package.json bundle), not
+// index.html — that's handled separately above. Every release that should
+// reach installed users this way needs its package.json "version" bumped;
+// electron-updater compares versions, not file contents.
+function setupAutoUpdater() {
+  if (!app.isPackaged) return;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-downloaded', () => {
+    if (mainWindow) {
+      showBanner(
+        mainWindow,
+        'An app update was downloaded — restarting in 10 seconds to finish installing...',
+        '#15803d'
+      );
+    }
+    setTimeout(() => autoUpdater.quitAndInstall(true, true), 10000);
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('autoUpdater error:', err == null ? err : err.message);
+  });
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    console.error('Initial update check failed:', err.message);
+  });
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch((err) => {
+      console.error('Periodic update check failed:', err.message);
+    });
+  }, UPDATE_CHECK_INTERVAL_MS);
+}
+
 app.whenReady().then(() => {
   app.setName(DEFAULT_APP_NAME);
   Menu.setApplicationMenu(null);
   createWindow();
+  setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
