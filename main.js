@@ -1,7 +1,9 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
+
+const DEFAULT_APP_NAME = 'Unified Logistics HR Claims Dashboard';
 
 // Uses the GitHub Contents API (not raw.githubusercontent.com) because that
 // raw host sits behind a CDN that can serve a stale cached copy for a while
@@ -92,6 +94,55 @@ function injectStatusBanner(win) {
     .catch(() => {});
 }
 
+// Electron's native confirm()/prompt() dialogs title themselves after
+// app.getName() (from package.json's "name" field) — the page has no way to
+// influence that itself. We override confirm/prompt in the page to derive a
+// title from the dialog's message text, set it via IPC just before showing
+// the dialog, then restore the default name once it closes.
+function deriveDialogTitle(message) {
+  const m = String(message || '');
+  const patterns = [
+    [/delete all routes/i, 'Delete All Routes'],
+    [/delete all claims/i, 'Delete All Claims'],
+    [/delete all charges/i, 'Delete All Charges'],
+    [/delete all users/i, 'Delete All Users'],
+    [/reset all data/i, 'Reset All Data'],
+    [/reset system/i, 'System Reset'],
+    [/new password/i, 'Reset Password'],
+  ];
+  for (const [re, title] of patterns) {
+    if (re.test(m)) return title;
+  }
+  const firstLine = m.split('\n')[0].replace(/[:?]\s*$/, '').trim();
+  if (firstLine && firstLine.length <= 60) return firstLine;
+  return DEFAULT_APP_NAME;
+}
+
+function injectDialogTitleOverride(win) {
+  win.webContents
+    .executeJavaScript(
+      `(function(){
+        if (window.__dialogTitleOverrideInstalled) return;
+        window.__dialogTitleOverrideInstalled = true;
+        var bridge = window.__dialogTitleBridge;
+        if (!bridge) return;
+        var origConfirm = window.confirm;
+        var origPrompt = window.prompt;
+        window.confirm = function(message) {
+          bridge.setTitle(message);
+          try { return origConfirm.call(window, message); }
+          finally { bridge.setTitle(null); }
+        };
+        window.prompt = function(message, defaultValue) {
+          bridge.setTitle(message);
+          try { return origPrompt.call(window, message, defaultValue); }
+          finally { bridge.setTitle(null); }
+        };
+      })();`
+    )
+    .catch(() => {});
+}
+
 async function forceRefresh(win) {
   const cachedPath = path.join(app.getPath('userData'), 'index.html');
   try {
@@ -117,10 +168,14 @@ async function createWindow() {
       // showing a dialog. nodeIntegration:false + contextIsolation:true
       // already keep the page from touching Node/Electron internals.
       sandbox: false,
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
-  win.webContents.on('did-finish-load', () => injectStatusBanner(win));
+  win.webContents.on('did-finish-load', () => {
+    injectStatusBanner(win);
+    injectDialogTitleOverride(win);
+  });
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown' && input.control && input.shift && input.key.toLowerCase() === 'r') {
       forceRefresh(win);
@@ -130,7 +185,13 @@ async function createWindow() {
   win.loadFile(htmlPath);
 }
 
+ipcMain.on('set-dialog-title', (event, message) => {
+  app.setName(message ? deriveDialogTitle(message) : DEFAULT_APP_NAME);
+  event.returnValue = true;
+});
+
 app.whenReady().then(() => {
+  app.setName(DEFAULT_APP_NAME);
   Menu.setApplicationMenu(null);
   createWindow();
 

@@ -17,7 +17,8 @@
     "productName": "Unified Logistics HR Claims Dashboard",
     "files": [
       "index.html",
-      "main.js"
+      "main.js",
+      "preload.js"
     ],
     "directories": {
       "output": "dist"
