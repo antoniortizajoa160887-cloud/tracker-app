@@ -1196,8 +1196,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.12';
+    const APP_VERSION = 'v2.14';
     const CHANGELOG = [
+        { version: 'v2.14', date: '2026-08-04', notes: 'Carrier claim # and Customer claim # now show alongside Company and Claimant account in the same two spots added last version: Payroll\'s expanded deduction breakdown, and Statement\'s per-claim panel.' },
+        { version: 'v2.13', date: '2026-08-04', notes: 'Three additions. (1) Employees without a login now show a "Generate User" button in their expanded detail — mainly for the 126 people brought in through CSV import, which never auto-creates accounts. Uses the same role mapping as adding a new employee (Owner/Manager → Administrator, Staff → Medium, everyone else → View Only) and shows the new username/password once, same as the existing flow. Found and fixed a real problem while building this: the username generator (shared with the existing new-employee flow) builds a username from "first initial + last name" — but most employees here have their whole name in one field with nothing in last name, so it was generating single-letter usernames like "a". Fixed specifically for this new button by splitting the full name on spaces instead when last name is empty, without touching the already-shipped new-employee flow. (2) Claim deductions in Payroll and Statement now also show Company and Claimant Account beneath the claim, when the claim has them set. (3) A claim still marked "Deducting" now automatically switches to "Paid" once its own payment schedule has shown a $0.00 balance for a full week — not the instant it hits zero, so it settles rather than flipping the moment the last dollar clears. This checks quietly on every data refresh; nothing to click.' },
         { version: 'v2.12', date: '2026-08-04', notes: 'Fixed Payroll sometimes showing every paid day doubled (e.g. "Wed 8/5" twice, base pay total exactly 2x what it should be) when expanding a person\'s row. Confirmed first that the underlying Daily Pay data itself was never actually duplicated — this was a pure display bug: the function that loads the week\'s daily totals reset a shared list and then filled it back in after a database round-trip, so if it got triggered twice in quick succession (switching a Payroll filter, for instance), both calls could end up dropping their rows into the same list together. Rebuilt it to assemble each call\'s results separately and swap them in only once, fully finished, so overlapping calls can no longer double up. Applied the same fix to claim rate-change/pause history for the same underlying reason. Also reworked how Weekly Deductions and Additional Income are displayed in Payroll\'s expanded view — they were rigid 3-column tables that clipped the Balance/Remaining figure off the right edge of the screen on mobile; each line now stacks the item on its own row with the two amounts below it, so nothing gets cut off at any screen width.' },
         { version: 'v2.11', date: '2026-08-04', notes: 'Fixed the Claims Excel/CSV importer from v2.10 immediately failing with "No claim rows found to import." on the exact file it was built for. Root cause: the header-row detector scanned rows with a SheetJS option that silently drops fully-blank rows before handing back row numbers — this file has a blank row right above its real header row, so the detector\'s row count came back one short of reality, and the actual data extraction (which does NOT drop blank rows) then grabbed the wrong row as the header. Rewrote the detector to read cells directly by their true row/column address instead, so the row number it finds always lines up with the row number the rest of the import uses. Also made the "found nothing importable" message name how many rows it did see, to make it faster to diagnose if this ever happens again for a different reason.' },
         { version: 'v2.10', date: '2026-08-04', notes: 'New: Import Excel/CSV button on the Claims tab. Built against a "Tracker" sheet like the one already used for Route imports — auto-finds the real header row (skips metadata rows above it), matches columns flexibly, and skips Weeks/Balance/Processing Fee (the app already computes those live). Employee names are matched against the roster automatically — verified against a real 187-row file, matching 183 correctly and safely leaving the 4 genuinely ambiguous ones (e.g. a bare "Jose Garcia" when two different Jose Garcias exist) blank for manual assignment in Claims → Edit, rather than guessing wrong. Source status text is mapped to this app\'s 5 statuses (Paused→Deducting, Pending→Queued, Absorved→Absorbed, Drop Claim→Absorbed, Tk FrLast Check→Tk from check); anything that doesn\'t map cleanly (Wrong, Team Notified, blank) defaults to Queued — the safest non-deducting state — with the original text preserved in Notes so it is easy to find and fix. New damage-type descriptions found in the file are added to the Damage Types list automatically. Claim IDs are always freshly generated by the app itself, never reused from the source file\'s own reference numbers, so re-importing or importing alongside existing claims can\'t collide with an ID already in use.' },
@@ -2085,8 +2087,38 @@
         ]);
         await loadCurrentWeekDaily();    // for Payroll base pay of Daily people
         await loadClaimHistory();        // rate changes + pauses for balances
+        if (canEdit()) await autoResolvePaidClaims();
         await fetchIncomeFromCloud();    // additional income for Payroll
         if (typeof renderClaims === 'function') renderClaims();
+    }
+
+    // Auto-flip a claim from "Deducting" to "Paid" once its own projected
+    // schedule (the same buildClaimSchedule() math shown everywhere else in
+    // the app) has shown a $0 balance for at least a week — not the instant
+    // it hits zero, so a claim that was just paid off today still reads
+    // "Deducting" for a few more days before quietly settling to "Paid".
+    // Runs once per data refresh; harmless to run repeatedly since a claim
+    // already marked Paid is excluded from the next pass automatically.
+    async function autoResolvePaidClaims() {
+        const today = todayStr();
+        const cutoff = (() => { const d = new Date(today + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 7); return d.toISOString().split('T')[0]; })();
+        const toResolve = claims.filter(c => {
+            if (c.status !== 'Deducting') return false;
+            const sched = buildClaimSchedule(c, today);
+            if (!sched.rows.length || !sched.endDate) return false;
+            if (sched.balanceAsOf > 0.004) return false;
+            return sched.endDate <= cutoff;
+        });
+        if (!toResolve.length) return;
+        for (const c of toResolve) {
+            try {
+                const { error } = await supabaseClient.rpc('edit_claim', {
+                    p_actor: currentUsername, p_id: c.claim_id, p_fields: { status: 'Paid' }
+                });
+                if (error) console.error('autoResolvePaidClaims:', c.claim_id, error.message);
+            } catch (e) { console.error('autoResolvePaidClaims:', c.claim_id, e); }
+        }
+        await fetchClaimsFromCloud();
     }
 
     async function fetchRoutesFromCloud() {
@@ -2096,11 +2128,25 @@
         updateUI();
     }
 
+    // Which employees already have a linked login (app_users.employee_id) —
+    // drives whether the "Generate User" button shows on their card. Kept
+    // separate from the full Users list (which is lazy-loaded only when that
+    // tab opens) since Employees needs this much earlier/more often.
+    let employeeUserIds = new Set();
+    async function loadEmployeeUserLinks() {
+        try {
+            const { data, error } = await supabaseClient.rpc('list_users', { p_actor: currentUsername, p_company: currentCompany });
+            if (error) { employeeUserIds = new Set(); return; }
+            employeeUserIds = new Set((data || []).filter(u => u.employee_id).map(u => u.employee_id));
+        } catch (e) { employeeUserIds = new Set(); }
+    }
+
     async function fetchEmployeesFromCloud() {
         const { data, error } = await supabaseClient.rpc('get_employees', { p_actor: currentUsername, p_company: currentCompany });
         if (error) { console.error('get_employees failed:', error); showDiagBanner('Employees: ' + error.message); employees = []; }
         else { employees = data || []; }
         await loadEmployeeDetails();
+        if (canEdit()) await loadEmployeeUserLinks();
         renderEmployees();
         populateEmployeeDropdowns();
         if (typeof updateNextEmpId === 'function') updateNextEmpId();
@@ -2439,6 +2485,7 @@
             </div>
             <div style="margin-top:10px;">
                 <button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); loadEmployeeStatusHistory('${emp.id}')">Status history</button>
+                ${(canEdit() && !employeeUserIds.has(emp.id)) ? `<button class="btn-small" style="background:var(--navy);margin:0 0 0 6px;" onclick="event.stopPropagation(); generateEmployeeUser('${emp.id}')">Generate User</button>` : ''}
                 <div id="stathist-${emp.id}" style="margin-top:6px;font-size:12px;"></div>
             </div>`;
     }
@@ -2713,6 +2760,22 @@
             if (error) alert('Error: ' + error.message);
             else fetchEmployeesFromCloud();
         }
+    }
+
+    async function generateEmployeeUser(empId) {
+        if (!canEdit()) return;
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return;
+        const name = `${emp.first_name} ${emp.last_name || ''}`.trim();
+        if (!confirm(`Generate a login for ${name}?`)) return;
+        const { data, error } = await supabaseClient.rpc('provision_employee_account', { p_actor: currentUsername, p_employee_id: empId });
+        if (error) { alert('Error: ' + error.message); return; }
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row || !row.new_username) { alert('No account was returned — check the Users tab.'); return; }
+        const role = (emp.person_type === 'Owner' || emp.person_type === 'Manager') ? 'Administrator' : (emp.person_type === 'Staff' ? 'Medium' : 'User');
+        employeeUserIds.add(empId);
+        showNewEmployeeCredentials(name, empId, role, row.new_username, row.new_password);
+        renderEmployees();
     }
 
     function employeeOptionLabel(emp) {
@@ -3547,6 +3610,10 @@
                     </div>
                     <div>
                         <div class="form-row" style="margin:6px 0 4px;align-items:center;">
+                            <div class="field"><label>Company</label><div>${c.company_name ? escHtml(c.company_name) : '—'}</div></div>
+                            <div class="field"><label>Claimant account</label><div>${c.claimant_account ? escHtml(c.claimant_account) : '—'}</div></div>
+                            <div class="field"><label>Carrier claim #</label><div>${c.carrier_claim_number ? escHtml(c.carrier_claim_number) : '—'}</div></div>
+                            <div class="field"><label>Customer claim #</label><div>${c.customer_claim_number ? escHtml(c.customer_claim_number) : '—'}</div></div>
                             <div class="field"><label>Weekly rate</label><div>${formatMoney(rateOn(c, asOf))}</div></div>
                             <div class="field"><label>Weeks to $0</label><div>${weeks}</div></div>
                             <div class="field"><label>Ends</label><div>${endDate}</div></div>
@@ -3633,7 +3700,7 @@
             const bal = claimBalance(c, asOf);
             if (bal > 0 && !isPausedOn(c, asOf)) {
                 const weekly = Math.min(rateOn(c, asOf), bal);
-                items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', weekly, scheduled: weekly, balance: bal });
+                items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', company: c.company_name || '', claimant: c.claimant_account || '', carrier: c.carrier_claim_number || '', customer: c.customer_claim_number || '', weekly, scheduled: weekly, balance: bal });
             }
         });
         charges.filter(ch => ch.employee_id === empId && ch.status === 'Deducting').forEach(ch => {
@@ -4280,7 +4347,14 @@
             ? `<div style="font-size:12px;">
                     ${items.map(it => `
                         <div style="padding:6px 0;border-bottom:1px solid var(--border);">
-                            <div><span class="type-pill">${it.kind}</span> ${it.id} · ${it.label}${it.weekly < it.scheduled ? `<br><span style="color:var(--text-muted);">(scheduled ${formatMoney(it.scheduled)})</span>` : ''}</div>
+                            <div><span class="type-pill">${it.kind}</span> ${it.id} · ${it.label}${(() => {
+                                const parts = [];
+                                if (it.company) parts.push(escHtml(it.company));
+                                if (it.claimant) parts.push('Acct ' + escHtml(it.claimant));
+                                if (it.carrier) parts.push('Carrier # ' + escHtml(it.carrier));
+                                if (it.customer) parts.push('Customer # ' + escHtml(it.customer));
+                                return parts.length ? `<br><span style="color:var(--text-muted);">${parts.join(' · ')}</span>` : '';
+                            })()}${it.weekly < it.scheduled ? `<br><span style="color:var(--text-muted);">(scheduled ${formatMoney(it.scheduled)})</span>` : ''}</div>
                             <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;">
                                 <span style="color:#dc2626;font-weight:700;">−${formatMoney(it.weekly)}</span>
                                 <span style="color:var(--text-muted);">Balance: ${formatMoney(it.balance)}</span>
