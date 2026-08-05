@@ -1265,8 +1265,11 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.19';
+    const APP_VERSION = 'v2.22';
     const CHANGELOG = [
+        { version: 'v2.22', date: '2026-08-05', notes: 'Fixed switching an employee between Weekly and Daily pay — it started failing right after last version\'s security fix. That fix (correctly) removed direct read access to the pay-type table, but Postgres needs that same read access internally to process the kind of save this screen uses, so every attempt started failing outright the moment the security fix went live. Moved the save itself to a dedicated database function that doesn\'t hit that limitation, and fixed a related issue: a failed save was still showing the attempted new value on screen instead of the real one, so it looked like it worked right up until the page was reloaded — a failed save now visibly reverts immediately instead of silently lying. Checked the underlying data directly: it\'s accurate — 118 of 127 people are correctly Daily and the other 9 are Staff roles that are genuinely Weekly-salary, not a mistake. If anyone still shows the wrong pay type after this update, it should now be safe to correct and have it actually stick.' },
+        { version: 'v2.21', date: '2026-08-05', notes: '"Delete All Users" (Data Sync) is fixed — it was calling a database function that had never actually been created, so every click failed outright. Now works the same way deleting one user at a time already does (Administrators can only remove non-SuperAdmin accounts in their own company; Super Admin can remove anyone but themselves). Users can now have their linked Employee ID changed or cleared directly (🪪 Edit ID button, Users tab) instead of needing the account deleted and recreated — an employee can never be linked to more than one account at the same time, enforced at the database level, and the employee must belong to that user\'s own company. Also revised claim rate-change and pause/resume: a new weekly amount can no longer be negative or duplicate an existing effective date for the same claim, and a pause\'s expected resume date must actually be after its start date and can no longer overlap an existing pause window for that claim — all of these were previously accepted without any check.' },
+        { version: 'v2.20', date: '2026-08-04', notes: 'Security fix — the "Unlinked" name on that income row turned out to be a symptom of something bigger: Additional Income, Employee Details (phone/email/driver\'s license/medical card), Daily Pay, employee pay-type, and claim rate-change/pause history were all readable directly by any logged-in account, with no scoping by company or role at all. In practice this meant a View Only account could see every coworker\'s bonus amounts, personal contact and license info, and daily earnings — not just their own — and it wasn\'t scoped to one company either. All six now go through the same properly-scoped access every other part of the app already uses (a View Only account sees only their own record; other roles see their own company). The reported symptom is also gone as a side effect: a View Only account now simply doesn\'t see other people\'s records at all, so there\'s nothing left to show as "Unlinked."' },
         { version: 'v2.19', date: '2026-08-04', notes: 'Fixed the Daily Report table (Route Tracker) header row running off the right edge of the screen with the last few columns cut off entirely and no obvious way to see them. Column headers now wrap onto 2-3 lines instead of forcing themselves onto one, so each column\'s width is driven by its (short) data instead of its (long) label like "COMPLETED STOPS**". Also added a permanent "scroll for more columns" hint under this specific table, since even with wrapped headers, 15 columns will usually still need a horizontal scroll on most screens — previously that hint only ever showed on narrow mobile widths.' },
         { version: 'v2.18', date: '2026-08-04', notes: 'Database-only fix, no app screens changed: deleting a company left a surprising amount behind. Audited every table for how it connects to a company and found only employees, routes, claims, and charges actually cleaned up automatically — usernames were never removed (just unlinked, so the login account kept working with no company attached), and additional income, claim rate-change/pause history, daily pay entries, employee details, pay-type settings, and pending approval requests were all left behind permanently with no cleanup at all. Deleting a company now removes all of it. Verified end-to-end with a fully isolated throwaway test company (one of every kind of record, 19 tables total, including a real login account) — deleted it and confirmed zero rows remained anywhere. A company\'s change history is also cleared as part of this (unlike deleting a single employee or claim, which still keep their history) — a full company deletion is a more total action, and there\'s no longer a company left for that history to be about.' },
         { version: 'v2.17', date: '2026-08-04', notes: 'Fixed the sort direction (▲/▼) button doing nothing on first tap, needing a dropdown change first to "wake up" — every "Sort by" list defaulted to no sort field selected internally even though its dropdown visually showed one, so flipping direction had nothing to apply itself to until the dropdown was touched. Every sortable list now starts properly sorted by its dropdown\'s default option, so the direction button works immediately. Audited every list in the app for sorting as asked: Payroll, Companies, Users, and the Approvals and Log tabs had no sorting controls at all before this — added the same "Sort by" dropdown + direction button to all five, matching the pattern already used by Employees/Claims/Charges/Income (Payroll: Employee/ID/Type/Base/Gross/Deductions/Net/Status; Companies: Name/Code/Owner/Manager/Created; Users: Username/Employee ID/Role/Created; Approvals: Requested/Requested by/Table/Field; Log: When/Who/Table/Field, defaulting newest-first same as before). Employees now defaults to showing Active only, matching Payroll/Daily Pay/Statement\'s existing default — switch to Inactive or All statuses anytime from the same dropdown.' },
@@ -1533,9 +1536,8 @@
     async function loadClaimHistory() {
         claimHistMissing = false;
         try {
-            let rq = supabaseClient.from('claim_rate_changes').select('*');
-            let pq = supabaseClient.from('claim_pauses').select('*');
-            if (currentCompany) { rq = rq.eq('company_code', currentCompany); pq = pq.eq('company_code', currentCompany); }
+            const rq = supabaseClient.rpc('get_claim_rate_changes', { p_actor: currentUsername, p_company: currentCompany });
+            const pq = supabaseClient.rpc('get_claim_pauses', { p_actor: currentUsername, p_company: currentCompany });
             const [{ data: rc, error: re }, { data: pc, error: pe }] = await Promise.all([rq, pq]);
             if (re && isMissingTable(re)) { claimHistMissing = true; return; }
             if (pe && isMissingTable(pe)) { claimHistMissing = true; return; }
@@ -2339,16 +2341,16 @@
     }
     function getEmpDetail(id) { return employeeDetails[id] || {}; }
 
-    // Companion table for the non-secret ID fields. Direct-access, like
-    // employee_pay_type / daily_pay — no RPC change needed. Degrades quietly
-    // if the table isn't created yet.
+    // Companion table for the non-secret ID fields. Was direct-access with
+    // no scoping at all (a real PII exposure — driver's license, phone,
+    // email, medical card readable by anyone) — now goes through
+    // get_employee_details, same scoping as employees/claims/charges.
+    // Still degrades quietly if the table isn't created yet.
     async function loadEmployeeDetails() {
         empDetailsMissing = false;
         employeeDetails = {};
         try {
-            let q = supabaseClient.from('employee_details').select('*');
-            if (currentCompany) q = q.eq('company_code', currentCompany);
-            const { data, error } = await q;
+            const { data, error } = await supabaseClient.rpc('get_employee_details', { p_actor: currentUsername, p_company: currentCompany });
             if (error) { if (isMissingTable(error)) empDetailsMissing = true; return; }
             (data || []).forEach(r => { employeeDetails[r.employee_id] = r; });
         } catch (e) { console.error('loadEmployeeDetails:', e); }
@@ -3425,9 +3427,7 @@
     async function fetchIncomeFromCloud() {
         incomeTableMissing = false;
         try {
-            let q = supabaseClient.from('additional_income').select('*');
-            if (currentCompany) q = q.eq('company_code', currentCompany);
-            const { data, error } = await q;
+            const { data, error } = await supabaseClient.rpc('get_additional_income', { p_actor: currentUsername, p_company: currentCompany });
             if (error) { if (isMissingTable(error)) { incomeTableMissing = true; additionalIncome = []; } else console.error('additional_income:', error); }
             else additionalIncome = data || [];
         } catch (e) { console.error('fetchIncomeFromCloud:', e); }
@@ -3845,9 +3845,7 @@
     async function loadPayTypes() {
         dailyTableMissing = false; // re-check each full sync
         try {
-            let q = supabaseClient.from('employee_pay_type').select('employee_id, pay_type');
-            if (currentCompany) q = q.eq('company_code', currentCompany);
-            const { data, error } = await q;
+            const { data, error } = await supabaseClient.rpc('get_employee_pay_type', { p_actor: currentUsername, p_company: currentCompany });
             if (error) { if (isMissingTable(error)) dailyTableMissing = true; return; }
             payTypes = {};
             (data || []).forEach(r => { payTypes[r.employee_id] = r.pay_type === 'Daily' ? 'Daily' : 'Weekly'; });
@@ -3855,19 +3853,23 @@
     }
 
     async function setPayType(empId, type, companyCode) {
+        const previous = payTypes[empId];
         payTypes[empId] = type;               // optimistic local update
         try {
-            const payload = { employee_id: empId, pay_type: type };
-            const co = companyCode || writeCompany();
-            if (co) payload.company_code = co;
-            const { error } = await supabaseClient
-                .from('employee_pay_type')
-                .upsert(payload, { onConflict: 'employee_id' });
+            const { error } = await supabaseClient.rpc('set_employee_pay_type', {
+                p_actor: currentUsername, p_employee_id: empId, p_pay_type: type
+            });
             if (error) {
+                payTypes[empId] = previous;    // roll back — the save didn't actually happen
                 if (isMissingTable(error)) { dailyTableMissing = true; alert('Daily-pay tables are not set up yet. See the yellow note in the Daily Pay tab.'); }
                 else alert('Could not save pay type: ' + error.message);
+                renderEmployees();
             }
-        } catch (e) { console.error('setPayType:', e); }
+        } catch (e) {
+            payTypes[empId] = previous;
+            console.error('setPayType:', e);
+            renderEmployees();
+        }
     }
 
     async function togglePayType(empId) {
@@ -3961,11 +3963,9 @@
         const k = weekKeyFromSunday(sun);
         const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         try {
-            let q = supabaseClient.from('daily_pay')
-                .select('employee_id, day_index, amount, is_off')
-                .eq('year', k.year).eq('week', k.week);
-            if (currentCompany) q = q.eq('company_code', currentCompany);
-            const { data, error } = await q;
+            const { data, error } = await supabaseClient.rpc('get_daily_pay', {
+                p_actor: currentUsername, p_company: currentCompany, p_year: k.year, p_week: k.week
+            });
             if (error) { if (isMissingTable(error)) dailyTableMissing = true; return; }
             // Build into fresh local objects rather than mutating the shared
             // module-level ones directly. If this function gets called again
@@ -4143,11 +4143,9 @@
         dailyGrid = {};
         if (dailyTableMissing) return;
         try {
-            let q = supabaseClient.from('daily_pay')
-                .select('employee_id, day_index, amount, is_off')
-                .eq('year', year).eq('week', week);
-            if (currentCompany) q = q.eq('company_code', currentCompany);
-            const { data, error } = await q;
+            const { data, error } = await supabaseClient.rpc('get_daily_pay', {
+                p_actor: currentUsername, p_company: currentCompany, p_year: year, p_week: week
+            });
             if (error) { if (isMissingTable(error)) dailyTableMissing = true; return; }
             (data || []).forEach(r => {
                 if (!dailyGrid[r.employee_id]) dailyGrid[r.employee_id] = {};
@@ -4579,6 +4577,12 @@
         const amt = parseFloat(document.getElementById('rc-amount').value);
         const date = document.getElementById('rc-date').value;
         if (!date || isNaN(amt)) { alert('Enter both a new weekly amount and an effective date.'); return; }
+        if (amt < 0) { alert('Weekly amount cannot be negative.'); return; }
+        const existing = claimRateChanges[editingClaimId] || [];
+        if (existing.some(r => r.effective_date === date)) {
+            alert(`There's already a rate change effective ${date} for this claim. Remove the existing one first if you want to replace it.`);
+            return;
+        }
         const { error } = await supabaseClient.from('claim_rate_changes')
             .insert([{ company_code: claimHistCompany(), claim_id: editingClaimId, effective_date: date, weekly_amount: amt }]);
         if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
@@ -4591,6 +4595,17 @@
         const date = document.getElementById('pause-date').value;
         const resume = document.getElementById('pause-resume').value || null;
         if (!date) { alert('Enter a paused date.'); return; }
+        if (resume && resume <= date) { alert('Expected resume date must be after the paused date.'); return; }
+        const existing = claimPauses[editingClaimId] || [];
+        const overlaps = existing.some(p => {
+            const pStart = p.paused_date, pEnd = p.resume_date;
+            // Two [start, end) windows overlap unless one ends before the other starts
+            // (an open-ended existing or new pause is treated as extending to infinity).
+            const newEndsBeforeExisting = resume && resume <= pStart;
+            const existingEndsBeforeNew = pEnd && pEnd <= date;
+            return !(newEndsBeforeExisting || existingEndsBeforeNew);
+        });
+        if (overlaps) { alert('This overlaps with an existing pause window for this claim. Remove or adjust the existing one first.'); return; }
         const { error } = await supabaseClient.from('claim_pauses')
             .insert([{ company_code: claimHistCompany(), claim_id: editingClaimId, paused_date: date, resume_date: resume }]);
         if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
@@ -5035,7 +5050,7 @@
                         roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
                     }
                     const actionHtml = u.can_manage
-                        ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
+                        ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">🪪 ID</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
                         : '<span style="color:#94a3b8; font-size:11px;">Restricted</span>';
                     rows += `<tr>
                         <td>${u.username}</td>
@@ -5065,7 +5080,7 @@
                     roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
                 }
                 const actionHtml = u.can_manage
-                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset password</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕ Delete</button>`
+                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">🪪 Edit ID</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset password</button><button class="del-btn" onclick="deleteUser('${u.username}')">✕ Delete</button>`
                     : '<span style="color:#94a3b8; font-size:11px;">Restricted — outside your scope</span>';
                 const open = recExpanded.users ? recExpanded.users.has(u.username) : false;
 
@@ -5107,6 +5122,25 @@
             alert('Error resetting password: ' + error.message);
         } else {
             alert(`Password for "${usernameToReset}" has been reset.`);
+        }
+    }
+
+    // Change (or clear) which employee a user account is linked to, without
+    // deleting and recreating the account. The RPC itself enforces that an
+    // employee can only ever be linked to one account at a time and that the
+    // employee belongs to this user's own company.
+    async function editUserEmployeeId(username, currentId) {
+        const val = prompt(`Employee ID for "${username}" (leave blank to unlink):`, currentId || '');
+        if (val === null) return; // cancelled
+        const newId = val.trim() || null;
+        if (newId === (currentId || null)) return; // unchanged
+        const { error } = await supabaseClient.rpc('set_user_employee_id', {
+            p_actor: currentUsername, p_target: username, p_employee_id: newId
+        });
+        if (error) {
+            alert('Error: ' + error.message);
+        } else {
+            fetchUsersList();
         }
     }
 
