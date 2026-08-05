@@ -1,0 +1,42 @@
+{
+  "name": "unified-logistics-hr-dashboard",
+  "version": "1.0.0",
+  "description": "Unified Logistics & HR Claims Dashboard desktop app",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.trackerapp.dashboard",
+    "productName": "Unified Logistics HR Claims Dashboard",
+    "files": [
+      "index.html",
+      "main.js"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
