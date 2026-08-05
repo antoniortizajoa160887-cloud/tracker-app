@@ -112,7 +112,11 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      // sandbox:true blocks window.prompt() (used by several admin actions,
+      // e.g. the "Delete All ..." confirmations) — it rejects instead of
+      // showing a dialog. nodeIntegration:false + contextIsolation:true
+      // already keep the page from touching Node/Electron internals.
+      sandbox: false,
     },
   });
 
