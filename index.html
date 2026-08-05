@@ -1196,8 +1196,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.14';
+    const APP_VERSION = 'v2.15';
     const CHANGELOG = [
+        { version: 'v2.15', date: '2026-08-04', notes: 'Database-only change, no visible app difference: the "auto-switch a claim to Paid a week after it hits $0" feature (added last version) now runs as a true server-side job on Supabase — a scheduled task that checks every "Deducting" claim once a day (06:00 UTC) and settles any that qualify, using the exact same schedule math the app itself displays (weekly deductions from the start date, honoring recorded rate changes and pauses). This means it now works even when nobody has the app open, instead of only checking whenever someone loads the Claims/Payroll data. Removed the version of this check that ran in the browser, since the server job replaces it. Verified live against real claims before turning it on for real: 2 already qualified (paid off with their last scheduled deduction more than a week ago) and were correctly flipped to Paid, with the usual audit trail entry. Worth flagging: one of those two (claim 3OFL00003) was originally imported with status "Paused" from the Excel tracker back in the Claims-import work, and its notes say it still needs a real pause entry added — since that was never added, this claim\'s schedule was calculated as if it deducted continuously with no pause, so it\'s worth double-checking that one specifically rather than just trusting the auto-resolved "Paid" status.' },
         { version: 'v2.14', date: '2026-08-04', notes: 'Carrier claim # and Customer claim # now show alongside Company and Claimant account in the same two spots added last version: Payroll\'s expanded deduction breakdown, and Statement\'s per-claim panel.' },
         { version: 'v2.13', date: '2026-08-04', notes: 'Three additions. (1) Employees without a login now show a "Generate User" button in their expanded detail — mainly for the 126 people brought in through CSV import, which never auto-creates accounts. Uses the same role mapping as adding a new employee (Owner/Manager → Administrator, Staff → Medium, everyone else → View Only) and shows the new username/password once, same as the existing flow. Found and fixed a real problem while building this: the username generator (shared with the existing new-employee flow) builds a username from "first initial + last name" — but most employees here have their whole name in one field with nothing in last name, so it was generating single-letter usernames like "a". Fixed specifically for this new button by splitting the full name on spaces instead when last name is empty, without touching the already-shipped new-employee flow. (2) Claim deductions in Payroll and Statement now also show Company and Claimant Account beneath the claim, when the claim has them set. (3) A claim still marked "Deducting" now automatically switches to "Paid" once its own payment schedule has shown a $0.00 balance for a full week — not the instant it hits zero, so it settles rather than flipping the moment the last dollar clears. This checks quietly on every data refresh; nothing to click.' },
         { version: 'v2.12', date: '2026-08-04', notes: 'Fixed Payroll sometimes showing every paid day doubled (e.g. "Wed 8/5" twice, base pay total exactly 2x what it should be) when expanding a person\'s row. Confirmed first that the underlying Daily Pay data itself was never actually duplicated — this was a pure display bug: the function that loads the week\'s daily totals reset a shared list and then filled it back in after a database round-trip, so if it got triggered twice in quick succession (switching a Payroll filter, for instance), both calls could end up dropping their rows into the same list together. Rebuilt it to assemble each call\'s results separately and swap them in only once, fully finished, so overlapping calls can no longer double up. Applied the same fix to claim rate-change/pause history for the same underlying reason. Also reworked how Weekly Deductions and Additional Income are displayed in Payroll\'s expanded view — they were rigid 3-column tables that clipped the Balance/Remaining figure off the right edge of the screen on mobile; each line now stacks the item on its own row with the two amounts below it, so nothing gets cut off at any screen width.' },
@@ -2087,38 +2088,8 @@
         ]);
         await loadCurrentWeekDaily();    // for Payroll base pay of Daily people
         await loadClaimHistory();        // rate changes + pauses for balances
-        if (canEdit()) await autoResolvePaidClaims();
         await fetchIncomeFromCloud();    // additional income for Payroll
         if (typeof renderClaims === 'function') renderClaims();
-    }
-
-    // Auto-flip a claim from "Deducting" to "Paid" once its own projected
-    // schedule (the same buildClaimSchedule() math shown everywhere else in
-    // the app) has shown a $0 balance for at least a week — not the instant
-    // it hits zero, so a claim that was just paid off today still reads
-    // "Deducting" for a few more days before quietly settling to "Paid".
-    // Runs once per data refresh; harmless to run repeatedly since a claim
-    // already marked Paid is excluded from the next pass automatically.
-    async function autoResolvePaidClaims() {
-        const today = todayStr();
-        const cutoff = (() => { const d = new Date(today + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 7); return d.toISOString().split('T')[0]; })();
-        const toResolve = claims.filter(c => {
-            if (c.status !== 'Deducting') return false;
-            const sched = buildClaimSchedule(c, today);
-            if (!sched.rows.length || !sched.endDate) return false;
-            if (sched.balanceAsOf > 0.004) return false;
-            return sched.endDate <= cutoff;
-        });
-        if (!toResolve.length) return;
-        for (const c of toResolve) {
-            try {
-                const { error } = await supabaseClient.rpc('edit_claim', {
-                    p_actor: currentUsername, p_id: c.claim_id, p_fields: { status: 'Paid' }
-                });
-                if (error) console.error('autoResolvePaidClaims:', c.claim_id, error.message);
-            } catch (e) { console.error('autoResolvePaidClaims:', c.claim_id, e); }
-        }
-        await fetchClaimsFromCloud();
     }
 
     async function fetchRoutesFromCloud() {
