@@ -511,6 +511,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report">Daily Report</button>
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
+    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications">Notifications <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees">Employees</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims">Claims</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges">Charges &amp; Income</button>
@@ -600,6 +601,18 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- TAB: NOTIFICATIONS -->
+<div id="tab-notifications" class="tab-content">
+    <div class="panel">
+        <h2>Notifications</h2>
+        <div class="note-box">New claims, charges, and additional income you've been assigned show up here, newest first. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company's, same as the rest of the app.</div>
+        <div class="form-row" style="margin-bottom:10px;">
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="markAllNotificationsRead()">Mark all as read</button>
+        </div>
+        <div id="notifications-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -1265,8 +1278,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.24';
+    const APP_VERSION = 'v2.25';
     const CHANGELOG = [
+        { version: 'v2.25', date: '2026-08-05', notes: 'New: Notifications tab (HR & Payroll). Whenever a claim, charge, or additional income is created for an employee, they now get a notification showing what it is, the amount, and when it happened — tap it and it jumps straight to that record, already filtered into view. A red count badge on the tab shows how many are unread. This runs at the database level, so it fires no matter how the record was created (the form, a CSV import, anything in the future) — nothing can slip through. Same access rules as everywhere else: a View Only account only ever sees notifications about themselves, never a coworker\'s.' },
         { version: 'v2.24', date: '2026-08-05', notes: 'Fixed Daily Pay not saving — the exact same underlying issue as last version\'s Weekly/Daily pay-type bug, just on a different table: the security fix before that had removed direct read access to the daily pay table, which broke the kind of save this screen uses the same way. Moved it to the same kind of dedicated database function. Checked every other screen in the app for this same pattern and confirmed nothing else is affected. Also merged the Changelog tab\'s two lists (Version History and System Changelog) into one, since they were showing the same information twice — it now reads entirely from the database-backed list, including the full history back to v1.0, so this record survives independently of whatever app file is deployed. Still Super Admin only.' },
         { version: 'v2.23', date: '2026-08-05', notes: 'Full database reset and security hardening, at your request. Wiped every operational table clean (companies, employees, claims, charges, routes, income, daily pay, and everything tied to them) — reused the existing Damage Type / Charge Type / Income Type lists rather than losing them. Every table connected to a company, employee, or claim now has a real enforced connection at the database level, so deleting something always takes everything that belongs to it with it — verified directly, not just assumed. SSN/ITIN, driver license, and work permit numbers are now encrypted in storage — previously they were kept as plain readable text; confirmed the raw stored values are now unreadable without going through the app\'s own access controls. Created the Super Admin account. New: a database-backed System Changelog (Changelog tab, second panel) that survives independently of this app file — visible to Super Admin only, same as the regular Version History above it, which is no longer visible to Administrators. Also closed a smaller gap found while doing this: the Damage/Charge/Income Type lists in Settings could previously be edited by anyone logged in, including View Only accounts — now requires Medium role or above, same as everything else that changes shared data.' },
         { version: 'v2.22', date: '2026-08-05', notes: 'Fixed switching an employee between Weekly and Daily pay — it started failing right after last version\'s security fix. That fix (correctly) removed direct read access to the pay-type table, but Postgres needs that same read access internally to process the kind of save this screen uses, so every attempt started failing outright the moment the security fix went live. Moved the save itself to a dedicated database function that doesn\'t hit that limitation, and fixed a related issue: a failed save was still showing the attempted new value on screen instead of the real one, so it looked like it worked right up until the page was reloaded — a failed save now visibly reverts immediately instead of silently lying. Checked the underlying data directly: it\'s accurate — 118 of 127 people are correctly Daily and the other 9 are Staff roles that are genuinely Weekly-salary, not a mistake. If anyone still shows the wrong pay type after this update, it should now be safe to correct and have it actually stick.' },
@@ -1638,15 +1652,16 @@
     function claimCurrentRate(claim) { return rateOn(claim, todayStr()); }
 
     function openTab(evt, tabName) {
-        // View Only users may only open their 5 permitted tabs.
+        // View Only users may only open their 6 permitted tabs.
         if (currentUserRole === 'User') {
-            const allowed = ['tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll'];
+            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll'];
             if (!allowed.includes(tabName)) return;
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(tabName).classList.add('active');
         if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        if(tabName === 'tab-notifications') renderNotifications();
         if(tabName === 'tab-claims') renderClaims();
         if(tabName === 'tab-charges') { renderCharges(); renderIncome(); }
         if(tabName === 'tab-report') renderDailyReport();
@@ -1665,7 +1680,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report'],
-        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll'],
+        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
 
@@ -2207,6 +2222,7 @@
         if (typeof renderClaims === 'function') renderClaims();
         if (typeof renderCharges === 'function') renderCharges();
         if (typeof renderIncome === 'function') renderIncome();
+        await loadNotifications();
     }
 
     async function fetchRoutesFromCloud() {
@@ -2967,6 +2983,84 @@
                 <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value">${resolved}</div></div>
             `;
         }
+    }
+
+    // --- NOTIFICATIONS ----------------------------------------------------
+    let notifications = [];
+
+    async function loadNotifications() {
+        const { data, error } = await supabaseClient.rpc('get_notifications', { p_actor: currentUsername, p_company: currentCompany });
+        if (error) { console.error('get_notifications:', error); notifications = []; return; }
+        notifications = data || [];
+        updateNotifBadge();
+    }
+
+    function updateNotifBadge() {
+        const badge = document.getElementById('notif-badge');
+        if (!badge) return;
+        const unread = notifications.filter(n => !n.read_at).length;
+        if (unread > 0) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.style.display = 'inline-block'; }
+        else { badge.style.display = 'none'; }
+    }
+
+    const NOTIF_KIND_LABEL = { claim: 'Claim', charge: 'Charge', income: 'Additional Income' };
+    const NOTIF_KIND_ICON = { claim: '📋', charge: '➖', income: '➕' };
+
+    function renderNotifications() {
+        const container = document.getElementById('notifications-tbody');
+        if (!container) return;
+        container.className = 'record-grid';
+        if (!notifications.length) {
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No notifications yet.</div>';
+            return;
+        }
+        container.innerHTML = '';
+        notifications.forEach(n => {
+            const unread = !n.read_at;
+            const emp = employees.find(e => e.id === n.employee_id);
+            const empName = emp ? `${emp.first_name} ${emp.last_name}`.trim() : n.employee_id;
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card open" id="rec-notif-${n.id}" style="cursor:pointer; ${unread ? 'border-left:3px solid var(--secondary);' : 'opacity:0.75;'}" onclick="goToNotification(${n.id}, '${n.kind}', '${escJsAttr(n.record_id)}', '${escJsAttr(n.employee_id)}')">
+                    <div class="rec-card-head" style="cursor:pointer;">
+                        <span style="font-size:16px;">${NOTIF_KIND_ICON[n.kind] || '🔔'}</span>
+                        <span class="rec-title">New ${NOTIF_KIND_LABEL[n.kind] || n.kind}${unread ? ' <span class="status-badge status-active" style="margin-left:6px;">New</span>' : ''}</span>
+                        <span class="rec-sub">${escHtml(n.label)}${n.amount ? ' · ' + formatMoney(n.amount) : ''} · ${escHtml(empName)}</span>
+                        <span class="rec-right" style="font-family:var(--mono); font-size:11px; color:var(--text-muted);">${n.record_id} · ${new Date(n.created_at).toLocaleString()}</span>
+                    </div>
+                </div>`);
+        });
+    }
+
+    async function goToNotification(notifId, kind, recordId, empId) {
+        try { await supabaseClient.rpc('mark_notification_read', { p_actor: currentUsername, p_id: notifId }); } catch (e) {}
+        const n = notifications.find(x => x.id === notifId);
+        if (n) n.read_at = n.read_at || new Date().toISOString();
+        updateNotifBadge();
+
+        if (kind === 'claim') {
+            openTab(null, 'tab-claims');
+            document.getElementById('btn-tab-claims')?.classList.add('active');
+            const search = document.getElementById('claim-search');
+            if (search) { search.value = recordId; filterClaims(); }
+            recExpanded.claims.add(recordId);
+        } else {
+            openTab(null, 'tab-charges');
+            document.getElementById('btn-tab-charges')?.classList.add('active');
+            const searchId = kind === 'charge' ? 'charge-search' : 'income-search';
+            const search = document.getElementById(searchId);
+            if (search) { search.value = recordId; (kind === 'charge' ? renderCharges : renderIncome)(); }
+            recExpanded[kind === 'charge' ? 'charges' : 'income'].add(recordId);
+        }
+        renderNotifications();
+    }
+
+    async function markAllNotificationsRead() {
+        try {
+            await supabaseClient.rpc('mark_all_notifications_read', { p_actor: currentUsername, p_company: currentCompany });
+            notifications.forEach(n => { n.read_at = n.read_at || new Date().toISOString(); });
+            updateNotifBadge();
+            renderNotifications();
+        } catch (e) { console.error('markAllNotificationsRead:', e); }
     }
 
     function filterClaims() {
