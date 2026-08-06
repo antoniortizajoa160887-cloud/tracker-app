@@ -866,29 +866,29 @@
 <div id="tab-charges" class="tab-content">
     <div class="panel" style="padding-top:14px; padding-bottom:14px;">
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
-            <div class="field field-wide"><label>Employee <span style="color:var(--text-muted); font-weight:400;">— applies to both the charge and income forms below</span></label><select id="ci-employee"><option value="">— Select employee —</option></select></div>
+            <div class="field field-wide"><label data-i18n="employee_applies_both">Employee <span style="color:var(--text-muted); font-weight:400;">— applies to both the charge and income forms below</span></label><select id="ci-employee"><option value="">— Select employee —</option></select></div>
         </div>
     </div>
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="charge-form-titletext">New Charge</span> <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="charge-form-titletext" data-i18n="new_charge">New Charge</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
             <div>
-                <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;">Next Charge ID</div>
+                <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;" data-i18n="next_charge_id">Next Charge ID</div>
                 <div id="next-charge-id-display" style="color: #fff; font-family: var(--mono); font-size: 15px; font-weight: 700;">3OFL00001D</div>
             </div>
         </div>
         <form id="charge-form">
             <div class="form-row">
-                <div class="field field-narrow"><label>Charge type</label><select id="gChargeType" required><option value="">— Select —</option></select></div>
-                <div class="field field-narrow"><label>Charge amount</label><input type="number" id="gAmount" min="0" step="0.01" required></div>
-                <div class="field field-narrow"><label>Weekly deduction</label><input type="number" id="gWeekly" min="0" step="0.01" required></div>
-                <div class="field field-narrow"><label>Start deduction date</label><input type="date" id="gStartDate"></div>
-                <div class="field field-narrow"><label>End deduction date</label><input type="date" id="gEndDate"></div>
-                <div class="field field-narrow"><label>Status</label><select id="gStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
-                <div class="field field-wide"><label>Notes</label><input type="text" id="gNotes"></div>
+                <div class="field field-narrow"><label data-i18n="charge_type">Charge type</label><select id="gChargeType" required><option value="">— Select —</option></select></div>
+                <div class="field field-narrow"><label data-i18n="charge_amount">Charge amount</label><input type="number" id="gAmount" min="0" step="0.01" required></div>
+                <div class="field field-narrow"><label data-i18n="weekly_deduction">Weekly deduction</label><input type="number" id="gWeekly" min="0" step="0.01" required></div>
+                <div class="field field-narrow"><label data-i18n="start_deduction_date">Start deduction date</label><input type="date" id="gStartDate"></div>
+                <div class="field field-narrow"><label data-i18n="end_deduction_date">End deduction date</label><input type="date" id="gEndDate"></div>
+                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="gStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
+                <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="gNotes"></div>
             </div>
-            <button type="submit" class="btn" id="charge-save-btn">+ Save Charge</button>
-            <button type="button" class="btn-small" id="charge-cancel-btn" style="display:none;background:#64748b;" onclick="cancelChargeEdit()">Cancel edit</button>
+            <button type="submit" class="btn" id="charge-save-btn" data-i18n="save_charge">+ Save Charge</button>
+            <button type="button" class="btn-small" id="charge-cancel-btn" style="display:none;background:#64748b;" onclick="cancelChargeEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
 
         <!-- Rate changes + pause/resume (only while editing a charge) -->
@@ -896,22 +896,22 @@
             <div id="charge-hist-setup" class="setup-banner" style="display:none;">Run the migration SQL once (the <strong>charge_rate_changes</strong> / <strong>charge_pauses</strong> tables) to save rate changes and pauses.</div>
             <div class="form-row" style="gap:16px; align-items:flex-start;">
                 <div class="field field-wide" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px;">
-                    <label style="font-weight:700;">Weekly deduction rate</label>
+                    <label style="font-weight:700;" data-i18n="weekly_deduction_rate">Weekly deduction rate</label>
                     <div id="charge-current-rate" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
                     <div class="form-row" style="margin-bottom:8px;">
-                        <div class="field field-narrow"><label>New weekly amount</label><input type="number" id="chrc-amount" min="0" step="0.01" placeholder="0.00"></div>
-                        <div class="field field-narrow"><label>Effective date</label><input type="date" id="chrc-date"></div>
-                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="addChargeRateChange()">Add rate change</button></div>
+                        <div class="field field-narrow"><label data-i18n="new_weekly_amount">New weekly amount</label><input type="number" id="chrc-amount" min="0" step="0.01" placeholder="0.00"></div>
+                        <div class="field field-narrow"><label data-i18n="effective_date">Effective date</label><input type="date" id="chrc-date"></div>
+                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="addChargeRateChange()" data-i18n="add_rate_change">Add rate change</button></div>
                     </div>
                     <div id="charge-rate-history"></div>
                 </div>
                 <div class="field field-wide" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px;">
-                    <label style="font-weight:700;">Pause / Resume</label>
+                    <label style="font-weight:700;" data-i18n="pause_resume">Pause / Resume</label>
                     <div id="charge-pause-status" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
                     <div class="form-row" style="margin-bottom:8px;">
-                        <div class="field field-narrow"><label>Paused date</label><input type="date" id="chpause-date"></div>
-                        <div class="field field-narrow"><label>Expected resume (optional)</label><input type="date" id="chpause-resume"></div>
-                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="recordChargePause()">Record pause</button></div>
+                        <div class="field field-narrow"><label data-i18n="paused_date">Paused date</label><input type="date" id="chpause-date"></div>
+                        <div class="field field-narrow"><label data-i18n="expected_resume">Expected resume (optional)</label><input type="date" id="chpause-resume"></div>
+                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="recordChargePause()" data-i18n="record_pause">Record pause</button></div>
                     </div>
                     <div id="charge-pause-history"></div>
                 </div>
@@ -921,7 +921,7 @@
 
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()"></div>
+            <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()" data-i18n-placeholder="search_charges_ph"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
@@ -943,31 +943,31 @@
     <div style="height:1px;background:var(--border);margin:18px 2px 4px;"></div>
 
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">New Additional Income <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span data-i18n="new_additional_income">New Additional Income</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
             <div>
-                <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;">Next Income ID</div>
+                <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;" data-i18n="next_income_id">Next Income ID</div>
                 <div id="next-income-id-display" style="color: #fff; font-family: var(--mono); font-size: 15px; font-weight: 700;">3OFL00001I</div>
             </div>
         </div>
         <form id="income-form">
             <div class="form-row">
-                <div class="field field-narrow"><label>Income type</label><select id="iType" required><option value="">— Select —</option></select></div>
-                <div class="field field-narrow"><label>Total amount</label><input type="number" id="iAmount" min="0" step="0.01" required></div>
-                <div class="field field-narrow"><label>Weekly amount</label><input type="number" id="iWeekly" min="0" step="0.01" required></div>
-                <div class="field field-narrow"><label>Start date</label><input type="date" id="iStartDate"></div>
-                <div class="field field-narrow"><label>End date</label><input type="date" id="iEndDate"></div>
-                <div class="field field-narrow"><label>Status</label><select id="iStatus"><option value="Queued">Queued</option><option value="Paying">Paying</option><option value="Paid">Paid</option><option value="Stopped">Stopped</option></select></div>
-                <div class="field field-wide"><label>Notes</label><input type="text" id="iNotes"></div>
+                <div class="field field-narrow"><label data-i18n="income_type">Income type</label><select id="iType" required><option value="">— Select —</option></select></div>
+                <div class="field field-narrow"><label data-i18n="total_amount">Total amount</label><input type="number" id="iAmount" min="0" step="0.01" required></div>
+                <div class="field field-narrow"><label data-i18n="weekly_amount">Weekly amount</label><input type="number" id="iWeekly" min="0" step="0.01" required></div>
+                <div class="field field-narrow"><label data-i18n="start_date">Start date</label><input type="date" id="iStartDate"></div>
+                <div class="field field-narrow"><label data-i18n="end_date">End date</label><input type="date" id="iEndDate"></div>
+                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="iStatus"><option value="Queued">Queued</option><option value="Paying">Paying</option><option value="Paid">Paid</option><option value="Stopped">Stopped</option></select></div>
+                <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="iNotes"></div>
             </div>
-            <div class="note-box">Additional income is <strong>added</strong> to the employee's pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.</div>
-            <button type="submit" class="btn">+ Save Income</button>
+            <div class="note-box" data-i18n="income_note">Additional income is <strong>added</strong> to the employee's pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.</div>
+            <button type="submit" class="btn" data-i18n="save_income">+ Save Income</button>
         </form>
     </div>
 
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()"></div>
+            <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()" data-i18n-placeholder="search_income_ph"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
@@ -1404,8 +1404,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.37';
+    const APP_VERSION = 'v2.39';
     const CHANGELOG = [
+        { version: 'v2.39', date: '2026-08-06', notes: 'Daily Pay import now automatically downloads a correction report whenever a name in the file can\'t be matched to an employee — no more digging through the original spreadsheet by hand to find who was skipped. The report lists each unmatched name, its row in your file, and that week\'s total dollar amount so you can tell at a glance which ones actually had real pay data at stake versus an empty row. Fix the names (or add the employee) and re-upload. The name-matching itself hasn\'t changed — it already used the same logic as the Claims importer.' },
+        { version: 'v2.38', date: '2026-08-06', notes: 'Bilingual work continued: Charges & Income is now fully translatable — both forms, the rate-change/pause-resume panel on Charges, and both tables. Still hidden until every tab is done (per request).' },
         { version: 'v2.37', date: '2026-08-06', notes: 'Bilingual work continued: Claims tab is now fully translatable (the form, the rate-change/pause panel, and the table). Per request, the Language switcher itself is now hidden — on the login screen and in Settings — until every tab is done, so nobody sees a half-English, half-Spanish app in the meantime. Nothing was removed; it\'ll reappear once translation is complete.' },
         { version: 'v2.36', date: '2026-08-06', notes: 'Continued the bilingual work — the Employees tab (form and table) is now fully translatable, along with the "Clear filters" and "Sort by" controls used across every section in the app. Still English-only: every other tab\'s form fields and table headers, help text, and pop-up messages — same as before, this is ongoing.' },
         { version: 'v2.35', date: '2026-08-06', notes: 'Charges can now have their weekly rate changed mid-stream and be paused/resumed — the exact same tools Claims already had, now on the Charges tab too (tap Edit on a charge to see it). This wasn\'t just a UI addition: Charges\' whole balance calculation was rebuilt underneath to actually account for pauses and rate changes week by week, the same proven system Claims already used — previously charges only understood a flat weekly amount with no way to represent a pause or a rate change at all. Statement now also shows exactly how much of each claim, charge, and income item has actually been paid or collected so far, not just what\'s left — and Charges\' Statement view now shows the full week-by-week schedule the same way Claims already did. Verified the whole pipeline directly with a test charge — paused it for two weeks, changed its rate mid-stream, and confirmed the schedule correctly skipped the paused weeks and applied the new rate from the right date, landing on exactly $0 at the right week — before shipping.' },
@@ -3689,14 +3691,23 @@
                 const wk = weekKeyFromSunday(sunday);
 
                 const entries = [];
-                const unmatched = [];
+                const unmatched = []; // {row, name, weekTotal} — same name-matching as the Claims importer (matchEmployeeByName)
                 let r = 2; // row 3 = first employee row
                 while (true) {
                     const nameCell = ws[XLSX.utils.encode_cell({ r, c: 0 })];
                     const name = nameCell ? String(nameCell.v || '').trim() : '';
                     if (!name) break;
                     const empId = matchEmployeeByName(name);
-                    if (!empId) { unmatched.push(name); r++; continue; }
+                    if (!empId) {
+                        let weekTotal = 0;
+                        dayCols.forEach(c => {
+                            const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                            const v = cell ? parseFloat(cell.v) : NaN;
+                            if (!isNaN(v)) weekTotal += v;
+                        });
+                        unmatched.push({ row: r + 1, name, weekTotal });
+                        r++; continue;
+                    }
                     dayCols.forEach((c, i) => {
                         const cell = ws[XLSX.utils.encode_cell({ r, c })];
                         if (!cell || cell.v === undefined || cell.v === null || String(cell.v).trim() === '') return; // blank = no entry, skip
@@ -3707,13 +3718,22 @@
                     r++;
                 }
 
-                if (!entries.length) { alert('No importable daily pay rows found in this file.'); return; }
+                if (!entries.length && !unmatched.length) { alert('No importable daily pay rows found in this file.'); return; }
 
-                const { data: result, error } = await supabaseClient.rpc('import_daily_pay_batch', { p_actor: currentUsername, p_entries: entries });
-                if (error) { alert('Error importing: ' + error.message); return; }
-                const res = (result && result[0]) || { imported: 0, skipped: 0 };
-                let msg = `Imported ${res.imported} daily pay entries for Week ${wk.week}, ${wk.year}.`;
-                if (unmatched.length) msg += `\n\n${unmatched.length} name(s) could not be matched to an employee and were skipped:\n` + unmatched.join(', ');
+                let msg = '';
+                if (entries.length) {
+                    const { data: result, error } = await supabaseClient.rpc('import_daily_pay_batch', { p_actor: currentUsername, p_entries: entries });
+                    if (error) { alert('Error importing: ' + error.message); return; }
+                    const res = (result && result[0]) || { imported: 0, skipped: 0 };
+                    msg = `Imported ${res.imported} daily pay entries for Week ${wk.week}, ${wk.year}.`;
+                } else {
+                    msg = `No rows could be matched to an employee for Week ${wk.week}, ${wk.year} — nothing was imported.`;
+                }
+
+                if (unmatched.length) {
+                    msg += `\n\n${unmatched.length} name(s) could not be matched to an employee and were skipped. A correction report has been downloaded — fix the names in that file (or add the employee), then re-upload.`;
+                    downloadDailyPayCorrectionReport(unmatched, wk, sheetName);
+                }
                 alert(msg);
                 event.target.value = '';
                 dailyView = { sunday };
@@ -3723,6 +3743,26 @@
             }
         };
         reader.readAsArrayBuffer(file);
+    }
+
+    // Downloadable .xlsx listing every Daily Pay row that couldn't be
+    // matched to an employee — row number and week total from the source
+    // file for context, plus a blank column to note the fix, so the whole
+    // thing can be corrected and re-uploaded in one pass instead of hunting
+    // through the original file by hand.
+    function downloadDailyPayCorrectionReport(unmatched, wk, sourceSheetName) {
+        const rows = unmatched.map(u => ({
+            'Row in source file': u.row,
+            'Name as entered': u.name,
+            'Week total ($)': +u.weekTotal.toFixed(2),
+            'Correct Employee ID or Name': '',
+            'Notes': ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [{ wch: 16 }, { wch: 34 }, { wch: 14 }, { wch: 28 }, { wch: 30 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Corrections needed');
+        XLSX.writeFile(wb, `Daily_Pay_Corrections_Week${wk.week}_${wk.year}.xlsx`);
     }
 
     async function importClaimsExcel(event) {
@@ -3926,9 +3966,10 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>Charge ID</th><th>Employee</th><th>Emp. ID</th><th>Type</th><th>Amount</th><th>Weekly</th><th>Weeks</th><th>Balance</th><th>Start</th><th>Ends</th><th>Status</th><th>Action</th>
+                <th data-i18n="th_charge_id">Charge ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             updateRecSortUI('charges');
+            applyTranslations();
             return;
         }
 
@@ -3968,6 +4009,7 @@
                 </div>`);
         });
         updateRecSortUI('charges');
+        applyTranslations();
     }
 
     async function deleteCharge(id) {
@@ -4096,9 +4138,10 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>Income ID</th><th>Employee</th><th>Emp. ID</th><th>Type</th><th>Amount</th><th>Weekly</th><th>Weeks</th><th>Remaining</th><th>Start</th><th>Ends</th><th>Status</th><th>Action</th>
+                <th data-i18n="th_income_id">Income ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_remaining">Remaining</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             updateRecSortUI('income');
+            applyTranslations();
             return;
         }
 
@@ -4137,6 +4180,7 @@
                 </div>`);
         });
         updateRecSortUI('income');
+        applyTranslations();
     }
 
     async function editIncome(id) {
@@ -5579,7 +5623,15 @@
             import_excel_csv: 'Import Excel/CSV',
             th_claim_id: 'Claim ID', th_employee: 'Employee', th_emp_id: 'Emp. ID', th_claimant_acct: 'Claimant Acct',
             th_company: 'Company', th_carrier: 'Carrier #', th_customer: 'Customer #', th_damage_type: 'Damage Type',
-            th_amount: 'Amount', th_weeks: 'Weeks', th_balance: 'Balance', th_absorbed: 'Absorbed', th_ends: 'Ends'
+            th_amount: 'Amount', th_weeks: 'Weeks', th_balance: 'Balance', th_absorbed: 'Absorbed', th_ends: 'Ends',
+            employee_applies_both: 'Employee <span style="color:var(--text-muted); font-weight:400;">— applies to both the charge and income forms below</span>',
+            new_charge: 'New Charge', next_charge_id: 'Next Charge ID', charge_type: 'Charge type', charge_amount: 'Charge amount',
+            save_charge: '+ Save Charge', search_charges_ph: 'Search charge ID, employee, type, status...',
+            new_additional_income: 'New Additional Income', next_income_id: 'Next Income ID', income_type: 'Income type',
+            total_amount: 'Total amount', weekly_amount: 'Weekly amount', end_date: 'End date',
+            income_note: 'Additional income is <strong>added</strong> to the employee\'s pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.',
+            save_income: '+ Save Income', search_income_ph: 'Search income ID, employee, type, status...',
+            th_charge_id: 'Charge ID', th_income_id: 'Income ID', th_type: 'Type', th_weekly: 'Weekly', th_remaining: 'Remaining'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -5628,7 +5680,15 @@
             import_excel_csv: 'Importar Excel/CSV',
             th_claim_id: 'ID de Reclamo', th_employee: 'Empleado', th_emp_id: 'ID Empleado', th_claimant_acct: 'Cuenta Reclamante',
             th_company: 'Compañía', th_carrier: 'N.º Transportista', th_customer: 'N.º Cliente', th_damage_type: 'Tipo de Daño',
-            th_amount: 'Monto', th_weeks: 'Semanas', th_balance: 'Saldo', th_absorbed: 'Absorbido', th_ends: 'Finaliza'
+            th_amount: 'Monto', th_weeks: 'Semanas', th_balance: 'Saldo', th_absorbed: 'Absorbido', th_ends: 'Finaliza',
+            employee_applies_both: 'Empleado <span style="color:var(--text-muted); font-weight:400;">— aplica tanto al formulario de cargo como al de ingreso abajo</span>',
+            new_charge: 'Nuevo Cargo', next_charge_id: 'Próximo ID de Cargo', charge_type: 'Tipo de cargo', charge_amount: 'Monto del cargo',
+            save_charge: '+ Guardar Cargo', search_charges_ph: 'Buscar ID de cargo, empleado, tipo, estado...',
+            new_additional_income: 'Nuevo Ingreso Adicional', next_income_id: 'Próximo ID de Ingreso', income_type: 'Tipo de ingreso',
+            total_amount: 'Monto total', weekly_amount: 'Monto semanal', end_date: 'Fecha de fin',
+            income_note: 'El ingreso adicional se <strong>suma</strong> al pago del empleado cada semana (lo opuesto a un cargo) — el monto semanal se paga hasta alcanzar el total, y luego se detiene automáticamente.',
+            save_income: '+ Guardar Ingreso', search_income_ph: 'Buscar ID de ingreso, empleado, tipo, estado...',
+            th_charge_id: 'ID de Cargo', th_income_id: 'ID de Ingreso', th_type: 'Tipo', th_weekly: 'Semanal', th_remaining: 'Restante'
         }
     };
 
