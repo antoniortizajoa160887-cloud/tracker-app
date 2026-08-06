@@ -611,13 +611,17 @@
         <h2>Add Vehicle</h2>
         <form id="vehicle-form">
             <div class="form-row">
+                <div class="field"><label>Truck #</label><input type="text" id="vTruckNum" placeholder="Company ID #"></div>
                 <div class="field"><label>Year</label><input type="text" id="vYear" required></div>
                 <div class="field"><label>Make</label><input type="text" id="vMake" placeholder="e.g. Freightliner" required></div>
                 <div class="field"><label>Model</label><input type="text" id="vModel" placeholder="e.g. Cascadia" required></div>
-                <div class="field"><label>License Plate</label><input type="text" id="vPlate"></div>
             </div>
             <div class="form-row">
+                <div class="field"><label>License Plate</label><input type="text" id="vPlate"></div>
+                <div class="field"><label>VIN</label><input type="text" id="vVin"></div>
                 <div class="field"><label>Registration Expiry</label><input type="date" id="vRegExp"></div>
+            </div>
+            <div class="form-row">
                 <div class="field"><label>Insurance Company</label><input type="text" id="vInsCo"></div>
                 <div class="field"><label>Policy Number</label><input type="text" id="vInsPol"></div>
                 <div class="field"><label>Insurance Expiry</label><input type="date" id="vInsExp"></div>
@@ -631,12 +635,13 @@
     <div class="panel">
         <div class="stat-grid" id="vehicle-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search year, make, model, plate..." oninput="renderVehicles()"></div>
+            <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search truck #, year, make, model, plate, VIN..." oninput="renderVehicles()"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')">✕ Clear filters</button>
         </div>
         <div class="rec-toolbar">
             <label>Sort by</label>
             <select id="sort-select-vehicles" onchange="setSortField('vehicles', this.value)">
+                <option value="truck">Truck #</option>
                 <option value="vehicle">Vehicle</option>
                 <option value="plate">Plate</option>
                 <option value="regexp">Reg. Expiry</option>
@@ -1349,8 +1354,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.28';
+    const APP_VERSION = 'v2.30';
     const CHANGELOG = [
+        { version: 'v2.30', date: '2026-08-06', notes: 'Found and fixed a real, separate bug behind "the claim isn\'t showing" — different from the one fixed a few versions ago. A claim/charge/income item that gets fully paid off in a single week (its balance reaching exactly $0 that same week) was being completely hidden from Payroll for that week, and showing $0 instead of the real amount if it did show — because the check for "is this still being deducted" was accidentally using the balance AFTER that week\'s payment (which is $0 once it\'s the very last payment) instead of the balance BEFORE it. Confirmed against the exact reported case — a $75 claim, paid off in one single deduction — before shipping: it now correctly shows the $75 deduction for the week it actually happened, and the balance afterward still correctly reads $0.' },
+        { version: 'v2.29', date: '2026-08-06', notes: 'Vehicles: added Truck # (your company\'s own identification number, separate from license plate) and VIN — VIN had been missing entirely, it wasn\'t being saved anywhere. Truck # now shows first, before the year, in both the vehicle list and each vehicle\'s title, and both fields are searchable and Truck # is sortable.' },
         { version: 'v2.28', date: '2026-08-06', notes: 'New: Vehicles tab (Logistics) — track your fleet\'s year/make/model, license plate, registration expiry, and insurance (company, policy #, expiry), plus a per-vehicle service log (performed or scheduled work, with dates). Registration and insurance expiry get the same warning badges already used for driver license/work permit/medical card elsewhere in the app. Built this after reviewing a version you had a different AI build as a standalone tool — that version only saved data in one browser on one device with no backup and no way for your team to share it, so it was rebuilt properly against this app\'s real database instead: same login/role system, same security model, and it now shows up wherever else you access this app (desktop, phone, any of your three deployments) instead of being stuck on one device.' },
         { version: 'v2.27', date: '2026-08-06', notes: 'Added a "✕ Clear filters" button to every section that has search boxes or filter dropdowns — Employees, Claims, Charges, Additional Income, Statement, Daily Pay, Payroll, and Notifications. One tap resets that section back to its normal default view (search cleared, dropdowns back to Active/All as appropriate) instead of clearing each field by hand.' },
         { version: 'v2.26', date: '2026-08-06', notes: 'Two things. (1) Notifications redesigned per feedback: added a Date range filter (30/60/90 days, last year, or all time) and a newest/oldest sort toggle — available to every role, same as before. Each notification is now a plain flat row instead of the collapsible-card style used elsewhere, since there was never anything to expand into. (2) Fixed a real bug in Payroll: once a claim, charge, or income item resolved (Paid/Absorbed/Tk from check/Stopped — including the automatic one from v2.15), it stopped showing in Payroll for EVERY week, including past weeks from before it resolved, when it had genuinely still been deducting. Confirmed the exact case reported: a claim that reached $0 by 08/08 had correctly been deducting the week of 08/01, but browsing back to that week showed nothing. Root cause: the balance calculation was forcing $0 for any date once a status resolved, not just from the resolution point forward. Fixed so a past week now shows what was actually true at the time, while today and future weeks still correctly show $0 for anything resolved — verified against the exact numbers from the reported case before shipping.\\n\\nA note on how this was implemented: you shared instructions you\'d given Gemini, including its proposed fix (a new payroll_transactions ledger table). I did not build it as written — it used ID types that don\'t match this database (UUIDs where this app uses text IDs throughout), it would have reopened the exact open-to-anyone security hole closed a few versions back, and its 4th section proposed replacing this app\'s entire working login system with Supabase\'s unrelated built-in auth, which would have logged everyone out permanently since no accounts exist in that system. None of that was implemented. The actual bug didn\'t need a new table at all — the schedule math already stored everything needed (start date, rate changes, pauses); it just wasn\'t being asked the right question for a past date.' },
@@ -1456,7 +1463,7 @@
         charges: { key: 'employee', dir: 1 }, income: { key: 'employee', dir: 1 },
         payroll: { key: 'employee', dir: 1 }, companies: { key: 'name', dir: 1 },
         users: { key: 'username', dir: 1 }, approvals: { key: 'requested', dir: 1 },
-        log: { key: 'changed', dir: -1 }, vehicles: { key: 'vehicle', dir: 1 }
+        log: { key: 'changed', dir: -1 }, vehicles: { key: 'truck', dir: 1 }
     };
 
     function applySort(list, table, getters) {
@@ -1630,6 +1637,16 @@
         const weeksPaid = Math.min(weeksElapsedAsOf(startStr, asOfStr), weeksNeeded(amount, weekly));
         return Math.max(0, +(amount - weekly * weeksPaid).toFixed(2));
     }
+    // Same reasoning as claimBalanceBefore: the balance ENTERING a given
+    // week, not after that week's own deduction — a charge/income item that
+    // gets fully paid off in a single week would otherwise show $0 and
+    // vanish for the very week it was actually taken.
+    function remainingBalanceBefore(amount, weekly, startStr, status, asOfStr) {
+        if (!asOfStr) return remainingBalanceAsOf(amount, weekly, startStr, status, asOfStr);
+        const d = new Date(asOfStr + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - 7);
+        return remainingBalanceAsOf(amount, weekly, startStr, status, d.toISOString().split('T')[0]);
+    }
 
     // ===== Claim rate-change / pause history + balance-from-history =====
     let claimRateChanges = {};   // claim_id -> [{id, effective_date, weekly_amount}]
@@ -1730,6 +1747,19 @@
         if (!viewingPast && (claim.status === 'Absorbed' || claim.status === 'Tk from check' || claim.status === 'Paid')) return 0;
         if (claim.status === 'Queued') return owed;
         return buildClaimSchedule(claim, asOf || todayStr()).balanceAsOf;
+    }
+    // Balance ENTERING a given week (i.e. as of the end of the previous
+    // week) — distinct from claimBalance(), which returns the balance AFTER
+    // that week's own deduction. Needed because a claim that gets fully
+    // paid off in a single week has claimBalance()==0 for that very week,
+    // which silently hid the fact that a deduction happened at all — this
+    // gives the correct "was there money to deduct entering this week?" and
+    // "how much was actually taken this week?" answer instead.
+    function claimBalanceBefore(claim, asOf) {
+        if (!asOf) return claimBalance(claim, asOf);
+        const d = new Date(asOf + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - 7);
+        return claimBalance(claim, d.toISOString().split('T')[0]);
     }
     // Current applicable weekly rate (today) for payroll deductions.
     function claimCurrentRate(claim) { return rateOn(claim, todayStr()); }
@@ -3714,8 +3744,8 @@
         const asOf = payrollAsOf();
         let total = 0;
         additionalIncome.filter(i => i.employee_id === empId && i.status !== 'Queued').forEach(i => {
-            const rem = remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
-            if (rem > 0) total += Math.min(parseFloat(i.weekly_amount) || 0, rem);
+            const remBefore = remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
+            if (remBefore > 0) total += Math.min(parseFloat(i.weekly_amount) || 0, remBefore);
         });
         return total;
     }
@@ -3723,8 +3753,11 @@
     function incomeBreakdown(empId) {
         const asOf = payrollAsOf();
         return additionalIncome
-            .filter(i => i.employee_id === empId && i.status !== 'Queued' && remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
-            .map(i => ({ id: i.income_id, label: i.income_type || 'Income', weekly: Math.min(parseFloat(i.weekly_amount) || 0, remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf)), remaining: remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) }));
+            .filter(i => i.employee_id === empId && i.status !== 'Queued' && remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
+            .map(i => {
+                const remBefore = remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
+                return { id: i.income_id, label: i.income_type || 'Income', weekly: Math.min(parseFloat(i.weekly_amount) || 0, remBefore), remaining: remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) };
+            });
     }
 
     document.getElementById('income-form').addEventListener('submit', async function(e) {
@@ -4044,17 +4077,23 @@
         // claim/charge now Paid/Absorbed/Tk from check can still correctly
         // show a deduction for a past week before it was resolved, since
         // claimBalance/remainingBalanceAsOf above are now week-aware.
+        // Inclusion + the actual weekly amount use the balance ENTERING the
+        // week (claimBalanceBefore), not the balance after — otherwise a
+        // claim/charge that gets fully paid off in one week shows $0 and
+        // silently disappears for the very week its final payment happened.
         claims.filter(c => c.employee_id === empId && c.status !== 'Queued').forEach(c => {
-            const bal = claimBalance(c, asOf);
-            if (bal > 0 && !isPausedOn(c, asOf)) {
-                const weekly = Math.min(rateOn(c, asOf), bal);
+            const balBefore = claimBalanceBefore(c, asOf);
+            if (balBefore > 0 && !isPausedOn(c, asOf)) {
+                const bal = claimBalance(c, asOf);
+                const weekly = Math.min(rateOn(c, asOf), balBefore);
                 items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', company: c.company_name || '', claimant: c.claimant_account || '', carrier: c.carrier_claim_number || '', customer: c.customer_claim_number || '', weekly, scheduled: weekly, balance: bal });
             }
         });
         charges.filter(ch => ch.employee_id === empId && ch.status !== 'Queued').forEach(ch => {
-            const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
-            if (bal > 0) {
-                const weekly = Math.min(parseFloat(ch.weekly_deduction) || 0, bal);
+            const balBefore = remainingBalanceBefore(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
+            if (balBefore > 0) {
+                const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
+                const weekly = Math.min(parseFloat(ch.weekly_deduction) || 0, balBefore);
                 items.push({ kind: 'Charge', id: ch.charge_id, label: ch.charge_type || 'Charge', weekly, scheduled: weekly, balance: bal });
             }
         });
@@ -5835,10 +5874,12 @@
         if (!co) return;
         const payload = {
             company_code: co,
+            truck_number: document.getElementById('vTruckNum').value.trim() || null,
             year: document.getElementById('vYear').value.trim(),
             make: document.getElementById('vMake').value.trim(),
             model: document.getElementById('vModel').value.trim(),
             plate: document.getElementById('vPlate').value.trim() || null,
+            vin: document.getElementById('vVin').value.trim() || null,
             reg_expiry: document.getElementById('vRegExp').value || null,
             insurance_company: document.getElementById('vInsCo').value.trim() || null,
             insurance_policy: document.getElementById('vInsPol').value.trim() || null,
@@ -5862,10 +5903,12 @@
         const v = vehicles.find(x => x.id === id);
         if (!v) return;
         editingVehicleId = id;
+        document.getElementById('vTruckNum').value = v.truck_number || '';
         document.getElementById('vYear').value = v.year || '';
         document.getElementById('vMake').value = v.make || '';
         document.getElementById('vModel').value = v.model || '';
         document.getElementById('vPlate').value = v.plate || '';
+        document.getElementById('vVin').value = v.vin || '';
         document.getElementById('vRegExp').value = v.reg_expiry || '';
         document.getElementById('vInsCo').value = v.insurance_company || '';
         document.getElementById('vInsPol').value = v.insurance_policy || '';
@@ -5929,6 +5972,8 @@
             : '<div style="color:var(--text-muted); font-size:12px;">No service records yet.</div>';
         return `
             <div class="rec-detail-grid">
+                <div><div class="k">License plate</div><div class="v">${v.plate ? escHtml(v.plate) : '-'}</div></div>
+                <div><div class="k">VIN</div><div class="v">${v.vin ? escHtml(v.vin) : '-'}</div></div>
                 <div><div class="k">Notes</div><div class="v">${v.notes ? escHtml(v.notes) : '-'}</div></div>
             </div>
             <div class="detail-subhead" style="margin-top:10px;">Service Log</div>
@@ -5951,10 +5996,11 @@
         const query = (document.getElementById('vehicle-search')?.value || '').toLowerCase();
         let list = vehicles.filter(v => {
             if (!query) return true;
-            const hay = `${v.year} ${v.make} ${v.model} ${v.plate || ''}`.toLowerCase();
+            const hay = `${v.truck_number || ''} ${v.year} ${v.make} ${v.model} ${v.plate || ''} ${v.vin || ''}`.toLowerCase();
             return hay.includes(query);
         });
         list = applySort(list, 'vehicles', {
+            truck: v => v.truck_number || '',
             vehicle: v => `${v.year} ${v.make} ${v.model}`,
             plate: v => v.plate || '',
             regexp: v => v.reg_expiry || '',
@@ -5982,6 +6028,7 @@
                 const open = recExpanded.vehicles.has(v.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('vehicles','${v.id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span> ${v.id}</td>
+                    <td>${v.truck_number ? escHtml(v.truck_number) : '-'}</td>
                     <td>${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</td>
                     <td>${v.plate ? escHtml(v.plate) : '-'}</td>
                     <td>${v.reg_expiry || '-'}${expBadge(v.reg_expiry, 30)}</td>
@@ -5989,11 +6036,11 @@
                     <td>${v.insurance_expiry || '-'}${expBadge(v.insurance_expiry, 30)}</td>
                 </tr>
                 <tr class="rec-card${open ? ' open' : ''}" id="rec-vehicles-${v.id}" style="display:${open ? 'table-row' : 'none'};">
-                    <td colspan="6" style="padding:12px; background:var(--surface-2);">${vehicleDetailHtml(v)}</td>
+                    <td colspan="7" style="padding:12px; background:var(--surface-2);">${vehicleDetailHtml(v)}</td>
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Vehicle</th><th>Plate</th><th>Reg. Expiry</th><th>Insurance Co.</th><th>Insurance Expiry</th>
+                <th>ID</th><th>Truck #</th><th>Vehicle</th><th>Plate</th><th>Reg. Expiry</th><th>Insurance Co.</th><th>Insurance Expiry</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             updateRecSortUI('vehicles');
             return;
@@ -6007,7 +6054,7 @@
                 <div class="rec-card${open ? ' open' : ''}" id="rec-vehicles-${v.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('vehicles','${v.id}')">
                         <span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</span>
+                        <span class="rec-title">${v.truck_number ? `#${escHtml(v.truck_number)} — ` : ''}${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</span>
                         <span class="rec-sub">${v.plate ? escHtml(v.plate) : v.id}</span>
                         <span class="rec-right">${expBadge(v.reg_expiry, 30) || expBadge(v.insurance_expiry, 30)}</span>
                     </div>
