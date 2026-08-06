@@ -2,7 +2,6 @@ const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
-const { execFileSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
 const DEFAULT_APP_NAME = 'Unified Logistics HR Claims Dashboard';
@@ -114,23 +113,92 @@ function deriveDialogTitle(message) {
 
 // Electron never implemented window.prompt() (alert/confirm map to real
 // native dialogs; prompt() just rejects with "prompt() is and will not be
-// supported."). This shows a genuine native Windows input box instead,
-// blocking synchronously just like a real prompt() would.
-function showNativePrompt(message, defaultValue) {
-  const title = deriveDialogTitle(message);
-  const escape = (s) => String(s == null ? '' : s).replace(/'/g, "''");
-  const script = `Add-Type -AssemblyName Microsoft.VisualBasic; [Console]::Out.Write([Microsoft.VisualBasic.Interaction]::InputBox('${escape(
-    message
-  )}', '${escape(title)}', '${escape(defaultValue)}'))`;
-  try {
-    return execFileSync(
-      'powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
-      { encoding: 'utf8' }
+// supported."). This shows a small modal window with our own input field
+// instead. An earlier version of this shelled out to powershell.exe to run
+// a native VB InputBox — that got silently blocked by Windows' "Check apps
+// and files" (SmartScreen) reputation check on the child process, which is
+// exactly the "inputs don't work unless I turn security off" report this
+// replaces. A window created by the already-running app isn't a new
+// executable launch, so it isn't subject to that check at all.
+function buildPromptHtml(message, defaultValue) {
+  const escapeHtml = (s) =>
+    String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body { margin:0; font-family: -apple-system, "Segoe UI", sans-serif; background:#1e293b; color:#e2e8f0; padding:18px 20px; box-sizing:border-box; -webkit-user-select:none; }
+  p { margin:0 0 10px; font-size:13px; white-space:pre-wrap; }
+  input { width:100%; box-sizing:border-box; padding:8px 10px; font-size:13px; border-radius:6px; border:1px solid #475569; background:#0f172a; color:#e2e8f0; outline:none; }
+  input:focus { border-color:#10b981; }
+  .buttons { margin-top:16px; display:flex; justify-content:flex-end; gap:8px; }
+  button { padding:7px 16px; border-radius:6px; border:none; font-size:13px; cursor:pointer; }
+  #ok { background:#10b981; color:#04120c; font-weight:600; }
+  #cancel { background:#334155; color:#e2e8f0; }
+</style></head>
+<body>
+  <p>${escapeHtml(message)}</p>
+  <input id="val" />
+  <div class="buttons">
+    <button id="cancel">Cancel</button>
+    <button id="ok">OK</button>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+    const input = document.getElementById('val');
+    input.value = ${JSON.stringify(String(defaultValue == null ? '' : defaultValue))};
+    input.focus();
+    input.select();
+    function respond(value) { ipcRenderer.send('native-prompt-response', value); }
+    document.getElementById('ok').addEventListener('click', () => respond(input.value));
+    document.getElementById('cancel').addEventListener('click', () => respond(null));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') respond(input.value);
+      if (e.key === 'Escape') respond(null);
+    });
+  </script>
+</body></html>`;
+}
+
+function showNativePromptAsync(message, defaultValue) {
+  return new Promise((resolve) => {
+    const title = deriveDialogTitle(message);
+    const promptWin = new BrowserWindow({
+      width: 440,
+      height: 190,
+      parent: mainWindow || undefined,
+      modal: !!mainWindow,
+      show: false,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      autoHideMenuBar: true,
+      title,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+    });
+
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      ipcMain.removeListener('native-prompt-response', onResponse);
+      resolve(value);
+      if (!promptWin.isDestroyed()) promptWin.close();
+    };
+    const onResponse = (event, value) => finish(value);
+    ipcMain.on('native-prompt-response', onResponse);
+    promptWin.on('closed', () => finish(null));
+
+    promptWin.once('ready-to-show', () => promptWin.show());
+    promptWin.loadURL(
+      'data:text/html;charset=utf-8,' + encodeURIComponent(buildPromptHtml(message, defaultValue))
     );
-  } catch (err) {
-    return '';
-  }
+  });
 }
 
 function injectDialogTitleOverride(win) {
@@ -180,7 +248,7 @@ async function createWindow() {
       contextIsolation: true,
       // sandbox:true blocked window.confirm() dialogs entirely (used by the
       // "Delete All ..." admin actions). window.prompt() is a separate story
-      // — see showNativePrompt below, Electron never implements it at all.
+      // — see showNativePromptAsync below, Electron never implements it at all.
       // nodeIntegration:false + contextIsolation:true already keep the page
       // from touching Node/Electron internals, sandbox:false doesn't change that.
       sandbox: false,
@@ -212,7 +280,13 @@ ipcMain.on('set-dialog-title', (event, message) => {
 });
 
 ipcMain.on('native-prompt', (event, message, defaultValue) => {
-  event.returnValue = showNativePrompt(message, defaultValue);
+  // Deliberately not setting event.returnValue synchronously here — Electron
+  // keeps the renderer's sendSync call blocked until it's assigned, however
+  // long that takes, so it's safe to resolve this later once the user
+  // actually answers the modal (verified empirically, not just assumed).
+  showNativePromptAsync(message, defaultValue).then((value) => {
+    event.returnValue = value;
+  });
 });
 
 function showBanner(win, message, background) {

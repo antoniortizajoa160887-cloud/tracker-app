@@ -1,6 +1,6 @@
 {
   "name": "unified-logistics-hr-dashboard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Unified Logistics & HR Claims Dashboard desktop app",
   "main": "main.js",
   "private": true,
