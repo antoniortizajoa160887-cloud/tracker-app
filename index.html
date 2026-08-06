@@ -509,6 +509,7 @@
 <div class="tabs sub-tabs open" id="grp-logistics">
     <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker">Route Tracker</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report">Daily Report</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles">Vehicles</button>
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
     <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications">Notifications <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
@@ -601,6 +602,49 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- TAB: VEHICLES -->
+<div id="tab-vehicles" class="tab-content">
+    <div class="panel" id="vehicle-form-panel">
+        <h2>Add Vehicle</h2>
+        <form id="vehicle-form">
+            <div class="form-row">
+                <div class="field"><label>Year</label><input type="text" id="vYear" required></div>
+                <div class="field"><label>Make</label><input type="text" id="vMake" placeholder="e.g. Freightliner" required></div>
+                <div class="field"><label>Model</label><input type="text" id="vModel" placeholder="e.g. Cascadia" required></div>
+                <div class="field"><label>License Plate</label><input type="text" id="vPlate"></div>
+            </div>
+            <div class="form-row">
+                <div class="field"><label>Registration Expiry</label><input type="date" id="vRegExp"></div>
+                <div class="field"><label>Insurance Company</label><input type="text" id="vInsCo"></div>
+                <div class="field"><label>Policy Number</label><input type="text" id="vInsPol"></div>
+                <div class="field"><label>Insurance Expiry</label><input type="date" id="vInsExp"></div>
+            </div>
+            <div class="form-row"><div class="field field-wide"><label>Notes</label><input type="text" id="vNotes"></div></div>
+            <button type="submit" class="btn" id="vehicle-save-btn">+ Add Vehicle</button>
+            <button type="button" class="btn-small" id="vehicle-cancel-btn" style="display:none;background:#64748b;" onclick="cancelVehicleEdit()">Cancel edit</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="stat-grid" id="vehicle-stats-grid"></div>
+        <div class="form-row" style="margin-bottom: 10px;">
+            <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search year, make, model, plate..." oninput="renderVehicles()"></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')">✕ Clear filters</button>
+        </div>
+        <div class="rec-toolbar">
+            <label>Sort by</label>
+            <select id="sort-select-vehicles" onchange="setSortField('vehicles', this.value)">
+                <option value="vehicle">Vehicle</option>
+                <option value="plate">Plate</option>
+                <option value="regexp">Reg. Expiry</option>
+                <option value="insexp">Insurance Expiry</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-vehicles" onclick="flipSortDir('vehicles')">▲</button>
+        </div>
+        <div id="vehicles-tbody" class="record-grid"></div>
     </div>
 </div>
 
@@ -1297,7 +1341,7 @@
     let currentWeekDaily = {};  // employee_id -> number (this week's daily total, for Payroll)
     let currentWeekDailyDetail = {}; // employee_id -> [{date, amount, is_off}] (this week, for Payroll expand)
     let currentWeekLabel = '';  // human label for the current pay week
-    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set(), changelog: new Set() };
+    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set(), changelog: new Set(), vehicles: new Set() };
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
 
     // ===== Version tracking =====
@@ -1305,8 +1349,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.27';
+    const APP_VERSION = 'v2.28';
     const CHANGELOG = [
+        { version: 'v2.28', date: '2026-08-06', notes: 'New: Vehicles tab (Logistics) — track your fleet\'s year/make/model, license plate, registration expiry, and insurance (company, policy #, expiry), plus a per-vehicle service log (performed or scheduled work, with dates). Registration and insurance expiry get the same warning badges already used for driver license/work permit/medical card elsewhere in the app. Built this after reviewing a version you had a different AI build as a standalone tool — that version only saved data in one browser on one device with no backup and no way for your team to share it, so it was rebuilt properly against this app\'s real database instead: same login/role system, same security model, and it now shows up wherever else you access this app (desktop, phone, any of your three deployments) instead of being stuck on one device.' },
         { version: 'v2.27', date: '2026-08-06', notes: 'Added a "✕ Clear filters" button to every section that has search boxes or filter dropdowns — Employees, Claims, Charges, Additional Income, Statement, Daily Pay, Payroll, and Notifications. One tap resets that section back to its normal default view (search cleared, dropdowns back to Active/All as appropriate) instead of clearing each field by hand.' },
         { version: 'v2.26', date: '2026-08-06', notes: 'Two things. (1) Notifications redesigned per feedback: added a Date range filter (30/60/90 days, last year, or all time) and a newest/oldest sort toggle — available to every role, same as before. Each notification is now a plain flat row instead of the collapsible-card style used elsewhere, since there was never anything to expand into. (2) Fixed a real bug in Payroll: once a claim, charge, or income item resolved (Paid/Absorbed/Tk from check/Stopped — including the automatic one from v2.15), it stopped showing in Payroll for EVERY week, including past weeks from before it resolved, when it had genuinely still been deducting. Confirmed the exact case reported: a claim that reached $0 by 08/08 had correctly been deducting the week of 08/01, but browsing back to that week showed nothing. Root cause: the balance calculation was forcing $0 for any date once a status resolved, not just from the resolution point forward. Fixed so a past week now shows what was actually true at the time, while today and future weeks still correctly show $0 for anything resolved — verified against the exact numbers from the reported case before shipping.\\n\\nA note on how this was implemented: you shared instructions you\'d given Gemini, including its proposed fix (a new payroll_transactions ledger table). I did not build it as written — it used ID types that don\'t match this database (UUIDs where this app uses text IDs throughout), it would have reopened the exact open-to-anyone security hole closed a few versions back, and its 4th section proposed replacing this app\'s entire working login system with Supabase\'s unrelated built-in auth, which would have logged everyone out permanently since no accounts exist in that system. None of that was implemented. The actual bug didn\'t need a new table at all — the schedule math already stored everything needed (start date, rate changes, pauses); it just wasn\'t being asked the right question for a past date.' },
         { version: 'v2.25', date: '2026-08-05', notes: 'New: Notifications tab (HR & Payroll). Whenever a claim, charge, or additional income is created for an employee, they now get a notification showing what it is, the amount, and when it happened — tap it and it jumps straight to that record, already filtered into view. A red count badge on the tab shows how many are unread. This runs at the database level, so it fires no matter how the record was created (the form, a CSV import, anything in the future) — nothing can slip through. Same access rules as everywhere else: a View Only account only ever sees notifications about themselves, never a coworker\'s.' },
@@ -1411,7 +1456,7 @@
         charges: { key: 'employee', dir: 1 }, income: { key: 'employee', dir: 1 },
         payroll: { key: 'employee', dir: 1 }, companies: { key: 'name', dir: 1 },
         users: { key: 'username', dir: 1 }, approvals: { key: 'requested', dir: 1 },
-        log: { key: 'changed', dir: -1 }
+        log: { key: 'changed', dir: -1 }, vehicles: { key: 'vehicle', dir: 1 }
     };
 
     function applySort(list, table, getters) {
@@ -1692,7 +1737,7 @@
     function openTab(evt, tabName) {
         // View Only users may only open their 6 permitted tabs.
         if (currentUserRole === 'User') {
-            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll'];
+            const allowed = ['tab-notifications','tab-vehicles','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll'];
             if (!allowed.includes(tabName)) return;
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -1700,6 +1745,7 @@
         document.getElementById(tabName).classList.add('active');
         if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
         if(tabName === 'tab-notifications') renderNotifications();
+        if(tabName === 'tab-vehicles') renderVehicles();
         if(tabName === 'tab-claims') renderClaims();
         if(tabName === 'tab-charges') { renderCharges(); renderIncome(); }
         if(tabName === 'tab-report') renderDailyReport();
@@ -1717,7 +1763,7 @@
 
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
-        'grp-logistics': ['tab-tracker', 'tab-report'],
+        'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
         'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
@@ -2261,6 +2307,7 @@
         if (typeof renderCharges === 'function') renderCharges();
         if (typeof renderIncome === 'function') renderIncome();
         await loadNotifications();
+        await fetchVehiclesFromCloud();
     }
 
     async function fetchRoutesFromCloud() {
@@ -2688,6 +2735,10 @@
             case 'notifications':
                 setVal('notif-range', '');
                 renderNotifications();
+                break;
+            case 'vehicles':
+                setVal('vehicle-search', '');
+                renderVehicles();
                 break;
         }
     }
@@ -5754,6 +5805,224 @@
                 <td>${sums.deductions > 0 ? formatMoney(sums.deductions) : ''}</td><td>${sums.extra > 0 ? formatMoney(sums.extra) : ''}</td>
                 <td class="money">${formatMoney(sums.totalPay)}</td>
             </tr>`;
+    }
+
+    // --- VEHICLES ----------------------------------------------------------
+    let vehicles = [];
+    let vehicleServices = {}; // vehicle_id -> [{id, service_date, description, type}]
+    let editingVehicleId = null;
+
+    async function fetchVehiclesFromCloud() {
+        try {
+            const [vq, sq] = await Promise.all([
+                supabaseClient.rpc('get_vehicles', { p_actor: currentUsername, p_company: currentCompany }),
+                supabaseClient.rpc('get_vehicle_services', { p_actor: currentUsername, p_company: currentCompany })
+            ]);
+            if (vq.error) { console.error('get_vehicles:', vq.error); vehicles = []; }
+            else vehicles = vq.data || [];
+            const svc = {};
+            if (sq.error) { console.error('get_vehicle_services:', sq.error); }
+            else (sq.data || []).forEach(s => { (svc[s.vehicle_id] = svc[s.vehicle_id] || []).push(s); });
+            vehicleServices = svc;
+        } catch (e) { console.error('fetchVehiclesFromCloud:', e); }
+        renderVehicles();
+    }
+
+    document.getElementById('vehicle-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!canEdit()) return;
+        const co = requireWriteCompany();
+        if (!co) return;
+        const payload = {
+            company_code: co,
+            year: document.getElementById('vYear').value.trim(),
+            make: document.getElementById('vMake').value.trim(),
+            model: document.getElementById('vModel').value.trim(),
+            plate: document.getElementById('vPlate').value.trim() || null,
+            reg_expiry: document.getElementById('vRegExp').value || null,
+            insurance_company: document.getElementById('vInsCo').value.trim() || null,
+            insurance_policy: document.getElementById('vInsPol').value.trim() || null,
+            insurance_expiry: document.getElementById('vInsExp').value || null,
+            notes: document.getElementById('vNotes').value.trim() || null
+        };
+        let error;
+        if (editingVehicleId) {
+            ({ error } = await supabaseClient.from('vehicles').update(payload).eq('id', editingVehicleId));
+        } else {
+            const id = `${idPrefix()}${String(vehicles.length + 1).padStart(4, '0')}V`;
+            ({ error } = await supabaseClient.from('vehicles').insert([{ id, ...payload }]));
+        }
+        if (error) { alert('Error: ' + error.message); return; }
+        cancelVehicleEdit();
+        this.reset();
+        fetchVehiclesFromCloud();
+    });
+
+    function editVehicle(id) {
+        const v = vehicles.find(x => x.id === id);
+        if (!v) return;
+        editingVehicleId = id;
+        document.getElementById('vYear').value = v.year || '';
+        document.getElementById('vMake').value = v.make || '';
+        document.getElementById('vModel').value = v.model || '';
+        document.getElementById('vPlate').value = v.plate || '';
+        document.getElementById('vRegExp').value = v.reg_expiry || '';
+        document.getElementById('vInsCo').value = v.insurance_company || '';
+        document.getElementById('vInsPol').value = v.insurance_policy || '';
+        document.getElementById('vInsExp').value = v.insurance_expiry || '';
+        document.getElementById('vNotes').value = v.notes || '';
+        document.getElementById('vehicle-save-btn').textContent = 'Save Changes';
+        document.getElementById('vehicle-cancel-btn').style.display = 'inline-block';
+        document.getElementById('vehicle-form-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelVehicleEdit() {
+        editingVehicleId = null;
+        document.getElementById('vehicle-save-btn').textContent = '+ Add Vehicle';
+        document.getElementById('vehicle-cancel-btn').style.display = 'none';
+        document.getElementById('vehicle-form').reset();
+    }
+
+    async function deleteVehicle(id) {
+        if (!canEdit()) return;
+        if (!confirm('Delete this vehicle and its whole service log?')) return;
+        const { error } = await supabaseClient.from('vehicles').delete().eq('id', id);
+        if (error) { alert('Error: ' + error.message); return; }
+        fetchVehiclesFromCloud();
+    }
+
+    async function addVehicleService(vehicleId) {
+        if (!canEdit()) return;
+        const co = requireWriteCompany();
+        if (!co) return;
+        const dateEl = document.getElementById(`vs-date-${vehicleId}`);
+        const descEl = document.getElementById(`vs-desc-${vehicleId}`);
+        const typeEl = document.getElementById(`vs-type-${vehicleId}`);
+        if (!dateEl.value || !descEl.value.trim()) { alert('Enter both a date and a description.'); return; }
+        const { error } = await supabaseClient.from('vehicle_services').insert([{
+            vehicle_id: vehicleId, company_code: co, service_date: dateEl.value,
+            description: descEl.value.trim(), type: typeEl.value
+        }]);
+        if (error) { alert('Error: ' + error.message); return; }
+        recExpanded.vehicles.add(vehicleId);
+        fetchVehiclesFromCloud();
+    }
+
+    async function deleteVehicleService(id, vehicleId) {
+        if (!canEdit() || !id) return;
+        const { error } = await supabaseClient.from('vehicle_services').delete().eq('id', id);
+        if (error) { alert('Error: ' + error.message); return; }
+        recExpanded.vehicles.add(vehicleId);
+        fetchVehiclesFromCloud();
+    }
+
+    // Shared service-log block — used by both the desktop detail row and the
+    // mobile card body, same pattern as employeeDetailHtml.
+    function vehicleDetailHtml(v) {
+        const editable = canEdit();
+        const services = (vehicleServices[v.id] || []).slice().sort((a, b) => String(b.service_date).localeCompare(String(a.service_date)));
+        const rows = services.length
+            ? services.map(s => `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px;">
+                    <span><strong>${s.service_date}</strong> — ${escHtml(s.description)} <span class="status-badge ${s.type === 'Performed' ? 'status-active' : ''}" style="margin-left:6px;">${s.type}</span></span>
+                    ${editable ? `<span class="del-btn" onclick="deleteVehicleService(${s.id}, '${escJsAttr(v.id)}')">✕</span>` : ''}
+                </div>`).join('')
+            : '<div style="color:var(--text-muted); font-size:12px;">No service records yet.</div>';
+        return `
+            <div class="rec-detail-grid">
+                <div><div class="k">Notes</div><div class="v">${v.notes ? escHtml(v.notes) : '-'}</div></div>
+            </div>
+            <div class="detail-subhead" style="margin-top:10px;">Service Log</div>
+            ${editable ? `
+            <div class="form-row" style="margin:6px 0;">
+                <div class="field"><input type="date" id="vs-date-${v.id}"></div>
+                <div class="field field-wide"><input type="text" id="vs-desc-${v.id}" placeholder="e.g. Oil Change, Tire Rotation"></div>
+                <div class="field"><select id="vs-type-${v.id}"><option value="Performed">Performed</option><option value="Scheduled">Scheduled</option></select></div>
+                <button type="button" class="btn-small" style="background:var(--navy);" onclick="addVehicleService('${escJsAttr(v.id)}')">+ Add</button>
+            </div>` : ''}
+            <div>${rows}</div>
+            ${editable ? `
+            <div class="rec-actions" style="margin-top:10px;">
+                <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editVehicle('${escJsAttr(v.id)}')">Edit</button>
+                <button class="del-btn" onclick="deleteVehicle('${escJsAttr(v.id)}')">✕ Delete</button>
+            </div>` : ''}`;
+    }
+
+    function renderVehicles() {
+        const query = (document.getElementById('vehicle-search')?.value || '').toLowerCase();
+        let list = vehicles.filter(v => {
+            if (!query) return true;
+            const hay = `${v.year} ${v.make} ${v.model} ${v.plate || ''}`.toLowerCase();
+            return hay.includes(query);
+        });
+        list = applySort(list, 'vehicles', {
+            vehicle: v => `${v.year} ${v.make} ${v.model}`,
+            plate: v => v.plate || '',
+            regexp: v => v.reg_expiry || '',
+            insexp: v => v.insurance_expiry || ''
+        });
+
+        const grid = document.getElementById('vehicle-stats-grid');
+        if (grid) {
+            const expiringReg = vehicles.filter(v => v.reg_expiry && expBadge(v.reg_expiry, 30)).length;
+            const expiringIns = vehicles.filter(v => v.insurance_expiry && expBadge(v.insurance_expiry, 30)).length;
+            grid.innerHTML = `
+                <div class="stat-card"><div class="stat-label">Vehicles</div><div class="stat-value">${vehicles.length}</div></div>
+                <div class="stat-card"><div class="stat-label">Reg. expiring/expired</div><div class="stat-value">${expiringReg}</div></div>
+                <div class="stat-card"><div class="stat-label">Insurance expiring/expired</div><div class="stat-value">${expiringIns}</div></div>`;
+        }
+
+        const container = document.getElementById('vehicles-tbody');
+        const editable = canEdit();
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No vehicles yet.</div>'; return; }
+            let rows = '';
+            list.forEach(v => {
+                const open = recExpanded.vehicles.has(v.id);
+                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('vehicles','${v.id}')">
+                    <td class="id-cell"><span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span> ${v.id}</td>
+                    <td>${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</td>
+                    <td>${v.plate ? escHtml(v.plate) : '-'}</td>
+                    <td>${v.reg_expiry || '-'}${expBadge(v.reg_expiry, 30)}</td>
+                    <td>${v.insurance_company ? escHtml(v.insurance_company) : '-'}</td>
+                    <td>${v.insurance_expiry || '-'}${expBadge(v.insurance_expiry, 30)}</td>
+                </tr>
+                <tr class="rec-card${open ? ' open' : ''}" id="rec-vehicles-${v.id}" style="display:${open ? 'table-row' : 'none'};">
+                    <td colspan="6" style="padding:12px; background:var(--surface-2);">${vehicleDetailHtml(v)}</td>
+                </tr>`;
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>ID</th><th>Vehicle</th><th>Plate</th><th>Reg. Expiry</th><th>Insurance Co.</th><th>Insurance Expiry</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            updateRecSortUI('vehicles');
+            return;
+        }
+
+        container.className = 'record-grid';
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No vehicles yet.</div>';
+        list.forEach(v => {
+            const open = recExpanded.vehicles.has(v.id);
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card${open ? ' open' : ''}" id="rec-vehicles-${v.id}">
+                    <div class="rec-card-head" onclick="toggleRecCard('vehicles','${v.id}')">
+                        <span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span>
+                        <span class="rec-title">${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</span>
+                        <span class="rec-sub">${v.plate ? escHtml(v.plate) : v.id}</span>
+                        <span class="rec-right">${expBadge(v.reg_expiry, 30) || expBadge(v.insurance_expiry, 30)}</span>
+                    </div>
+                    <div class="rec-card-body">
+                        <div class="rec-detail-grid">
+                            <div><div class="k">Registration expiry</div><div class="v">${v.reg_expiry || '-'}${expBadge(v.reg_expiry, 30)}</div></div>
+                            <div><div class="k">Insurance company</div><div class="v">${v.insurance_company ? escHtml(v.insurance_company) : '-'}</div></div>
+                            <div><div class="k">Policy #</div><div class="v">${v.insurance_policy ? escHtml(v.insurance_policy) : '-'}</div></div>
+                            <div><div class="k">Insurance expiry</div><div class="v">${v.insurance_expiry || '-'}${expBadge(v.insurance_expiry, 30)}</div></div>
+                        </div>
+                        ${vehicleDetailHtml(v)}
+                    </div>
+                </div>`);
+        });
+        updateRecSortUI('vehicles');
     }
 
     function renderDailyReport() {
