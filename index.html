@@ -1369,8 +1369,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.33';
+    const APP_VERSION = 'v2.34';
     const CHANGELOG = [
+        { version: 'v2.34', date: '2026-08-06', notes: 'Found the real, deeper cause of the income-showing-in-the-wrong-week issue — last version\'s fix was correct as far as it went, but there was a second, more fundamental bug underneath it that only this exact case (a 1-week item) exposed clearly. The week-counting math for every charge and additional income (not claims, which were already correct) was starting the count a full week late — treating the very week something starts as "zero weeks elapsed" instead of the first week. For a 1-week item like David Rodriguez\'s $50 income, that meant it looked unpaid during its actual start week and then looked like it was still being paid the week after, instead of being fully done in its own start week as it should be — exactly matching the rule you gave: weeks = 1 means the start week and end week are the same. Fixed the underlying week count so it now matches how claims already worked. Important to know: this also quietly corrects the running balance shown for every other active charge and additional income, not just this one — those had been under-counting by one week\'s payment this whole time, so a few balances (Charges & Income tab, and Payroll) will shift down by one week\'s worth of deduction the moment this goes live. That\'s the correction taking effect, not new data loss.' },
         { version: 'v2.33', date: '2026-08-06', notes: 'Two things. (1) Fixed a real, confirmed bug in Payroll: claims, charges, and additional income were showing in payroll weeks BEFORE their own start date, not just after they finished — David Rodriguez\'s income entry (start date 7/25) was incorrectly showing in the 7/12 week too, more than a week before it began. Root cause: the balance calculation correctly reports "full amount, nothing paid yet" for any week before something starts, which is true, but nothing was checking whether the week being viewed was even on-or-after the start date before treating that as an active deduction. Fixed with a direct date check. Verified against the exact reported case — the income entry now shows in exactly one week, its actual start week, and nowhere else. Applies to claims, charges, and additional income alike. (2) New: Import Registry button on Daily Pay — upload your weekly daily-pay spreadsheet directly instead of entering each day by hand. Matches employees by name the same way Claims import already does, skips anyone it can\'t confidently match rather than guessing, and tells you exactly who was skipped so you can fix and re-import.' },
         { version: 'v2.32', date: '2026-08-06', notes: 'Fixed Route Tracker not showing all your data after a large import. Checked your file directly and confirmed the import itself worked completely and correctly — all 1,063 routes were saved with nothing missing and nothing duplicated. The problem was on the way back out: Supabase caps how many rows come back in a single request, and with over 1,000 routes now on file, the tail end was silently getting cut off every time the dashboard loaded them, with no error shown. Route Tracker now automatically fetches everything in batches instead of trusting one request to return it all, so this won\'t happen again regardless of how large the dataset grows.' },
         { version: 'v2.31', date: '2026-08-06', notes: 'Fixed Truck # not saving — turned out to be much bigger than that one field: editing or deleting an existing vehicle was completely broken (adding a new one worked fine, editing or removing one silently did nothing). Root cause: those two actions were written to talk to the database directly instead of through this app\'s normal secure channel, and without that channel they couldn\'t actually find the vehicle to change. Fixed properly, and directly confirmed your real truck now has "1444" saved. While fixing this, checked the rest of the app for the exact same mistake and found it in three more places that were likely also silently failing: editing Additional Income, and removing a claim\'s rate-change or pause history entries. All four fixed and individually tested before shipping.' },
@@ -1599,7 +1600,11 @@
         const start = new Date(startStr);
         if (isNaN(start)) return 0;
         const diffDays = (Date.now() - start.getTime()) / 86400000;
-        return diffDays <= 0 ? 0 : Math.floor(diffDays / 7);
+        // The first payment happens ON start_date itself — same convention
+        // buildClaimSchedule already uses for claims (proven correct there).
+        // This was previously missing the +1, so every charge/income was
+        // under-counted by a full week versus how claims already behaved.
+        return diffDays < 0 ? 0 : Math.floor(diffDays / 7) + 1;
     }
 
     // Total weeks needed to pay the item off at its weekly rate.
@@ -1641,7 +1646,9 @@
         const asOf = asOfStr ? new Date(asOfStr) : new Date();
         if (isNaN(start) || isNaN(asOf)) return 0;
         const diffDays = (asOf.getTime() - start.getTime()) / 86400000;
-        return diffDays <= 0 ? 0 : Math.floor(diffDays / 7);
+        // Same +1 fix as weeksElapsed above — the week containing start_date
+        // is already "week 1", not the week after it.
+        return diffDays < 0 ? 0 : Math.floor(diffDays / 7) + 1;
     }
     function remainingBalanceAsOf(amount, weekly, startStr, status, asOfStr) {
         amount = parseFloat(amount || 0); weekly = parseFloat(weekly || 0);
