@@ -865,7 +865,7 @@
         </div>
     </div>
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">New Charge <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="charge-form-titletext">New Charge</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
             <div>
                 <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;">Next Charge ID</div>
@@ -882,8 +882,36 @@
                 <div class="field field-narrow"><label>Status</label><select id="gStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
                 <div class="field field-wide"><label>Notes</label><input type="text" id="gNotes"></div>
             </div>
-            <button type="submit" class="btn">+ Save Charge</button>
+            <button type="submit" class="btn" id="charge-save-btn">+ Save Charge</button>
+            <button type="button" class="btn-small" id="charge-cancel-btn" style="display:none;background:#64748b;" onclick="cancelChargeEdit()">Cancel edit</button>
         </form>
+
+        <!-- Rate changes + pause/resume (only while editing a charge) -->
+        <div id="charge-edit-extra" style="display:none; margin-top:14px;">
+            <div id="charge-hist-setup" class="setup-banner" style="display:none;">Run the migration SQL once (the <strong>charge_rate_changes</strong> / <strong>charge_pauses</strong> tables) to save rate changes and pauses.</div>
+            <div class="form-row" style="gap:16px; align-items:flex-start;">
+                <div class="field field-wide" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px;">
+                    <label style="font-weight:700;">Weekly deduction rate</label>
+                    <div id="charge-current-rate" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
+                    <div class="form-row" style="margin-bottom:8px;">
+                        <div class="field field-narrow"><label>New weekly amount</label><input type="number" id="chrc-amount" min="0" step="0.01" placeholder="0.00"></div>
+                        <div class="field field-narrow"><label>Effective date</label><input type="date" id="chrc-date"></div>
+                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="addChargeRateChange()">Add rate change</button></div>
+                    </div>
+                    <div id="charge-rate-history"></div>
+                </div>
+                <div class="field field-wide" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px;">
+                    <label style="font-weight:700;">Pause / Resume</label>
+                    <div id="charge-pause-status" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
+                    <div class="form-row" style="margin-bottom:8px;">
+                        <div class="field field-narrow"><label>Paused date</label><input type="date" id="chpause-date"></div>
+                        <div class="field field-narrow"><label>Expected resume (optional)</label><input type="date" id="chpause-resume"></div>
+                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="recordChargePause()">Record pause</button></div>
+                    </div>
+                    <div id="charge-pause-history"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="panel">
@@ -1369,8 +1397,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.34';
+    const APP_VERSION = 'v2.35';
     const CHANGELOG = [
+        { version: 'v2.35', date: '2026-08-06', notes: 'Charges can now have their weekly rate changed mid-stream and be paused/resumed — the exact same tools Claims already had, now on the Charges tab too (tap Edit on a charge to see it). This wasn\'t just a UI addition: Charges\' whole balance calculation was rebuilt underneath to actually account for pauses and rate changes week by week, the same proven system Claims already used — previously charges only understood a flat weekly amount with no way to represent a pause or a rate change at all. Statement now also shows exactly how much of each claim, charge, and income item has actually been paid or collected so far, not just what\'s left — and Charges\' Statement view now shows the full week-by-week schedule the same way Claims already did. Verified the whole pipeline directly with a test charge — paused it for two weeks, changed its rate mid-stream, and confirmed the schedule correctly skipped the paused weeks and applied the new rate from the right date, landing on exactly $0 at the right week — before shipping.' },
         { version: 'v2.34', date: '2026-08-06', notes: 'Found the real, deeper cause of the income-showing-in-the-wrong-week issue — last version\'s fix was correct as far as it went, but there was a second, more fundamental bug underneath it that only this exact case (a 1-week item) exposed clearly. The week-counting math for every charge and additional income (not claims, which were already correct) was starting the count a full week late — treating the very week something starts as "zero weeks elapsed" instead of the first week. For a 1-week item like David Rodriguez\'s $50 income, that meant it looked unpaid during its actual start week and then looked like it was still being paid the week after, instead of being fully done in its own start week as it should be — exactly matching the rule you gave: weeks = 1 means the start week and end week are the same. Fixed the underlying week count so it now matches how claims already worked. Important to know: this also quietly corrects the running balance shown for every other active charge and additional income, not just this one — those had been under-counting by one week\'s payment this whole time, so a few balances (Charges & Income tab, and Payroll) will shift down by one week\'s worth of deduction the moment this goes live. That\'s the correction taking effect, not new data loss.' },
         { version: 'v2.33', date: '2026-08-06', notes: 'Two things. (1) Fixed a real, confirmed bug in Payroll: claims, charges, and additional income were showing in payroll weeks BEFORE their own start date, not just after they finished — David Rodriguez\'s income entry (start date 7/25) was incorrectly showing in the 7/12 week too, more than a week before it began. Root cause: the balance calculation correctly reports "full amount, nothing paid yet" for any week before something starts, which is true, but nothing was checking whether the week being viewed was even on-or-after the start date before treating that as an active deduction. Fixed with a direct date check. Verified against the exact reported case — the income entry now shows in exactly one week, its actual start week, and nowhere else. Applies to claims, charges, and additional income alike. (2) New: Import Registry button on Daily Pay — upload your weekly daily-pay spreadsheet directly instead of entering each day by hand. Matches employees by name the same way Claims import already does, skips anyone it can\'t confidently match rather than guessing, and tells you exactly who was skipped so you can fix and re-import.' },
         { version: 'v2.32', date: '2026-08-06', notes: 'Fixed Route Tracker not showing all your data after a large import. Checked your file directly and confirmed the import itself worked completely and correctly — all 1,063 routes were saved with nothing missing and nothing duplicated. The problem was on the way back out: Supabase caps how many rows come back in a single request, and with over 1,000 routes now on file, the tail end was silently getting cut off every time the dashboard loaded them, with no error shown. Route Tracker now automatically fetches everything in batches instead of trusting one request to return it all, so this won\'t happen again regardless of how large the dataset grows.' },
@@ -1678,6 +1707,10 @@
     let claimPauses = {};        // claim_id -> [{id, paused_date, resume_date}]
     let editingClaimId = null;
     let claimHistMissing = false;
+    let chargeRateChanges = {};  // charge_id -> [{id, effective_date, weekly_amount}]
+    let chargePauses = {};       // charge_id -> [{id, paused_date, resume_date}]
+    let editingChargeId = null;
+    let chargeHistMissing = false;
 
     function todayStr() { return new Date().toISOString().split('T')[0]; }
 
@@ -1697,6 +1730,21 @@
             (pc || []).forEach(p => { (pauses[p.claim_id] = pauses[p.claim_id] || []).push(p); });
             claimRateChanges = rateChanges; claimPauses = pauses;
         } catch (e) { console.error('loadClaimHistory:', e); }
+    }
+
+    async function loadChargeHistory() {
+        chargeHistMissing = false;
+        try {
+            const rq = supabaseClient.rpc('get_charge_rate_changes', { p_actor: currentUsername, p_company: currentCompany });
+            const pq = supabaseClient.rpc('get_charge_pauses', { p_actor: currentUsername, p_company: currentCompany });
+            const [{ data: rc, error: re }, { data: pc, error: pe }] = await Promise.all([rq, pq]);
+            if (re && isMissingTable(re)) { chargeHistMissing = true; return; }
+            if (pe && isMissingTable(pe)) { chargeHistMissing = true; return; }
+            const rateChanges = {}, pauses = {};
+            (rc || []).forEach(r => { (rateChanges[r.charge_id] = rateChanges[r.charge_id] || []).push(r); });
+            (pc || []).forEach(p => { (pauses[p.charge_id] = pauses[p.charge_id] || []).push(p); });
+            chargeRateChanges = rateChanges; chargePauses = pauses;
+        } catch (e) { console.error('loadChargeHistory:', e); }
     }
 
     // Applicable weekly rate on a given date: base claim rate, overridden by
@@ -1788,6 +1836,80 @@
     }
     // Current applicable weekly rate (today) for payroll deductions.
     function claimCurrentRate(claim) { return rateOn(claim, todayStr()); }
+
+    // ===== Same system as claims above, for charges =====
+    function chargeRateOn(charge, dateStr) {
+        let rate = parseFloat(charge.weekly_deduction) || 0;
+        const changes = (chargeRateChanges[charge.charge_id] || []).slice()
+            .sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
+        for (const ch of changes) {
+            if (String(ch.effective_date) <= dateStr) rate = parseFloat(ch.weekly_amount) || 0;
+            else break;
+        }
+        return rate;
+    }
+    function chargeFutureRateExists(charge, dateStr) {
+        if ((parseFloat(charge.weekly_deduction) || 0) > 0) return true;
+        return (chargeRateChanges[charge.charge_id] || []).some(ch => (parseFloat(ch.weekly_amount) || 0) > 0);
+    }
+    function isChargePausedOn(charge, dateStr) {
+        return (chargePauses[charge.charge_id] || []).some(p => {
+            const start = String(p.paused_date || '');
+            const end = p.resume_date ? String(p.resume_date) : null;
+            return start && dateStr >= start && (!end || dateStr < end);
+        });
+    }
+    function buildChargeSchedule(charge, asOf) {
+        const owed = Math.max(0, parseFloat(charge.amount) || 0);
+        const viewingPast = asOf && asOf < todayStr();
+        const resolved = !viewingPast && (charge.status === 'Absorbed' || charge.status === 'Tk from check');
+        const rows = [];
+        if (resolved || !charge.start_date || owed <= 0) {
+            return { rows, owed, balanceAsOf: resolved ? 0 : owed, endDate: null };
+        }
+        let bal = owed;
+        let d = new Date(charge.start_date + 'T00:00:00Z');
+        if (isNaN(d)) return { rows, owed, balanceAsOf: owed, endDate: null };
+        let guard = 0;
+        while (bal > 0.004 && guard < 2000) {
+            guard++;
+            const ds = d.toISOString().split('T')[0];
+            if (isChargePausedOn(charge, ds)) {
+                rows.push({ date: ds, deducted: 0, balance: +bal.toFixed(2), paused: true });
+            } else {
+                const rate = chargeRateOn(charge, ds);
+                if (rate <= 0) { if (!chargeFutureRateExists(charge, ds)) break; }
+                const ded = Math.min(rate, bal);
+                bal = +(bal - ded).toFixed(2);
+                rows.push({ date: ds, deducted: ded, balance: bal, paused: false });
+            }
+            d.setUTCDate(d.getUTCDate() + 7);
+        }
+        const endDate = rows.length ? rows[rows.length - 1].date : null;
+        let balanceAsOf = owed;
+        if (asOf) {
+            let paid = 0;
+            rows.forEach(r => { if (r.date <= asOf) paid += r.deducted; });
+            balanceAsOf = Math.max(0, +(owed - paid).toFixed(2));
+        } else {
+            balanceAsOf = bal;
+        }
+        return { rows, owed, balanceAsOf, endDate };
+    }
+    function chargeBalance(charge, asOf) {
+        const owed = Math.max(0, parseFloat(charge.amount) || 0);
+        const viewingPast = asOf && asOf < todayStr();
+        if (!viewingPast && (charge.status === 'Absorbed' || charge.status === 'Tk from check')) return 0;
+        if (charge.status === 'Queued') return owed;
+        return buildChargeSchedule(charge, asOf || todayStr()).balanceAsOf;
+    }
+    function chargeBalanceBefore(charge, asOf) {
+        if (!asOf) return chargeBalance(charge, asOf);
+        const d = new Date(asOf + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - 7);
+        return chargeBalance(charge, d.toISOString().split('T')[0]);
+    }
+    function chargeCurrentRate(charge) { return chargeRateOn(charge, todayStr()); }
 
     function openTab(evt, tabName) {
         // View Only users may only open their 6 permitted tabs.
@@ -2349,6 +2471,7 @@
         ]);
         await loadCurrentWeekDaily();    // for Payroll base pay of Daily people
         await loadClaimHistory();        // rate changes + pauses for balances
+        await loadChargeHistory();       // same, for charges
         await fetchIncomeFromCloud();    // additional income for Payroll
         // Claims/Charges/Income are fetched concurrently with Employees just
         // above — if Employees happens to finish loading last (it does more
@@ -3708,14 +3831,10 @@
     // --- CHARGES ---
     document.getElementById('charge-form').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
-        const chargeCo = requireWriteCompany();
-        if (!chargeCo) return;
+        if (!canEdit()) return;
         const chargeEmpId = document.getElementById('ci-employee').value;
         if (!chargeEmpId) { alert('Select an employee at the top of the tab first.'); return; }
-        const payload = {
-            charge_id: chargeId,
-            company_code: chargeCo,
+        const fields = {
             employee_id: chargeEmpId,
             charge_type: document.getElementById('gChargeType').value,
             amount: parseFloat(document.getElementById('gAmount').value) || 0,
@@ -3726,9 +3845,19 @@
             notes: document.getElementById('gNotes').value.trim()
         };
 
-        const { error } = await supabaseClient.from('charges').insert([payload]);
-        if (error) alert('Error saving charge: ' + error.message);
-        else {
+        if (editingChargeId) {
+            const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: editingChargeId, p_fields: fields });
+            if (error) { alert('Error: ' + error.message); return; }
+            if (data) alert(data);
+            cancelChargeEdit();
+            fetchChargesFromCloud();
+        } else {
+            const chargeCo = requireWriteCompany();
+            if (!chargeCo) return;
+            const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
+            const payload = Object.assign({ charge_id: chargeId, company_code: chargeCo }, fields);
+            const { error } = await supabaseClient.from('charges').insert([payload]);
+            if (error) { alert('Error saving charge: ' + error.message); return; }
             document.getElementById('charge-form').reset();
             fetchChargesFromCloud();
             document.getElementById('next-charge-id-display').textContent = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
@@ -3765,8 +3894,9 @@
                 const emp = employees.find(e => e.id === ch.employee_id);
                 const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
                 const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
-                const bal = remainingBalance(ch.amount, 0, ch.weekly_deduction, ch.start_date, ch.status);
-                const endDate = projectedEndDate(ch.start_date, ch.amount, ch.weekly_deduction) || (ch.end_date || '-');
+                const sched = buildChargeSchedule(ch, null);
+                const bal = chargeBalance(ch);
+                const endDate = sched.endDate || (ch.end_date || '-');
                 rows += `<tr>
                     <td class="id-cell">${ch.charge_id}</td>
                     <td>${empName}</td>
@@ -3795,8 +3925,9 @@
             const emp = employees.find(e => e.id === ch.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
             const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
-            const bal = remainingBalance(ch.amount, 0, ch.weekly_deduction, ch.start_date, ch.status);
-            const endDate = projectedEndDate(ch.start_date, ch.amount, ch.weekly_deduction) || (ch.end_date || '-');
+            const sched = buildChargeSchedule(ch, null);
+            const bal = chargeBalance(ch);
+            const endDate = sched.endDate || (ch.end_date || '-');
             const open = recExpanded.charges.has(ch.charge_id);
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}">
@@ -4095,6 +4226,8 @@
         empClaims.forEach(c => {
             const sched = buildClaimSchedule(c, null); // full projection to $0.00
             const bal = claimBalance(c, asOf);
+            const owed = Math.max(0, (parseFloat(c.claim_amount) || 0) - (parseFloat(c.absorbed_amount) || 0));
+            const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
             const weeks = sched.rows.filter(r => !r.paused).length;
             const endDate = sched.endDate || '—';
             const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
@@ -4113,6 +4246,7 @@
                             <div class="field"><label>Weekly rate</label><div>${formatMoney(rateOn(c, asOf))}</div></div>
                             <div class="field"><label>Weeks to $0</label><div>${weeks}</div></div>
                             <div class="field"><label>Ends</label><div>${endDate}</div></div>
+                            <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
                             <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
                         </div>
                         ${sched.rows.length
@@ -4123,9 +4257,13 @@
         });
 
         empCharges.forEach(ch => {
-            const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
-            const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
-            const endDate = projectedEndDate(ch.start_date, ch.amount, ch.weekly_deduction) || '-';
+            const sched = buildChargeSchedule(ch, null);
+            const bal = chargeBalance(ch, asOf);
+            const owed = Math.max(0, parseFloat(ch.amount) || 0);
+            const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
+            const weeks = sched.rows.filter(r => !r.paused).length;
+            const endDate = sched.endDate || (ch.end_date || '-');
+            const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
             html += `
                 <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                     <div class="panel-head" onclick="toggleCollapse(this)">
@@ -4134,12 +4272,16 @@
                     </div>
                     <div>
                         <div class="form-row" style="margin:6px 0 0;align-items:center;">
-                            <div class="field"><label>Weekly rate</label><div>${formatMoney(ch.weekly_deduction)}</div></div>
+                            <div class="field"><label>Weekly rate</label><div>${formatMoney(chargeRateOn(ch, asOf))}</div></div>
                             <div class="field"><label>Weeks</label><div>${weeks}</div></div>
                             <div class="field"><label>Ends</label><div>${endDate}</div></div>
+                            <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
                             <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
                             <div class="field"><label>Start</label><div>${ch.start_date || '-'}</div></div>
                         </div>
+                        ${sched.rows.length
+                            ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${ch.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
+                            : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the charge is resolved, or needs a start date and weekly amount.</div>`}
                     </div>
                 </div>`;
         });
@@ -4151,6 +4293,7 @@
             empIncome.forEach(i => {
                 const weeks = weeksNeeded(i.amount, i.weekly_amount);
                 const rem = remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
+                const paidSoFar = Math.max(0, +((parseFloat(i.amount) || 0) - rem).toFixed(2));
                 const endDate = projectedEndDate(i.start_date, i.amount, i.weekly_amount) || '-';
                 html += `
                     <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
@@ -4163,6 +4306,7 @@
                                 <div class="field"><label>Weekly</label><div style="color:#059669;">+${formatMoney(i.weekly_amount)}</div></div>
                                 <div class="field"><label>Weeks</label><div>${weeks}</div></div>
                                 <div class="field"><label>Ends</label><div>${endDate}</div></div>
+                                <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
                                 <div class="field"><label>Remaining (as of ${asOf})</label><div class="money" style="color:#059669;">${formatMoney(rem)}</div></div>
                                 <div class="field"><label>Start</label><div>${i.start_date || '-'}</div></div>
                             </div>
@@ -4213,10 +4357,10 @@
             }
         });
         charges.filter(ch => ch.employee_id === empId && ch.status !== 'Queued' && ch.start_date && ch.start_date <= asOf).forEach(ch => {
-            const balBefore = remainingBalanceBefore(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
-            if (balBefore > 0) {
-                const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
-                const weekly = Math.min(parseFloat(ch.weekly_deduction) || 0, balBefore);
+            const balBefore = chargeBalanceBefore(ch, asOf);
+            if (balBefore > 0 && !isChargePausedOn(ch, asOf)) {
+                const bal = chargeBalance(ch, asOf);
+                const weekly = Math.min(chargeRateOn(ch, asOf), balBefore);
                 items.push({ kind: 'Charge', id: ch.charge_id, label: ch.charge_type || 'Charge', weekly, scheduled: weekly, balance: bal });
             }
         });
@@ -5055,23 +5199,120 @@
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
     }
 
-    async function editCharge(id) {
+    function editCharge(id) {
         if (!canEdit()) return;
         const ch = charges.find(x => x.charge_id === id);
         if (!ch) return;
-        const changed = promptFields(`Edit charge ${id}`, [
-            { label: 'Charge type', key: 'charge_type', value: ch.charge_type },
-            { label: 'Amount', key: 'amount', value: ch.amount },
-            { label: 'Weekly deduction', key: 'weekly_deduction', value: ch.weekly_deduction },
-            { label: 'Start date (YYYY-MM-DD)', key: 'start_date', value: ch.start_date },
-            { label: 'Status', key: 'status', value: ch.status },
-            { label: 'Notes', key: 'notes', value: ch.notes }
-        ]);
-        if (!Object.keys(changed).length) return;
-        if (!coerceEditFields(changed, ['amount', 'weekly_deduction'], ['start_date'])) return;
-        const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: id, p_fields: changed });
-        if (error) alert('Error: ' + error.message);
-        else { alert(data || 'Saved.'); fetchChargesFromCloud(); }
+        editingChargeId = id;
+        document.getElementById('gChargeType').value = ch.charge_type || '';
+        document.getElementById('gAmount').value = (ch.amount ?? '');
+        document.getElementById('gWeekly').value = (ch.weekly_deduction ?? '');
+        document.getElementById('gStartDate').value = ch.start_date || '';
+        document.getElementById('gEndDate').value = ch.end_date || '';
+        document.getElementById('gStatus').value = ch.status || 'Queued';
+        document.getElementById('gNotes').value = ch.notes || '';
+        const emp = employees.find(e => e.id === ch.employee_id);
+        const empSel = document.getElementById('ci-employee');
+        if (empSel) empSel.value = ch.employee_id || '';
+        document.getElementById('charge-form-titletext').textContent = `Editing ${id}`;
+        document.getElementById('charge-save-btn').textContent = 'Save changes';
+        document.getElementById('charge-cancel-btn').style.display = '';
+        document.getElementById('charge-edit-extra').style.display = '';
+        const panel = document.getElementById('charge-form').closest('.panel');
+        if (panel) panel.classList.remove('collapsed');
+        renderChargeHistoryPanels();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelChargeEdit() {
+        editingChargeId = null;
+        document.getElementById('charge-form').reset();
+        document.getElementById('charge-form-titletext').textContent = 'New Charge';
+        document.getElementById('charge-save-btn').textContent = '+ Save Charge';
+        document.getElementById('charge-cancel-btn').style.display = 'none';
+        document.getElementById('charge-edit-extra').style.display = 'none';
+        refreshIdPreviews();
+    }
+
+    function renderChargeHistoryPanels() {
+        if (!editingChargeId) return;
+        const ch = charges.find(x => x.charge_id === editingChargeId);
+        if (!ch) return;
+        const setup = document.getElementById('charge-hist-setup');
+        if (setup) setup.style.display = chargeHistMissing ? 'block' : 'none';
+        document.getElementById('charge-current-rate').innerHTML = `${formatMoney(chargeCurrentRate(ch))} / wk <span style="opacity:.7;">(current)</span> · balance ${formatMoney(chargeBalance(ch))}`;
+        const paused = isChargePausedOn(ch, todayStr());
+        document.getElementById('charge-pause-status').innerHTML = `Current: <span class="status-badge status-${paused ? 'Paused' : 'Deducting'}">${paused ? 'Paused' : 'Active'}</span>`;
+
+        const rc = (chargeRateChanges[ch.charge_id] || []).slice().sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
+        document.getElementById('charge-rate-history').innerHTML = rc.length
+            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Effective</th><th style="text-align:left;">Weekly</th><th></th></tr></thead><tbody>${rc.map(r => `<tr><td>${r.effective_date}</td><td>${formatMoney(r.weekly_amount)}</td><td style="text-align:right;"><span class="del-btn" onclick="deleteChargeRateChange(${r.id})">✕</span></td></tr>`).join('')}</tbody></table>`
+            : '<div style="font-size:12px;color:var(--text-muted);">No rate changes — using the base weekly amount.</div>';
+
+        const ph = (chargePauses[ch.charge_id] || []).slice().sort((a, b) => String(a.paused_date).localeCompare(String(b.paused_date)));
+        document.getElementById('charge-pause-history').innerHTML = ph.length
+            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Paused</th><th style="text-align:left;">Resume</th><th></th></tr></thead><tbody>${ph.map(p => `<tr><td>${p.paused_date}</td><td>${p.resume_date || '—'}</td><td style="text-align:right;"><span class="del-btn" onclick="deleteChargePause(${p.id})">✕</span></td></tr>`).join('')}</tbody></table>`
+            : '<div style="font-size:12px;color:var(--text-muted);">No pauses recorded yet.</div>';
+    }
+
+    function chargeHistCompany() {
+        const ch = charges.find(x => x.charge_id === editingChargeId);
+        return (ch && ch.company_code) ? ch.company_code : writeCompany();
+    }
+
+    async function addChargeRateChange() {
+        if (!editingChargeId) return;
+        const amt = parseFloat(document.getElementById('chrc-amount').value);
+        const date = document.getElementById('chrc-date').value;
+        if (!date || isNaN(amt)) { alert('Enter both a new weekly amount and an effective date.'); return; }
+        if (amt < 0) { alert('Weekly amount cannot be negative.'); return; }
+        const existing = chargeRateChanges[editingChargeId] || [];
+        if (existing.some(r => r.effective_date === date)) {
+            alert(`There's already a rate change effective ${date} for this charge. Remove the existing one first if you want to replace it.`);
+            return;
+        }
+        const { error } = await supabaseClient.from('charge_rate_changes')
+            .insert([{ company_code: chargeHistCompany(), charge_id: editingChargeId, effective_date: date, weekly_amount: amt }]);
+        if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
+        document.getElementById('chrc-amount').value = ''; document.getElementById('chrc-date').value = '';
+        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
+    }
+
+    async function recordChargePause() {
+        if (!editingChargeId) return;
+        const date = document.getElementById('chpause-date').value;
+        const resume = document.getElementById('chpause-resume').value || null;
+        if (!date) { alert('Enter a paused date.'); return; }
+        if (resume && resume <= date) { alert('Expected resume date must be after the paused date.'); return; }
+        const existing = chargePauses[editingChargeId] || [];
+        const overlaps = existing.some(p => {
+            const pStart = p.paused_date, pEnd = p.resume_date;
+            const newEndsBeforeExisting = resume && resume <= pStart;
+            const existingEndsBeforeNew = pEnd && pEnd <= date;
+            return !(newEndsBeforeExisting || existingEndsBeforeNew);
+        });
+        if (overlaps) { alert('This overlaps with an existing pause window for this charge. Remove or adjust the existing one first.'); return; }
+        const { error } = await supabaseClient.from('charge_pauses')
+            .insert([{ company_code: chargeHistCompany(), charge_id: editingChargeId, paused_date: date, resume_date: resume }]);
+        if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
+        document.getElementById('chpause-date').value = ''; document.getElementById('chpause-resume').value = '';
+        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
+    }
+
+    async function deleteChargeRateChange(rid) {
+        if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
+        if (!confirm('Remove this rate change?')) return;
+        const { error } = await supabaseClient.rpc('delete_charge_rate_change_entry', { p_actor: currentUsername, p_id: rid });
+        if (error) { alert('Error: ' + error.message); return; }
+        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
+    }
+
+    async function deleteChargePause(pid) {
+        if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
+        if (!confirm('Remove this pause record?')) return;
+        const { error } = await supabaseClient.rpc('delete_charge_pause_entry', { p_actor: currentUsername, p_id: pid });
+        if (error) { alert('Error: ' + error.message); return; }
+        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
     }
 
     async function editRoute(id) {
