@@ -410,10 +410,15 @@
     <p id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem;"></p>
     <p id="login-timeout-notice" data-i18n="timeout_notice" style="color: #b45309; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
     <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
-        <div data-i18n="language_label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Language</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:0.85rem;">
-            <button type="button" class="btn-small" id="login-lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
-            <button type="button" class="btn-small" id="login-lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
+        <!-- Language picker hidden until full translation coverage is done —
+             see id="language-picker-block" below and its Settings-tab twin.
+             Re-show both once every tab is translated, not before. -->
+        <div id="login-language-picker-block" style="display:none;">
+            <div data-i18n="language_label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Language</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:0.85rem;">
+                <button type="button" class="btn-small" id="login-lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
+                <button type="button" class="btn-small" id="login-lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
+            </div>
         </div>
         <div data-i18n="appearance_label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Appearance</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
@@ -771,32 +776,32 @@
 <!-- TAB 4: CLAIMS -->
 <div id="tab-claims" class="tab-content">
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="claim-form-titletext">New Claim</span> <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="claim-form-titletext" data-i18n="new_claim">New Claim</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
             <div>
-                <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;">Next Claim ID</div>
+                <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;" data-i18n="next_claim_id">Next Claim ID</div>
                 <div id="next-claim-id-display" style="color: #fff; font-family: var(--mono); font-size: 15px; font-weight: 700;">3OFL00001</div>
             </div>
         </div>
         <form id="claim-form">
             <div class="form-row">
-                <div class="field"><label>Claimant account</label><input type="text" id="cClaimant"></div>
-                <div class="field"><label>Company</label><input type="text" id="cCompany" placeholder="e.g. RXO/Costco"></div>
-                <div class="field"><label>Employee</label><select id="cEmployee"><option value="">— Select employee —</option></select></div>
-                <div class="field"><label>Carrier claim #</label><input type="text" id="cCarrier"></div>
-                <div class="field"><label>Customer claim #</label><input type="text" id="cCustomer"></div>
-                <div class="field"><label>Type of damage</label><select id="cDamageType" required><option value="">— Select —</option></select></div>
-                <div class="field field-narrow"><label>Claim amount</label><input type="number" id="cAmount" min="0" step="0.01" required></div>
-                <div class="field field-narrow"><label>Weekly deduction</label><input type="number" id="cWeekly" min="0" step="0.01" required></div>
-                <div class="field field-narrow"><label>Start deduction date</label><input type="date" id="cStartDate"></div>
-                <div class="field field-narrow"><label>End deduction date</label><input type="date" id="cEndDate"></div>
-                <div class="field field-narrow"><label>Status</label><select id="cStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Paid">Paid</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
-                <div class="field field-narrow"><label>Absorbed amount</label><input type="number" id="cAbsorbed" min="0" step="0.01" placeholder="If written off"></div>
-                <div class="field field-wide"><label>Notes</label><input type="text" id="cNotes"></div>
+                <div class="field"><label data-i18n="claimant_account">Claimant account</label><input type="text" id="cClaimant"></div>
+                <div class="field"><label data-i18n="company_field">Company</label><input type="text" id="cCompany" placeholder="e.g. RXO/Costco"></div>
+                <div class="field"><label data-i18n="employee_field">Employee</label><select id="cEmployee"><option value="">— Select employee —</option></select></div>
+                <div class="field"><label data-i18n="carrier_claim_num">Carrier claim #</label><input type="text" id="cCarrier"></div>
+                <div class="field"><label data-i18n="customer_claim_num">Customer claim #</label><input type="text" id="cCustomer"></div>
+                <div class="field"><label data-i18n="type_of_damage">Type of damage</label><select id="cDamageType" required><option value="">— Select —</option></select></div>
+                <div class="field field-narrow"><label data-i18n="claim_amount">Claim amount</label><input type="number" id="cAmount" min="0" step="0.01" required></div>
+                <div class="field field-narrow"><label data-i18n="weekly_deduction">Weekly deduction</label><input type="number" id="cWeekly" min="0" step="0.01" required></div>
+                <div class="field field-narrow"><label data-i18n="start_deduction_date">Start deduction date</label><input type="date" id="cStartDate"></div>
+                <div class="field field-narrow"><label data-i18n="end_deduction_date">End deduction date</label><input type="date" id="cEndDate"></div>
+                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="cStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Paid">Paid</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
+                <div class="field field-narrow"><label data-i18n="absorbed_amount">Absorbed amount</label><input type="number" id="cAbsorbed" min="0" step="0.01" placeholder="If written off"></div>
+                <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="cNotes"></div>
             </div>
-            <div class="note-box">Weeks needed = claim amount ÷ weekly deduction (rounded up), calculated automatically.</div>
-            <button type="submit" class="btn" id="claim-save-btn">+ Save Claim</button>
-            <button type="button" class="btn-small" id="claim-cancel-btn" style="display:none;background:#64748b;" onclick="cancelClaimEdit()">Cancel edit</button>
+            <div class="note-box" data-i18n="weeks_needed_note">Weeks needed = claim amount ÷ weekly deduction (rounded up), calculated automatically.</div>
+            <button type="submit" class="btn" id="claim-save-btn" data-i18n="save_claim">+ Save Claim</button>
+            <button type="button" class="btn-small" id="claim-cancel-btn" style="display:none;background:#64748b;" onclick="cancelClaimEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
 
         <!-- Rate changes + pause/resume (only while editing a claim) -->
@@ -804,22 +809,22 @@
             <div id="claim-hist-setup" class="setup-banner" style="display:none;">Run the migration SQL once (the <strong>claim_rate_changes</strong> / <strong>claim_pauses</strong> tables) to save rate changes and pauses.</div>
             <div class="form-row" style="gap:16px; align-items:flex-start;">
                 <div class="field field-wide" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px;">
-                    <label style="font-weight:700;">Weekly deduction rate</label>
+                    <label style="font-weight:700;" data-i18n="weekly_deduction_rate">Weekly deduction rate</label>
                     <div id="claim-current-rate" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
                     <div class="form-row" style="margin-bottom:8px;">
-                        <div class="field field-narrow"><label>New weekly amount</label><input type="number" id="rc-amount" min="0" step="0.01" placeholder="0.00"></div>
-                        <div class="field field-narrow"><label>Effective date</label><input type="date" id="rc-date"></div>
-                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="addRateChange()">Add rate change</button></div>
+                        <div class="field field-narrow"><label data-i18n="new_weekly_amount">New weekly amount</label><input type="number" id="rc-amount" min="0" step="0.01" placeholder="0.00"></div>
+                        <div class="field field-narrow"><label data-i18n="effective_date">Effective date</label><input type="date" id="rc-date"></div>
+                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="addRateChange()" data-i18n="add_rate_change">Add rate change</button></div>
                     </div>
                     <div id="rate-history"></div>
                 </div>
                 <div class="field field-wide" style="background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px;">
-                    <label style="font-weight:700;">Pause / Resume</label>
+                    <label style="font-weight:700;" data-i18n="pause_resume">Pause / Resume</label>
                     <div id="claim-pause-status" style="font-size:12px; color:var(--text-muted); margin-bottom:8px;"></div>
                     <div class="form-row" style="margin-bottom:8px;">
-                        <div class="field field-narrow"><label>Paused date</label><input type="date" id="pause-date"></div>
-                        <div class="field field-narrow"><label>Expected resume (optional)</label><input type="date" id="pause-resume"></div>
-                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="recordPause()">Record pause</button></div>
+                        <div class="field field-narrow"><label data-i18n="paused_date">Paused date</label><input type="date" id="pause-date"></div>
+                        <div class="field field-narrow"><label data-i18n="expected_resume">Expected resume (optional)</label><input type="date" id="pause-resume"></div>
+                        <div class="field field-narrow" style="align-self:flex-end;"><button type="button" class="btn-small" onclick="recordPause()" data-i18n="record_pause">Record pause</button></div>
                     </div>
                     <div id="pause-history"></div>
                 </div>
@@ -830,12 +835,12 @@
     <div class="panel">
         <div class="stat-grid" id="claim-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="claim-search" placeholder="Search Claim ID, Employee, account, company..." oninput="filterClaims()"></div>
+            <div class="field field-wide"><input type="text" id="claim-search" placeholder="Search Claim ID, Employee, account, company..." oninput="filterClaims()" data-i18n-placeholder="search_claims_ph"></div>
             <div class="field"><select id="filter-claim-emp" onchange="filterClaims()"><option value="">All employees</option></select></div>
             <div class="field"><select id="filter-claim-damage" onchange="filterClaims()"><option value="">All damage types</option></select></div>
             <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()">Import Excel/CSV</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()" data-i18n="import_excel_csv">Import Excel/CSV</button>
             <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
         </div>
         <div class="rec-toolbar">
@@ -1137,7 +1142,9 @@
 
 <!-- TAB 7: SETTINGS -->
 <div id="tab-settings" class="tab-content">
-    <div class="panel">
+    <!-- Language panel hidden until full translation coverage is done —
+         re-show once every tab is translated, not before. -->
+    <div class="panel" id="settings-language-panel" style="display:none;">
         <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="language_label">Language <span class="caret">&#9662;</span></h2>
         <div class="note-box" data-i18n="language_note">Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -1397,8 +1404,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.36';
+    const APP_VERSION = 'v2.37';
     const CHANGELOG = [
+        { version: 'v2.37', date: '2026-08-06', notes: 'Bilingual work continued: Claims tab is now fully translatable (the form, the rate-change/pause panel, and the table). Per request, the Language switcher itself is now hidden — on the login screen and in Settings — until every tab is done, so nobody sees a half-English, half-Spanish app in the meantime. Nothing was removed; it\'ll reappear once translation is complete.' },
         { version: 'v2.36', date: '2026-08-06', notes: 'Continued the bilingual work — the Employees tab (form and table) is now fully translatable, along with the "Clear filters" and "Sort by" controls used across every section in the app. Still English-only: every other tab\'s form fields and table headers, help text, and pop-up messages — same as before, this is ongoing.' },
         { version: 'v2.35', date: '2026-08-06', notes: 'Charges can now have their weekly rate changed mid-stream and be paused/resumed — the exact same tools Claims already had, now on the Charges tab too (tap Edit on a charge to see it). This wasn\'t just a UI addition: Charges\' whole balance calculation was rebuilt underneath to actually account for pauses and rate changes week by week, the same proven system Claims already used — previously charges only understood a flat weekly amount with no way to represent a pause or a rate change at all. Statement now also shows exactly how much of each claim, charge, and income item has actually been paid or collected so far, not just what\'s left — and Charges\' Statement view now shows the full week-by-week schedule the same way Claims already did. Verified the whole pipeline directly with a test charge — paused it for two weeks, changed its rate mid-stream, and confirmed the schedule correctly skipped the paused weeks and applied the new rate from the right date, landing on exactly $0 at the right week — before shipping.' },
         { version: 'v2.34', date: '2026-08-06', notes: 'Found the real, deeper cause of the income-showing-in-the-wrong-week issue — last version\'s fix was correct as far as it went, but there was a second, more fundamental bug underneath it that only this exact case (a 1-week item) exposed clearly. The week-counting math for every charge and additional income (not claims, which were already correct) was starting the count a full week late — treating the very week something starts as "zero weeks elapsed" instead of the first week. For a 1-week item like David Rodriguez\'s $50 income, that meant it looked unpaid during its actual start week and then looked like it was still being paid the week after, instead of being fully done in its own start week as it should be — exactly matching the rule you gave: weeks = 1 means the start week and end week are the same. Fixed the underlying week count so it now matches how claims already worked. Important to know: this also quietly corrects the running balance shown for every other active charge and additional income, not just this one — those had been under-counting by one week\'s payment this whole time, so a few balances (Charges & Income tab, and Payroll) will shift down by one week\'s worth of deduction the moment this goes live. That\'s the correction taking effect, not new data loss.' },
@@ -3481,9 +3489,10 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>Claim ID</th><th>Employee</th><th>Emp. ID</th><th>Claimant Acct</th><th>Company</th><th>Carrier #</th><th>Customer #</th>
-                <th>Damage Type</th><th>Amount</th><th>Weeks</th><th>Balance</th><th>Absorbed</th><th>Start</th><th>Ends</th><th>Status</th><th>Action</th>
+                <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_claimant_acct">Claimant Acct</th><th data-i18n="th_company">Company</th><th data-i18n="th_carrier">Carrier #</th><th data-i18n="th_customer">Customer #</th>
+                <th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_absorbed">Absorbed</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
+            applyTranslations();
             return;
         }
 
@@ -3526,6 +3535,7 @@
                     </div>
                 </div>`);
         });
+        applyTranslations();
     }
 
     async function deleteClaim(id) {
@@ -5555,7 +5565,21 @@
             search_employees_ph: 'Search name, ID, department, type...',
             export_csv: 'Export CSV', import_csv: 'Import CSV',
             th_id: 'ID', th_name: 'Name', th_type: 'Type', th_department: 'Department',
-            th_start: 'Start', th_pay: 'Pay', th_status: 'Status', th_action: 'Action'
+            th_start: 'Start', th_pay: 'Pay', th_status: 'Status', th_action: 'Action',
+            new_claim: 'New Claim', next_claim_id: 'Next Claim ID', claimant_account: 'Claimant account',
+            company_field: 'Company', employee_field: 'Employee', carrier_claim_num: 'Carrier claim #',
+            customer_claim_num: 'Customer claim #', type_of_damage: 'Type of damage', claim_amount: 'Claim amount',
+            weekly_deduction: 'Weekly deduction', start_deduction_date: 'Start deduction date',
+            end_deduction_date: 'End deduction date', status_field: 'Status', absorbed_amount: 'Absorbed amount',
+            weeks_needed_note: 'Weeks needed = claim amount ÷ weekly deduction (rounded up), calculated automatically.',
+            save_claim: '+ Save Claim', weekly_deduction_rate: 'Weekly deduction rate',
+            new_weekly_amount: 'New weekly amount', effective_date: 'Effective date', add_rate_change: 'Add rate change',
+            pause_resume: 'Pause / Resume', paused_date: 'Paused date', expected_resume: 'Expected resume (optional)',
+            record_pause: 'Record pause', search_claims_ph: 'Search Claim ID, Employee, account, company...',
+            import_excel_csv: 'Import Excel/CSV',
+            th_claim_id: 'Claim ID', th_employee: 'Employee', th_emp_id: 'Emp. ID', th_claimant_acct: 'Claimant Acct',
+            th_company: 'Company', th_carrier: 'Carrier #', th_customer: 'Customer #', th_damage_type: 'Damage Type',
+            th_amount: 'Amount', th_weeks: 'Weeks', th_balance: 'Balance', th_absorbed: 'Absorbed', th_ends: 'Ends'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -5590,13 +5614,35 @@
             search_employees_ph: 'Buscar nombre, ID, departamento, tipo...',
             export_csv: 'Exportar CSV', import_csv: 'Importar CSV',
             th_id: 'ID', th_name: 'Nombre', th_type: 'Tipo', th_department: 'Departamento',
-            th_start: 'Inicio', th_pay: 'Pago', th_status: 'Estado', th_action: 'Acción'
+            th_start: 'Inicio', th_pay: 'Pago', th_status: 'Estado', th_action: 'Acción',
+            new_claim: 'Nuevo Reclamo', next_claim_id: 'Próximo ID de Reclamo', claimant_account: 'Cuenta del reclamante',
+            company_field: 'Compañía', employee_field: 'Empleado', carrier_claim_num: 'N.º de reclamo del transportista',
+            customer_claim_num: 'N.º de reclamo del cliente', type_of_damage: 'Tipo de daño', claim_amount: 'Monto del reclamo',
+            weekly_deduction: 'Deducción semanal', start_deduction_date: 'Fecha de inicio de deducción',
+            end_deduction_date: 'Fecha de fin de deducción', status_field: 'Estado', absorbed_amount: 'Monto absorbido',
+            weeks_needed_note: 'Semanas necesarias = monto del reclamo ÷ deducción semanal (redondeado hacia arriba), calculado automáticamente.',
+            save_claim: '+ Guardar Reclamo', weekly_deduction_rate: 'Tasa de deducción semanal',
+            new_weekly_amount: 'Nuevo monto semanal', effective_date: 'Fecha de vigencia', add_rate_change: 'Agregar cambio de tasa',
+            pause_resume: 'Pausar / Reanudar', paused_date: 'Fecha de pausa', expected_resume: 'Reanudación esperada (opcional)',
+            record_pause: 'Registrar pausa', search_claims_ph: 'Buscar ID de Reclamo, Empleado, cuenta, compañía...',
+            import_excel_csv: 'Importar Excel/CSV',
+            th_claim_id: 'ID de Reclamo', th_employee: 'Empleado', th_emp_id: 'ID Empleado', th_claimant_acct: 'Cuenta Reclamante',
+            th_company: 'Compañía', th_carrier: 'N.º Transportista', th_customer: 'N.º Cliente', th_damage_type: 'Tipo de Daño',
+            th_amount: 'Monto', th_weeks: 'Semanas', th_balance: 'Saldo', th_absorbed: 'Absorbido', th_ends: 'Finaliza'
         }
     };
 
+    // Translation coverage is still partial — the language switcher is
+    // hidden until it's complete (see login screen + Settings). Force
+    // English in the meantime so nobody who switched to Spanish earlier
+    // gets stuck in a half-translated view with no visible way back. Flip
+    // this to false (and re-show the two picker blocks) once coverage is done.
+    const LANGUAGE_SWITCH_HIDDEN = true;
     function t(key) {
         let lang = 'en';
-        try { lang = localStorage.getItem('tracker_lang') || 'en'; } catch (e) {}
+        if (!LANGUAGE_SWITCH_HIDDEN) {
+            try { lang = localStorage.getItem('tracker_lang') || 'en'; } catch (e) {}
+        }
         return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) ?? TRANSLATIONS.en[key];
     }
 
