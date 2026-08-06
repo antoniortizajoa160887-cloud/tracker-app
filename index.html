@@ -1354,8 +1354,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.30';
+    const APP_VERSION = 'v2.32';
     const CHANGELOG = [
+        { version: 'v2.32', date: '2026-08-06', notes: 'Fixed Route Tracker not showing all your data after a large import. Checked your file directly and confirmed the import itself worked completely and correctly — all 1,063 routes were saved with nothing missing and nothing duplicated. The problem was on the way back out: Supabase caps how many rows come back in a single request, and with over 1,000 routes now on file, the tail end was silently getting cut off every time the dashboard loaded them, with no error shown. Route Tracker now automatically fetches everything in batches instead of trusting one request to return it all, so this won\'t happen again regardless of how large the dataset grows.' },
+        { version: 'v2.31', date: '2026-08-06', notes: 'Fixed Truck # not saving — turned out to be much bigger than that one field: editing or deleting an existing vehicle was completely broken (adding a new one worked fine, editing or removing one silently did nothing). Root cause: those two actions were written to talk to the database directly instead of through this app\'s normal secure channel, and without that channel they couldn\'t actually find the vehicle to change. Fixed properly, and directly confirmed your real truck now has "1444" saved. While fixing this, checked the rest of the app for the exact same mistake and found it in three more places that were likely also silently failing: editing Additional Income, and removing a claim\'s rate-change or pause history entries. All four fixed and individually tested before shipping.' },
         { version: 'v2.30', date: '2026-08-06', notes: 'Found and fixed a real, separate bug behind "the claim isn\'t showing" — different from the one fixed a few versions ago. A claim/charge/income item that gets fully paid off in a single week (its balance reaching exactly $0 that same week) was being completely hidden from Payroll for that week, and showing $0 instead of the real amount if it did show — because the check for "is this still being deducted" was accidentally using the balance AFTER that week\'s payment (which is $0 once it\'s the very last payment) instead of the balance BEFORE it. Confirmed against the exact reported case — a $75 claim, paid off in one single deduction — before shipping: it now correctly shows the $75 deduction for the week it actually happened, and the balance afterward still correctly reads $0.' },
         { version: 'v2.29', date: '2026-08-06', notes: 'Vehicles: added Truck # (your company\'s own identification number, separate from license plate) and VIN — VIN had been missing entirely, it wasn\'t being saved anywhere. Truck # now shows first, before the year, in both the vehicle list and each vehicle\'s title, and both fields are searchable and Truck # is sortable.' },
         { version: 'v2.28', date: '2026-08-06', notes: 'New: Vehicles tab (Logistics) — track your fleet\'s year/make/model, license plate, registration expiry, and insurance (company, policy #, expiry), plus a per-vehicle service log (performed or scheduled work, with dates). Registration and insurance expiry get the same warning badges already used for driver license/work permit/medical card elsewhere in the app. Built this after reviewing a version you had a different AI build as a standalone tool — that version only saved data in one browser on one device with no backup and no way for your team to share it, so it was rebuilt properly against this app\'s real database instead: same login/role system, same security model, and it now shows up wherever else you access this app (desktop, phone, any of your three deployments) instead of being stuck on one device.' },
@@ -2340,8 +2342,26 @@
         await fetchVehiclesFromCloud();
     }
 
+    // Supabase's API caps a single request's returned rows (commonly 1000,
+    // configurable per-project) — silently, no error, just a truncated
+    // result. Any RPC that could plausibly return more rows than that over
+    // time (routes especially, after a bulk import) needs to page through
+    // in batches instead of trusting one call to return everything.
+    async function fetchAllRpcRows(rpcName, params, pageSize = 1000) {
+        let all = [];
+        let from = 0;
+        while (true) {
+            const { data, error } = await supabaseClient.rpc(rpcName, params).range(from, from + pageSize - 1);
+            if (error) return { data: null, error };
+            all = all.concat(data || []);
+            if (!data || data.length < pageSize) break;
+            from += pageSize;
+        }
+        return { data: all, error: null };
+    }
+
     async function fetchRoutesFromCloud() {
-        const { data, error } = await supabaseClient.rpc('get_routes', { p_actor: currentUsername, p_company: currentCompany });
+        const { data, error } = await fetchAllRpcRows('get_routes', { p_actor: currentUsername, p_company: currentCompany });
         if (error) console.error('get_routes:', error);
         routes = data || [];
         updateUI();
@@ -3894,7 +3914,11 @@
         ]);
         if (!Object.keys(changed).length) return;
         if (!coerceEditFields(changed, ['amount', 'weekly_amount'], ['start_date'])) return;
-        const { error } = await supabaseClient.from('additional_income').update(changed).eq('income_id', id);
+        const merged = { ...inc, ...changed };
+        const { error } = await supabaseClient.rpc('edit_income', {
+            p_actor: currentUsername, p_id: id, p_income_type: merged.income_type, p_amount: merged.amount,
+            p_weekly_amount: merged.weekly_amount, p_start_date: merged.start_date || null, p_status: merged.status, p_notes: merged.notes
+        });
         if (error) alert('Error: ' + error.message);
         else fetchIncomeFromCloud();
     }
@@ -3903,7 +3927,7 @@
         if (!canEdit()) return;
         if (!id) { alert('Error: could not identify which income entry to delete — try refreshing the page.'); return; }
         if (confirm('Delete income ' + id + '?')) {
-            const { error } = await supabaseClient.from('additional_income').delete().eq('income_id', id);
+            const { error } = await supabaseClient.rpc('delete_income', { p_actor: currentUsername, p_id: id });
             if (error) alert('Error: ' + error.message);
             fetchIncomeFromCloud();
         }
@@ -4919,7 +4943,7 @@
     async function deleteRateChange(rid) {
         if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
         if (!confirm('Remove this rate change?')) return;
-        const { error } = await supabaseClient.from('claim_rate_changes').delete().eq('id', rid);
+        const { error } = await supabaseClient.rpc('delete_claim_rate_change_entry', { p_actor: currentUsername, p_id: rid });
         if (error) { alert('Error: ' + error.message); return; }
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
     }
@@ -4927,7 +4951,7 @@
     async function deletePause(pid) {
         if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
         if (!confirm('Remove this pause record?')) return;
-        const { error } = await supabaseClient.from('claim_pauses').delete().eq('id', pid);
+        const { error } = await supabaseClient.rpc('delete_claim_pause_entry', { p_actor: currentUsername, p_id: pid });
         if (error) { alert('Error: ' + error.message); return; }
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
     }
@@ -5888,7 +5912,12 @@
         };
         let error;
         if (editingVehicleId) {
-            ({ error } = await supabaseClient.from('vehicles').update(payload).eq('id', editingVehicleId));
+            ({ error } = await supabaseClient.rpc('update_vehicle', {
+                p_actor: currentUsername, p_id: editingVehicleId, p_truck_number: payload.truck_number,
+                p_year: payload.year, p_make: payload.make, p_model: payload.model, p_plate: payload.plate,
+                p_vin: payload.vin, p_reg_expiry: payload.reg_expiry, p_insurance_company: payload.insurance_company,
+                p_insurance_policy: payload.insurance_policy, p_insurance_expiry: payload.insurance_expiry, p_notes: payload.notes
+            }));
         } else {
             const id = `${idPrefix()}${String(vehicles.length + 1).padStart(4, '0')}V`;
             ({ error } = await supabaseClient.from('vehicles').insert([{ id, ...payload }]));
@@ -5929,7 +5958,7 @@
     async function deleteVehicle(id) {
         if (!canEdit()) return;
         if (!confirm('Delete this vehicle and its whole service log?')) return;
-        const { error } = await supabaseClient.from('vehicles').delete().eq('id', id);
+        const { error } = await supabaseClient.rpc('delete_vehicle', { p_actor: currentUsername, p_id: id });
         if (error) { alert('Error: ' + error.message); return; }
         fetchVehiclesFromCloud();
     }
@@ -5953,7 +5982,7 @@
 
     async function deleteVehicleService(id, vehicleId) {
         if (!canEdit() || !id) return;
-        const { error } = await supabaseClient.from('vehicle_services').delete().eq('id', id);
+        const { error } = await supabaseClient.rpc('delete_vehicle_service', { p_actor: currentUsername, p_id: id });
         if (error) { alert('Error: ' + error.message); return; }
         recExpanded.vehicles.add(vehicleId);
         fetchVehiclesFromCloud();
