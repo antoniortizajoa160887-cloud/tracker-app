@@ -397,20 +397,25 @@
 
 <!-- LOGIN SCREEN -->
 <div id="auth-container">
-    <h2>Secure Login</h2>
+    <h2 data-i18n="login_title">Secure Login</h2>
     <div style="margin-bottom: 1rem; text-align: left;">
-        <label>Username</label>
-        <input type="text" id="login-username" placeholder="Enter username">
+        <label data-i18n="username_label">Username</label>
+        <input type="text" id="login-username" placeholder="Enter username" data-i18n-placeholder="username_ph">
     </div>
     <div style="margin-bottom: 1.5rem; text-align: left;">
-        <label>Password</label>
+        <label data-i18n="password_label">Password</label>
         <input type="password" id="login-password" placeholder="••••••••">
     </div>
-    <button type="button" class="btn" style="width: 100%;" id="login-btn" onclick="handleLoginClick()">Sign In</button>
+    <button type="button" class="btn" style="width: 100%;" id="login-btn" onclick="handleLoginClick()" data-i18n="sign_in_btn">Sign In</button>
     <p id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem;"></p>
-    <p id="login-timeout-notice" style="color: #b45309; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
+    <p id="login-timeout-notice" data-i18n="timeout_notice" style="color: #b45309; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
     <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
-        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Appearance</div>
+        <div data-i18n="language_label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Language</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:0.85rem;">
+            <button type="button" class="btn-small" id="login-lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
+            <button type="button" class="btn-small" id="login-lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
+        </div>
+        <div data-i18n="appearance_label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Appearance</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
             <button type="button" class="btn-small" id="login-theme-btn-light" onclick="setTheme('light')" style="margin:0;">☀ Light (current)</button>
             <button type="button" class="btn-small" id="login-theme-btn-ocean" onclick="setTheme('dark')" style="margin:0;">🌊 Ocean</button>
@@ -472,62 +477,62 @@
     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 0.75rem;">
         <div>
             <h1 id="app-title">Unified Logistics &amp; HR Claims Dashboard</h1>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;">Welcome, <strong id="user-name-display"></strong> · Role: <strong id="user-role-display" style="color:var(--primary);"></strong> · Company: <strong id="user-company-display"></strong></p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;"><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong> · <span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></p>
         </div>
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <span style="display:inline-flex; align-items:center;"><span class="sync-status" id="sync-dot"></span><span id="sync-text" style="font-size: 0.75rem; color: var(--text-muted);">Synchronized</span></span>
+                <span style="display:inline-flex; align-items:center;"><span class="sync-status" id="sync-dot"></span><span id="sync-text" data-i18n="synchronized" style="font-size: 0.75rem; color: var(--text-muted);">Synchronized</span></span>
                 <div id="company-switcher-wrap" style="display:none; align-items:center; gap:4px;">
-                    <span style="font-size:0.7rem; color:var(--text-muted);">Company:</span>
+                    <span data-i18n="company_label" style="font-size:0.7rem; color:var(--text-muted);">Company:</span>
                     <select id="company-switcher" onchange="onCompanySwitch()" style="width:auto; min-height:40px; padding:0.4rem 0.5rem; font-size:0.8rem; border-radius:6px;"></select>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-                <button class="btn-small" style="margin:0; white-space:nowrap; height:40px; min-height:40px;" onclick="toggleChangePasswordCard()">🔑 Change Password</button>
-                <button class="btn-small" style="background:#ef4444; margin:0; white-space:nowrap; height:40px; min-height:40px;" onclick="logout()">Sign Out</button>
+                <button class="btn-small" style="margin:0; white-space:nowrap; height:40px; min-height:40px;" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+                <button class="btn-small" style="background:#ef4444; margin:0; white-space:nowrap; height:40px; min-height:40px;" onclick="logout()" data-i18n="sign_out_btn">Sign Out</button>
             </div>
         </div>
     </div>
 
     <div class="card" id="change-password-card" style="display:none; max-width:420px;">
-        <h2>Change My Password</h2>
+        <h2 data-i18n="change_password_title">Change My Password</h2>
         <div class="grid-form">
-            <div class="field"><label>Current Password</label><input type="password" id="cp-current-pass" autocomplete="current-password"></div>
-            <div class="field"><label>New Password</label><input type="password" id="cp-new-pass" autocomplete="new-password"></div>
-            <div class="field"><label>Confirm New Password</label><input type="password" id="cp-confirm-pass" autocomplete="new-password"></div>
+            <div class="field"><label data-i18n="current_password">Current Password</label><input type="password" id="cp-current-pass" autocomplete="current-password"></div>
+            <div class="field"><label data-i18n="new_password">New Password</label><input type="password" id="cp-new-pass" autocomplete="new-password"></div>
+            <div class="field"><label data-i18n="confirm_new_password">Confirm New Password</label><input type="password" id="cp-confirm-pass" autocomplete="new-password"></div>
         </div>
         <p id="cp-error" style="color:#ef4444; font-size:0.85rem; margin:0.25rem 0;"></p>
-        <button class="btn-small" style="background:var(--navy);" onclick="submitChangePassword()">Save Password</button>
-        <button class="btn-small" onclick="toggleChangePasswordCard()">Cancel</button>
+        <button class="btn-small" style="background:var(--navy);" onclick="submitChangePassword()" data-i18n="save_password">Save Password</button>
+        <button class="btn-small" onclick="toggleChangePasswordCard()" data-i18n="cancel">Cancel</button>
     </div>
 
 <div class="tab-groups" id="tab-groups">
-    <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics">Logistics</button>
-    <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr">HR &amp; Payroll</button>
-    <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin">Administration</button>
+    <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
+    <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr" data-i18n="group_hr">HR &amp; Payroll</button>
+    <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin" data-i18n="group_admin">Administration</button>
 </div>
 <div class="tabs sub-tabs open" id="grp-logistics">
-    <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker">Route Tracker</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report">Daily Report</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles">Vehicles</button>
+    <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker" data-i18n="tab_tracker">Route Tracker</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report" data-i18n="tab_report">Daily Report</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Vehicles</button>
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
-    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications">Notifications <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees">Employees</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims">Claims</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges">Charges &amp; Income</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay">Daily Pay</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement">Statement</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll">Payroll</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges" data-i18n="tab_charges">Charges &amp; Income</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
 </div>
 <div class="tabs sub-tabs" id="grp-admin">
-    <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings">Settings</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;">Users</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;">Companies</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;">Approvals</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;">Log</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data">Data Sync</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;">Changelog</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;" data-i18n="tab_users">Users</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;" data-i18n="tab_companies">Companies</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;" data-i18n="tab_approvals">Approvals</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;" data-i18n="tab_log">Log</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
 </div>
 
 <!-- TAB 1: ROUTE TRACKER -->
@@ -1007,6 +1012,8 @@
             <span class="wk-label" id="dailypay-week-label">—</span>
             <button class="btn-small" onclick="shiftPayWeek(1)">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayWeek()">This week</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('dailypay-xlsx-input').click()">Import Registry</button>
+            <input type="file" id="dailypay-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importDailyPayExcel(event)">
             <span class="save-flash" id="dailypay-saveflash">Saved ✓</span>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
@@ -1103,7 +1110,15 @@
 <!-- TAB 7: SETTINGS -->
 <div id="tab-settings" class="tab-content">
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Appearance <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="language_label">Language <span class="caret">&#9662;</span></h2>
+        <div class="note-box" data-i18n="language_note">Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-small" id="lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
+            <button type="button" class="btn-small" id="lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
+        </div>
+    </div>
+    <div class="panel">
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="appearance_label">Appearance <span class="caret">&#9662;</span></h2>
         <div class="note-box">Choose how the app looks. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
             <button type="button" class="btn-small" id="theme-btn-light" onclick="setTheme('light')" style="margin:0;">☀ Light (current)</button>
@@ -1354,8 +1369,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.32';
+    const APP_VERSION = 'v2.33';
     const CHANGELOG = [
+        { version: 'v2.33', date: '2026-08-06', notes: 'Two things. (1) Fixed a real, confirmed bug in Payroll: claims, charges, and additional income were showing in payroll weeks BEFORE their own start date, not just after they finished — David Rodriguez\'s income entry (start date 7/25) was incorrectly showing in the 7/12 week too, more than a week before it began. Root cause: the balance calculation correctly reports "full amount, nothing paid yet" for any week before something starts, which is true, but nothing was checking whether the week being viewed was even on-or-after the start date before treating that as an active deduction. Fixed with a direct date check. Verified against the exact reported case — the income entry now shows in exactly one week, its actual start week, and nowhere else. Applies to claims, charges, and additional income alike. (2) New: Import Registry button on Daily Pay — upload your weekly daily-pay spreadsheet directly instead of entering each day by hand. Matches employees by name the same way Claims import already does, skips anyone it can\'t confidently match rather than guessing, and tells you exactly who was skipped so you can fix and re-import.' },
         { version: 'v2.32', date: '2026-08-06', notes: 'Fixed Route Tracker not showing all your data after a large import. Checked your file directly and confirmed the import itself worked completely and correctly — all 1,063 routes were saved with nothing missing and nothing duplicated. The problem was on the way back out: Supabase caps how many rows come back in a single request, and with over 1,000 routes now on file, the tail end was silently getting cut off every time the dashboard loaded them, with no error shown. Route Tracker now automatically fetches everything in batches instead of trusting one request to return it all, so this won\'t happen again regardless of how large the dataset grows.' },
         { version: 'v2.31', date: '2026-08-06', notes: 'Fixed Truck # not saving — turned out to be much bigger than that one field: editing or deleting an existing vehicle was completely broken (adding a new one worked fine, editing or removing one silently did nothing). Root cause: those two actions were written to talk to the database directly instead of through this app\'s normal secure channel, and without that channel they couldn\'t actually find the vehicle to change. Fixed properly, and directly confirmed your real truck now has "1444" saved. While fixing this, checked the rest of the app for the exact same mistake and found it in three more places that were likely also silently failing: editing Additional Income, and removing a claim\'s rate-change or pause history entries. All four fixed and individually tested before shipping.' },
         { version: 'v2.30', date: '2026-08-06', notes: 'Found and fixed a real, separate bug behind "the claim isn\'t showing" — different from the one fixed a few versions ago. A claim/charge/income item that gets fully paid off in a single week (its balance reaching exactly $0 that same week) was being completely hidden from Payroll for that week, and showing $0 instead of the real amount if it did show — because the check for "is this still being deducted" was accidentally using the balance AFTER that week\'s payment (which is $0 once it\'s the very last payment) instead of the balance BEFORE it. Confirmed against the exact reported case — a $75 claim, paid off in one single deduction — before shipping: it now correctly shows the $75 deduction for the week it actually happened, and the balance afterward still correctly reads $0.' },
@@ -3494,6 +3510,78 @@
         return 0;
     }
 
+    // Daily Pay registry import — expects the same layout as the exported
+    // weekly registry: row 1 = column labels, row 2 = the actual date for
+    // each of the 7 day columns (Sun..Sat, columns C..I), row 3+ = one
+    // employee per row with that week's daily amounts (or "OFF").
+    async function importDailyPayExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const co = requireWriteCompany();
+        if (!co) { event.target.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = async function(evt) {
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                let sheetName = workbook.SheetNames.find(n => n.trim().toLowerCase() === 'daily pay') || workbook.SheetNames[0];
+                const ws = workbook.Sheets[sheetName];
+                if (!ws['!ref']) { alert('The file appears to be empty.'); return; }
+
+                const dayCols = [2, 3, 4, 5, 6, 7, 8]; // C..I = Sun..Sat
+                const dates = dayCols.map(c => {
+                    const cell = ws[XLSX.utils.encode_cell({ r: 1, c })]; // row 2
+                    if (!cell) return null;
+                    if (cell.t === 'n') { const epoch = new Date(Date.UTC(1899, 11, 30)); return new Date(epoch.getTime() + cell.v * 86400000); }
+                    const d = new Date(cell.v);
+                    return isNaN(d) ? null : d;
+                });
+                if (dates.some(d => !d)) {
+                    alert('Could not find 7 day dates in row 2 (columns C–I). Make sure this matches the Daily Pay registry format.');
+                    return;
+                }
+
+                const sunday = weekStartSunday(dates[0]);
+                const wk = weekKeyFromSunday(sunday);
+
+                const entries = [];
+                const unmatched = [];
+                let r = 2; // row 3 = first employee row
+                while (true) {
+                    const nameCell = ws[XLSX.utils.encode_cell({ r, c: 0 })];
+                    const name = nameCell ? String(nameCell.v || '').trim() : '';
+                    if (!name) break;
+                    const empId = matchEmployeeByName(name);
+                    if (!empId) { unmatched.push(name); r++; continue; }
+                    dayCols.forEach((c, i) => {
+                        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                        if (!cell || cell.v === undefined || cell.v === null || String(cell.v).trim() === '') return; // blank = no entry, skip
+                        const raw = String(cell.v).trim();
+                        if (raw.toUpperCase() === 'OFF') entries.push({ employee_id: empId, year: wk.year, week: wk.week, day_index: i, amount: 0, is_off: true });
+                        else { const num = parseFloat(raw); if (!isNaN(num)) entries.push({ employee_id: empId, year: wk.year, week: wk.week, day_index: i, amount: num, is_off: false }); }
+                    });
+                    r++;
+                }
+
+                if (!entries.length) { alert('No importable daily pay rows found in this file.'); return; }
+
+                const { data: result, error } = await supabaseClient.rpc('import_daily_pay_batch', { p_actor: currentUsername, p_entries: entries });
+                if (error) { alert('Error importing: ' + error.message); return; }
+                const res = (result && result[0]) || { imported: 0, skipped: 0 };
+                let msg = `Imported ${res.imported} daily pay entries for Week ${wk.week}, ${wk.year}.`;
+                if (unmatched.length) msg += `\n\n${unmatched.length} name(s) could not be matched to an employee and were skipped:\n` + unmatched.join(', ');
+                alert(msg);
+                event.target.value = '';
+                dailyView = { sunday };
+                await fetchAllDataFromCloud();
+            } catch (err) {
+                alert('Error parsing file: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
     async function importClaimsExcel(event) {
         const file = event.target.files && event.target.files[0];
         event.target.value = '';
@@ -3763,7 +3851,7 @@
     function activeWeeklyIncome(empId) {
         const asOf = payrollAsOf();
         let total = 0;
-        additionalIncome.filter(i => i.employee_id === empId && i.status !== 'Queued').forEach(i => {
+        additionalIncome.filter(i => i.employee_id === empId && i.status !== 'Queued' && i.start_date && i.start_date <= asOf).forEach(i => {
             const remBefore = remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
             if (remBefore > 0) total += Math.min(parseFloat(i.weekly_amount) || 0, remBefore);
         });
@@ -3773,7 +3861,7 @@
     function incomeBreakdown(empId) {
         const asOf = payrollAsOf();
         return additionalIncome
-            .filter(i => i.employee_id === empId && i.status !== 'Queued' && remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
+            .filter(i => i.employee_id === empId && i.status !== 'Queued' && i.start_date && i.start_date <= asOf && remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
             .map(i => {
                 const remBefore = remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
                 return { id: i.income_id, label: i.income_type || 'Income', weekly: Math.min(parseFloat(i.weekly_amount) || 0, remBefore), remaining: remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) };
@@ -4105,7 +4193,11 @@
         // week (claimBalanceBefore), not the balance after — otherwise a
         // claim/charge that gets fully paid off in one week shows $0 and
         // silently disappears for the very week its final payment happened.
-        claims.filter(c => c.employee_id === empId && c.status !== 'Queued').forEach(c => {
+        // A start_date guard is also required: before the item starts, its
+        // balance function correctly reports "full amount, nothing paid
+        // yet" — which is true, but was being misread as an active
+        // deduction for every week before it even began.
+        claims.filter(c => c.employee_id === empId && c.status !== 'Queued' && c.start_date && c.start_date <= asOf).forEach(c => {
             const balBefore = claimBalanceBefore(c, asOf);
             if (balBefore > 0 && !isPausedOn(c, asOf)) {
                 const bal = claimBalance(c, asOf);
@@ -4113,7 +4205,7 @@
                 items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', company: c.company_name || '', claimant: c.claimant_account || '', carrier: c.carrier_claim_number || '', customer: c.customer_claim_number || '', weekly, scheduled: weekly, balance: bal });
             }
         });
-        charges.filter(ch => ch.employee_id === empId && ch.status !== 'Queued').forEach(ch => {
+        charges.filter(ch => ch.employee_id === empId && ch.status !== 'Queued' && ch.start_date && ch.start_date <= asOf).forEach(ch => {
             const balBefore = remainingBalanceBefore(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
             if (balBefore > 0) {
                 const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
@@ -5172,6 +5264,97 @@
     }
 
     // ===== Appearance (Light / Dark theme) =====
+    // ===== Language (English / Español) =====
+    // First pass: navigation, login screen, and common header controls.
+    // Not yet covered: form field labels within individual tabs, table
+    // column headers, alert/confirm messages, and note-box help text — all
+    // still English-only. Add more entries to TRANSLATIONS + tag more
+    // elements with data-i18n to extend coverage over time.
+    const TRANSLATIONS = {
+        en: {
+            welcome_prefix: 'Welcome,', role_label: 'Role:', company_label: 'Company:',
+            synchronized: 'Synchronized', change_password_btn: 'Change Password', sign_out_btn: 'Sign Out',
+            change_password_title: 'Change My Password', current_password: 'Current Password',
+            new_password: 'New Password', confirm_new_password: 'Confirm New Password',
+            save_password: 'Save Password', cancel: 'Cancel',
+            group_logistics: 'Logistics', group_hr: 'HR & Payroll', group_admin: 'Administration',
+            tab_tracker: 'Route Tracker', tab_report: 'Daily Report', tab_vehicles: 'Vehicles',
+            tab_notifications: 'Notifications', tab_employees: 'Employees', tab_claims: 'Claims',
+            tab_charges: 'Charges & Income', tab_dailypay: 'Daily Pay', tab_statement: 'Statement',
+            tab_payroll: 'Payroll', tab_settings: 'Settings', tab_users: 'Users', tab_companies: 'Companies',
+            tab_approvals: 'Approvals', tab_log: 'Log', tab_data: 'Data Sync', tab_changelog: 'Changelog',
+            login_title: 'Secure Login', username_label: 'Username', username_ph: 'Enter username',
+            password_label: 'Password', sign_in_btn: 'Sign In',
+            timeout_notice: 'You were signed out after 5 minutes of inactivity.',
+            language_label: 'Language',
+            language_note: 'Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)',
+            appearance_label: 'Appearance'
+        },
+        es: {
+            welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
+            synchronized: 'Sincronizado', change_password_btn: 'Cambiar Contraseña', sign_out_btn: 'Cerrar Sesión',
+            change_password_title: 'Cambiar Mi Contraseña', current_password: 'Contraseña Actual',
+            new_password: 'Nueva Contraseña', confirm_new_password: 'Confirmar Nueva Contraseña',
+            save_password: 'Guardar Contraseña', cancel: 'Cancelar',
+            group_logistics: 'Logística', group_hr: 'RR. HH. y Nómina', group_admin: 'Administración',
+            tab_tracker: 'Rastreador de Rutas', tab_report: 'Informe Diario', tab_vehicles: 'Vehículos',
+            tab_notifications: 'Notificaciones', tab_employees: 'Empleados', tab_claims: 'Reclamos',
+            tab_charges: 'Cargos e Ingresos', tab_dailypay: 'Pago Diario', tab_statement: 'Estado de Cuenta',
+            tab_payroll: 'Nómina', tab_settings: 'Configuración', tab_users: 'Usuarios', tab_companies: 'Compañías',
+            tab_approvals: 'Aprobaciones', tab_log: 'Registro', tab_data: 'Sincronización de Datos', tab_changelog: 'Historial de Cambios',
+            login_title: 'Iniciar Sesión', username_label: 'Usuario', username_ph: 'Ingrese su usuario',
+            password_label: 'Contraseña', sign_in_btn: 'Iniciar Sesión',
+            timeout_notice: 'Se cerró su sesión después de 5 minutos de inactividad.',
+            language_label: 'Idioma',
+            language_note: 'Elija su idioma. Esto se guarda solo en este dispositivo, así que otras personas conectadas en otro lugar mantienen su propia preferencia. (También disponible en la pantalla de inicio de sesión.)',
+            appearance_label: 'Apariencia'
+        }
+    };
+
+    function t(key) {
+        let lang = 'en';
+        try { lang = localStorage.getItem('tracker_lang') || 'en'; } catch (e) {}
+        return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) ?? TRANSLATIONS.en[key];
+    }
+
+    function applyTranslations() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const val = t(el.getAttribute('data-i18n'));
+            if (val === undefined) return;
+            // Some tagged elements (panel headers with a caret span, tab
+            // buttons with a badge span) have element children alongside
+            // their text — only swap the first text node so those don't
+            // get wiped out.
+            const hasElementChildren = Array.from(el.childNodes).some(n => n.nodeType === 1);
+            if (hasElementChildren) {
+                const textNode = Array.from(el.childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
+                if (textNode) textNode.textContent = val + ' ';
+                else el.insertBefore(document.createTextNode(val + ' '), el.firstChild);
+            } else {
+                el.textContent = val;
+            }
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const val = t(el.getAttribute('data-i18n-placeholder'));
+            if (val !== undefined) el.placeholder = val;
+        });
+    }
+
+    function setLanguage(lang) {
+        try { localStorage.setItem('tracker_lang', lang === 'es' ? 'es' : 'en'); } catch (e) {}
+        applyTranslations();
+        updateLanguageButtons();
+    }
+
+    function updateLanguageButtons() {
+        let cur = 'en';
+        try { cur = localStorage.getItem('tracker_lang') || 'en'; } catch (e) {}
+        const enBtn = document.getElementById('lang-btn-en'), esBtn = document.getElementById('lang-btn-es');
+        const loginEnBtn = document.getElementById('login-lang-btn-en'), loginEsBtn = document.getElementById('login-lang-btn-es');
+        [enBtn, loginEnBtn].forEach(b => { if (b) b.style.background = cur === 'en' ? 'var(--navy)' : '#64748b'; });
+        [esBtn, loginEsBtn].forEach(b => { if (b) b.style.background = cur === 'es' ? 'var(--navy)' : '#64748b'; });
+    }
+
     // Applies to whichever selector set is passed in — lets both the Settings
     // panel and the login screen (different button IDs) share this logic.
     function setTheme(theme, idPrefix) {
@@ -6162,6 +6345,8 @@
 
     renderVersionBadge();
     updateThemeButtons();
+    applyTranslations();
+    updateLanguageButtons();
     if (sessionStorage.getItem('logout_reason') === 'idle') {
         sessionStorage.removeItem('logout_reason');
         const notice = document.getElementById('login-timeout-notice');
