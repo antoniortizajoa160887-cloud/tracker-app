@@ -608,8 +608,28 @@
 <div id="tab-notifications" class="tab-content">
     <div class="panel">
         <h2>Notifications</h2>
-        <div class="note-box">New claims, charges, and additional income you've been assigned show up here, newest first. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company's, same as the rest of the app.</div>
-        <div class="form-row" style="margin-bottom:10px;">
+        <div class="note-box">New claims, charges, and additional income you've been assigned show up here. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company's, same as the rest of the app.</div>
+        <div class="form-row" style="margin-bottom:10px; align-items:flex-end;">
+            <div class="field">
+                <label>Date range</label>
+                <select id="notif-range" onchange="renderNotifications()">
+                    <option value="">All time</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="60">Last 60 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Sort</label>
+                <div style="display:flex; gap:6px;">
+                    <select id="notif-sort" onchange="renderNotifications()">
+                        <option value="date">Date</option>
+                    </select>
+                    <button type="button" class="btn-small rec-dir-btn" id="notif-dir-btn" onclick="flipNotifDir()">▼</button>
+                </div>
+            </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('notifications')">✕ Clear filters</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="markAllNotificationsRead()">Mark all as read</button>
         </div>
         <div id="notifications-tbody" class="record-grid"></div>
@@ -673,6 +693,7 @@
                     <option value="">All statuses</option>
                 </select>
             </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('employees')">✕ Clear filters</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()">Export CSV</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()">Import CSV</button>
             <input type="file" id="emp-csv-input" accept=".csv,text/csv" style="display:none;" onchange="importEmployeesCsv(event)">
@@ -759,6 +780,7 @@
             <div class="field"><select id="filter-claim-emp" onchange="filterClaims()"><option value="">All employees</option></select></div>
             <div class="field"><select id="filter-claim-damage" onchange="filterClaims()"><option value="">All damage types</option></select></div>
             <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')">✕ Clear filters</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()">Import Excel/CSV</button>
             <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
         </div>
@@ -813,6 +835,7 @@
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()"></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')">✕ Clear filters</button>
         </div>
         <div class="rec-toolbar">
             <label>Sort by</label>
@@ -858,6 +881,7 @@
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()"></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')">✕ Clear filters</button>
         </div>
         <div class="rec-toolbar">
             <label>Sort by</label>
@@ -901,6 +925,7 @@
             <div class="field field-wide">
                 <input type="text" id="statement-search" placeholder="Search name or ID..." oninput="populateStatementEmployeeDropdown()">
             </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('statement')">✕ Clear filters</button>
         </div>
         <div class="form-row" style="margin-bottom:0; margin-top:8px;">
             <div class="field" style="flex:1 1 300px;">
@@ -957,6 +982,7 @@
             <div class="field field-wide">
                 <input type="text" id="dailypay-search" placeholder="Search name or ID..." oninput="renderDailyPay()">
             </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('dailypay')">✕ Clear filters</button>
         </div>
         <div class="note-box" style="margin-top:10px;">
             Enter each person's pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person's pay type in the Employees tab).
@@ -997,6 +1023,7 @@
             <div class="field field-wide">
                 <input type="text" id="payroll-search" placeholder="Search name or ID..." oninput="renderPayroll()">
             </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('payroll')">✕ Clear filters</button>
         </div>
         <div class="note-box" style="margin-top:10px;">
             Net pay = base pay + route pay (drivers) + additional income − active weekly deductions (claims + charges currently being deducted). Base pay is the flat <strong>weekly salary</strong> for Weekly people, or this week's <strong>Daily Pay</strong> total for Daily-rate people. Route pay, additional income, and daily pay all use the current week.
@@ -1278,8 +1305,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.25';
+    const APP_VERSION = 'v2.27';
     const CHANGELOG = [
+        { version: 'v2.27', date: '2026-08-06', notes: 'Added a "✕ Clear filters" button to every section that has search boxes or filter dropdowns — Employees, Claims, Charges, Additional Income, Statement, Daily Pay, Payroll, and Notifications. One tap resets that section back to its normal default view (search cleared, dropdowns back to Active/All as appropriate) instead of clearing each field by hand.' },
+        { version: 'v2.26', date: '2026-08-06', notes: 'Two things. (1) Notifications redesigned per feedback: added a Date range filter (30/60/90 days, last year, or all time) and a newest/oldest sort toggle — available to every role, same as before. Each notification is now a plain flat row instead of the collapsible-card style used elsewhere, since there was never anything to expand into. (2) Fixed a real bug in Payroll: once a claim, charge, or income item resolved (Paid/Absorbed/Tk from check/Stopped — including the automatic one from v2.15), it stopped showing in Payroll for EVERY week, including past weeks from before it resolved, when it had genuinely still been deducting. Confirmed the exact case reported: a claim that reached $0 by 08/08 had correctly been deducting the week of 08/01, but browsing back to that week showed nothing. Root cause: the balance calculation was forcing $0 for any date once a status resolved, not just from the resolution point forward. Fixed so a past week now shows what was actually true at the time, while today and future weeks still correctly show $0 for anything resolved — verified against the exact numbers from the reported case before shipping.\\n\\nA note on how this was implemented: you shared instructions you\'d given Gemini, including its proposed fix (a new payroll_transactions ledger table). I did not build it as written — it used ID types that don\'t match this database (UUIDs where this app uses text IDs throughout), it would have reopened the exact open-to-anyone security hole closed a few versions back, and its 4th section proposed replacing this app\'s entire working login system with Supabase\'s unrelated built-in auth, which would have logged everyone out permanently since no accounts exist in that system. None of that was implemented. The actual bug didn\'t need a new table at all — the schedule math already stored everything needed (start date, rate changes, pauses); it just wasn\'t being asked the right question for a past date.' },
         { version: 'v2.25', date: '2026-08-05', notes: 'New: Notifications tab (HR & Payroll). Whenever a claim, charge, or additional income is created for an employee, they now get a notification showing what it is, the amount, and when it happened — tap it and it jumps straight to that record, already filtered into view. A red count badge on the tab shows how many are unread. This runs at the database level, so it fires no matter how the record was created (the form, a CSV import, anything in the future) — nothing can slip through. Same access rules as everywhere else: a View Only account only ever sees notifications about themselves, never a coworker\'s.' },
         { version: 'v2.24', date: '2026-08-05', notes: 'Fixed Daily Pay not saving — the exact same underlying issue as last version\'s Weekly/Daily pay-type bug, just on a different table: the security fix before that had removed direct read access to the daily pay table, which broke the kind of save this screen uses the same way. Moved it to the same kind of dedicated database function. Checked every other screen in the app for this same pattern and confirmed nothing else is affected. Also merged the Changelog tab\'s two lists (Version History and System Changelog) into one, since they were showing the same information twice — it now reads entirely from the database-backed list, including the full history back to v1.0, so this record survives independently of whatever app file is deployed. Still Super Admin only.' },
         { version: 'v2.23', date: '2026-08-05', notes: 'Full database reset and security hardening, at your request. Wiped every operational table clean (companies, employees, claims, charges, routes, income, daily pay, and everything tied to them) — reused the existing Damage Type / Charge Type / Income Type lists rather than losing them. Every table connected to a company, employee, or claim now has a real enforced connection at the database level, so deleting something always takes everything that belongs to it with it — verified directly, not just assumed. SSN/ITIN, driver license, and work permit numbers are now encrypted in storage — previously they were kept as plain readable text; confirmed the raw stored values are now unreadable without going through the app\'s own access controls. Created the Super Admin account. New: a database-backed System Changelog (Changelog tab, second panel) that survives independently of this app file — visible to Super Admin only, same as the regular Version History above it, which is no longer visible to Administrators. Also closed a smaller gap found while doing this: the Damage/Charge/Income Type lists in Settings could previously be edited by anyone logged in, including View Only accounts — now requires Medium role or above, same as everything else that changes shared data.' },
@@ -1546,7 +1575,13 @@
     }
     function remainingBalanceAsOf(amount, weekly, startStr, status, asOfStr) {
         amount = parseFloat(amount || 0); weekly = parseFloat(weekly || 0);
-        if (status === 'Absorbed' || status === 'Tk from check' || status === 'Paid' || status === 'Stopped') return 0;
+        // A resolved status (written off, taken from last check, paid, or
+        // stopped) correctly means $0 owed from today onward — but forcing
+        // that for every date, including weeks BEFORE the item was resolved,
+        // erased the real deduction history the moment something got
+        // resolved. Only apply the shortcut when asOf isn't in the past.
+        const viewingPast = asOfStr && asOfStr < todayStr();
+        if (!viewingPast && (status === 'Absorbed' || status === 'Tk from check' || status === 'Paid' || status === 'Stopped')) return 0;
         const weeksPaid = Math.min(weeksElapsedAsOf(startStr, asOfStr), weeksNeeded(amount, weekly));
         return Math.max(0, +(amount - weekly * weeksPaid).toFixed(2));
     }
@@ -1606,7 +1641,9 @@
     // balance reaches $0, applying rate changes and skipping pause weeks.
     function buildClaimSchedule(claim, asOf) {
         const owed = Math.max(0, (parseFloat(claim.claim_amount) || 0) - (parseFloat(claim.absorbed_amount) || 0));
-        const resolved = claim.status === 'Absorbed' || claim.status === 'Tk from check' || claim.status === 'Paid';
+        // See remainingBalanceAsOf's comment above — same fix, same reasoning.
+        const viewingPast = asOf && asOf < todayStr();
+        const resolved = !viewingPast && (claim.status === 'Absorbed' || claim.status === 'Tk from check' || claim.status === 'Paid');
         const rows = [];
         if (resolved || !claim.start_date || owed <= 0) {
             return { rows, owed, balanceAsOf: resolved ? 0 : owed, endDate: null };
@@ -1644,7 +1681,8 @@
     // Current balance for a claim, honoring rate changes + pauses.
     function claimBalance(claim, asOf) {
         const owed = Math.max(0, (parseFloat(claim.claim_amount) || 0) - (parseFloat(claim.absorbed_amount) || 0));
-        if (claim.status === 'Absorbed' || claim.status === 'Tk from check' || claim.status === 'Paid') return 0;
+        const viewingPast = asOf && asOf < todayStr();
+        if (!viewingPast && (claim.status === 'Absorbed' || claim.status === 'Tk from check' || claim.status === 'Paid')) return 0;
         if (claim.status === 'Queued') return owed;
         return buildClaimSchedule(claim, asOf || todayStr()).balanceAsOf;
     }
@@ -2613,6 +2651,47 @@
         }</tbody></table>`;
     }
 
+    // Resets a section's filter controls back to their defaults (matching
+    // each dropdown's own default-selected option) and re-renders — one
+    // function so every "Clear filters" button behaves consistently.
+    function clearFilters(tab) {
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        switch (tab) {
+            case 'employees':
+                setVal('employee-search', ''); setVal('employee-status-filter', 'Active');
+                renderEmployees();
+                break;
+            case 'claims':
+                setVal('claim-search', ''); setVal('filter-claim-emp', ''); setVal('filter-claim-damage', ''); setVal('filter-claim-status', '');
+                filterClaims();
+                break;
+            case 'charges':
+                setVal('charge-search', '');
+                renderCharges();
+                break;
+            case 'income':
+                setVal('income-search', '');
+                renderIncome();
+                break;
+            case 'dailypay':
+                setVal('dailypay-type-filter', ''); setVal('dailypay-status-filter', 'Active'); setVal('dailypay-search', '');
+                renderDailyPay();
+                break;
+            case 'statement':
+                setVal('statement-type-filter', ''); setVal('statement-status-filter', 'Active'); setVal('statement-search', '');
+                populateStatementEmployeeDropdown();
+                break;
+            case 'payroll':
+                setVal('payroll-type-filter', ''); setVal('payroll-status-filter', 'Active'); setVal('payroll-search', '');
+                renderPayroll();
+                break;
+            case 'notifications':
+                setVal('notif-range', '');
+                renderNotifications();
+                break;
+        }
+    }
+
     function renderEmployees() {
         const query = (document.getElementById('employee-search')?.value || '').toLowerCase();
         const statusFilter = document.getElementById('employee-status-filter')?.value || '';
@@ -2987,6 +3066,7 @@
 
     // --- NOTIFICATIONS ----------------------------------------------------
     let notifications = [];
+    let notifDir = -1; // -1 = newest first (default), 1 = oldest first
 
     async function loadNotifications() {
         const { data, error } = await supabaseClient.rpc('get_notifications', { p_actor: currentUsername, p_company: currentCompany });
@@ -3003,6 +3083,13 @@
         else { badge.style.display = 'none'; }
     }
 
+    function flipNotifDir() {
+        notifDir *= -1;
+        const btn = document.getElementById('notif-dir-btn');
+        if (btn) btn.textContent = notifDir === 1 ? '▲' : '▼';
+        renderNotifications();
+    }
+
     const NOTIF_KIND_LABEL = { claim: 'Claim', charge: 'Charge', income: 'Additional Income' };
     const NOTIF_KIND_ICON = { claim: '📋', charge: '➖', income: '➕' };
 
@@ -3010,23 +3097,36 @@
         const container = document.getElementById('notifications-tbody');
         if (!container) return;
         container.className = 'record-grid';
-        if (!notifications.length) {
-            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No notifications yet.</div>';
+
+        const rangeDays = parseInt(document.getElementById('notif-range')?.value || '', 10);
+        let list = notifications;
+        if (rangeDays) {
+            const cutoff = Date.now() - rangeDays * 86400000;
+            list = list.filter(n => new Date(n.created_at).getTime() >= cutoff);
+        }
+        list = [...list].sort((a, b) => (new Date(a.created_at) - new Date(b.created_at)) * notifDir);
+
+        if (!list.length) {
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No notifications in this range.</div>';
             return;
         }
         container.innerHTML = '';
-        notifications.forEach(n => {
+        list.forEach(n => {
             const unread = !n.read_at;
             const emp = employees.find(e => e.id === n.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}`.trim() : n.employee_id;
+            // Plain, flat notification row — deliberately not the collapsible
+            // .rec-card style used elsewhere, since there's nothing to expand
+            // into (everything relevant is already shown); the whole row is
+            // just a single click-to-jump target.
             container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card open" id="rec-notif-${n.id}" style="cursor:pointer; ${unread ? 'border-left:3px solid var(--secondary);' : 'opacity:0.75;'}" onclick="goToNotification(${n.id}, '${n.kind}', '${escJsAttr(n.record_id)}', '${escJsAttr(n.employee_id)}')">
-                    <div class="rec-card-head" style="cursor:pointer;">
-                        <span style="font-size:16px;">${NOTIF_KIND_ICON[n.kind] || '🔔'}</span>
-                        <span class="rec-title">New ${NOTIF_KIND_LABEL[n.kind] || n.kind}${unread ? ' <span class="status-badge status-active" style="margin-left:6px;">New</span>' : ''}</span>
-                        <span class="rec-sub">${escHtml(n.label)}${n.amount ? ' · ' + formatMoney(n.amount) : ''} · ${escHtml(empName)}</span>
-                        <span class="rec-right" style="font-family:var(--mono); font-size:11px; color:var(--text-muted);">${n.record_id} · ${new Date(n.created_at).toLocaleString()}</span>
+                <div id="rec-notif-${n.id}" style="cursor:pointer; display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); ${unread ? 'border-left:3px solid var(--secondary);' : 'opacity:0.7;'}" onclick="goToNotification(${n.id}, '${n.kind}', '${escJsAttr(n.record_id)}', '${escJsAttr(n.employee_id)}')">
+                    <span style="font-size:18px; flex-shrink:0;">${NOTIF_KIND_ICON[n.kind] || '🔔'}</span>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:700; font-size:13px;">New ${NOTIF_KIND_LABEL[n.kind] || n.kind}${unread ? ' <span class="status-badge status-active" style="margin-left:4px;">New</span>' : ''}</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${escHtml(n.label)}${n.amount ? ' · ' + formatMoney(n.amount) : ''} · ${escHtml(empName)}</div>
                     </div>
+                    <div style="text-align:right; font-family:var(--mono); font-size:11px; color:var(--text-muted); flex-shrink:0;">${n.record_id}<br>${new Date(n.created_at).toLocaleDateString()}</div>
                 </div>`);
         });
     }
@@ -3562,7 +3662,7 @@
     function activeWeeklyIncome(empId) {
         const asOf = payrollAsOf();
         let total = 0;
-        additionalIncome.filter(i => i.employee_id === empId && i.status === 'Paying').forEach(i => {
+        additionalIncome.filter(i => i.employee_id === empId && i.status !== 'Queued').forEach(i => {
             const rem = remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
             if (rem > 0) total += Math.min(parseFloat(i.weekly_amount) || 0, rem);
         });
@@ -3572,7 +3672,7 @@
     function incomeBreakdown(empId) {
         const asOf = payrollAsOf();
         return additionalIncome
-            .filter(i => i.employee_id === empId && i.status === 'Paying' && remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
+            .filter(i => i.employee_id === empId && i.status !== 'Queued' && remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
             .map(i => ({ id: i.income_id, label: i.income_type || 'Income', weekly: Math.min(parseFloat(i.weekly_amount) || 0, remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf)), remaining: remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) }));
     }
 
@@ -3889,14 +3989,18 @@
     function deductionBreakdown(empId, capAmount) {
         const asOf = payrollAsOf();
         const items = [];
-        claims.filter(c => c.employee_id === empId && c.status === 'Deducting').forEach(c => {
+        // Only Queued (never authorized to start) is excluded outright — a
+        // claim/charge now Paid/Absorbed/Tk from check can still correctly
+        // show a deduction for a past week before it was resolved, since
+        // claimBalance/remainingBalanceAsOf above are now week-aware.
+        claims.filter(c => c.employee_id === empId && c.status !== 'Queued').forEach(c => {
             const bal = claimBalance(c, asOf);
             if (bal > 0 && !isPausedOn(c, asOf)) {
                 const weekly = Math.min(rateOn(c, asOf), bal);
                 items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', company: c.company_name || '', claimant: c.claimant_account || '', carrier: c.carrier_claim_number || '', customer: c.customer_claim_number || '', weekly, scheduled: weekly, balance: bal });
             }
         });
-        charges.filter(ch => ch.employee_id === empId && ch.status === 'Deducting').forEach(ch => {
+        charges.filter(ch => ch.employee_id === empId && ch.status !== 'Queued').forEach(ch => {
             const bal = remainingBalanceAsOf(ch.amount, ch.weekly_deduction, ch.start_date, ch.status, asOf);
             if (bal > 0) {
                 const weekly = Math.min(parseFloat(ch.weekly_deduction) || 0, bal);
