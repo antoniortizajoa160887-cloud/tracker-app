@@ -641,10 +641,10 @@
         <div class="stat-grid" id="vehicle-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search truck #, year, make, model, plate, VIN..." oninput="renderVehicles()"></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-vehicles" onchange="setSortField('vehicles', this.value)">
                 <option value="truck">Truck #</option>
                 <option value="vehicle">Vehicle</option>
@@ -683,7 +683,7 @@
                     <button type="button" class="btn-small rec-dir-btn" id="notif-dir-btn" onclick="flipNotifDir()">▼</button>
                 </div>
             </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('notifications')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('notifications')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="markAllNotificationsRead()">Mark all as read</button>
         </div>
         <div id="notifications-tbody" class="record-grid"></div>
@@ -693,53 +693,53 @@
 <!-- TAB 3: EMPLOYEES -->
 <div id="tab-employees" class="tab-content">
     <div class="panel">
-        <h2 id="employee-form-title" class="panel-head" onclick="toggleCollapse(this)"><span id="employee-form-titletext">New Contact</span> <span class="caret">&#9662;</span></h2>
+        <h2 id="employee-form-title" class="panel-head" onclick="toggleCollapse(this)"><span id="employee-form-titletext" data-i18n="new_contact">New Contact</span> <span class="caret">&#9662;</span></h2>
         <div class="id-banner">
-            <div class="id-banner-label">Next ID</div>
+            <div class="id-banner-label" data-i18n="next_id">Next ID</div>
             <div class="id-banner-value" id="next-emp-id-display">—</div>
         </div>
         <form id="employee-form" style="margin-bottom: 1rem;">
-            <div class="form-section-label">Basic info</div>
+            <div class="form-section-label" data-i18n="basic_info">Basic info</div>
             <div class="grid-form">
-                <div class="field"><label>First Name</label><input type="text" id="emp-first" required></div>
-                <div class="field"><label>Last Name</label><input type="text" id="emp-last" required></div>
-                <div class="field"><label>Person Type</label><select id="emp-type" onchange="updateNextEmpId()"><option value="Employee">Employee (E)</option><option value="Staff">Staff (S)</option><option value="Contractor">Contractor (C)</option><option value="Provider">Provider (P)</option><option value="Owner">Owner (O)</option><option value="Manager">Manager (M)</option></select></div>
-                <div class="field"><label>Department</label><input type="text" id="emp-dept"></div>
-                <div class="field"><label>Role / Title</label><input type="text" id="emp-role"></div>
-                <div class="field"><label>Start Date</label><input type="date" id="emp-start"></div>
+                <div class="field"><label data-i18n="first_name">First Name</label><input type="text" id="emp-first" required></div>
+                <div class="field"><label data-i18n="last_name">Last Name</label><input type="text" id="emp-last" required></div>
+                <div class="field"><label data-i18n="person_type">Person Type</label><select id="emp-type" onchange="updateNextEmpId()"><option value="Employee">Employee (E)</option><option value="Staff">Staff (S)</option><option value="Contractor">Contractor (C)</option><option value="Provider">Provider (P)</option><option value="Owner">Owner (O)</option><option value="Manager">Manager (M)</option></select></div>
+                <div class="field"><label data-i18n="department">Department</label><input type="text" id="emp-dept"></div>
+                <div class="field"><label data-i18n="role_title">Role / Title</label><input type="text" id="emp-role"></div>
+                <div class="field"><label data-i18n="start_date">Start Date</label><input type="date" id="emp-start"></div>
             </div>
-            <div class="form-section-label" style="margin-top:10px;">Contact info</div>
+            <div class="form-section-label" style="margin-top:10px;" data-i18n="contact_info">Contact info</div>
             <div class="grid-form">
-                <div class="field"><label>Phone #</label><input type="tel" id="emp-phone" placeholder="(555) 555-5555"></div>
-                <div class="field"><label>Email</label><input type="email" id="emp-email" placeholder="name@example.com"></div>
+                <div class="field"><label data-i18n="phone">Phone #</label><input type="tel" id="emp-phone" placeholder="(555) 555-5555"></div>
+                <div class="field"><label data-i18n="email">Email</label><input type="email" id="emp-email" placeholder="name@example.com"></div>
             </div>
-            <div class="form-section-label" style="margin-top:10px;">Identification</div>
+            <div class="form-section-label" style="margin-top:10px;" data-i18n="identification">Identification</div>
             <div class="grid-form">
-                <div class="field"><label>SSN or ITIN #</label><input type="text" id="emp-idnum" placeholder="XXX-XX-XXXX"></div>
-                <div class="field"><label>Type</label><select id="emp-idtype"><option value="SSN">SSN</option><option value="ITIN">ITIN</option></select></div>
-                <div class="field"><label>Driver License or State ID #</label><input type="text" id="emp-dl"></div>
-                <div class="field"><label>DL / State ID expiration</label><input type="date" id="emp-dlexp"></div>
-                <div class="field"><label>Work Permit #</label><input type="text" id="emp-wp"></div>
-                <div class="field"><label>Work Permit expiration</label><input type="date" id="emp-wpexp"></div>
-                <div class="field"><label>Medical Card</label><select id="emp-medcard"><option value="No">No</option><option value="Yes">Yes</option></select></div>
-                <div class="field"><label>Medical Card expiration</label><input type="date" id="emp-medexp"></div>
-                <div class="field field-wide"><label>Notes</label><input type="text" id="emp-notes"></div>
+                <div class="field"><label data-i18n="ssn_itin">SSN or ITIN #</label><input type="text" id="emp-idnum" placeholder="XXX-XX-XXXX"></div>
+                <div class="field"><label data-i18n="type_label">Type</label><select id="emp-idtype"><option value="SSN">SSN</option><option value="ITIN">ITIN</option></select></div>
+                <div class="field"><label data-i18n="dl_or_state_id">Driver License or State ID #</label><input type="text" id="emp-dl"></div>
+                <div class="field"><label data-i18n="dl_expiration">DL / State ID expiration</label><input type="date" id="emp-dlexp"></div>
+                <div class="field"><label data-i18n="work_permit">Work Permit #</label><input type="text" id="emp-wp"></div>
+                <div class="field"><label data-i18n="work_permit_exp">Work Permit expiration</label><input type="date" id="emp-wpexp"></div>
+                <div class="field"><label data-i18n="medical_card">Medical Card</label><select id="emp-medcard"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                <div class="field"><label data-i18n="medical_card_exp">Medical Card expiration</label><input type="date" id="emp-medexp"></div>
+                <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="emp-notes"></div>
             </div>
-            <div class="form-section-label" style="margin-top:10px;">Pay</div>
+            <div class="form-section-label" style="margin-top:10px;" data-i18n="pay">Pay</div>
             <div class="grid-form">
-                <div class="field"><label>Pay Type</label><select id="emp-paytype"><option value="Weekly">Weekly Salary</option><option value="Daily">Daily Rate</option></select></div>
-                <div class="field"><label>Base Weekly Pay ($)</label><input type="number" id="emp-payrate" min="0" step="0.01" placeholder="0.00"></div>
+                <div class="field"><label data-i18n="pay_type">Pay Type</label><select id="emp-paytype"><option value="Weekly">Weekly Salary</option><option value="Daily">Daily Rate</option></select></div>
+                <div class="field"><label data-i18n="base_weekly_pay">Base Weekly Pay ($)</label><input type="number" id="emp-payrate" min="0" step="0.01" placeholder="0.00"></div>
             </div>
-            <div class="note-box" style="margin-top:8px;">Set <strong>Daily Rate</strong> for anyone whose pay changes week to week — enter their day-by-day amounts in the <strong>Daily Pay</strong> tab. On edit, leave <strong>SSN/ITIN</strong> blank to keep the stored number unchanged. Driver license, work permit, medical card and notes are shown openly in the directory; the SSN/ITIN stays hidden.</div>
+            <div class="note-box" style="margin-top:8px;" data-i18n="employee_note">Set <strong>Daily Rate</strong> for anyone whose pay changes week to week — enter their day-by-day amounts in the <strong>Daily Pay</strong> tab. On edit, leave <strong>SSN/ITIN</strong> blank to keep the stored number unchanged. Driver license, work permit, medical card and notes are shown openly in the directory; the SSN/ITIN stays hidden.</div>
             <div style="margin-top:0.5rem;">
-                <button type="submit" class="btn" id="emp-save-btn">+ Add Employee</button>
-                <button type="button" class="btn-small" id="emp-cancel-btn" style="display:none;background:#64748b;" onclick="cancelEmployeeEdit()">Cancel edit</button>
+                <button type="submit" class="btn" id="emp-save-btn" data-i18n="add_employee">+ Add Employee</button>
+                <button type="button" class="btn-small" id="emp-cancel-btn" style="display:none;background:#64748b;" onclick="cancelEmployeeEdit()" data-i18n="cancel_edit">Cancel edit</button>
             </div>
         </form>
     </div>
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px; align-items:center; gap:8px;">
-            <div class="field field-wide"><input type="text" id="employee-search" placeholder="Search name, ID, department, type..." oninput="renderEmployees()"></div>
+            <div class="field field-wide"><input type="text" id="employee-search" placeholder="Search name, ID, department, type..." oninput="renderEmployees()" data-i18n-placeholder="search_employees_ph"></div>
             <div class="field">
                 <select id="employee-status-filter" onchange="renderEmployees()">
                     <option value="Active">Active</option>
@@ -747,13 +747,13 @@
                     <option value="">All statuses</option>
                 </select>
             </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('employees')">✕ Clear filters</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()">Export CSV</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()">Import CSV</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('employees')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()" data-i18n="export_csv">Export CSV</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()" data-i18n="import_csv">Import CSV</button>
             <input type="file" id="emp-csv-input" accept=".csv,text/csv" style="display:none;" onchange="importEmployeesCsv(event)">
         </div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-employees" onchange="setSortField('employees', this.value)">
                 <option value="name">Name</option>
                 <option value="id">ID</option>
@@ -834,12 +834,12 @@
             <div class="field"><select id="filter-claim-emp" onchange="filterClaims()"><option value="">All employees</option></select></div>
             <div class="field"><select id="filter-claim-damage" onchange="filterClaims()"><option value="">All damage types</option></select></div>
             <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()">Import Excel/CSV</button>
             <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
         </div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-claims" onchange="setSortField('claims', this.value)">
                 <option value="employee">Employee</option>
                 <option value="claim_id">Claim ID</option>
@@ -917,10 +917,10 @@
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()"></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-charges" onchange="setSortField('charges', this.value)">
                 <option value="employee">Employee</option>
                 <option value="charge_id">Charge ID</option>
@@ -963,10 +963,10 @@
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()"></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-income" onchange="setSortField('income', this.value)">
                 <option value="employee">Employee</option>
                 <option value="income_id">Income ID</option>
@@ -1007,7 +1007,7 @@
             <div class="field field-wide">
                 <input type="text" id="statement-search" placeholder="Search name or ID..." oninput="populateStatementEmployeeDropdown()">
             </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('statement')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('statement')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="form-row" style="margin-bottom:0; margin-top:8px;">
             <div class="field" style="flex:1 1 300px;">
@@ -1066,7 +1066,7 @@
             <div class="field field-wide">
                 <input type="text" id="dailypay-search" placeholder="Search name or ID..." oninput="renderDailyPay()">
             </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('dailypay')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('dailypay')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="note-box" style="margin-top:10px;">
             Enter each person's pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person's pay type in the Employees tab).
@@ -1107,7 +1107,7 @@
             <div class="field field-wide">
                 <input type="text" id="payroll-search" placeholder="Search name or ID..." oninput="renderPayroll()">
             </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('payroll')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('payroll')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="note-box" style="margin-top:10px;">
             Net pay = base pay + route pay (drivers) + additional income − active weekly deductions (claims + charges currently being deducted). Base pay is the flat <strong>weekly salary</strong> for Weekly people, or this week's <strong>Daily Pay</strong> total for Daily-rate people. Route pay, additional income, and daily pay all use the current week.
@@ -1117,7 +1117,7 @@
     <div class="panel">
         <div class="stat-grid" id="payroll-stats-grid"></div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-payroll" onchange="setSortField('payroll', this.value)">
                 <option value="employee">Employee</option>
                 <option value="id">ID</option>
@@ -1232,7 +1232,7 @@
     <div class="panel">
         <h2>System Users</h2>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-users" onchange="setSortField('users', this.value)">
                 <option value="username">Username</option>
                 <option value="employee_id">Employee ID</option>
@@ -1268,7 +1268,7 @@
     <div class="panel">
         <h2>Companies</h2>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-companies" onchange="setSortField('companies', this.value)">
                 <option value="name">Name</option>
                 <option value="code">Code</option>
@@ -1288,7 +1288,7 @@
         <h2>Pending Approvals</h2>
         <div class="note-box">Locked financial changes (base pay rate, claim amount, weekly deduction) requested by Medium users appear here for Administrator approval.</div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-approvals" onchange="setSortField('approvals', this.value)">
                 <option value="requested">Requested</option>
                 <option value="requestedby">Requested by</option>
@@ -1307,7 +1307,7 @@
         <h2 class="panel-head" onclick="toggleCollapse(this)">Change Log <span class="caret">&#9662;</span></h2>
         <div class="note-box">Every applied change to employees, claims, charges, and routes is recorded here.</div>
         <div class="rec-toolbar">
-            <label>Sort by</label>
+            <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-log" onchange="setSortField('log', this.value)">
                 <option value="changed">When</option>
                 <option value="who">Who</option>
@@ -1397,8 +1397,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.35';
+    const APP_VERSION = 'v2.36';
     const CHANGELOG = [
+        { version: 'v2.36', date: '2026-08-06', notes: 'Continued the bilingual work — the Employees tab (form and table) is now fully translatable, along with the "Clear filters" and "Sort by" controls used across every section in the app. Still English-only: every other tab\'s form fields and table headers, help text, and pop-up messages — same as before, this is ongoing.' },
         { version: 'v2.35', date: '2026-08-06', notes: 'Charges can now have their weekly rate changed mid-stream and be paused/resumed — the exact same tools Claims already had, now on the Charges tab too (tap Edit on a charge to see it). This wasn\'t just a UI addition: Charges\' whole balance calculation was rebuilt underneath to actually account for pauses and rate changes week by week, the same proven system Claims already used — previously charges only understood a flat weekly amount with no way to represent a pause or a rate change at all. Statement now also shows exactly how much of each claim, charge, and income item has actually been paid or collected so far, not just what\'s left — and Charges\' Statement view now shows the full week-by-week schedule the same way Claims already did. Verified the whole pipeline directly with a test charge — paused it for two weeks, changed its rate mid-stream, and confirmed the schedule correctly skipped the paused weeks and applied the new rate from the right date, landing on exactly $0 at the right week — before shipping.' },
         { version: 'v2.34', date: '2026-08-06', notes: 'Found the real, deeper cause of the income-showing-in-the-wrong-week issue — last version\'s fix was correct as far as it went, but there was a second, more fundamental bug underneath it that only this exact case (a 1-week item) exposed clearly. The week-counting math for every charge and additional income (not claims, which were already correct) was starting the count a full week late — treating the very week something starts as "zero weeks elapsed" instead of the first week. For a 1-week item like David Rodriguez\'s $50 income, that meant it looked unpaid during its actual start week and then looked like it was still being paid the week after, instead of being fully done in its own start week as it should be — exactly matching the rule you gave: weeks = 1 means the start week and end week are the same. Fixed the underlying week count so it now matches how claims already worked. Important to know: this also quietly corrects the running balance shown for every other active charge and additional income, not just this one — those had been under-counting by one week\'s payment this whole time, so a few balances (Charges & Income tab, and Payroll) will shift down by one week\'s worth of deduction the moment this goes live. That\'s the correction taking effect, not new data loss.' },
         { version: 'v2.33', date: '2026-08-06', notes: 'Two things. (1) Fixed a real, confirmed bug in Payroll: claims, charges, and additional income were showing in payroll weeks BEFORE their own start date, not just after they finished — David Rodriguez\'s income entry (start date 7/25) was incorrectly showing in the 7/12 week too, more than a week before it began. Root cause: the balance calculation correctly reports "full amount, nothing paid yet" for any week before something starts, which is true, but nothing was checking whether the week being viewed was even on-or-after the start date before treating that as an active deduction. Fixed with a direct date check. Verified against the exact reported case — the income entry now shows in exactly one week, its actual start week, and nowhere else. Applies to claims, charges, and additional income alike. (2) New: Import Registry button on Daily Pay — upload your weekly daily-pay spreadsheet directly instead of entering each day by hand. Matches employees by name the same way Claims import already does, skips anyone it can\'t confidently match rather than guessing, and tells you exactly who was skipped so you can fix and re-import.' },
@@ -2994,8 +2995,9 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Name</th><th>Type</th><th>Department</th><th>Start</th><th>Pay</th><th>Status</th><th>Action</th>
+                <th data-i18n="th_id">ID</th><th data-i18n="th_name">Name</th><th data-i18n="th_type">Type</th><th data-i18n="th_department">Department</th><th data-i18n="th_start">Start</th><th data-i18n="th_pay">Pay</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
+            applyTranslations();
             return;
         }
 
@@ -3041,6 +3043,7 @@
                 </div>`);
         });
         updateRecSortUI('employees');
+        applyTranslations();
     }
 
     async function setEmployeeStatus(id, newStatus) {
@@ -5536,7 +5539,23 @@
             timeout_notice: 'You were signed out after 5 minutes of inactivity.',
             language_label: 'Language',
             language_note: 'Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)',
-            appearance_label: 'Appearance'
+            appearance_label: 'Appearance',
+            clear_filters: '✕ Clear filters', sort_by: 'Sort by',
+            new_contact: 'New Contact', next_id: 'Next ID', basic_info: 'Basic info',
+            first_name: 'First Name', last_name: 'Last Name', person_type: 'Person Type',
+            department: 'Department', role_title: 'Role / Title', start_date: 'Start Date',
+            contact_info: 'Contact info', phone: 'Phone #', email: 'Email',
+            identification: 'Identification', ssn_itin: 'SSN or ITIN #', type_label: 'Type',
+            dl_or_state_id: 'Driver License or State ID #', dl_expiration: 'DL / State ID expiration',
+            work_permit: 'Work Permit #', work_permit_exp: 'Work Permit expiration',
+            medical_card: 'Medical Card', medical_card_exp: 'Medical Card expiration', notes: 'Notes',
+            pay: 'Pay', pay_type: 'Pay Type', base_weekly_pay: 'Base Weekly Pay ($)',
+            employee_note: 'Set <strong>Daily Rate</strong> for anyone whose pay changes week to week — enter their day-by-day amounts in the <strong>Daily Pay</strong> tab. On edit, leave <strong>SSN/ITIN</strong> blank to keep the stored number unchanged. Driver license, work permit, medical card and notes are shown openly in the directory; the SSN/ITIN stays hidden.',
+            add_employee: '+ Add Employee', cancel_edit: 'Cancel edit',
+            search_employees_ph: 'Search name, ID, department, type...',
+            export_csv: 'Export CSV', import_csv: 'Import CSV',
+            th_id: 'ID', th_name: 'Name', th_type: 'Type', th_department: 'Department',
+            th_start: 'Start', th_pay: 'Pay', th_status: 'Status', th_action: 'Action'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -5555,7 +5574,23 @@
             timeout_notice: 'Se cerró su sesión después de 5 minutos de inactividad.',
             language_label: 'Idioma',
             language_note: 'Elija su idioma. Esto se guarda solo en este dispositivo, así que otras personas conectadas en otro lugar mantienen su propia preferencia. (También disponible en la pantalla de inicio de sesión.)',
-            appearance_label: 'Apariencia'
+            appearance_label: 'Apariencia',
+            clear_filters: '✕ Limpiar filtros', sort_by: 'Ordenar por',
+            new_contact: 'Nuevo Contacto', next_id: 'Próximo ID', basic_info: 'Información básica',
+            first_name: 'Nombre', last_name: 'Apellido', person_type: 'Tipo de Persona',
+            department: 'Departamento', role_title: 'Puesto / Cargo', start_date: 'Fecha de Inicio',
+            contact_info: 'Información de contacto', phone: 'Teléfono', email: 'Correo electrónico',
+            identification: 'Identificación', ssn_itin: 'SSN o ITIN #', type_label: 'Tipo',
+            dl_or_state_id: 'Licencia de Conducir o ID Estatal #', dl_expiration: 'Vencimiento de Licencia/ID Estatal',
+            work_permit: 'Permiso de Trabajo #', work_permit_exp: 'Vencimiento del Permiso de Trabajo',
+            medical_card: 'Tarjeta Médica', medical_card_exp: 'Vencimiento de Tarjeta Médica', notes: 'Notas',
+            pay: 'Pago', pay_type: 'Tipo de Pago', base_weekly_pay: 'Pago Semanal Base ($)',
+            employee_note: 'Elija <strong>Pago Diario</strong> para cualquier persona cuyo pago cambie semana a semana — ingrese sus montos día a día en la pestaña <strong>Pago Diario</strong>. Al editar, deje <strong>SSN/ITIN</strong> en blanco para mantener el número guardado sin cambios. La licencia de conducir, el permiso de trabajo, la tarjeta médica y las notas se muestran abiertamente en el directorio; el SSN/ITIN permanece oculto.',
+            add_employee: '+ Agregar Empleado', cancel_edit: 'Cancelar edición',
+            search_employees_ph: 'Buscar nombre, ID, departamento, tipo...',
+            export_csv: 'Exportar CSV', import_csv: 'Importar CSV',
+            th_id: 'ID', th_name: 'Nombre', th_type: 'Tipo', th_department: 'Departamento',
+            th_start: 'Inicio', th_pay: 'Pago', th_status: 'Estado', th_action: 'Acción'
         }
     };
 
@@ -5569,6 +5604,10 @@
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const val = t(el.getAttribute('data-i18n'));
             if (val === undefined) return;
+            // A translation value containing HTML markup (e.g. <strong> in a
+            // note box) fully replaces this element's contents — there's
+            // nothing else inside it worth preserving.
+            if (/<[a-z][\s\S]*>/i.test(val)) { el.innerHTML = val; return; }
             // Some tagged elements (panel headers with a caret span, tab
             // buttons with a badge span) have element children alongside
             // their text — only swap the first text node so those don't
