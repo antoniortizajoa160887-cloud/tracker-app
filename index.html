@@ -1438,8 +1438,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.42';
+    const APP_VERSION = 'v2.43';
     const CHANGELOG = [
+        { version: 'v2.43', date: '2026-08-06', notes: 'Fixes the "can\'t add or edit vehicles" error some of you may have hit right after the last database update — that was a real, temporary gap between the database and this file (the database side of a security fix landed slightly ahead of this file), not something wrong with your data. This version closes that gap: Vehicles now saves and edits correctly again. Two other things: every employee dropdown across the whole app now consistently shows Name then Employee ID, in that order, everywhere — a few had it backwards or missing the ID entirely. And the biggest one: found that the audit log (Administration → Log) was missing a real record of a lot of actions — not just Vehicles as reported, but deleting a claim, charge, or route entirely, resetting a company\'s data, changing someone\'s pay type, editing income, editing employee details, and more all left zero trace before this. All of it now writes a proper log entry, tested individually before shipping.' },
         { version: 'v2.42', date: '2026-08-06', notes: 'Claims on desktop now works the same way Employees and Payroll already do: instead of one very wide table showing every column at once (Claim ID, Employee, Emp ID, Claimant Acct, Company, Carrier #, Customer #, Damage Type, Amount, Weeks, Balance, Absorbed, Start, Ends, Status, Action — all 16 columns, needing horizontal scroll to see the rest), each row now shows a short summary and taps open to reveal everything else, matching exactly what the mobile card already showed. Built this so mobile and desktop share the exact same detail content from one place — they can\'t drift out of sync with each other going forward.' },
         { version: 'v2.41', date: '2026-08-06', notes: 'Added the actual logo, visible inside the app itself — last version only added it as the browser/install icon, which wasn\'t what was meant. The Shield + Dial + Pin mark now sits next to the title on the main dashboard, and a full logo (icon + "Tracker" wordmark) appears above the login form. Drawn as crisp vector graphics rather than a bitmap image, so it looks sharp at any size. Fixed one thing before shipping: the login screen\'s wordmark subtitle was using a fixed color that would have been hard to read in the two dark themes — switched it to the same theme-aware color already used for accents elsewhere, so it looks right in Light, Ocean, and Emerald alike.' },
         { version: 'v2.40', date: '2026-08-06', notes: 'Added a real app icon — the "Shield + Dial + Pin" mark you picked from the concepts (protection, tracking, and location in one badge). Recreated it precisely as actual icon files (not just a picture) at every size browsers and phones need, plus a proper install manifest, so the app can now be installed with a real icon on both Windows and Android — Chrome/Edge will offer "Install this app" on Windows, and on Android it installs as a genuine home-screen app (technically a real WebAPK, generated automatically by Chrome). A true standalone .apk file for direct distribution outside the browser would need separate packaging tools beyond what can be done from inside this file — this covers the "install it like an app" part.' },
@@ -2664,7 +2665,7 @@
         if(!empSel) return;
 
         empSel.innerHTML = '<option value="">All employees</option>';
-        employees.forEach(e => empSel.insertAdjacentHTML('beforeend', `<option value="${e.id}">${e.first_name} ${e.last_name}</option>`));
+        employees.forEach(e => empSel.insertAdjacentHTML('beforeend', `<option value="${e.id}">${employeeOptionLabel(e)}</option>`));
         sortSelectAZ(empSel);
 
         damSel.innerHTML = '<option value="">All damage types</option>';
@@ -5963,9 +5964,10 @@
             const takenEmpIds = new Set((data || []).map(u => u.employee_id).filter(Boolean));
             const empSel = document.getElementById('new-user-employee');
             if (empSel) {
-                const avail = employees.filter(emp => !takenEmpIds.has(emp.id));
+                const avail = employees.filter(emp => !takenEmpIds.has(emp.id))
+                    .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
                 empSel.innerHTML = '<option value="">— Select employee —</option>' +
-                    avail.map(emp => `<option value="${emp.id}">${emp.id} — ${emp.first_name} ${emp.last_name}</option>`).join('');
+                    avail.map(emp => `<option value="${emp.id}">${employeeOptionLabel(emp)}</option>`).join('');
             }
         } catch (e) { console.error('assign-to-employee dropdown:', e); }
 
@@ -6535,7 +6537,12 @@
             }));
         } else {
             const id = `${idPrefix()}${String(vehicles.length + 1).padStart(4, '0')}V`;
-            ({ error } = await supabaseClient.from('vehicles').insert([{ id, ...payload }]));
+            ({ error } = await supabaseClient.rpc('create_vehicle', {
+                p_actor: currentUsername, p_id: id, p_company: payload.company_code, p_truck_number: payload.truck_number,
+                p_year: payload.year, p_make: payload.make, p_model: payload.model, p_plate: payload.plate,
+                p_vin: payload.vin, p_reg_expiry: payload.reg_expiry, p_insurance_company: payload.insurance_company,
+                p_insurance_policy: payload.insurance_policy, p_insurance_expiry: payload.insurance_expiry, p_notes: payload.notes
+            }));
         }
         if (error) { alert('Error: ' + error.message); return; }
         cancelVehicleEdit();
@@ -6580,16 +6587,14 @@
 
     async function addVehicleService(vehicleId) {
         if (!canEdit()) return;
-        const co = requireWriteCompany();
-        if (!co) return;
         const dateEl = document.getElementById(`vs-date-${vehicleId}`);
         const descEl = document.getElementById(`vs-desc-${vehicleId}`);
         const typeEl = document.getElementById(`vs-type-${vehicleId}`);
         if (!dateEl.value || !descEl.value.trim()) { alert('Enter both a date and a description.'); return; }
-        const { error } = await supabaseClient.from('vehicle_services').insert([{
-            vehicle_id: vehicleId, company_code: co, service_date: dateEl.value,
-            description: descEl.value.trim(), type: typeEl.value
-        }]);
+        const { error } = await supabaseClient.rpc('add_vehicle_service', {
+            p_actor: currentUsername, p_vehicle_id: vehicleId, p_service_date: dateEl.value,
+            p_description: descEl.value.trim(), p_type: typeEl.value
+        });
         if (error) { alert('Error: ' + error.message); return; }
         recExpanded.vehicles.add(vehicleId);
         fetchVehiclesFromCloud();
