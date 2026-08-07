@@ -395,9 +395,27 @@
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable:hover { opacity: 0.8; }
     th.sortable .sort-arrow { font-size: 0.7rem; margin-left: 3px; opacity: 0.85; }
+    /* ---- Print support: #print-area is invisible on screen, and is the
+       ONLY thing shown when printing. Each printX() function fills it in
+       and calls window.print(). ---- */
+    #print-area { display: none; }
+    @media print {
+        body > *:not(#print-area) { display: none !important; }
+        #print-area { display: block !important; position: static; background: #fff; color: #111; padding: 20px; font-family: Arial, sans-serif; }
+        #print-area table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        #print-area th, #print-area td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 12px; }
+        #print-area th { background: #f0f0f0; }
+        #print-area h1 { font-size: 18px; margin: 0 0 4px; }
+        #print-area h2 { font-size: 14px; margin: 16px 0 6px; }
+        #print-area .print-meta { font-size: 12px; color: #555; margin-bottom: 12px; }
+        #print-area .print-totals { font-weight: bold; }
+        #print-area .panel.collapsed > *:not(.panel-head) { display: block !important; }
+        #print-area .caret { display: none; }
+    }
 </style>
 </head>
 <body>
+<div id="print-area"></div>
 
 <div id="env-warning" style="display:none; background:#fef3c7; border-bottom:3px solid #f59e0b; color:#78350f; padding:14px 16px; font-size:0.9rem; text-align:center; position:sticky; top:0; z-index:1000;">
     ⚠️ <strong>This preview can't load the app's required libraries.</strong> Please download this file and open it directly in your phone or computer's browser (Safari, Chrome, etc.) instead of viewing it inside this chat.
@@ -1053,17 +1071,15 @@
                 <label>Employee</label>
                 <select id="statement-emp-select" onchange="renderStatement()"><option value="">— Select employee —</option></select>
             </div>
-            <div class="field" style="flex:0 0 auto;">
-                <label>Statement as of</label>
-                <input type="date" id="statement-date" onchange="renderStatement()">
-            </div>
         </div>
         <div class="week-nav" style="margin-top:10px;">
             <button class="btn-small" onclick="shiftStatementWeek(-1)">◀ Prev</button>
             <span class="wk-label" id="statement-week-label">—</span>
             <button class="btn-small" onclick="shiftStatementWeek(1)">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisStatementWeek()">This week</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="printStatement()">🖨 Print</button>
         </div>
+        <div class="stat-grid" id="statement-stats-grid" style="margin-top:10px;"></div>
     </div>
     <div id="statement-content"></div>
 </div>
@@ -1438,8 +1454,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.43';
+    const APP_VERSION = 'v2.44';
     const CHANGELOG = [
+        { version: 'v2.44', date: '2026-08-06', notes: 'A big Statement/Payroll/Daily Pay update. Printing: each claim and charge in Statement now has its own "Print schedule" button (full week-by-week payment history, one item at a time), and each employee\'s Payroll detail has a "Print payslip" button — each prints just that one thing, not everything at once. Statement: removed the separate "Statement as of" date field entirely — it now uses the same Prev/Next/This week navigation as Payroll and Daily Pay, and every number on the page is driven purely by whichever week is selected, with no hidden fallback to today\'s date anywhere. Statement also gained bubble indicators at the top — claims/charges/additional income counts and their dollar totals — matching the style already used on the Claims tab. Daily Pay, Payroll, and Statement now all open to last week by default instead of the current week (the "This week" button still correctly jumps to the real current week when tapped).' },
         { version: 'v2.43', date: '2026-08-06', notes: 'Fixes the "can\'t add or edit vehicles" error some of you may have hit right after the last database update — that was a real, temporary gap between the database and this file (the database side of a security fix landed slightly ahead of this file), not something wrong with your data. This version closes that gap: Vehicles now saves and edits correctly again. Two other things: every employee dropdown across the whole app now consistently shows Name then Employee ID, in that order, everywhere — a few had it backwards or missing the ID entirely. And the biggest one: found that the audit log (Administration → Log) was missing a real record of a lot of actions — not just Vehicles as reported, but deleting a claim, charge, or route entirely, resetting a company\'s data, changing someone\'s pay type, editing income, editing employee details, and more all left zero trace before this. All of it now writes a proper log entry, tested individually before shipping.' },
         { version: 'v2.42', date: '2026-08-06', notes: 'Claims on desktop now works the same way Employees and Payroll already do: instead of one very wide table showing every column at once (Claim ID, Employee, Emp ID, Claimant Acct, Company, Carrier #, Customer #, Damage Type, Amount, Weeks, Balance, Absorbed, Start, Ends, Status, Action — all 16 columns, needing horizontal scroll to see the rest), each row now shows a short summary and taps open to reveal everything else, matching exactly what the mobile card already showed. Built this so mobile and desktop share the exact same detail content from one place — they can\'t drift out of sync with each other going forward.' },
         { version: 'v2.41', date: '2026-08-06', notes: 'Added the actual logo, visible inside the app itself — last version only added it as the browser/install icon, which wasn\'t what was meant. The Shield + Dial + Pin mark now sits next to the title on the main dashboard, and a full logo (icon + "Tracker" wordmark) appears above the login form. Drawn as crisp vector graphics rather than a bitmap image, so it looks sharp at any size. Fixed one thing before shipping: the login screen\'s wordmark subtitle was using a fixed color that would have been hard to read in the two dark themes — switched it to the same theme-aware color already used for accents elsewhere, so it looks right in Light, Ocean, and Emerald alike.' },
@@ -2142,10 +2159,6 @@
                 }
             });
         }
-
-        const todayStr = new Date().toISOString().split('T')[0];
-        const stmtDate = document.getElementById('statement-date');
-        if(stmtDate) stmtDate.value = todayStr;
 
         refreshGroupVisibility();
 
@@ -3497,6 +3510,79 @@
     // Shared detail content for one claim — used by BOTH the desktop
     // collapsible row and the mobile card body, so they can never drift
     // apart (same pattern as employeeDetailHtml).
+    // ---- Print: claim payment schedule ----------------------------------
+    function printClaimSchedule(claimId) {
+        const c = claims.find(x => x.claim_id === claimId);
+        if (!c) return;
+        const emp = employees.find(e => e.id === c.employee_id);
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+        const sched = buildClaimSchedule(c, null);
+        const bal = claimBalance(c);
+        const owed = Math.max(0, (parseFloat(c.claim_amount) || 0) - (parseFloat(c.absorbed_amount) || 0));
+        const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
+        const rows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? 'Paused' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
+        document.getElementById('print-area').innerHTML = `
+            <h1>Claim Payment Schedule</h1>
+            <div class="print-meta">${escHtml(empName)} (${c.employee_id}) · Claim ${c.claim_id} · ${escHtml(c.damage_type || '')} · Printed ${new Date().toLocaleDateString()}</div>
+            <table><tbody>
+                <tr><td>Claim amount</td><td>${formatMoney(c.claim_amount)}</td></tr>
+                <tr><td>Weekly rate</td><td>${formatMoney(rateOn(c, todayStr()))}</td></tr>
+                <tr><td>Start date</td><td>${c.start_date || '-'}</td></tr>
+                <tr><td>Status</td><td>${c.status}</td></tr>
+                <tr><td>Paid so far</td><td>${formatMoney(paidSoFar)}</td></tr>
+                <tr class="print-totals"><td>Current balance</td><td>${formatMoney(bal)}</td></tr>
+            </tbody></table>
+            <h2>Weekly Schedule</h2>
+            ${rows ? `<table><thead><tr><th>Date</th><th>Deducted</th><th>Running Balance</th></tr></thead><tbody>${rows}</tbody></table>` : '<div>No schedule to print — this claim is resolved or missing a start date/weekly amount.</div>'}
+        `;
+        window.print();
+    }
+
+    // ---- Print: charge payment schedule ----------------------------------
+    function printChargeSchedule(chargeId) {
+        const ch = charges.find(x => x.charge_id === chargeId);
+        if (!ch) return;
+        const emp = employees.find(e => e.id === ch.employee_id);
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+        const sched = buildChargeSchedule(ch, null);
+        const bal = chargeBalance(ch);
+        const owed = Math.max(0, parseFloat(ch.amount) || 0);
+        const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
+        const rows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? 'Paused' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
+        document.getElementById('print-area').innerHTML = `
+            <h1>Charge Payment Schedule</h1>
+            <div class="print-meta">${escHtml(empName)} (${ch.employee_id}) · Charge ${ch.charge_id} · ${escHtml(ch.charge_type || '')} · Printed ${new Date().toLocaleDateString()}</div>
+            <table><tbody>
+                <tr><td>Charge amount</td><td>${formatMoney(ch.amount)}</td></tr>
+                <tr><td>Weekly rate</td><td>${formatMoney(chargeRateOn(ch, todayStr()))}</td></tr>
+                <tr><td>Start date</td><td>${ch.start_date || '-'}</td></tr>
+                <tr><td>Status</td><td>${ch.status}</td></tr>
+                <tr><td>Paid so far</td><td>${formatMoney(paidSoFar)}</td></tr>
+                <tr class="print-totals"><td>Current balance</td><td>${formatMoney(bal)}</td></tr>
+            </tbody></table>
+            <h2>Weekly Schedule</h2>
+            ${rows ? `<table><thead><tr><th>Date</th><th>Deducted</th><th>Running Balance</th></tr></thead><tbody>${rows}</tbody></table>` : '<div>No schedule to print — this charge is resolved or missing a start date/weekly amount.</div>'}
+        `;
+        window.print();
+    }
+
+    // ---- Print: whole statement for the selected employee ---------------
+    function printStatement() {
+        const empId = document.getElementById('statement-emp-select').value;
+        if (!empId) { alert('Select an employee first.'); return; }
+        const content = document.getElementById('statement-content');
+        const statsGrid = document.getElementById('statement-stats-grid');
+        const emp = employees.find(e => e.id === empId);
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : empId;
+        document.getElementById('print-area').innerHTML = `
+            <h1>Statement — ${escHtml(empName)} (${empId})</h1>
+            <div class="print-meta">Week ending ${statementAsOf()} · Printed ${new Date().toLocaleDateString()}</div>
+            ${statsGrid ? statsGrid.outerHTML : ''}
+            ${content.innerHTML}
+        `;
+        window.print();
+    }
+
     function claimDetailHtml(c, empName, weeks, bal, endDate, editable) {
         return `
             <div class="rec-detail-grid">
@@ -4286,34 +4372,48 @@
         // Keep the current selection if it still matches the filters; otherwise
         // clear it rather than silently keep showing a now-filtered-out person's statement.
         if (prev && filtered.some(e => e.id === prev)) { sel.value = prev; }
-        else if (prev) { sel.value = ''; renderStatement(); }
+        else if (prev) { sel.value = ''; }
+        renderStatement(); // always, so the week label + stat bubbles are correct even before any employee is picked
+    }
+
+    // Bubble indicators above the statement — claims/charges/income counts
+    // and totals for the selected employee, matching the stat-card style
+    // already used on Claims/Charges/Payroll.
+    function renderStatementStats(empId, asOf) {
+        const grid = document.getElementById('statement-stats-grid');
+        if (!grid) return;
+        const empClaims = empId ? claims.filter(c => c.employee_id === empId) : [];
+        const empCharges = empId ? charges.filter(ch => ch.employee_id === empId) : [];
+        const empIncome = empId ? additionalIncome.filter(i => i.employee_id === empId) : [];
+        const claimsTotal = empClaims.reduce((a, c) => a + (parseFloat(c.claim_amount) || 0), 0);
+        const chargesTotal = empCharges.reduce((a, ch) => a + (parseFloat(ch.amount) || 0), 0);
+        const incomeTotal = empIncome.reduce((a, i) => a + (parseFloat(i.amount) || 0), 0);
+        grid.innerHTML = `
+            <div class="stat-card"><div class="stat-label">Claims</div><div class="stat-value">${empClaims.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Charges</div><div class="stat-value">${empCharges.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Additional income</div><div class="stat-value">${empIncome.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Total claims</div><div class="stat-value">${formatMoney(claimsTotal)}</div></div>
+            <div class="stat-card"><div class="stat-label">Total charges</div><div class="stat-value">${formatMoney(chargesTotal)}</div></div>
+            <div class="stat-card"><div class="stat-label">Total income</div><div class="stat-value" style="color:#059669;">${formatMoney(incomeTotal)}</div></div>`;
     }
 
     function renderStatement() {
         const empId = document.getElementById('statement-emp-select').value;
         const container = document.getElementById('statement-content');
-        const sd = document.getElementById('statement-date');
-        const asOf = (sd && sd.value) || todayStr();
-        updateStatementWeekLabel(asOf);
+        const asOf = statementAsOf();
+        updateStatementWeekLabel();
+        renderStatementStats(empId, asOf);
         if (!empId) { container.innerHTML = '<div class="panel" style="text-align:center;color:var(--text-muted);">Select an employee above to see their statement.</div>'; return; }
 
         const emp = employees.find(e => e.id === empId);
         const empClaims = claims.filter(c => c.employee_id === empId);
         const empCharges = charges.filter(ch => ch.employee_id === empId);
         const empIncome = additionalIncome.filter(i => i.employee_id === empId);
-        const totalItems = empClaims.length + empCharges.length + empIncome.length;
-        const totalOrig = empClaims.reduce((acc, c) => acc + c.claim_amount, 0) + empCharges.reduce((acc, ch) => acc + ch.amount, 0);
-        const totalIncomeAmt = empIncome.reduce((acc, i) => acc + (parseFloat(i.amount) || 0), 0);
 
         let html = `
             <div class="panel">
                 <h2>${emp.first_name} ${emp.last_name} — ${emp.id}</h2>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + emp.department : ''}</div>
-                <div class="form-row" style="margin-bottom:0;">
-                    <div class="field"><label>Total items</label><div class="stat-value" style="font-size:15px;">${totalItems}</div></div>
-                    <div class="field"><label>Deductions (original)</label><div class="stat-value" style="font-size:15px;">${formatMoney(totalOrig)}</div></div>
-                    <div class="field"><label>Additional income</label><div class="stat-value" style="font-size:15px;color:#059669;">${formatMoney(totalIncomeAmt)}</div></div>
-                </div>
             </div>
             <div class="panel">
                 <h2>Current deductions — full breakdown</h2>`;
@@ -4346,6 +4446,7 @@
                             <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
                             <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
                         </div>
+                        <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printClaimSchedule('${c.claim_id}')">🖨 Print schedule</button>
                         ${sched.rows.length
                             ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${c.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
                             : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the claim is resolved, or needs a start date and weekly amount.</div>`}
@@ -4376,6 +4477,7 @@
                             <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
                             <div class="field"><label>Start</label><div>${ch.start_date || '-'}</div></div>
                         </div>
+                        <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printChargeSchedule('${ch.charge_id}')">🖨 Print schedule</button>
                         ${sched.rows.length
                             ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${ch.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
                             : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the charge is resolved, or needs a start date and weekly amount.</div>`}
@@ -4594,7 +4696,7 @@
 
     // ---- Payroll week selector (drives historical payroll) --------------
     function payrollSunday() {
-        if (!payrollView) payrollView = { sunday: weekStartSunday(new Date()) };
+        if (!payrollView) { const s = weekStartSunday(new Date()); s.setUTCDate(s.getUTCDate() - 7); payrollView = { sunday: s }; } // defaults to LAST week, not this week
         return payrollView.sunday;
     }
     function payrollWeekKey() { return weekKeyFromSunday(payrollSunday()); }
@@ -4610,23 +4712,24 @@
 
     // ---- Statement week selector (drives the "as of" date) --------------
     function statementSunday() {
-        const sd = document.getElementById('statement-date');
-        const base = (sd && sd.value) ? new Date(sd.value) : new Date();
-        return weekStartSunday(isNaN(base) ? new Date() : base);
+        if (!statementView) { const s = weekStartSunday(new Date()); s.setUTCDate(s.getUTCDate() - 7); statementView = { sunday: s }; } // defaults to LAST week, not this week
+        return statementView.sunday;
+    }
+    function statementAsOf() { // Saturday of the selected week — the only point balances are ever evaluated at, no other date logic
+        const sat = new Date(statementSunday()); sat.setUTCDate(sat.getUTCDate() + 6); return ymd(sat);
     }
     function updateStatementWeekLabel(asOf) {
         const lbl = document.getElementById('statement-week-label');
         if (!lbl) return;
-        const base = asOf ? new Date(asOf) : new Date();
-        lbl.textContent = fmtWeekLabel(weekStartSunday(isNaN(base) ? new Date() : base));
+        lbl.textContent = fmtWeekLabel(statementSunday());
     }
     function shiftStatementWeek(delta) {
-        const s = new Date(statementSunday()); s.setUTCDate(s.getUTCDate() + delta * 7 + 6); // Saturday of the new week
-        const sd = document.getElementById('statement-date'); if (sd) sd.value = ymd(s);
+        const s = new Date(statementSunday()); s.setUTCDate(s.getUTCDate() + delta * 7);
+        statementView = { sunday: s };
         renderStatement();
     }
     function goToThisStatementWeek() {
-        const sd = document.getElementById('statement-date'); if (sd) sd.value = todayStr();
+        statementView = { sunday: weekStartSunday(new Date()) };
         renderStatement();
     }
 
@@ -4674,11 +4777,11 @@
 
     // ---- Daily Pay tab -------------------------------------------------
     function goToThisPayWeek() {
-        dailyView = null;
+        dailyView = { sunday: weekStartSunday(new Date()) }; // explicit current week — distinct from the initial-load default below
         renderDailyPay();
     }
     function shiftPayWeek(deltaWeeks) {
-        if (!dailyView) dailyView = { sunday: weekStartSunday(new Date()) };
+        if (!dailyView) { const s0 = weekStartSunday(new Date()); s0.setUTCDate(s0.getUTCDate() - 7); dailyView = { sunday: s0 }; } // defaults to LAST week, not this week
         const s = new Date(dailyView.sunday);
         s.setUTCDate(s.getUTCDate() + deltaWeeks * 7);
         dailyView = { sunday: s };
@@ -4695,7 +4798,7 @@
     }
 
     async function renderDailyPay() {
-        if (!dailyView) dailyView = { sunday: weekStartSunday(new Date()) };
+        if (!dailyView) { const s0 = weekStartSunday(new Date()); s0.setUTCDate(s0.getUTCDate() - 7); dailyView = { sunday: s0 }; } // defaults to LAST week, not this week
         const sun = dailyView.sunday;
         const k = weekKeyFromSunday(sun);
         dailyView.year = k.year; dailyView.week = k.week;
@@ -4920,6 +5023,34 @@
         el._t = setTimeout(() => el.classList.remove('show'), 1200);
     }
 
+    // ---- Print: one employee's payroll for the selected week ------------
+    function printPayrollForEmployee(empId) {
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return;
+        const isDaily = getPayType(emp.id) === 'Daily';
+        const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
+        const routePay = currentWeekRoutePay(emp);
+        const income = activeWeeklyIncome(emp.id);
+        const gross = base + routePay + income;
+        const ded = activeWeeklyDeductions(emp.id, gross);
+        const net = gross - ded;
+        const detail = payrollDetailHtml(emp, isDaily, base, routePay, ded, income);
+        document.getElementById('print-area').innerHTML = `
+            <h1>Payroll — ${escHtml(emp.first_name)} ${escHtml(emp.last_name)} (${emp.id})</h1>
+            <div class="print-meta">Week of ${fmtWeekLabel(payrollSunday())} · Printed ${new Date().toLocaleDateString()}</div>
+            <table><tbody>
+                <tr><td>Base pay</td><td>${formatMoney(base)}</td></tr>
+                <tr><td>Route pay</td><td>${formatMoney(routePay)}</td></tr>
+                <tr><td>Additional income</td><td>${formatMoney(income)}</td></tr>
+                <tr class="print-totals"><td>Gross pay</td><td>${formatMoney(gross)}</td></tr>
+                <tr><td>Deductions</td><td>−${formatMoney(ded)}</td></tr>
+                <tr class="print-totals"><td>Net pay</td><td>${formatMoney(net)}</td></tr>
+            </tbody></table>
+            ${detail}
+        `;
+        window.print();
+    }
+
     async function renderPayroll() {
         const typeFilter = document.getElementById('payroll-type-filter').value;
         const statusFilter = document.getElementById('payroll-status-filter').value;
@@ -5117,7 +5248,8 @@
                 </div>${wasCapped ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Capped at this week's gross pay (${formatMoney(gross)}) — the full scheduled amount is ${formatMoney(scheduledTotal)}. Net pay can't go below $0.00. The claim/charge balance still follows its own calendar schedule regardless of pay, so if a week is known in advance to have no pay, pausing it (Claims tab) keeps the balance accurate too.</div>` : ''}`
             : `<div style="color:var(--text-muted);font-size:12px;">No active weekly deductions.</div>`;
 
-        return `<div style="display:flex;flex-wrap:wrap;gap:16px;padding:12px 12px;">
+        return `<div style="padding:8px 12px 0;"><button type="button" class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); printPayrollForEmployee('${emp.id}')">🖨 Print payslip</button></div>
+                <div style="display:flex;flex-wrap:wrap;gap:16px;padding:12px 12px;">
                     <div style="flex:1;min-width:240px;">
                         <div class="detail-subhead">Paid days / base pay${isDaily ? ' · ' + currentWeekLabel : ''}</div>
                         ${baseHtml}${routeHtml}${incomeHtml}
