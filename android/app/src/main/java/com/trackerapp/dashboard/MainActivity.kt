@@ -8,8 +8,10 @@ import android.text.InputType
 import android.view.KeyEvent
 import android.webkit.JsPromptResult
 import android.webkit.JsResult
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.CoroutineScope
@@ -68,6 +70,21 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             allowFileAccess = true
+        }
+
+        // Without this, the default WebViewClient lets a WebView renderer
+        // crash take the whole app down with it — which is what Android's
+        // "Uninstall WebView updates?" dialog is actually reporting (it
+        // shows whenever an app crashes repeatedly alongside a WebView
+        // renderer death, not specifically because our page is broken).
+        // Recreating the activity here recovers in place instead.
+        webView.webViewClient = object : WebViewClient() {
+            override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                if (view === webView) {
+                    recreate()
+                }
+                return true
+            }
         }
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -227,18 +244,23 @@ class MainActivity : AppCompatActivity() {
     // everything up to that one tap, it can't remove it.
     private fun checkForAppUpdate() {
         CoroutineScope(Dispatchers.Main).launch {
-            val manifest = withContext(Dispatchers.IO) { fetchUpdateManifest() } ?: return@launch
-            if (manifest.versionCode <= BuildConfig.VERSION_CODE) return@launch
+            try {
+                val manifest = withContext(Dispatchers.IO) { fetchUpdateManifest() } ?: return@launch
+                if (manifest.versionCode <= BuildConfig.VERSION_CODE) return@launch
 
-            injectBanner("Downloading update v${manifest.versionName}...", "#0e7490")
-            val apkFile = withContext(Dispatchers.IO) { downloadUpdateApk(manifest) }
-            if (apkFile == null) {
-                injectBanner("Could not download update v${manifest.versionName} — will retry next launch", "#b45309")
-                return@launch
+                injectBanner("Downloading update v${manifest.versionName}...", "#0e7490")
+                val apkFile = withContext(Dispatchers.IO) { downloadUpdateApk(manifest) }
+                if (apkFile == null) {
+                    injectBanner("Could not download update v${manifest.versionName} — will retry next launch", "#b45309")
+                    return@launch
+                }
+
+                injectBanner("Update v${manifest.versionName} ready — opening installer...", "#15803d")
+                promptInstall(apkFile)
+            } catch (e: Exception) {
+                // Never let a failed update check take the app down — it's a
+                // background convenience, not something worth crashing over.
             }
-
-            injectBanner("Update v${manifest.versionName} ready — opening installer...", "#15803d")
-            promptInstall(apkFile)
         }
     }
 
@@ -301,13 +323,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun promptInstall(apkFile: File) {
-        val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", apkFile)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
         try {
+            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", apkFile)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
             startActivity(intent)
         } catch (e: Exception) {
             injectBanner("Update downloaded, but couldn't open the installer automatically", "#b45309")
