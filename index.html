@@ -1438,8 +1438,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.41';
+    const APP_VERSION = 'v2.42';
     const CHANGELOG = [
+        { version: 'v2.42', date: '2026-08-06', notes: 'Claims on desktop now works the same way Employees and Payroll already do: instead of one very wide table showing every column at once (Claim ID, Employee, Emp ID, Claimant Acct, Company, Carrier #, Customer #, Damage Type, Amount, Weeks, Balance, Absorbed, Start, Ends, Status, Action — all 16 columns, needing horizontal scroll to see the rest), each row now shows a short summary and taps open to reveal everything else, matching exactly what the mobile card already showed. Built this so mobile and desktop share the exact same detail content from one place — they can\'t drift out of sync with each other going forward.' },
         { version: 'v2.41', date: '2026-08-06', notes: 'Added the actual logo, visible inside the app itself — last version only added it as the browser/install icon, which wasn\'t what was meant. The Shield + Dial + Pin mark now sits next to the title on the main dashboard, and a full logo (icon + "Tracker" wordmark) appears above the login form. Drawn as crisp vector graphics rather than a bitmap image, so it looks sharp at any size. Fixed one thing before shipping: the login screen\'s wordmark subtitle was using a fixed color that would have been hard to read in the two dark themes — switched it to the same theme-aware color already used for accents elsewhere, so it looks right in Light, Ocean, and Emerald alike.' },
         { version: 'v2.40', date: '2026-08-06', notes: 'Added a real app icon — the "Shield + Dial + Pin" mark you picked from the concepts (protection, tracking, and location in one badge). Recreated it precisely as actual icon files (not just a picture) at every size browsers and phones need, plus a proper install manifest, so the app can now be installed with a real icon on both Windows and Android — Chrome/Edge will offer "Install this app" on Windows, and on Android it installs as a genuine home-screen app (technically a real WebAPK, generated automatically by Chrome). A true standalone .apk file for direct distribution outside the browser would need separate packaging tools beyond what can be done from inside this file — this covers the "install it like an app" part.' },
         { version: 'v2.39', date: '2026-08-06', notes: 'Daily Pay import now automatically downloads a correction report whenever a name in the file can\'t be matched to an employee — no more digging through the original spreadsheet by hand to find who was skipped. The report lists each unmatched name, its row in your file, and that week\'s total dollar amount so you can tell at a glance which ones actually had real pay data at stake versus an empty row. Fix the names (or add the employee) and re-upload. The name-matching itself hasn\'t changed — it already used the same logic as the Claims importer.' },
@@ -3492,6 +3493,32 @@
 
     function renderClaims() { filterClaims(); }
 
+    // Shared detail content for one claim — used by BOTH the desktop
+    // collapsible row and the mobile card body, so they can never drift
+    // apart (same pattern as employeeDetailHtml).
+    function claimDetailHtml(c, empName, weeks, bal, endDate, editable) {
+        return `
+            <div class="rec-detail-grid">
+                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
+                <div><div class="k">Claimant acct</div><div class="v">${c.claimant_account || '-'}</div></div>
+                <div><div class="k">Company</div><div class="v">${c.company_name || '-'}</div></div>
+                <div><div class="k">Carrier claim #</div><div class="v">${c.carrier_claim_number || '-'}</div></div>
+                <div><div class="k">Customer claim #</div><div class="v">${c.customer_claim_number || '-'}</div></div>
+                <div><div class="k">Type of damage</div><div class="v">${c.damage_type}</div></div>
+                <div><div class="k">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
+                <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
+                <div><div class="k">Balance</div><div class="v">${formatMoney(bal)}</div></div>
+                <div><div class="k">Absorbed</div><div class="v">${formatMoney(c.absorbed_amount)}</div></div>
+                <div><div class="k">Start ded.</div><div class="v">${c.start_date || '-'}</div></div>
+                <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
+            </div>
+            ${editable ? `<div class="rec-actions">
+                <button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
+                <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>
+            </div>` : ''}`;
+    }
+
     function renderClaimsTable(list) {
         const container = document.getElementById('claims-tbody');
         const editable = canEdit();
@@ -3507,28 +3534,22 @@
                 const weeks = sched.rows.filter(r => !r.paused).length;
                 const bal = claimBalance(c);
                 const endDate = sched.endDate || (c.end_date || '—');
-                rows += `<tr>
-                    <td class="id-cell">${c.claim_id}</td>
-                    <td>${empName}</td>
-                    <td class="id-cell">${c.employee_id}</td>
-                    <td>${c.claimant_account || '-'}</td>
-                    <td>${c.company_name || '-'}</td>
-                    <td>${c.carrier_claim_number || '-'}</td>
-                    <td>${c.customer_claim_number || '-'}</td>
+                const open = recExpanded.claims.has(c.claim_id);
+                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('claims','${c.claim_id}')">
+                    <td class="id-cell"><span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span> ${c.claim_id}</td>
+                    <td>${escHtml(empName)}</td>
                     <td>${c.damage_type}</td>
                     <td>${formatMoney(c.claim_amount)}</td>
-                    <td>${weeks}</td>
                     <td>${formatMoney(bal)}</td>
-                    <td>${formatMoney(c.absorbed_amount)}</td>
-                    <td>${c.start_date || '-'}</td>
-                    <td>${endDate}</td>
                     <td><span class="status-badge status-${c.status}">${c.status}</span></td>
-                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editClaim('${c.claim_id}')">✎</button><button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕</button>` : ''}</td>
+                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editClaim('${c.claim_id}')">✎</button><button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕</button>` : ''}</td>
+                </tr>
+                <tr class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}" style="display:${open ? 'table-row' : 'none'};">
+                    <td colspan="7" style="padding:12px; background:var(--surface-2);">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</td>
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_claimant_acct">Claimant Acct</th><th data-i18n="th_company">Company</th><th data-i18n="th_carrier">Carrier #</th><th data-i18n="th_customer">Customer #</th>
-                <th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_absorbed">Absorbed</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
+                <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             applyTranslations();
             return;
@@ -3552,25 +3573,7 @@
                         <span class="rec-sub">${c.claim_id}</span>
                         <span class="rec-right">${formatMoney(bal)} <span class="status-badge status-${c.status}">${c.status}</span></span>
                     </div>
-                    <div class="rec-card-body">
-                        <div class="rec-detail-grid">
-                            <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
-                            <div><div class="k">Claimant acct</div><div class="v">${c.claimant_account || '-'}</div></div>
-                            <div><div class="k">Company</div><div class="v">${c.company_name || '-'}</div></div>
-                            <div><div class="k">Carrier claim #</div><div class="v">${c.carrier_claim_number || '-'}</div></div>
-                            <div><div class="k">Customer claim #</div><div class="v">${c.customer_claim_number || '-'}</div></div>
-                            <div><div class="k">Type of damage</div><div class="v">${c.damage_type}</div></div>
-                            <div><div class="k">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
-                            <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
-                            <div><div class="k">Absorbed</div><div class="v">${formatMoney(c.absorbed_amount)}</div></div>
-                            <div><div class="k">Start ded.</div><div class="v">${c.start_date || '-'}</div></div>
-                            <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
-                        </div>
-                        ${editable ? `<div class="rec-actions">
-                            <button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
-                            <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>
-                        </div>` : ''}
-                    </div>
+                    <div class="rec-card-body">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</div>
                 </div>`);
         });
         applyTranslations();
