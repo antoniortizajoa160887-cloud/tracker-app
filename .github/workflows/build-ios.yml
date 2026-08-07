@@ -1,0 +1,85 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches:
+      - claude/windows-exe-install-check-5d4sve
+      - main
+    paths:
+      - "ios/**"
+      - ".github/workflows/build-ios.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(grep 'MARKETING_VERSION:' ios/project.yml | sed 's/.*MARKETING_VERSION: "\(.*\)"/\1/')
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Archive (unsigned)
+        working-directory: ios
+        run: |
+          xcodebuild archive \
+            -project UnifiedLogisticsHRDashboard.xcodeproj \
+            -scheme UnifiedLogisticsHRDashboard \
+            -destination "generic/platform=iOS" \
+            -archivePath build/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          ls build/App.xcarchive/Products/Applications/
+
+      - name: Package unsigned IPA
+        working-directory: ios
+        run: |
+          APP_PATH=$(find build/App.xcarchive/Products/Applications -maxdepth 1 -name "*.app")
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          cd build
+          zip -r -y "UnifiedLogisticsHRDashboard.ipa" Payload
+          cd ..
+
+      - name: Stage IPA + version manifest into installer/ios
+        run: |
+          mkdir -p installer/ios
+          find installer/ios -maxdepth 1 -name "*.ipa" -delete || true
+          IPA_NAME="Unified Logistics HR Claims Dashboard ${{ steps.version.outputs.name }}.ipa"
+          cp "ios/build/UnifiedLogisticsHRDashboard.ipa" "installer/ios/$IPA_NAME"
+          SHA256=$(shasum -a 256 "installer/ios/$IPA_NAME" | cut -d' ' -f1)
+          cat > installer/ios/latest.json <<EOF
+          {
+            "versionName": "${{ steps.version.outputs.name }}",
+            "ipaFileName": "$IPA_NAME",
+            "sha256": "$SHA256",
+            "note": "Unsigned build for Sideloadly/AltStore resigning with your own Apple ID. No in-app auto-update on iOS -- reinstall manually for new versions."
+          }
+          EOF
+
+      - name: Commit and push IPA
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "installer/ios"
+          if git diff --cached --quiet; then
+            echo "No IPA changes to commit"
+          else
+            git commit -m "Add built iOS IPA v${{ steps.version.outputs.name }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
