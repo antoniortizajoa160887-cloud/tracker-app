@@ -1,0 +1,76 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - claude/windows-exe-install-check-5d4sve
+      - main
+    paths:
+      - "android/**"
+      - ".github/workflows/build-android.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build release APK (debug-signed)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Read version info
+        id: version
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' android/app/build.gradle.kts)
+          VERSION_CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' android/app/build.gradle.kts)
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Stage APK + version manifest into installer/android
+        run: |
+          mkdir -p installer/android
+          # remove any previously published APKs so only the latest remains
+          find installer/android -maxdepth 1 -name "*.apk" -delete || true
+          APK_NAME="Unified Logistics HR Claims Dashboard ${{ steps.version.outputs.name }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "installer/android/$APK_NAME"
+          SHA256=$(sha256sum "installer/android/$APK_NAME" | cut -d' ' -f1)
+          cat > installer/android/latest.json <<EOF
+          {
+            "versionCode": ${{ steps.version.outputs.code }},
+            "versionName": "${{ steps.version.outputs.name }}",
+            "apkFileName": "$APK_NAME",
+            "sha256": "$SHA256"
+          }
+          EOF
+
+      - name: Commit and push APK
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "installer/android"
+          if git diff --cached --quiet; then
+            echo "No APK changes to commit"
+          else
+            git commit -m "Add built Android APK v${{ steps.version.outputs.version }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

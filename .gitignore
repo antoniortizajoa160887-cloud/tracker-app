@@ -1,0 +1,16 @@
+node_modules/
+dist/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+
+# iOS
+ios/UnifiedLogisticsHRDashboard.xcodeproj/
+ios/build/
+ios/Generated-Info.plist
+ios/DerivedData/

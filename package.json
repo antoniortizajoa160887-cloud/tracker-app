@@ -1,0 +1,59 @@
+{
+  "name": "unified-logistics-hr-dashboard",
+  "version": "1.0.4",
+  "description": "Unified Logistics & HR Claims Dashboard desktop app",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.trackerapp.dashboard",
+    "productName": "Unified Logistics HR Claims Dashboard",
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "build/icon.ico",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://raw.githubusercontent.com/antoniortizajoa160887-cloud/tracker-app/main/installer/",
+        "channel": "latest"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}
