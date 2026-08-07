@@ -11,18 +11,31 @@ android {
         applicationId = "com.trackerapp.dashboard"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 6
+        versionName = "1.0.5"
+    }
+
+    signingConfigs {
+        create("release") {
+            // Committed on purpose: this is a self-signed key for sideload
+            // distribution only (same trust model as the unsigned Windows
+            // installer), not a Play Store production key. What matters is
+            // that it's the SAME key on every build — Gradle's auto-generated
+            // debug keystore is regenerated randomly on every fresh CI
+            // runner, which silently made every prior release un-installable
+            // as an "update" over the last one (Android refuses to install
+            // an update whose signature doesn't match what's already there).
+            storeFile = file("../keystore/release.keystore")
+            storePassword = "trackerapp-sideload-2026"
+            keyAlias = "unified-dashboard"
+            keyPassword = "trackerapp-sideload-2026"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // No release keystore is configured, so release builds are
-            // signed with the debug key (works fine for sideloading, same
-            // trust model as the unsigned Windows installer). Set up a real
-            // keystore before ever publishing this to the Play Store.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
