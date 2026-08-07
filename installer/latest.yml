@@ -1,8 +1,8 @@
-version: 1.0.3
+version: 1.0.4
 files:
-  - url: Unified Logistics HR Claims Dashboard Setup 1.0.3.exe
-    sha512: ttYvyFT55UF6DIbgOeQbkXjyQ7PS6YlxupfY4l/oF/ClYkbS+eQb9zkQybRfmR+PmuDNQ9I8+nhBSBCKdPhNoA==
-    size: 79144434
-path: Unified Logistics HR Claims Dashboard Setup 1.0.3.exe
-sha512: ttYvyFT55UF6DIbgOeQbkXjyQ7PS6YlxupfY4l/oF/ClYkbS+eQb9zkQybRfmR+PmuDNQ9I8+nhBSBCKdPhNoA==
-releaseDate: '2026-08-07T00:23:24.075Z'
+  - url: Unified Logistics HR Claims Dashboard Setup 1.0.4.exe
+    sha512: 5uZwO2q6s5j4hYX20BnDwWJTfF81AlDPE6j7bibEump8+KalZ1Di0xDa4GFxtDDTeuKNx9Apo9kvqvod2bWTZg==
+    size: 79194412
+path: Unified Logistics HR Claims Dashboard Setup 1.0.4.exe
+sha512: 5uZwO2q6s5j4hYX20BnDwWJTfF81AlDPE6j7bibEump8+KalZ1Di0xDa4GFxtDDTeuKNx9Apo9kvqvod2bWTZg==
+releaseDate: '2026-08-07T01:07:04.605Z'

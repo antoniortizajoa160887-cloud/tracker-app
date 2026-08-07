@@ -1,26 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  A map-pin mark: fits the logistics/routes half of the app, in the same
-  emerald-to-cyan brand colors as the login screen's accent button, with a
-  dark cutout center matching the app's dark background rather than a
-  generic placeholder shape.
+  Shield + Dial + Pin mark, scaled 2.75x from the source 24x24 design
+  (shield = protection/claims, arc = dashboard/tracking gauge, dot at
+  its center = location pin) onto the 108x108 adaptive icon canvas.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- pin body: circular head (center 54,44 r18) + triangular point to (54,86) -->
     <path
-        android:fillColor="#10b981"
-        android:pathData="M36,44 A18,18 0 1,0 72,44 A18,18 0 1,0 36,44 Z
-                           M39,54 L69,54 L54,86 Z" />
-    <!-- cyan ring accent -->
+        android:fillColor="#0B1F1C"
+        android:pathData="M54,26.5 L73.25,34.75 V51.8 C73.25,65.275 65,74.9 54,78.75
+                           C43,74.9 34.75,65.275 34.75,51.8 V34.75 L54,26.5 Z" />
     <path
-        android:fillColor="#06b6d4"
-        android:pathData="M44.5,44 A9.5,9.5 0 1,0 63.5,44 A9.5,9.5 0 1,0 44.5,44 Z" />
-    <!-- dark cutout to read as a hollow pin -->
+        android:strokeColor="#14B8A6"
+        android:strokeWidth="3.85"
+        android:strokeLineCap="round"
+        android:pathData="M38.05,52.625 A15.95,15.95 0 0,1 69.95,52.625" />
     <path
-        android:fillColor="#08101A"
-        android:pathData="M47,44 A7,7 0 1,0 61,44 A7,7 0 1,0 47,44 Z" />
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.575"
+        android:strokeLineCap="round"
+        android:pathData="M54,52.625 L61.15,44.375" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56.475,52.625 A2.475,2.475 0 1,1 51.525,52.625 A2.475,2.475 0 1,1 56.475,52.625 Z" />
+    <path
+        android:fillColor="#14B8A6"
+        android:pathData="M57.1625,63.9 A3.1625,3.1625 0 1,1 50.8375,63.9 A3.1625,3.1625 0 1,1 57.1625,63.9 Z" />
 </vector>
