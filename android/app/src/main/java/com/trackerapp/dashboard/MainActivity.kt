@@ -12,8 +12,10 @@ import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,6 +44,7 @@ import java.security.MessageDigest
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var swipeRefresh: SwipeRefreshLayout
 
     private data class FetchResult(val loadUrl: String, val source: String, val error: String?)
     private data class UpdateManifest(
@@ -64,7 +67,28 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         webView = WebView(this)
-        setContentView(webView)
+        swipeRefresh = SwipeRefreshLayout(this).apply {
+            addView(webView)
+            // Only let a downward swipe start the refresh when the page
+            // itself has nothing left to scroll up into — otherwise every
+            // scroll-to-top gesture inside the dashboard would also yank a
+            // refresh spinner over it.
+            setOnChildScrollUpCallback { _, _ -> webView.canScrollVertically(-1) }
+            setOnRefreshListener { loadContent() }
+        }
+        setContentView(swipeRefresh)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -155,23 +179,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        loadContent()
+        checkForAppUpdate()
+    }
+
+    // Shared by the initial launch and pull-to-refresh — resolveHtmlToLoad
+    // always tries a fresh GitHub fetch first, so re-running this on a pull
+    // gesture naturally re-checks for the latest content rather than just
+    // replaying whatever's already cached.
+    private fun loadContent() {
         CoroutineScope(Dispatchers.Main).launch {
             val fetch = withContext(Dispatchers.IO) { resolveHtmlToLoad() }
             webView.loadUrl(fetch.loadUrl)
             if (fetch.source != "live") {
                 webView.postDelayed({ injectBanner(contentStatusMessage(fetch.source, fetch.error), "#b45309") }, 800)
             }
+            swipeRefresh.isRefreshing = false
         }
-
-        checkForAppUpdate()
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
-            webView.goBack()
-            return true
-        }
-        return super.onKeyDown(keyCode, event)
     }
 
     private fun cacheFile(): File = File(filesDir, "index.html")
