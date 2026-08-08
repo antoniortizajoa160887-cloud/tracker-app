@@ -1209,6 +1209,7 @@
             <span class="wk-label" id="payroll-week-label">—</span>
             <button class="btn-small" onclick="shiftPayrollWeek(1)">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayrollWeek()">This week</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()">🖨 Print All (net pay &gt; 0)</button>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
@@ -1581,8 +1582,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.57';
+    const APP_VERSION = 'v2.58';
     const CHANGELOG = [
+        { version: 'v2.58', date: '2026-08-06', notes: 'New: "Print All (net pay > 0)" button on Payroll — prints everyone with a real amount owed for the selected week in one combined document instead of opening each person one at a time. Respects whatever filters you already have set (Person type, Status, search), so it prints exactly who\'s on screen, minus anyone whose net pay is zero or less.' },
         { version: 'v2.57', date: '2026-08-06', notes: 'Logistics is now fully hidden for View Only accounts — found that Vehicles specifically had been left visible there since it was added, even though the rest of Logistics was already hidden; fixing that one thing let the whole Logistics group correctly disappear the way it was always meant to for that role. Statement: claims and charges are now grouped by status — Deducting together, Queued together, Paid together, and so on — with claims and charges mixed together within each group, but Additional Income stays in its own separate section as before, never mixed in with the other two.' },
         { version: 'v2.56', date: '2026-08-06', notes: 'New: full data export and import, both as one combined file and individually per section. "Export All Data" (Data Sync tab) downloads a single Excel file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything in one download, SSN/ITIN never included. "Import All Data" reads that same file back in and restores everything except Employees (which keeps its own dedicated import, since employee records need more careful handling around sensitive fields). Claims, Charges, Additional Income, Vehicles, and Provider Pay also each got their own individual Export/Import buttons for when you only need one section. Every import matches existing records by their ID and updates them, or creates a new record if the ID isn\'t recognized — verified each of these paths directly against real data before shipping. One honest note: I tested every underlying save/update operation directly, but couldn\'t click through an actual export-then-reimport in a live browser from here — worth trying that full round trip once and letting me know how it goes.' },
         { version: 'v2.55', date: '2026-08-06', notes: 'Fixed being unable to switch anyone to Provider pay — last version added Provider as an option, but missed three real spots that were still hardcoded to only know about Weekly and Daily: the quick ↺ toggle button on the Employees list (was a strict Weekly/Daily flip-flop with no way to ever land on Provider), the employee form\'s own save handler (would have silently saved "Weekly" even if you picked Provider from the dropdown), and the bulk CSV import. All three now correctly handle all three pay types. The quick toggle now cycles Weekly → Daily → Provider → back to Weekly.' },
@@ -1706,6 +1708,7 @@
     }
     let dailyView = null;       // { sunday: Date(UTC), year, week }
     let payrollView = null;     // { sunday } — Payroll week selector
+    let lastPayrollCalc = [];   // most recent renderPayroll() calc[] — for printAllPayroll
     let statementView = null;   // { sunday } — Statement week selector
     let dailyTableMissing = false;
     const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -5598,6 +5601,37 @@
         window.print();
     }
 
+    // Prints everyone currently shown in Payroll (same filters/sort already
+    // on screen) whose net pay for the selected week is above zero — one
+    // combined document instead of clicking Print on each person.
+    function printAllPayroll() {
+        const qualifying = lastPayrollCalc.filter(c => c.net > 0);
+        if (!qualifying.length) { alert('No one in the current view has a net amount to pay for this week.'); return; }
+        const sections = qualifying.map(c => {
+            const detail = payrollDetailHtml(c.emp, c.payType, c.base, c.routePay, c.ded, c.income);
+            return `
+                <div style="page-break-inside:avoid; margin-bottom:22px; padding-bottom:16px; border-bottom:2px solid #ccc;">
+                    <h2>${escHtml(c.emp.first_name)} ${escHtml(c.emp.last_name)} (${c.emp.id})</h2>
+                    <table><tbody>
+                        <tr><td>Base pay</td><td>${formatMoney(c.base)}</td></tr>
+                        <tr><td>Route pay</td><td>${formatMoney(c.routePay)}</td></tr>
+                        <tr><td>Additional income</td><td>${formatMoney(c.income)}</td></tr>
+                        <tr class="print-totals"><td>Gross pay</td><td>${formatMoney(c.gross)}</td></tr>
+                        <tr><td>Deductions</td><td>−${formatMoney(c.ded)}</td></tr>
+                        <tr class="print-totals"><td>Net pay</td><td>${formatMoney(c.net)}</td></tr>
+                    </tbody></table>
+                    ${detail}
+                </div>`;
+        }).join('');
+        const grandNet = qualifying.reduce((a, c) => a + c.net, 0);
+        document.getElementById('print-area').innerHTML = `
+            <h1>Payroll — All with net pay due</h1>
+            <div class="print-meta">Week of ${fmtWeekLabel(payrollSunday())} · ${qualifying.length} of ${lastPayrollCalc.length} people (net pay &gt; $0) · Total net: ${formatMoney(grandNet)} · Printed ${new Date().toLocaleDateString()}</div>
+            ${sections}
+        `;
+        window.print();
+    }
+
     // ===== MESSAGES ========================================================
     let employeeMessages = [];
     let messageCategory = 'General';
@@ -5782,6 +5816,7 @@
             net: c => c.net,
             status: c => c.emp.status || ''
         });
+        lastPayrollCalc = calc; // for printAllPayroll — same rows, same filters/sort, currently on screen
 
         let totBase = 0, totRoute = 0, totIncome = 0, totGross = 0, totDed = 0, totNet = 0;
         const container = document.getElementById('payroll-tbody');
