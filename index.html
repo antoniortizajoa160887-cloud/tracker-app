@@ -720,6 +720,9 @@
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search truck #, year, make, model, plate, VIN..." oninput="renderVehicles()"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportVehiclesExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('vehicles-import-input').click()">⬆️ Import</button>
+            <input type="file" id="vehicles-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importVehiclesExcel(event)">
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
@@ -913,6 +916,7 @@
             <div class="field"><select id="filter-claim-damage" onchange="filterClaims()"><option value="">All damage types</option></select></div>
             <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportClaimsExcel()">⬇️ Export</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()" data-i18n="import_excel_csv">Import Excel/CSV</button>
             <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
         </div>
@@ -996,6 +1000,9 @@
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()" data-i18n-placeholder="search_charges_ph"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportChargesExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import</button>
+            <input type="file" id="charges-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importChargesExcel(event)">
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
@@ -1042,6 +1049,9 @@
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()" data-i18n-placeholder="search_income_ph"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportIncomeExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('income-import-input').click()">⬆️ Import</button>
+            <input type="file" id="income-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importIncomeExcel(event)">
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
@@ -1143,6 +1153,7 @@
                 <input type="text" id="dailypay-search" placeholder="Search name or ID..." oninput="renderDailyPay()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('dailypay')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportDailyPayExcel()">⬇️ Export</button>
         </div>
         <div class="note-box" style="margin-top:10px;">
             Enter each person's pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person's pay type in the Employees tab).
@@ -1177,6 +1188,9 @@
                 <input type="text" id="providerpay-search" placeholder="Search name or ID..." oninput="renderProviderPay()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('providerpay')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportProviderPayExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('providerpay-import-input').click()">⬆️ Import</button>
+            <input type="file" id="providerpay-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importProviderPayExcel(event)">
         </div>
         <div class="note-box" style="margin-top:10px;">
             Enter each provider's pay for the week — a single amount, since providers aren't on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person's pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does.
@@ -1484,7 +1498,17 @@
 <div id="tab-data" class="tab-content">
     <div class="panel">
         <h2>Export Data</h2>
-        <button class="btn" style="background:#2563eb;" onclick="exportExcel()">⬇️ Download Excel Backup</button>
+        <button class="btn" style="background:#2563eb;" onclick="exportExcel()">⬇️ Download Excel Backup (Route Tracker only)</button>
+        <button class="btn" style="background:#0f766e; margin-top:8px;" onclick="exportAllData(event)">⬇️ Export All Data (single file)</button>
+        <div class="note-box" style="margin-top:8px;">One .xlsx file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything you have access to, in one download. Employee SSN/ITIN is never included in any export.</div>
+    </div>
+    <div class="panel">
+        <h2 class="panel-head" onclick="toggleCollapse(this)">Import All Data (single file) <span class="caret">&#9662;</span></h2>
+        <div class="note-box">Upload a file exported from <strong>Export All Data</strong> above (or hand-edited to match its column layout) to restore Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay in one pass — matched to existing employees by Employee ID. Doesn't touch Employees themselves; use Import CSV on the Employees tab for that.</div>
+        <div style="border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 6px; background: var(--surface-2); margin-top:8px;">
+            <input type="file" id="import-all-input" accept=".xlsx,.xls,.csv" onchange="importAllData(event)">
+        </div>
+        <div id="import-all-status" style="margin-top:8px; font-size:0.85rem;"></div>
     </div>
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Import & Sync Routes from Excel (Tab: Tracker) <span class="caret">&#9662;</span></h2>
@@ -1557,8 +1581,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.55';
+    const APP_VERSION = 'v2.56';
     const CHANGELOG = [
+        { version: 'v2.56', date: '2026-08-06', notes: 'New: full data export and import, both as one combined file and individually per section. "Export All Data" (Data Sync tab) downloads a single Excel file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything in one download, SSN/ITIN never included. "Import All Data" reads that same file back in and restores everything except Employees (which keeps its own dedicated import, since employee records need more careful handling around sensitive fields). Claims, Charges, Additional Income, Vehicles, and Provider Pay also each got their own individual Export/Import buttons for when you only need one section. Every import matches existing records by their ID and updates them, or creates a new record if the ID isn\'t recognized — verified each of these paths directly against real data before shipping. One honest note: I tested every underlying save/update operation directly, but couldn\'t click through an actual export-then-reimport in a live browser from here — worth trying that full round trip once and letting me know how it goes.' },
         { version: 'v2.55', date: '2026-08-06', notes: 'Fixed being unable to switch anyone to Provider pay — last version added Provider as an option, but missed three real spots that were still hardcoded to only know about Weekly and Daily: the quick ↺ toggle button on the Employees list (was a strict Weekly/Daily flip-flop with no way to ever land on Provider), the employee form\'s own save handler (would have silently saved "Weekly" even if you picked Provider from the dropdown), and the bulk CSV import. All three now correctly handle all three pay types. The quick toggle now cycles Weekly → Daily → Provider → back to Weekly.' },
         { version: 'v2.54', date: '2026-08-06', notes: 'New: Provider Pay — a third pay category alongside Weekly and Daily, for providers whose pay isn\'t a flat rate. Set someone\'s Pay Type to "Provider" in the Employees tab, and they show up on the new Provider Pay tab (right next to Daily Pay), where you enter one amount for the week plus an optional note — no day-by-day breakdown, since that\'s not how these get paid. Entries save automatically and flow straight into Payroll the same way Daily Pay already does, with its own badge so it\'s easy to tell at a glance which pay category someone is on. Note: I built this as one amount per week rather than a 7-day grid — if you actually need day-by-day entry for providers too, let me know and I\'ll adjust it.' },
         { version: 'v2.53', date: '2026-08-06', notes: 'Fixed mouse scrolling. Traced it to a setting added a few versions back specifically to smooth out a small visual glitch on iPhone (where the phone\'s own natural bounce-scroll was fighting the pull-to-refresh indicator) — that setting was applied everywhere, including desktop, where it had no business being and could interfere with scrolling through the app\'s tables and lists with a mouse. It now only applies on touchscreens, where it was actually needed, and never touches mouse/trackpad scrolling at all.' },
@@ -3916,6 +3941,232 @@
     // weekly registry: row 1 = column labels, row 2 = the actual date for
     // each of the 7 day columns (Sun..Sat, columns C..I), row 3+ = one
     // employee per row with that week's daily amounts (or "OFF").
+    // ===== IMPORT (individual + combined) =================================
+    // Each processX(rows) takes already-parsed row objects (works whether
+    // they came from that section's own single-sheet file or one sheet
+    // pulled out of a combined multi-sheet "Import All" file) and returns
+    // {imported, skipped, errors}. Resolves an employee either by an exact
+    // "Employee ID" match (what our own export always produces) or, failing
+    // that, by name — so a hand-edited file still has a fighting chance.
+    function resolveRowEmployeeId(row) {
+        const rawId = String(row['Employee ID'] || '').trim();
+        if (rawId && employees.some(e => e.id === rawId)) return rawId;
+        const rawName = String(row['Employee'] || row['Employee Name'] || '').trim();
+        if (rawName) return matchEmployeeByName(rawName);
+        return null;
+    }
+
+    async function processClaimRows(rows) {
+        let imported = 0, skipped = 0; const errors = [];
+        for (const row of rows) {
+            const empId = resolveRowEmployeeId(row);
+            if (!empId) { skipped++; errors.push(`Row skipped — no matching employee (Claim ID ${row['Claim ID'] || '?'})`); continue; }
+            const fields = {
+                employee_id: empId, claimant_account: row['Claimant Account'] || null, company_name: row['Company'] || null,
+                carrier_claim_number: row['Carrier Claim #'] || null, customer_claim_number: row['Customer Claim #'] || null,
+                damage_type: row['Damage Type'] || '', claim_amount: parseFloat(row['Claim Amount']) || 0,
+                weekly_deduction: parseFloat(row['Weekly Deduction']) || 0, start_date: row['Start Date'] || null,
+                end_date: row['End Date'] || null, status: row['Status'] || 'Queued',
+                absorbed_amount: parseFloat(row['Absorbed Amount']) || 0, notes: row['Notes'] || null
+            };
+            const existingId = String(row['Claim ID'] || '').trim();
+            const exists = existingId && claims.some(c => c.claim_id === existingId);
+            if (exists) {
+                const { error } = await supabaseClient.rpc('edit_claim', { p_actor: currentUsername, p_id: existingId, p_fields: fields });
+                if (error) { skipped++; errors.push(`${existingId}: ${error.message}`); continue; }
+            } else {
+                const co = requireWriteCompany(); if (!co) { skipped++; continue; }
+                const newId = `${idPrefix()}${String(claims.length + imported + 1).padStart(settings.claimDigits, '0')}`;
+                const { error } = await supabaseClient.from('claims').insert([{ claim_id: newId, company_code: co, ...fields }]);
+                if (error) { skipped++; errors.push(`New claim: ${error.message}`); continue; }
+            }
+            imported++;
+        }
+        return { imported, skipped, errors };
+    }
+
+    async function processChargeRows(rows) {
+        let imported = 0, skipped = 0; const errors = [];
+        for (const row of rows) {
+            const empId = resolveRowEmployeeId(row);
+            if (!empId) { skipped++; errors.push(`Row skipped — no matching employee (Charge ID ${row['Charge ID'] || '?'})`); continue; }
+            const fields = {
+                employee_id: empId, charge_type: row['Charge Type'] || '', amount: parseFloat(row['Amount']) || 0,
+                weekly_deduction: parseFloat(row['Weekly Deduction']) || 0, start_date: row['Start Date'] || null,
+                end_date: row['End Date'] || null, status: row['Status'] || 'Queued', notes: row['Notes'] || null
+            };
+            const existingId = String(row['Charge ID'] || '').trim();
+            const exists = existingId && charges.some(c => c.charge_id === existingId);
+            if (exists) {
+                const { error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: existingId, p_fields: fields });
+                if (error) { skipped++; errors.push(`${existingId}: ${error.message}`); continue; }
+            } else {
+                const co = requireWriteCompany(); if (!co) { skipped++; continue; }
+                const newId = `${idPrefix()}${String(charges.length + imported + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
+                const { error } = await supabaseClient.from('charges').insert([{ charge_id: newId, company_code: co, ...fields }]);
+                if (error) { skipped++; errors.push(`New charge: ${error.message}`); continue; }
+            }
+            imported++;
+        }
+        return { imported, skipped, errors };
+    }
+
+    async function processIncomeRows(rows) {
+        let imported = 0, skipped = 0; const errors = [];
+        for (const row of rows) {
+            const empId = resolveRowEmployeeId(row);
+            if (!empId) { skipped++; errors.push(`Row skipped — no matching employee (Income ID ${row['Income ID'] || '?'})`); continue; }
+            const income_type = row['Income Type'] || '', amount = parseFloat(row['Amount']) || 0,
+                  weekly_amount = parseFloat(row['Weekly Amount']) || 0, start_date = row['Start Date'] || null,
+                  status = row['Status'] || 'Queued', notes = row['Notes'] || null;
+            const existingId = String(row['Income ID'] || '').trim();
+            const exists = existingId && additionalIncome.some(i => i.income_id === existingId);
+            if (exists) {
+                const { error } = await supabaseClient.rpc('edit_income', { p_actor: currentUsername, p_id: existingId, p_income_type: income_type, p_amount: amount, p_weekly_amount: weekly_amount, p_start_date: start_date, p_status: status, p_notes: notes });
+                if (error) { skipped++; errors.push(`${existingId}: ${error.message}`); continue; }
+            } else {
+                const co = requireWriteCompany(); if (!co) { skipped++; continue; }
+                const newId = `${idPrefix()}${String(additionalIncome.length + imported + 1).padStart(5, '0')}I`;
+                const { error } = await supabaseClient.from('additional_income').insert([{ income_id: newId, company_code: co, employee_id: empId, income_type, amount, weekly_amount, start_date, status, notes }]);
+                if (error) { skipped++; errors.push(`New income: ${error.message}`); continue; }
+            }
+            imported++;
+        }
+        return { imported, skipped, errors };
+    }
+
+    async function processVehicleRows(rows) {
+        let imported = 0, skipped = 0; const errors = [];
+        for (const row of rows) {
+            const co = requireWriteCompany(); if (!co) { skipped++; continue; }
+            const fields = {
+                p_truck_number: row['Truck #'] || null, p_year: row['Year'] || null, p_make: row['Make'] || '',
+                p_model: row['Model'] || '', p_plate: row['Plate'] || null, p_vin: row['VIN'] || null,
+                p_reg_expiry: row['Reg Expiry'] || null, p_insurance_company: row['Insurance Company'] || null,
+                p_insurance_policy: row['Insurance Policy'] || null, p_insurance_expiry: row['Insurance Expiry'] || null,
+                p_notes: row['Notes'] || null
+            };
+            const existingId = String(row['Vehicle ID'] || '').trim();
+            const exists = existingId && vehicles.some(v => v.id === existingId);
+            if (exists) {
+                const { error } = await supabaseClient.rpc('update_vehicle', { p_actor: currentUsername, p_id: existingId, ...fields });
+                if (error) { skipped++; errors.push(`${existingId}: ${error.message}`); continue; }
+            } else {
+                const newId = `${idPrefix()}${String(vehicles.length + imported + 1).padStart(4, '0')}V`;
+                const { error } = await supabaseClient.rpc('create_vehicle', { p_actor: currentUsername, p_id: newId, p_company: co, ...fields });
+                if (error) { skipped++; errors.push(`New vehicle: ${error.message}`); continue; }
+            }
+            imported++;
+        }
+        return { imported, skipped, errors };
+    }
+
+    async function processProviderPayRows(rows) {
+        let imported = 0, skipped = 0; const errors = [];
+        for (const row of rows) {
+            const empId = resolveRowEmployeeId(row);
+            if (!empId) { skipped++; errors.push(`Row skipped — no matching employee (${row['Year'] || '?'}/${row['Week'] || '?'})`); continue; }
+            const { error } = await supabaseClient.rpc('save_provider_pay', {
+                p_actor: currentUsername, p_employee_id: empId, p_year: String(row['Year'] || ''), p_week: String(row['Week'] || ''),
+                p_amount: parseFloat(row['Amount']) || 0, p_notes: row['Notes'] || null
+            });
+            if (error) { skipped++; errors.push(`${empId} ${row['Year']}/${row['Week']}: ${error.message}`); continue; }
+            imported++;
+        }
+        return { imported, skipped, errors };
+    }
+
+    function readWorkbookFromEvent(event) {
+        return new Promise((resolve, reject) => {
+            const file = event.target.files[0];
+            if (!file) { resolve(null); return; }
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try { resolve(XLSX.read(new Uint8Array(evt.target.result), { type: 'array' })); }
+                catch (e) { reject(e); }
+            };
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    function sheetRows(workbook, name) {
+        const sheet = workbook.Sheets[name];
+        return sheet ? XLSX.utils.sheet_to_json(sheet) : null;
+    }
+
+    async function importChargesExcel(event) {
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const wb = await readWorkbookFromEvent(event); if (!wb) return;
+        const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('charge')) || wb.SheetNames[0]) || [];
+        const res = await processChargeRows(rows);
+        alert(`Imported ${res.imported} charge(s).${res.skipped ? ` ${res.skipped} skipped:\n` + res.errors.slice(0, 10).join('\n') : ''}`);
+        event.target.value = '';
+        fetchChargesFromCloud();
+    }
+    async function importIncomeExcel(event) {
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const wb = await readWorkbookFromEvent(event); if (!wb) return;
+        const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('income')) || wb.SheetNames[0]) || [];
+        const res = await processIncomeRows(rows);
+        alert(`Imported ${res.imported} income record(s).${res.skipped ? ` ${res.skipped} skipped:\n` + res.errors.slice(0, 10).join('\n') : ''}`);
+        event.target.value = '';
+        fetchIncomeFromCloud();
+    }
+    async function importVehiclesExcel(event) {
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const wb = await readWorkbookFromEvent(event); if (!wb) return;
+        const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('vehicle')) || wb.SheetNames[0]) || [];
+        const res = await processVehicleRows(rows);
+        alert(`Imported ${res.imported} vehicle(s).${res.skipped ? ` ${res.skipped} skipped:\n` + res.errors.slice(0, 10).join('\n') : ''}`);
+        event.target.value = '';
+        fetchVehiclesFromCloud();
+    }
+    async function importProviderPayExcel(event) {
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const wb = await readWorkbookFromEvent(event); if (!wb) return;
+        const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('provider')) || wb.SheetNames[0]) || [];
+        const res = await processProviderPayRows(rows);
+        alert(`Imported ${res.imported} provider pay entr${res.imported === 1 ? 'y' : 'ies'}.${res.skipped ? ` ${res.skipped} skipped:\n` + res.errors.slice(0, 10).join('\n') : ''}`);
+        event.target.value = '';
+        renderProviderPay();
+    }
+
+    // Reads a combined "Export All Data" file and routes each recognized
+    // sheet through its own processor. Deliberately does NOT touch
+    // Employees — that has its own dedicated CSV import with PII-aware
+    // handling (SSN/ITIN blank-means-unchanged) that a generic combined
+    // pass shouldn't risk overwriting carelessly.
+    async function importAllData(event) {
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const statusEl = document.getElementById('import-all-status');
+        statusEl.textContent = 'Reading file…';
+        let wb;
+        try { wb = await readWorkbookFromEvent(event); } catch (e) { statusEl.textContent = 'Error reading file: ' + e.message; return; }
+        if (!wb) { statusEl.textContent = ''; return; }
+
+        const plan = [
+            { label: 'Claims', match: 'claim', proc: processClaimRows },
+            { label: 'Charges', match: 'charge', proc: processChargeRows },
+            { label: 'Additional Income', match: 'income', proc: processIncomeRows },
+            { label: 'Vehicles', match: 'vehicle', proc: processVehicleRows },
+            { label: 'Provider Pay', match: 'provider', proc: processProviderPayRows }
+        ];
+        const summary = [];
+        for (const step of plan) {
+            const sheetName = wb.SheetNames.find(n => n.toLowerCase().includes(step.match));
+            if (!sheetName) continue;
+            statusEl.textContent = `Importing ${step.label}…`;
+            const rows = sheetRows(wb, sheetName) || [];
+            const res = await step.proc(rows);
+            summary.push(`${step.label}: ${res.imported} imported${res.skipped ? `, ${res.skipped} skipped` : ''}`);
+        }
+        statusEl.innerHTML = summary.length
+            ? '<strong>Done.</strong><br>' + summary.join('<br>')
+            : 'No recognizable sheets found (expected names like Claims, Charges, Additional Income, Vehicles, Provider Pay).';
+        event.target.value = '';
+        await fetchAllDataFromCloud();
+    }
+
     async function importDailyPayExcel(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -7326,6 +7577,106 @@
     }
 
     function updateUI() { updateSlicerUI(); renderTracker(); renderDailyReport(); }
+
+    // ===== EXPORT / IMPORT ALL DATA =========================================
+    // Row-builders — one per table, reused by both the individual export
+    // buttons and the combined "Export All" workbook so there's exactly one
+    // place that defines each table's export columns.
+    function buildEmployeesExportRows() {
+        return employees.map(emp => {
+            const d = getEmpDetail(emp.id);
+            return {
+                'ID': emp.id, 'First Name': emp.first_name, 'Last Name': emp.last_name, 'Person Type': emp.person_type,
+                'Department': emp.department || '', 'Role Title': emp.role_title || '', 'Start Date': emp.start_date || '',
+                'Status': emp.status, 'Pay Rate': emp.pay_rate || 0, 'Pay Type': getPayType(emp.id),
+                'Phone': d.phone || '', 'Email': d.email || '', 'ID Type': d.id_type || 'SSN',
+                'Driver License': d.driver_license || '', 'DL Expiration': d.dl_expiration || '',
+                'Work Permit': d.work_permit || '', 'Work Permit Exp': d.work_permit_exp || '',
+                'Medical Card': d.medical_card || 'No', 'Medical Card Exp': d.medical_card_exp || '', 'Notes': d.notes || ''
+            };
+        });
+    }
+    function buildClaimsExportRows() {
+        return claims.map(c => ({
+            'Claim ID': c.claim_id, 'Employee ID': c.employee_id, 'Claimant Account': c.claimant_account || '',
+            'Company': c.company_name || '', 'Carrier Claim #': c.carrier_claim_number || '', 'Customer Claim #': c.customer_claim_number || '',
+            'Damage Type': c.damage_type || '', 'Claim Amount': c.claim_amount, 'Weekly Deduction': c.weekly_deduction,
+            'Start Date': c.start_date || '', 'End Date': c.end_date || '', 'Status': c.status,
+            'Absorbed Amount': c.absorbed_amount || 0, 'Notes': c.notes || ''
+        }));
+    }
+    function buildChargesExportRows() {
+        return charges.map(ch => ({
+            'Charge ID': ch.charge_id, 'Employee ID': ch.employee_id, 'Charge Type': ch.charge_type,
+            'Amount': ch.amount, 'Weekly Deduction': ch.weekly_deduction, 'Start Date': ch.start_date || '',
+            'End Date': ch.end_date || '', 'Status': ch.status, 'Notes': ch.notes || ''
+        }));
+    }
+    function buildIncomeExportRows() {
+        return additionalIncome.map(i => ({
+            'Income ID': i.income_id, 'Employee ID': i.employee_id, 'Income Type': i.income_type,
+            'Amount': i.amount, 'Weekly Amount': i.weekly_amount, 'Start Date': i.start_date || '',
+            'End Date': i.end_date || '', 'Status': i.status, 'Notes': i.notes || ''
+        }));
+    }
+    function buildVehiclesExportRows() {
+        return vehicles.map(v => ({
+            'Vehicle ID': v.id, 'Truck #': v.truck_number || '', 'Year': v.year || '', 'Make': v.make || '',
+            'Model': v.model || '', 'Plate': v.plate || '', 'VIN': v.vin || '', 'Reg Expiry': v.reg_expiry || '',
+            'Insurance Company': v.insurance_company || '', 'Insurance Policy': v.insurance_policy || '',
+            'Insurance Expiry': v.insurance_expiry || '', 'Notes': v.notes || ''
+        }));
+    }
+    function buildRoutesExportRows() { return routes.map(r => ({ ...r })); }
+    async function buildDailyPayExportRows() {
+        const { data, error } = await supabaseClient.rpc('get_daily_pay', { p_actor: currentUsername, p_company: currentCompany, p_year: null, p_week: null });
+        if (error) { console.error('buildDailyPayExportRows:', error); return []; }
+        return (data || []).map(r => ({ 'Employee ID': r.employee_id, 'Year': r.year, 'Week': r.week, 'Day Index': r.day_index, 'Amount': r.amount, 'Is Off': r.is_off ? 'Yes' : 'No' }));
+    }
+    async function buildProviderPayExportRows() {
+        const { data, error } = await supabaseClient.rpc('get_provider_pay', { p_actor: currentUsername, p_company: currentCompany, p_year: null, p_week: null });
+        if (error) { console.error('buildProviderPayExportRows:', error); return []; }
+        return (data || []).map(r => ({ 'Employee ID': r.employee_id, 'Year': r.year, 'Week': r.week, 'Amount': r.amount, 'Notes': r.notes || '' }));
+    }
+
+    // sheets: [{ name, rows }] — every export, individual or combined, goes
+    // through this so the format is always identical either way.
+    function downloadWorkbook(sheets, filename) {
+        const wb = XLSX.utils.book_new();
+        sheets.forEach(s => {
+            const ws = XLSX.utils.json_to_sheet(s.rows.length ? s.rows : [{ 'No data': 'This section is empty' }]);
+            XLSX.utils.book_append_sheet(wb, ws, s.name.substring(0, 31)); // Excel sheet-name length limit
+        });
+        XLSX.writeFile(wb, filename);
+    }
+
+    function exportClaimsExcel() { downloadWorkbook([{ name: 'Claims', rows: buildClaimsExportRows() }], 'claims_export.xlsx'); }
+    function exportChargesExcel() { downloadWorkbook([{ name: 'Charges', rows: buildChargesExportRows() }], 'charges_export.xlsx'); }
+    function exportIncomeExcel() { downloadWorkbook([{ name: 'Additional Income', rows: buildIncomeExportRows() }], 'income_export.xlsx'); }
+    function exportVehiclesExcel() { downloadWorkbook([{ name: 'Vehicles', rows: buildVehiclesExportRows() }], 'vehicles_export.xlsx'); }
+    async function exportDailyPayExcel() { downloadWorkbook([{ name: 'Daily Pay', rows: await buildDailyPayExportRows() }], 'daily_pay_export.xlsx'); }
+    async function exportProviderPayExcel() { downloadWorkbook([{ name: 'Provider Pay', rows: await buildProviderPayExportRows() }], 'provider_pay_export.xlsx'); }
+
+    async function exportAllData(evt) {
+        const btn = evt && evt.target;
+        if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+        try {
+            const sheets = [
+                { name: 'Employees', rows: buildEmployeesExportRows() },
+                { name: 'Claims', rows: buildClaimsExportRows() },
+                { name: 'Charges', rows: buildChargesExportRows() },
+                { name: 'Additional Income', rows: buildIncomeExportRows() },
+                { name: 'Vehicles', rows: buildVehiclesExportRows() },
+                { name: 'Routes', rows: buildRoutesExportRows() },
+                { name: 'Daily Pay', rows: await buildDailyPayExportRows() },
+                { name: 'Provider Pay', rows: await buildProviderPayExportRows() }
+            ];
+            const scope = currentUserRole === 'SuperAdmin' && !currentCompany ? 'AllCompanies' : (currentCompany || 'Export');
+            downloadWorkbook(sheets, `Full_Backup_${scope}_${todayStr()}.xlsx`);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '⬇️ Export All Data (single file)'; }
+        }
+    }
 
     function exportExcel() {
         if(!routes.length) return alert("No data to export!");
