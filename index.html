@@ -1581,8 +1581,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.56';
+    const APP_VERSION = 'v2.57';
     const CHANGELOG = [
+        { version: 'v2.57', date: '2026-08-06', notes: 'Logistics is now fully hidden for View Only accounts — found that Vehicles specifically had been left visible there since it was added, even though the rest of Logistics was already hidden; fixing that one thing let the whole Logistics group correctly disappear the way it was always meant to for that role. Statement: claims and charges are now grouped by status — Deducting together, Queued together, Paid together, and so on — with claims and charges mixed together within each group, but Additional Income stays in its own separate section as before, never mixed in with the other two.' },
         { version: 'v2.56', date: '2026-08-06', notes: 'New: full data export and import, both as one combined file and individually per section. "Export All Data" (Data Sync tab) downloads a single Excel file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything in one download, SSN/ITIN never included. "Import All Data" reads that same file back in and restores everything except Employees (which keeps its own dedicated import, since employee records need more careful handling around sensitive fields). Claims, Charges, Additional Income, Vehicles, and Provider Pay also each got their own individual Export/Import buttons for when you only need one section. Every import matches existing records by their ID and updates them, or creates a new record if the ID isn\'t recognized — verified each of these paths directly against real data before shipping. One honest note: I tested every underlying save/update operation directly, but couldn\'t click through an actual export-then-reimport in a live browser from here — worth trying that full round trip once and letting me know how it goes.' },
         { version: 'v2.55', date: '2026-08-06', notes: 'Fixed being unable to switch anyone to Provider pay — last version added Provider as an option, but missed three real spots that were still hardcoded to only know about Weekly and Daily: the quick ↺ toggle button on the Employees list (was a strict Weekly/Daily flip-flop with no way to ever land on Provider), the employee form\'s own save handler (would have silently saved "Weekly" even if you picked Provider from the dropdown), and the bulk CSV import. All three now correctly handle all three pay types. The quick toggle now cycles Weekly → Daily → Provider → back to Weekly.' },
         { version: 'v2.54', date: '2026-08-06', notes: 'New: Provider Pay — a third pay category alongside Weekly and Daily, for providers whose pay isn\'t a flat rate. Set someone\'s Pay Type to "Provider" in the Employees tab, and they show up on the new Provider Pay tab (right next to Daily Pay), where you enter one amount for the week plus an optional note — no day-by-day breakdown, since that\'s not how these get paid. Entries save automatically and flow straight into Payroll the same way Daily Pay already does, with its own badge so it\'s easy to tell at a glance which pay category someone is on. Note: I built this as one amount per week rather than a 7-day grid — if you actually need day-by-day entry for providers too, let me know and I\'ll adjust it.' },
@@ -2285,7 +2286,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-tracker','btn-tab-report','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
+            ['btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -4779,6 +4780,73 @@
             <div class="stat-card"><div class="stat-label">Total income</div><div class="stat-value" style="color:#059669;">${formatMoney(incomeTotal)}</div></div>`;
     }
 
+    // Extracted so both renderStatement's status-grouping loop and any
+    // future caller can build one item's panel without duplicating markup.
+    function statementClaimPanelHtml(c, asOf) {
+        const sched = buildClaimSchedule(c, null); // full projection to $0.00
+        const bal = claimBalance(c, asOf);
+        const owed = Math.max(0, (parseFloat(c.claim_amount) || 0) - (parseFloat(c.absorbed_amount) || 0));
+        const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
+        const weeks = sched.rows.filter(r => !r.paused).length;
+        const endDate = sched.endDate || '—';
+        const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
+        return `
+            <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
+                <div class="panel-head" onclick="toggleCollapse(this)">
+                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${c.damage_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${c.status}</span></span>
+                    <span class="caret">&#9662;</span>
+                </div>
+                <div>
+                    <div class="form-row" style="margin:6px 0 4px;align-items:center;">
+                        <div class="field"><label>Company</label><div>${c.company_name ? escHtml(c.company_name) : '—'}</div></div>
+                        <div class="field"><label>Claimant account</label><div>${c.claimant_account ? escHtml(c.claimant_account) : '—'}</div></div>
+                        <div class="field"><label>Carrier claim #</label><div>${c.carrier_claim_number ? escHtml(c.carrier_claim_number) : '—'}</div></div>
+                        <div class="field"><label>Customer claim #</label><div>${c.customer_claim_number ? escHtml(c.customer_claim_number) : '—'}</div></div>
+                        <div class="field"><label>Weekly rate</label><div>${formatMoney(rateOn(c, asOf))}</div></div>
+                        <div class="field"><label>Weeks to $0</label><div>${weeks}</div></div>
+                        <div class="field"><label>Ends</label><div>${endDate}</div></div>
+                        <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
+                        <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
+                    </div>
+                    <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printClaimSchedule('${c.claim_id}')">🖨 Print schedule</button>
+                    ${sched.rows.length
+                        ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${c.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
+                        : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the claim is resolved, or needs a start date and weekly amount.</div>`}
+                </div>
+            </div>`;
+    }
+
+    function statementChargePanelHtml(ch, asOf) {
+        const sched = buildChargeSchedule(ch, null);
+        const bal = chargeBalance(ch, asOf);
+        const owed = Math.max(0, parseFloat(ch.amount) || 0);
+        const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
+        const weeks = sched.rows.filter(r => !r.paused).length;
+        const endDate = sched.endDate || (ch.end_date || '-');
+        const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
+        return `
+            <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
+                <div class="panel-head" onclick="toggleCollapse(this)">
+                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${ch.charge_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${ch.status}</span></span>
+                    <span class="caret">&#9662;</span>
+                </div>
+                <div>
+                    <div class="form-row" style="margin:6px 0 0;align-items:center;">
+                        <div class="field"><label>Weekly rate</label><div>${formatMoney(chargeRateOn(ch, asOf))}</div></div>
+                        <div class="field"><label>Weeks</label><div>${weeks}</div></div>
+                        <div class="field"><label>Ends</label><div>${endDate}</div></div>
+                        <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
+                        <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
+                        <div class="field"><label>Start</label><div>${ch.start_date || '-'}</div></div>
+                    </div>
+                    <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printChargeSchedule('${ch.charge_id}')">🖨 Print schedule</button>
+                    ${sched.rows.length
+                        ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${ch.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
+                        : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the charge is resolved, or needs a start date and weekly amount.</div>`}
+                </div>
+            </div>`;
+    }
+
     function renderStatement() {
         const empId = document.getElementById('statement-emp-select').value;
         const container = document.getElementById('statement-content');
@@ -4799,72 +4867,27 @@
             </div>
             <div class="panel">
                 <h2>Current deductions — full breakdown</h2>`;
-        
-        if(!empClaims.length && !empCharges.length) html += `<div style="text-align:center;color:var(--text-muted);padding:15px;">No current claims or charges for this employee.</div>`;
-        
-        empClaims.forEach(c => {
-            const sched = buildClaimSchedule(c, null); // full projection to $0.00
-            const bal = claimBalance(c, asOf);
-            const owed = Math.max(0, (parseFloat(c.claim_amount) || 0) - (parseFloat(c.absorbed_amount) || 0));
-            const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
-            const weeks = sched.rows.filter(r => !r.paused).length;
-            const endDate = sched.endDate || '—';
-            const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
-            html += `
-                <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
-                    <div class="panel-head" onclick="toggleCollapse(this)">
-                        <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${c.damage_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${c.status}</span></span>
-                        <span class="caret">&#9662;</span>
-                    </div>
-                    <div>
-                        <div class="form-row" style="margin:6px 0 4px;align-items:center;">
-                            <div class="field"><label>Company</label><div>${c.company_name ? escHtml(c.company_name) : '—'}</div></div>
-                            <div class="field"><label>Claimant account</label><div>${c.claimant_account ? escHtml(c.claimant_account) : '—'}</div></div>
-                            <div class="field"><label>Carrier claim #</label><div>${c.carrier_claim_number ? escHtml(c.carrier_claim_number) : '—'}</div></div>
-                            <div class="field"><label>Customer claim #</label><div>${c.customer_claim_number ? escHtml(c.customer_claim_number) : '—'}</div></div>
-                            <div class="field"><label>Weekly rate</label><div>${formatMoney(rateOn(c, asOf))}</div></div>
-                            <div class="field"><label>Weeks to $0</label><div>${weeks}</div></div>
-                            <div class="field"><label>Ends</label><div>${endDate}</div></div>
-                            <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                            <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
-                        </div>
-                        <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printClaimSchedule('${c.claim_id}')">🖨 Print schedule</button>
-                        ${sched.rows.length
-                            ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${c.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
-                            : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the claim is resolved, or needs a start date and weekly amount.</div>`}
-                    </div>
-                </div>`;
-        });
 
-        empCharges.forEach(ch => {
-            const sched = buildChargeSchedule(ch, null);
-            const bal = chargeBalance(ch, asOf);
-            const owed = Math.max(0, parseFloat(ch.amount) || 0);
-            const paidSoFar = Math.max(0, +(owed - bal).toFixed(2));
-            const weeks = sched.rows.filter(r => !r.paused).length;
-            const endDate = sched.endDate || (ch.end_date || '-');
-            const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
-            html += `
-                <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
-                    <div class="panel-head" onclick="toggleCollapse(this)">
-                        <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${ch.charge_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${ch.status}</span></span>
-                        <span class="caret">&#9662;</span>
-                    </div>
-                    <div>
-                        <div class="form-row" style="margin:6px 0 0;align-items:center;">
-                            <div class="field"><label>Weekly rate</label><div>${formatMoney(chargeRateOn(ch, asOf))}</div></div>
-                            <div class="field"><label>Weeks</label><div>${weeks}</div></div>
-                            <div class="field"><label>Ends</label><div>${endDate}</div></div>
-                            <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                            <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
-                            <div class="field"><label>Start</label><div>${ch.start_date || '-'}</div></div>
-                        </div>
-                        <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printChargeSchedule('${ch.charge_id}')">🖨 Print schedule</button>
-                        ${sched.rows.length
-                            ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${ch.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
-                            : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the charge is resolved, or needs a start date and weekly amount.</div>`}
-                    </div>
-                </div>`;
+        if(!empClaims.length && !empCharges.length) html += `<div style="text-align:center;color:var(--text-muted);padding:15px;">No current claims or charges for this employee.</div>`;
+
+        // Claims and charges share a status vocabulary and get grouped
+        // together by status (Deducting people together, Queued together,
+        // etc.) — income has its own separate vocabulary and section below,
+        // deliberately never merged in with these two.
+        const combined = [
+            ...empClaims.map(c => ({ status: c.status, render: () => statementClaimPanelHtml(c, asOf) })),
+            ...empCharges.map(ch => ({ status: ch.status, render: () => statementChargePanelHtml(ch, asOf) }))
+        ];
+        const STATUS_ORDER = ['Deducting', 'Queued', 'Paid', 'Absorbed', 'Tk from check'];
+        const statusesPresent = [...new Set(combined.map(x => x.status))]
+            .sort((a, b) => {
+                const ia = STATUS_ORDER.indexOf(a), ib = STATUS_ORDER.indexOf(b);
+                return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+            });
+        statusesPresent.forEach(status => {
+            const group = combined.filter(x => x.status === status);
+            html += `<div class="detail-subhead" style="margin:12px 0 6px;"><span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:normal;">(${group.length})</span></div>`;
+            group.forEach(x => { html += x.render(); });
         });
 
         html += `</div>`;
