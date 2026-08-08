@@ -1284,6 +1284,10 @@
                 <select id="msg-linked-select"><option value="">— Select —</option></select>
             </div>
         </div>
+        <div id="msg-reply-banner" style="display:none; background:var(--surface-2); border-left:3px solid var(--primary); border-radius:6px; padding:8px 10px; margin-bottom:10px; font-size:12px; justify-content:space-between; align-items:center; gap:8px;">
+            <span>↩ Replying to: <em id="msg-reply-snippet" style="color:var(--text-muted);"></em></span>
+            <span class="del-btn" onclick="cancelReply()">✕ Cancel</span>
+        </div>
         <div class="form-row">
             <div class="field field-wide">
                 <label>Message</label>
@@ -1582,8 +1586,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.58';
+    const APP_VERSION = 'v2.59';
     const CHANGELOG = [
+        { version: 'v2.59', date: '2026-08-06', notes: 'Messages: added replies, so a conversation can now actually be followed as a thread instead of a flat list — each message has a "↩ Reply" option, and replies show grouped and indented right under what they\'re replying to, oldest first. Also corrected the delete permission to match what was actually intended: View Only accounts can send and reply, but can no longer delete any message — not even their own. Deleting stays a Medium-and-above action.' },
         { version: 'v2.58', date: '2026-08-06', notes: 'New: "Print All (net pay > 0)" button on Payroll — prints everyone with a real amount owed for the selected week in one combined document instead of opening each person one at a time. Respects whatever filters you already have set (Person type, Status, search), so it prints exactly who\'s on screen, minus anyone whose net pay is zero or less.' },
         { version: 'v2.57', date: '2026-08-06', notes: 'Logistics is now fully hidden for View Only accounts — found that Vehicles specifically had been left visible there since it was added, even though the rest of Logistics was already hidden; fixing that one thing let the whole Logistics group correctly disappear the way it was always meant to for that role. Statement: claims and charges are now grouped by status — Deducting together, Queued together, Paid together, and so on — with claims and charges mixed together within each group, but Additional Income stays in its own separate section as before, never mixed in with the other two.' },
         { version: 'v2.56', date: '2026-08-06', notes: 'New: full data export and import, both as one combined file and individually per section. "Export All Data" (Data Sync tab) downloads a single Excel file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything in one download, SSN/ITIN never included. "Import All Data" reads that same file back in and restores everything except Employees (which keeps its own dedicated import, since employee records need more careful handling around sensitive fields). Claims, Charges, Additional Income, Vehicles, and Provider Pay also each got their own individual Export/Import buttons for when you only need one section. Every import matches existing records by their ID and updates them, or creates a new record if the ID isn\'t recognized — verified each of these paths directly against real data before shipping. One honest note: I tested every underlying save/update operation directly, but couldn\'t click through an actual export-then-reimport in a live browser from here — worth trying that full round trip once and letting me know how it goes.' },
@@ -5635,6 +5640,7 @@
     // ===== MESSAGES ========================================================
     let employeeMessages = [];
     let messageCategory = 'General';
+    let replyingToId = null;
 
     function populateMessageEmployeeDropdowns() {
         const isViewOnly = currentUserRole === 'User';
@@ -5701,12 +5707,34 @@
 
         const { error } = await supabaseClient.rpc('post_employee_message', {
             p_actor: currentUsername, p_employee_id: empId, p_category: messageCategory,
-            p_linked_table: linkedTable, p_linked_id: linkedId, p_message: text
+            p_linked_table: linkedTable, p_linked_id: linkedId, p_message: text, p_reply_to_id: replyingToId
         });
         if (error) { alert('Error: ' + error.message); return; }
         document.getElementById('msg-text').value = '';
+        cancelReply();
         await fetchEmployeeMessages();
         renderEmployeeMessages();
+    }
+
+    // Clicking Reply on a message locks the employee picker to that
+    // message's employee (a reply must stay on the same thread) and shows
+    // a small banner so it's clear what's being replied to.
+    function startReply(id, snippet, empId) {
+        replyingToId = id;
+        const empSel = document.getElementById('msg-employee');
+        if (empSel) { empSel.value = empId; empSel.disabled = true; onMessageEmployeeChange(); }
+        const banner = document.getElementById('msg-reply-banner');
+        banner.style.display = 'flex';
+        document.getElementById('msg-reply-snippet').textContent = snippet.length > 80 ? snippet.slice(0, 80) + '…' : snippet;
+        document.getElementById('msg-text').focus();
+        document.getElementById('msg-employee').closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function cancelReply() {
+        replyingToId = null;
+        const empSel = document.getElementById('msg-employee');
+        if (empSel) empSel.disabled = false;
+        const banner = document.getElementById('msg-reply-banner');
+        if (banner) banner.style.display = 'none';
     }
 
     async function fetchEmployeeMessages() {
@@ -5728,6 +5756,43 @@
         'Claim': 'background:#e0f2fe;color:#075985;', 'Charge': 'background:#fee2e2;color:#991b1b;', 'Income': 'background:#dcfce7;color:#166534;'
     };
 
+    // One message card's HTML — used for both thread roots and replies
+    // (replies get extra left-indent/border via the `indent` flag).
+    function messageCardHtml(m, indent) {
+        const emp = employees.find(e => e.id === m.employee_id);
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : m.employee_id;
+        const linkedBadge = m.linked_table
+            ? `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)} ${escHtml(m.linked_id || '')}</span>`
+            : `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)}</span>`;
+        const isMine = String(m.posted_by || '').trim().toLowerCase() === String(currentUsername || '').trim().toLowerCase();
+        const canDelete = canEdit(); // Medium+ only — View Only can send/reply but never delete, not even their own
+        const visLine = isMine
+            ? '🔒 Posted by you — visible to you and staff only'
+            : (m.posted_by_role && m.posted_by_role !== 'User' ? '🌐 Visible to all Medium+ staff' : '🔒 Visible to staff and the poster only');
+        const snippetForReply = m.message.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        return `
+            <div class="rec-card" style="margin-bottom:8px; ${indent ? 'margin-left:22px; border-left:3px solid var(--border);' : ''}">
+                <div style="padding:12px 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                            ${indent ? '<span style="color:var(--text-muted);">↳</span>' : ''}
+                            <span class="type-pill">${escHtml(empName)} · ${m.employee_id}</span>
+                            ${linkedBadge}
+                        </div>
+                        <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${escHtml(m.posted_by)}${m.posted_by_role ? ' (' + m.posted_by_role + ')' : ''} · ${new Date(m.created_at).toLocaleString()}</span>
+                    </div>
+                    <div style="font-size:13.5px; line-height:1.5; margin-bottom:8px;">${escHtml(m.message)}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:11px; color:var(--text-muted);">${visLine}</span>
+                        <span style="display:flex; gap:12px; align-items:center;">
+                            <span class="del-btn" style="color:var(--primary);" onclick="startReply(${m.id}, '${snippetForReply}', '${m.employee_id}')">↩ Reply</span>
+                            ${canDelete ? `<span class="del-btn" onclick="deleteEmployeeMessage(${m.id})">✕ Delete</span>` : ''}
+                        </span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
     function renderEmployeeMessages() {
         const container = document.getElementById('messages-feed');
         if (!container) return;
@@ -5735,38 +5800,37 @@
         const list = filterEmp ? employeeMessages.filter(m => m.employee_id === filterEmp) : employeeMessages;
         if (!list.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">No messages yet.</div>'; return; }
 
-        container.innerHTML = list.map(m => {
-            const emp = employees.find(e => e.id === m.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}` : m.employee_id;
-            const linkedBadge = m.linked_table
-                ? `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)} ${escHtml(m.linked_id || '')}</span>`
-                : `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)}</span>`;
-            const isMine = m.posted_by === currentUsername;
-            const canDelete = isMine || canEdit();
-            const visLine = isMine
-                ? '🔒 Posted by you — visible to you and staff only'
-                : (m.posted_by_role && m.posted_by_role !== 'User' ? '🌐 Visible to all Medium+ staff' : '🔒 Visible to staff and the poster only');
-            return `
-                <div class="rec-card" style="margin-bottom:10px;">
-                    <div style="padding:12px 14px;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
-                            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                                <span class="type-pill">${escHtml(empName)} · ${m.employee_id}</span>
-                                ${linkedBadge}
-                            </div>
-                            <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${escHtml(m.posted_by)}${m.posted_by_role ? ' (' + m.posted_by_role + ')' : ''} · ${new Date(m.created_at).toLocaleString()}</span>
-                        </div>
-                        <div style="font-size:13.5px; line-height:1.5; margin-bottom:8px;">${escHtml(m.message)}</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:11px; color:var(--text-muted);">${visLine}</span>
-                            ${canDelete ? `<span class="del-btn" onclick="deleteEmployeeMessage(${m.id})">✕ Delete</span>` : ''}
-                        </div>
-                    </div>
-                </div>`;
+        // Group into threads: every message with no reply_to_id is a root;
+        // everything else attaches under its root (found by following
+        // reply_to_id up the chain) so a whole conversation stays together
+        // and reads top-to-bottom, oldest first, instead of a flat feed
+        // where a reply could be far away from what it's replying to.
+        const byId = {};
+        list.forEach(m => { byId[m.id] = m; });
+        function threadRootOf(m) {
+            let cur = m, guard = 0;
+            while (cur.reply_to_id && byId[cur.reply_to_id] && guard < 50) { cur = byId[cur.reply_to_id]; guard++; }
+            return cur.id;
+        }
+        const threads = {}; // rootId -> { root, replies: [] }
+        list.forEach(m => {
+            const rootId = threadRootOf(m);
+            if (!threads[rootId]) threads[rootId] = { root: byId[rootId], replies: [] };
+            if (m.id !== rootId) threads[rootId].replies.push(m);
+        });
+        // Threads ordered by their most recent activity (root or any reply), newest first.
+        const orderedRoots = Object.values(threads)
+            .map(t => ({ ...t, lastActivity: Math.max(new Date(t.root.created_at).getTime(), ...t.replies.map(r => new Date(r.created_at).getTime())) }))
+            .sort((a, b) => b.lastActivity - a.lastActivity);
+
+        container.innerHTML = orderedRoots.map(t => {
+            const replySorted = t.replies.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            return messageCardHtml(t.root, false) + replySorted.map(r => messageCardHtml(r, true)).join('');
         }).join('');
     }
 
     async function renderMessagesTab() {
+        cancelReply();
         populateMessageEmployeeDropdowns();
         setMessageCategory('General');
         await fetchEmployeeMessages();
