@@ -323,6 +323,7 @@
     /* Pay-type pill (Weekly vs Daily) */
     .pay-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
     .pay-weekly { background: var(--active-bg); color: var(--active); }
+    .pay-provider { background: var(--amber-bg); color: var(--amber); }
     .pay-daily { background: var(--purple-bg); color: var(--purple); }
 
     /* Daily Pay tab */
@@ -597,6 +598,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges" data-i18n="tab_charges">Charges &amp; Income</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
@@ -803,7 +805,7 @@
             </div>
             <div class="form-section-label" style="margin-top:10px;" data-i18n="pay">Pay</div>
             <div class="grid-form">
-                <div class="field"><label data-i18n="pay_type">Pay Type</label><select id="emp-paytype"><option value="Weekly">Weekly Salary</option><option value="Daily">Daily Rate</option></select></div>
+                <div class="field"><label data-i18n="pay_type">Pay Type</label><select id="emp-paytype"><option value="Weekly">Weekly Salary</option><option value="Daily">Daily Rate</option><option value="Provider">Provider (variable)</option></select></div>
                 <div class="field"><label data-i18n="base_weekly_pay">Base Weekly Pay ($)</label><input type="number" id="emp-payrate" min="0" step="0.01" placeholder="0.00"></div>
             </div>
             <div class="note-box" style="margin-top:8px;" data-i18n="employee_note">Set <strong>Daily Rate</strong> for anyone whose pay changes week to week — enter their day-by-day amounts in the <strong>Daily Pay</strong> tab. On edit, leave <strong>SSN/ITIN</strong> blank to keep the stored number unchanged. Driver license, work permit, medical card and notes are shown openly in the directory; the SSN/ITIN stays hidden.</div>
@@ -1148,6 +1150,40 @@
     </div>
     <div class="panel">
         <div id="dailypay-cards"></div>
+    </div>
+</div>
+
+<!-- TAB: PROVIDER PAY -->
+<div id="tab-providerpay" class="tab-content">
+    <div class="panel" style="margin-bottom:12px;">
+        <h2>Provider Pay</h2>
+        <div class="week-nav">
+            <button class="btn-small" onclick="shiftProviderWeek(-1)">◀ Prev</button>
+            <span class="wk-label" id="providerpay-week-label">—</span>
+            <button class="btn-small" onclick="shiftProviderWeek(1)">Next ▶</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="goToThisProviderWeek()">This week</button>
+            <span class="save-flash" id="providerpay-saveflash">Saved ✓</span>
+        </div>
+        <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
+            <div class="field">
+                <label>Status</label>
+                <select id="providerpay-status-filter" onchange="renderProviderPay()">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="">All statuses</option>
+                </select>
+            </div>
+            <div class="field field-wide">
+                <input type="text" id="providerpay-search" placeholder="Search name or ID..." oninput="renderProviderPay()">
+            </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('providerpay')">✕ Clear filters</button>
+        </div>
+        <div class="note-box" style="margin-top:10px;">
+            Enter each provider's pay for the week — a single amount, since providers aren't on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person's pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does.
+        </div>
+    </div>
+    <div class="panel">
+        <div id="providerpay-cards"></div>
     </div>
 </div>
 
@@ -1521,8 +1557,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.53';
+    const APP_VERSION = 'v2.54';
     const CHANGELOG = [
+        { version: 'v2.54', date: '2026-08-06', notes: 'New: Provider Pay — a third pay category alongside Weekly and Daily, for providers whose pay isn\'t a flat rate. Set someone\'s Pay Type to "Provider" in the Employees tab, and they show up on the new Provider Pay tab (right next to Daily Pay), where you enter one amount for the week plus an optional note — no day-by-day breakdown, since that\'s not how these get paid. Entries save automatically and flow straight into Payroll the same way Daily Pay already does, with its own badge so it\'s easy to tell at a glance which pay category someone is on. Note: I built this as one amount per week rather than a 7-day grid — if you actually need day-by-day entry for providers too, let me know and I\'ll adjust it.' },
         { version: 'v2.53', date: '2026-08-06', notes: 'Fixed mouse scrolling. Traced it to a setting added a few versions back specifically to smooth out a small visual glitch on iPhone (where the phone\'s own natural bounce-scroll was fighting the pull-to-refresh indicator) — that setting was applied everywhere, including desktop, where it had no business being and could interfere with scrolling through the app\'s tables and lists with a mouse. It now only applies on touchscreens, where it was actually needed, and never touches mouse/trackpad scrolling at all.' },
         { version: 'v2.52', date: '2026-08-06', notes: 'Fixed the Messages text box — the app\'s dark themes style every input and dropdown to match, but textareas had been completely skipped from that styling since Messages introduced the first one, so it was showing up as a plain white browser box that clashed with everything around it. It now matches the rest of the app in all three themes, same border, background, and focus behavior as every other field.' },
         { version: 'v2.51', date: '2026-08-06', notes: 'Charges now has a "Paid" status option (it was missing — only Queued/Deducting/Absorbed/Tk from check existed before). And the automatic "mark as Paid once it\'s actually finished" behavior that claims already had now runs for charges and additional income too — a charge or income item that reaches $0 and stays there for a week gets automatically switched to Paid overnight, exactly the same rule claims have used all along. Verified this against real payoff data (a charge and an income item, each fully paid off) before turning it on.' },
@@ -2077,6 +2114,7 @@
         if(tabName === 'tab-users') fetchUsersList();
         if(tabName === 'tab-statement') populateStatementDropdown();
         if(tabName === 'tab-dailypay') renderDailyPay();
+        if(tabName === 'tab-providerpay') renderProviderPay();
         if(tabName === 'tab-employees' && typeof updateNextEmpId === 'function') updateNextEmpId();
         if(tabName === 'tab-payroll') renderPayroll();
         if(tabName === 'tab-companies') loadCompanies();
@@ -2089,7 +2127,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll', 'tab-messages'],
+        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-messages'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
 
@@ -2221,7 +2259,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-tracker','btn-tab-report','btn-tab-settings','btn-tab-data','btn-tab-dailypay'].forEach(id => {
+            ['btn-tab-tracker','btn-tab-report','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -2614,6 +2652,7 @@
             fetchSettingsFromCloud()
         ]);
         await loadCurrentWeekDaily();    // for Payroll base pay of Daily people
+        await loadCurrentWeekProvider(); // for Payroll base pay of Provider people
         await loadClaimHistory();        // rate changes + pauses for balances
         await loadChargeHistory();       // same, for charges
         await fetchIncomeFromCloud();    // additional income for Payroll
@@ -3063,6 +3102,10 @@
             case 'dailypay':
                 setVal('dailypay-type-filter', ''); setVal('dailypay-status-filter', 'Active'); setVal('dailypay-search', '');
                 renderDailyPay();
+                break;
+            case 'providerpay':
+                setVal('providerpay-status-filter', 'Active'); setVal('providerpay-search', '');
+                renderProviderPay();
                 break;
             case 'statement':
                 setVal('statement-type-filter', ''); setVal('statement-status-filter', 'Active'); setVal('statement-search', '');
@@ -4701,7 +4744,9 @@
     // ====================================================================
 
     function getPayType(empId) {
-        return payTypes[empId] === 'Daily' ? 'Daily' : 'Weekly';
+        if (payTypes[empId] === 'Daily') return 'Daily';
+        if (payTypes[empId] === 'Provider') return 'Provider';
+        return 'Weekly';
     }
 
     // Load per-employee pay types from the cloud. Degrades gracefully if the
@@ -4712,7 +4757,7 @@
             const { data, error } = await supabaseClient.rpc('get_employee_pay_type', { p_actor: currentUsername, p_company: currentCompany });
             if (error) { if (isMissingTable(error)) dailyTableMissing = true; return; }
             payTypes = {};
-            (data || []).forEach(r => { payTypes[r.employee_id] = r.pay_type === 'Daily' ? 'Daily' : 'Weekly'; });
+            (data || []).forEach(r => { payTypes[r.employee_id] = (r.pay_type === 'Daily' || r.pay_type === 'Provider') ? r.pay_type : 'Weekly'; });
         } catch (e) { console.error('loadPayTypes:', e); }
     }
 
@@ -4778,6 +4823,143 @@
         const dates = weekDatesFromSunday(sun);
         const k = weekKeyFromSunday(sun);
         return `Week ${k.week}, ${k.year} · ${fmtMD(dates[0])} – ${fmtMD(dates[6])}`;
+    }
+
+    // ===== PROVIDER PAY =====================================================
+    // Same idea as Daily Pay, but for people whose pay isn't a flat rate and
+    // doesn't break down by day either — one manually-entered amount per
+    // week per provider. Feeds Payroll's base pay the same way Daily Pay does.
+    let providerView = null;   // { sunday, year, week }
+    let providerGrid = {};     // employee_id -> { amount, notes }
+
+    function providerSunday() {
+        if (!providerView) { const s = weekStartSunday(new Date()); s.setUTCDate(s.getUTCDate() - 7); providerView = { sunday: s }; } // defaults to LAST week, not this week
+        return providerView.sunday;
+    }
+    function shiftProviderWeek(delta) {
+        const s = new Date(providerSunday()); s.setUTCDate(s.getUTCDate() + delta * 7);
+        providerView = { sunday: s };
+        renderProviderPay();
+    }
+    function goToThisProviderWeek() {
+        providerView = { sunday: weekStartSunday(new Date()) }; // explicit current week
+        renderProviderPay();
+    }
+
+    async function loadProviderPayForWeek(year, week) {
+        providerGrid = {};
+        try {
+            const { data, error } = await supabaseClient.rpc('get_provider_pay', { p_actor: currentUsername, p_company: currentCompany, p_year: year, p_week: week });
+            if (error) { console.error('get_provider_pay:', error); return; }
+            (data || []).forEach(r => { providerGrid[r.employee_id] = { amount: parseFloat(r.amount) || 0, notes: r.notes || '' }; });
+        } catch (e) { console.error('loadProviderPayForWeek:', e); }
+    }
+
+    async function saveProviderCell(empId, amount, notes) {
+        const sun = providerSunday();
+        const k = weekKeyFromSunday(sun);
+        try {
+            const { error } = await supabaseClient.rpc('save_provider_pay', {
+                p_actor: currentUsername, p_employee_id: empId, p_year: k.year, p_week: k.week,
+                p_amount: amount, p_notes: notes
+            });
+            if (error) { alert('Error saving: ' + error.message); return; }
+            flashSaved('providerpay-saveflash');
+            // Keep Payroll's current-week cache in sync when editing this week
+            const thisWeek = weekKeyFromSunday(weekStartSunday(new Date()));
+            if (providerView.year === thisWeek.year && providerView.week === thisWeek.week) {
+                await loadCurrentWeekProvider();
+            }
+        } catch (e) { console.error('saveProviderCell:', e); }
+    }
+
+    function onProviderAmountChange(empId, rawValue) {
+        const amount = parseFloat(rawValue) || 0;
+        const existing = providerGrid[empId] || { notes: '' };
+        providerGrid[empId] = { amount, notes: existing.notes };
+        saveProviderCell(empId, amount, existing.notes);
+    }
+    function onProviderNotesChange(empId, rawValue) {
+        const existing = providerGrid[empId] || { amount: 0 };
+        providerGrid[empId] = { amount: existing.amount, notes: rawValue };
+        saveProviderCell(empId, existing.amount, rawValue);
+    }
+
+    async function renderProviderPay() {
+        if (!providerView) { const s0 = weekStartSunday(new Date()); s0.setUTCDate(s0.getUTCDate() - 7); providerView = { sunday: s0 }; }
+        const sun = providerView.sunday;
+        const k = weekKeyFromSunday(sun);
+        providerView.year = k.year; providerView.week = k.week;
+        document.getElementById('providerpay-week-label').textContent = fmtWeekLabel(sun);
+
+        const statusFilter = document.getElementById('providerpay-status-filter') ? document.getElementById('providerpay-status-filter').value : 'Active';
+        const query = (document.getElementById('providerpay-search')?.value || '').toLowerCase();
+        const providerEmps = employees
+            .filter(e => getPayType(e.id) === 'Provider')
+            .filter(e => {
+                if (statusFilter && e.status !== statusFilter) return false;
+                if (query) {
+                    const hay = `${e.id} ${e.first_name} ${e.last_name}`.toLowerCase();
+                    if (!hay.includes(query)) return false;
+                }
+                return true;
+            })
+            .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
+
+        await loadProviderPayForWeek(k.year, k.week);
+
+        const cardsWrap = document.getElementById('providerpay-cards');
+        if (!providerEmps.length) {
+            cardsWrap.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted);">No one is set to <strong>Provider</strong> pay yet. Go to the Employees tab and switch a person's Pay to <em>Provider</em>.</div>`;
+            return;
+        }
+
+        const editable = canEdit();
+        let grand = 0;
+        const rows = providerEmps.map(emp => {
+            const cell = providerGrid[emp.id] || { amount: 0, notes: '' };
+            grand += cell.amount;
+            return `
+                <div class="rec-card" style="margin-bottom:8px;">
+                    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:12px 14px;">
+                        <div style="flex:1 1 220px;">
+                            <div style="font-weight:700;">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</div>
+                            <div class="id-cell" style="font-size:11px; color:var(--text-muted);">${emp.id}</div>
+                        </div>
+                        <div style="flex:0 0 140px;">
+                            <label style="font-size:10px;">Amount this week</label>
+                            <input type="number" min="0" step="0.01" inputmode="decimal" value="${cell.amount || ''}" placeholder="0.00"
+                                ${editable ? '' : 'disabled'} onchange="onProviderAmountChange('${emp.id}', this.value)">
+                        </div>
+                        <div style="flex:1 1 220px;">
+                            <label style="font-size:10px;">Notes (optional)</label>
+                            <input type="text" value="${escHtml(cell.notes || '')}" placeholder="e.g. invoice #, what for"
+                                ${editable ? '' : 'disabled'} onchange="onProviderNotesChange('${emp.id}', this.value)">
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+        cardsWrap.innerHTML = rows + `<div style="text-align:right; font-weight:700; padding:10px 4px 0;">Total this week: ${formatMoney(grand)}</div>`;
+    }
+
+    // Loaded alongside Daily Pay's own current-week cache, same reasoning
+    // (Payroll's base pay for Provider people reads from here). Kept
+    // separate from providerGrid on purpose — providerGrid reflects
+    // whichever week the Provider Pay TAB itself is currently viewing,
+    // which is a totally different week selector than Payroll's own.
+    let currentWeekProvider = {};       // employee_id -> number
+    let currentWeekProviderNotes = {};  // employee_id -> string
+    async function loadCurrentWeekProvider() {
+        const sun = payrollSunday();
+        const k = weekKeyFromSunday(sun);
+        try {
+            const { data, error } = await supabaseClient.rpc('get_provider_pay', { p_actor: currentUsername, p_company: currentCompany, p_year: k.year, p_week: k.week });
+            if (error) { console.error('get_provider_pay (payroll):', error); currentWeekProvider = {}; currentWeekProviderNotes = {}; return; }
+            const totals = {}, notes = {};
+            (data || []).forEach(r => { totals[r.employee_id] = parseFloat(r.amount) || 0; notes[r.employee_id] = r.notes || ''; });
+            currentWeekProvider = totals;
+            currentWeekProviderNotes = notes;
+        } catch (e) { console.error('loadCurrentWeekProvider:', e); currentWeekProvider = {}; currentWeekProviderNotes = {}; }
     }
 
     // ---- Payroll week selector (drives historical payroll) --------------
@@ -5101,8 +5283,8 @@
         }, 500);
     }
 
-    function flashSaved() {
-        const el = document.getElementById('dailypay-saveflash');
+    function flashSaved(elId) {
+        const el = document.getElementById(elId || 'dailypay-saveflash');
         if (!el) return;
         el.classList.add('show');
         clearTimeout(el._t);
@@ -5113,14 +5295,14 @@
     function printPayrollForEmployee(empId) {
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
-        const isDaily = getPayType(emp.id) === 'Daily';
-        const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
+        const payType = getPayType(emp.id);
+        const base = payType === 'Daily' ? (currentWeekDaily[emp.id] || 0) : payType === 'Provider' ? (currentWeekProvider[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
         const routePay = currentWeekRoutePay(emp);
         const income = activeWeeklyIncome(emp.id);
         const gross = base + routePay + income;
         const ded = activeWeeklyDeductions(emp.id, gross);
         const net = gross - ded;
-        const detail = payrollDetailHtml(emp, isDaily, base, routePay, ded, income);
+        const detail = payrollDetailHtml(emp, payType, base, routePay, ded, income);
         document.getElementById('print-area').innerHTML = `
             <h1>Payroll — ${escHtml(emp.first_name)} ${escHtml(emp.last_name)} (${emp.id})</h1>
             <div class="print-meta">Week of ${fmtWeekLabel(payrollSunday())} · Printed ${new Date().toLocaleDateString()}</div>
@@ -5283,8 +5465,9 @@
         const statusFilter = document.getElementById('payroll-status-filter').value;
         const query = (document.getElementById('payroll-search').value || '').toLowerCase();
 
-        // Load the selected week's daily totals (historical), then label the week.
+        // Load the selected week's daily and provider totals (historical), then label the week.
         await loadCurrentWeekDaily();
+        await loadCurrentWeekProvider();
         const plabel = document.getElementById('payroll-week-label');
         if (plabel) plabel.textContent = fmtWeekLabel(payrollSunday());
 
@@ -5301,14 +5484,14 @@
         // Compute each person's numbers once so both the sort and the two
         // render branches below can reuse them instead of recalculating.
         let calc = list.map(emp => {
-            const isDaily = getPayType(emp.id) === 'Daily';
-            const base = isDaily ? (currentWeekDaily[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
+            const payType = getPayType(emp.id);
+            const base = payType === 'Daily' ? (currentWeekDaily[emp.id] || 0) : payType === 'Provider' ? (currentWeekProvider[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
             const routePay = currentWeekRoutePay(emp);
             const income = activeWeeklyIncome(emp.id);
             const gross = base + routePay + income;
             const ded = activeWeeklyDeductions(emp.id, gross);
             const net = gross - ded;
-            return { emp, isDaily, base, routePay, income, gross, ded, net };
+            return { emp, payType, base, routePay, income, gross, ded, net };
         });
         calc = applySort(calc, 'payroll', {
             employee: c => `${c.emp.first_name} ${c.emp.last_name}`,
@@ -5328,14 +5511,15 @@
             container.className = '';
             if (!calc.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>'; renderPayrollFoot(0, 0, 0, 0, 0, 0); return; }
             let rows = '';
-            calc.forEach(({ emp, isDaily, base, routePay, income, gross, ded, net }) => {
+            calc.forEach(({ emp, payType, base, routePay, income, gross, ded, net }) => {
                 totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
                 const open = recExpanded.payroll.has(emp.id);
+                const payPill = payType === 'Daily' ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : payType === 'Provider' ? ' <span class="pay-pill pay-provider" style="font-size:9px;">provider</span>' : '';
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('payroll','${emp.id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="payroll-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
                     <td>${emp.first_name} ${emp.last_name}</td>
                     <td>${emp.person_type}</td>
-                    <td>${formatMoney(base)}${isDaily ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : ''}</td>
+                    <td>${formatMoney(base)}${payPill}</td>
                     <td>${formatMoney(routePay)}</td>
                     <td>${formatMoney(income)}</td>
                     <td>${formatMoney(gross)}</td>
@@ -5343,7 +5527,7 @@
                     <td style="font-weight:700;">${formatMoney(net)}</td>
                 </tr>
                 <tr class="rec-card${open ? ' open' : ''}" id="rec-payroll-${emp.id}" style="display:${open ? 'table-row' : 'none'};">
-                    <td colspan="9" style="padding:0; background:var(--surface-2);">${payrollDetailHtml(emp, isDaily, base, routePay, ded, income)}</td>
+                    <td colspan="9" style="padding:0; background:var(--surface-2);">${payrollDetailHtml(emp, payType, base, routePay, ded, income)}</td>
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
@@ -5357,10 +5541,11 @@
         container.className = 'record-grid';
         container.innerHTML = calc.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>';
 
-        calc.forEach(({ emp, isDaily, base, routePay, income, gross, ded, net }) => {
+        calc.forEach(({ emp, payType, base, routePay, income, gross, ded, net }) => {
             totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
 
             const open = recExpanded.payroll.has(emp.id);
+            const payPill = payType === 'Daily' ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : payType === 'Provider' ? ' <span class="pay-pill pay-provider" style="font-size:9px;">provider</span>' : '';
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-payroll-${emp.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('payroll','${emp.id}')">
@@ -5372,13 +5557,13 @@
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
                             <div><div class="k">Type</div><div class="v">${emp.person_type}</div></div>
-                            <div><div class="k">Base pay (wk)</div><div class="v">${formatMoney(base)}${isDaily ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : ''}</div></div>
+                            <div><div class="k">Base pay (wk)</div><div class="v">${formatMoney(base)}${payPill}</div></div>
                             <div><div class="k">Route pay (wk)</div><div class="v">${formatMoney(routePay)}</div></div>
                             <div><div class="k">Gross</div><div class="v">${formatMoney(gross)}</div></div>
                             <div><div class="k">Weekly deductions</div><div class="v" style="color:#dc2626;">${ded > 0 ? '−' + formatMoney(ded) : formatMoney(0)}</div></div>
                             <div><div class="k">Net pay</div><div class="v" style="font-weight:700;">${formatMoney(net)}</div></div>
                         </div>
-                        ${payrollDetailHtml(emp, isDaily, base, routePay, ded, income)}
+                        ${payrollDetailHtml(emp, payType, base, routePay, ded, income)}
                     </div>
                 </div>`);
         });
@@ -5410,13 +5595,18 @@
 
     // Expanded breakdown for one payroll row: paid days / base pay (+ route
     // pay for drivers) on the left, itemized weekly deductions on the right.
-    function payrollDetailHtml(emp, isDaily, base, routePay, ded, income) {
+    function payrollDetailHtml(emp, payType, base, routePay, ded, income) {
         let baseHtml;
-        if (isDaily) {
+        if (payType === 'Daily') {
             const days = currentWeekDailyDetail[emp.id] || [];
             baseHtml = days.length
                 ? `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Day</th><th style="text-align:right;">Pay</th></tr></thead><tbody>${days.map(d => `<tr><td>${d.label}</td><td style="text-align:right;">${d.is_off ? '<em style="color:var(--text-muted);">OFF</em>' : formatMoney(d.amount)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td>Base (daily total)</td><td style="text-align:right;">${formatMoney(base)}</td></tr></tbody></table>`
                 : `<div style="color:var(--text-muted);font-size:12px;">No daily pay entered for ${currentWeekLabel}.</div>`;
+        } else if (payType === 'Provider') {
+            const notes = currentWeekProviderNotes[emp.id] || '';
+            baseHtml = base > 0 || notes
+                ? `<table style="width:100%;font-size:12px;"><tbody><tr><td>Provider pay${notes ? ' · ' + escHtml(notes) : ''}</td><td style="text-align:right;font-weight:700;">${formatMoney(base)}</td></tr></tbody></table>`
+                : `<div style="color:var(--text-muted);font-size:12px;">No provider pay entered for ${currentWeekLabel}.</div>`;
         } else {
             baseHtml = `<table style="width:100%;font-size:12px;"><tbody><tr><td>Weekly salary</td><td style="text-align:right;font-weight:700;">${formatMoney(base)}</td></tr></tbody></table>`;
         }
@@ -5478,7 +5668,7 @@
         return `<div style="padding:8px 12px 0;"><button type="button" class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); printPayrollForEmployee('${emp.id}')">🖨 Print payslip</button></div>
                 <div style="display:flex;flex-wrap:wrap;gap:16px;padding:12px 12px;">
                     <div style="flex:1;min-width:240px;">
-                        <div class="detail-subhead">Paid days / base pay${isDaily ? ' · ' + currentWeekLabel : ''}</div>
+                        <div class="detail-subhead">Paid days / base pay${payType !== 'Weekly' ? ' · ' + currentWeekLabel : ''}</div>
                         ${baseHtml}${routeHtml}${incomeHtml}
                     </div>
                     <div style="flex:1;min-width:240px;">
