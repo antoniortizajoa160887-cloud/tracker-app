@@ -1557,8 +1557,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.54';
+    const APP_VERSION = 'v2.55';
     const CHANGELOG = [
+        { version: 'v2.55', date: '2026-08-06', notes: 'Fixed being unable to switch anyone to Provider pay — last version added Provider as an option, but missed three real spots that were still hardcoded to only know about Weekly and Daily: the quick ↺ toggle button on the Employees list (was a strict Weekly/Daily flip-flop with no way to ever land on Provider), the employee form\'s own save handler (would have silently saved "Weekly" even if you picked Provider from the dropdown), and the bulk CSV import. All three now correctly handle all three pay types. The quick toggle now cycles Weekly → Daily → Provider → back to Weekly.' },
         { version: 'v2.54', date: '2026-08-06', notes: 'New: Provider Pay — a third pay category alongside Weekly and Daily, for providers whose pay isn\'t a flat rate. Set someone\'s Pay Type to "Provider" in the Employees tab, and they show up on the new Provider Pay tab (right next to Daily Pay), where you enter one amount for the week plus an optional note — no day-by-day breakdown, since that\'s not how these get paid. Entries save automatically and flow straight into Payroll the same way Daily Pay already does, with its own badge so it\'s easy to tell at a glance which pay category someone is on. Note: I built this as one amount per week rather than a 7-day grid — if you actually need day-by-day entry for providers too, let me know and I\'ll adjust it.' },
         { version: 'v2.53', date: '2026-08-06', notes: 'Fixed mouse scrolling. Traced it to a setting added a few versions back specifically to smooth out a small visual glitch on iPhone (where the phone\'s own natural bounce-scroll was fighting the pull-to-refresh indicator) — that setting was applied everywhere, including desktop, where it had no business being and could interfere with scrolling through the app\'s tables and lists with a mouse. It now only applies on touchscreens, where it was actually needed, and never touches mouse/trackpad scrolling at all.' },
         { version: 'v2.52', date: '2026-08-06', notes: 'Fixed the Messages text box — the app\'s dark themes style every input and dropdown to match, but textareas had been completely skipped from that styling since Messages introduced the first one, so it was showing up as a plain white browser box that clashed with everything around it. It now matches the rest of the app in all three themes, same border, background, and focus behavior as every other field.' },
@@ -2924,7 +2925,7 @@
             start: document.getElementById('emp-start').value || null,
             pay: parseFloat(document.getElementById('emp-payrate').value) || 0,
             ssn: document.getElementById('emp-idnum').value.trim(),
-            payType: document.getElementById('emp-paytype').value === 'Daily' ? 'Daily' : 'Weekly'
+            payType: ['Daily', 'Provider'].includes(document.getElementById('emp-paytype').value) ? document.getElementById('emp-paytype').value : 'Weekly'
         };
     }
 
@@ -3162,7 +3163,7 @@
                 const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
                 const d = getEmpDetail(emp.id);
                 const pt = getPayType(emp.id);
-                const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="event.stopPropagation(); togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '';
+                const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="event.stopPropagation(); togglePayType('${emp.id}')" title="Cycle Weekly / Daily / Provider pay">↺</button>` : '';
                 const statusCell = editable
                     ? `<select onclick="event.stopPropagation();" onchange="event.stopPropagation(); setEmployeeStatus('${emp.id}', this.value)" style="padding:3px 4px;font-size:11px;border-radius:5px;">
                            <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
@@ -3197,7 +3198,7 @@
             const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
             const d = getEmpDetail(emp.id);
             const pt = getPayType(emp.id);
-            const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="togglePayType('${emp.id}')" title="Switch Weekly Salary / Daily Rate">↺</button>` : '';
+            const payToggle = editable ? ` <button class="btn-small" style="padding:0.15rem 0.4rem;font-size:0.65rem;margin:0;" onclick="togglePayType('${emp.id}')" title="Cycle Weekly / Daily / Provider pay">↺</button>` : '';
             const statusCell = editable
                 ? `<select onchange="setEmployeeStatus('${emp.id}', this.value)" style="padding:3px 4px;font-size:11px;border-radius:5px;">
                        <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
@@ -3211,7 +3212,7 @@
                         <span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="rec-sub">${emp.id}</span>
-                        <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : 'pay-weekly'}">${pt === 'Daily' ? 'Daily' : 'Weekly'}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span></span>
+                        <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : pt === 'Provider' ? 'pay-provider' : 'pay-weekly'}">${pt}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span></span>
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
@@ -3382,7 +3383,8 @@
                     p_notes: details.notes, p_phone: details.phone, p_email: details.email
                 });
             } catch (e) {}
-            const ptv = (get(r, idx.payType).toLowerCase() === 'daily') ? 'Daily' : 'Weekly';
+            const rawPayType = get(r, idx.payType).toLowerCase();
+            const ptv = rawPayType === 'daily' ? 'Daily' : rawPayType === 'provider' ? 'Provider' : 'Weekly';
             await setPayType(id, ptv, co);
             ok++;
         }
@@ -4785,13 +4787,16 @@
         if (!canEdit()) return;
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
-        const next = getPayType(empId) === 'Daily' ? 'Weekly' : 'Daily';
+        const cur = getPayType(empId);
+        const next = cur === 'Weekly' ? 'Daily' : cur === 'Daily' ? 'Provider' : 'Weekly';
+        const nextLabel = next === 'Daily' ? 'Daily Rate' : next === 'Provider' ? 'Provider (variable)' : 'Weekly Salary';
         const co = requireWriteCompany();
         if (!co) return;
-        if (!confirm(`Set ${emp.first_name} ${emp.last_name} to ${next === 'Daily' ? 'Daily Rate' : 'Weekly Salary'}?`)) return;
+        if (!confirm(`Set ${emp.first_name} ${emp.last_name} to ${nextLabel}?`)) return;
         await setPayType(empId, next, co);
         renderEmployees();
         if (document.getElementById('tab-dailypay').classList.contains('active')) renderDailyPay();
+        if (document.getElementById('tab-providerpay').classList.contains('active')) renderProviderPay();
     }
 
     function isMissingTable(error) {
