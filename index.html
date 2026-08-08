@@ -581,6 +581,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
 </div>
 <div class="tabs sub-tabs" id="grp-admin">
     <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
@@ -1190,6 +1191,54 @@
     </div>
 </div>
 
+<!-- TAB: MESSAGES -->
+<div id="tab-messages" class="tab-content">
+    <div class="panel">
+        <h2 class="panel-head" onclick="toggleCollapse(this)">New Message <span class="caret">&#9662;</span></h2>
+        <div class="form-row">
+            <div class="field field-wide">
+                <label>Employee</label>
+                <select id="msg-employee" onchange="onMessageEmployeeChange()"><option value="">— Select employee —</option></select>
+            </div>
+        </div>
+        <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin:6px 0;">Regarding</label>
+        <div class="regarding-toggle" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+            <button type="button" class="btn-small msg-cat-btn active" data-cat="General" onclick="setMessageCategory('General')" style="border-radius:999px;">General note</button>
+            <button type="button" class="btn-small msg-cat-btn" data-cat="Missing Day" onclick="setMessageCategory('Missing Day')" style="border-radius:999px;background:#64748b;">Missing day</button>
+            <button type="button" class="btn-small msg-cat-btn" data-cat="Claim" onclick="setMessageCategory('Claim')" style="border-radius:999px;background:#64748b;">Claim</button>
+            <button type="button" class="btn-small msg-cat-btn" data-cat="Charge" onclick="setMessageCategory('Charge')" style="border-radius:999px;background:#64748b;">Charge</button>
+            <button type="button" class="btn-small msg-cat-btn" data-cat="Income" onclick="setMessageCategory('Income')" style="border-radius:999px;background:#64748b;">Additional income</button>
+        </div>
+        <div class="form-row" id="msg-linked-row" style="display:none;">
+            <div class="field field-wide">
+                <label id="msg-linked-label">Linked record</label>
+                <select id="msg-linked-select"><option value="">— Select —</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="field field-wide">
+                <label>Message</label>
+                <textarea id="msg-text" rows="3" placeholder="e.g. Called about Tuesday 8/4 — says he was sick, no route logged that day."></textarea>
+            </div>
+        </div>
+        <div class="note-box" id="msg-visibility-note" style="display:flex; align-items:flex-start; gap:8px;">
+            <span>🔒</span><span>Only you and Medium-level staff and above will be able to see this message.</span>
+        </div>
+        <button type="button" class="btn" onclick="postEmployeeMessage()">Post Message</button>
+    </div>
+
+    <div class="panel">
+        <div class="form-row" style="margin-bottom: 10px;">
+            <div class="field field-wide">
+                <label>Filter by employee</label>
+                <select id="msg-filter-employee" onchange="renderEmployeeMessages()"><option value="">All employees you can see</option></select>
+            </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('messages')">✕ Clear filters</button>
+        </div>
+        <div id="messages-feed"></div>
+    </div>
+</div>
+
 <!-- TAB 7: SETTINGS -->
 <div id="tab-settings" class="tab-content">
     <!-- Language panel hidden until full translation coverage is done —
@@ -1454,8 +1503,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.44';
+    const APP_VERSION = 'v2.46';
     const CHANGELOG = [
+        { version: 'v2.46', date: '2026-08-06', notes: 'New: Messages — a new tab under HR & Payroll for notes tied to an employee, and optionally to one specific claim, charge, or additional income item. Meant for things like flagging a missing day or leaving a note on why a claim amount changed. Visibility works exactly as designed: everyone can see their own messages, Medium-level staff and above see every message, and View Only accounts never see another View Only account\'s messages — only their own, plus anything staff wrote back on their thread. View Only accounts can only post about their own employee record. Every post and delete is recorded in the audit log like everything else in the app.' },
+        { version: 'v2.45', date: '2026-08-06', notes: 'View Only accounts no longer see the Vehicles tab — fleet info is now Medium role and above only, matching how View Only\'s access already works everywhere else in the app.' },
         { version: 'v2.44', date: '2026-08-06', notes: 'A big Statement/Payroll/Daily Pay update. Printing: each claim and charge in Statement now has its own "Print schedule" button (full week-by-week payment history, one item at a time), and each employee\'s Payroll detail has a "Print payslip" button — each prints just that one thing, not everything at once. Statement: removed the separate "Statement as of" date field entirely — it now uses the same Prev/Next/This week navigation as Payroll and Daily Pay, and every number on the page is driven purely by whichever week is selected, with no hidden fallback to today\'s date anywhere. Statement also gained bubble indicators at the top — claims/charges/additional income counts and their dollar totals — matching the style already used on the Claims tab. Daily Pay, Payroll, and Statement now all open to last week by default instead of the current week (the "This week" button still correctly jumps to the real current week when tapped).' },
         { version: 'v2.43', date: '2026-08-06', notes: 'Fixes the "can\'t add or edit vehicles" error some of you may have hit right after the last database update — that was a real, temporary gap between the database and this file (the database side of a security fix landed slightly ahead of this file), not something wrong with your data. This version closes that gap: Vehicles now saves and edits correctly again. Two other things: every employee dropdown across the whole app now consistently shows Name then Employee ID, in that order, everywhere — a few had it backwards or missing the ID entirely. And the biggest one: found that the audit log (Administration → Log) was missing a real record of a lot of actions — not just Vehicles as reported, but deleting a claim, charge, or route entirely, resetting a company\'s data, changing someone\'s pay type, editing income, editing employee details, and more all left zero trace before this. All of it now writes a proper log entry, tested individually before shipping.' },
         { version: 'v2.42', date: '2026-08-06', notes: 'Claims on desktop now works the same way Employees and Payroll already do: instead of one very wide table showing every column at once (Claim ID, Employee, Emp ID, Claimant Acct, Company, Carrier #, Customer #, Damage Type, Amount, Weeks, Balance, Absorbed, Start, Ends, Status, Action — all 16 columns, needing horizontal scroll to see the rest), each row now shows a short summary and taps open to reveal everything else, matching exactly what the mobile card already showed. Built this so mobile and desktop share the exact same detail content from one place — they can\'t drift out of sync with each other going forward.' },
@@ -1980,7 +2031,7 @@
     function openTab(evt, tabName) {
         // View Only users may only open their 6 permitted tabs.
         if (currentUserRole === 'User') {
-            const allowed = ['tab-notifications','tab-vehicles','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll'];
+            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll','tab-messages'];
             if (!allowed.includes(tabName)) return;
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -1989,6 +2040,7 @@
         if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
         if(tabName === 'tab-notifications') renderNotifications();
         if(tabName === 'tab-vehicles') renderVehicles();
+        if(tabName === 'tab-messages') renderMessagesTab();
         if(tabName === 'tab-claims') renderClaims();
         if(tabName === 'tab-charges') { renderCharges(); renderIncome(); }
         if(tabName === 'tab-report') renderDailyReport();
@@ -2007,7 +2059,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll'],
+        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-statement', 'tab-payroll', 'tab-messages'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
 
@@ -2997,6 +3049,10 @@
             case 'vehicles':
                 setVal('vehicle-search', '');
                 renderVehicles();
+                break;
+            case 'messages':
+                setVal('msg-filter-employee', '');
+                renderEmployeeMessages();
                 break;
         }
     }
@@ -5049,6 +5105,147 @@
             ${detail}
         `;
         window.print();
+    }
+
+    // ===== MESSAGES ========================================================
+    let employeeMessages = [];
+    let messageCategory = 'General';
+
+    function populateMessageEmployeeDropdowns() {
+        const isViewOnly = currentUserRole === 'User';
+        const myEmpId = currentUser && currentUser.employee_id;
+        const scoped = isViewOnly ? employees.filter(e => e.id === myEmpId) : employees;
+        const sorted = scoped.slice().sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
+        const opts = sorted.map(e => `<option value="${e.id}">${employeeOptionLabel(e)}</option>`).join('');
+
+        const empSel = document.getElementById('msg-employee');
+        if (empSel) {
+            empSel.innerHTML = '<option value="">— Select employee —</option>' + opts;
+            if (isViewOnly && sorted.length === 1) empSel.value = sorted[0].id; // nothing to choose, so pick it for them
+        }
+        const filterSel = document.getElementById('msg-filter-employee');
+        if (filterSel) {
+            const prev = filterSel.value;
+            filterSel.innerHTML = '<option value="">All employees you can see</option>' + opts;
+            if (sorted.some(e => e.id === prev)) filterSel.value = prev;
+        }
+        onMessageEmployeeChange();
+    }
+
+    function setMessageCategory(cat) {
+        messageCategory = cat;
+        document.querySelectorAll('.msg-cat-btn').forEach(b => {
+            const active = b.getAttribute('data-cat') === cat;
+            b.style.background = active ? 'var(--navy)' : '#64748b';
+        });
+        const row = document.getElementById('msg-linked-row');
+        const label = document.getElementById('msg-linked-label');
+        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
+        if (map[cat]) {
+            row.style.display = '';
+            label.textContent = cat === 'Claim' ? 'Linked claim' : cat === 'Charge' ? 'Linked charge' : 'Linked income record';
+            onMessageEmployeeChange();
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+    // Repopulates the linked-record dropdown for whichever employee + category is currently selected.
+    function onMessageEmployeeChange() {
+        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
+        const table = map[messageCategory];
+        const sel = document.getElementById('msg-linked-select');
+        if (!sel || !table) return;
+        const empId = document.getElementById('msg-employee').value;
+        const source = table === 'claims' ? claims : table === 'charges' ? charges : additionalIncome;
+        const idField = table === 'claims' ? 'claim_id' : table === 'charges' ? 'charge_id' : 'income_id';
+        const labelField = table === 'claims' ? 'damage_type' : table === 'charges' ? 'charge_type' : 'income_type';
+        const items = empId ? source.filter(x => x.employee_id === empId) : [];
+        sel.innerHTML = '<option value="">— Select —</option>' + items.map(x => `<option value="${x[idField]}">${x[idField]} · ${x[labelField] || ''}</option>`).join('');
+    }
+
+    async function postEmployeeMessage() {
+        const empId = document.getElementById('msg-employee').value;
+        const text = document.getElementById('msg-text').value.trim();
+        if (!empId) { alert('Select an employee first.'); return; }
+        if (!text) { alert('Write a message first.'); return; }
+        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
+        const linkedTable = map[messageCategory] || null;
+        const linkedId = linkedTable ? (document.getElementById('msg-linked-select').value || null) : null;
+        if (linkedTable && !linkedId) { alert(`Select which ${messageCategory.toLowerCase()} this is about, or switch to "General note".`); return; }
+
+        const { error } = await supabaseClient.rpc('post_employee_message', {
+            p_actor: currentUsername, p_employee_id: empId, p_category: messageCategory,
+            p_linked_table: linkedTable, p_linked_id: linkedId, p_message: text
+        });
+        if (error) { alert('Error: ' + error.message); return; }
+        document.getElementById('msg-text').value = '';
+        await fetchEmployeeMessages();
+        renderEmployeeMessages();
+    }
+
+    async function fetchEmployeeMessages() {
+        const { data, error } = await supabaseClient.rpc('get_employee_messages', { p_actor: currentUsername, p_company: currentCompany, p_employee_id: null });
+        if (error) { console.error('get_employee_messages:', error); employeeMessages = []; return; }
+        employeeMessages = data || [];
+    }
+
+    async function deleteEmployeeMessage(id) {
+        if (!confirm('Delete this message?')) return;
+        const { error } = await supabaseClient.rpc('delete_employee_message', { p_actor: currentUsername, p_id: id });
+        if (error) { alert('Error: ' + error.message); return; }
+        await fetchEmployeeMessages();
+        renderEmployeeMessages();
+    }
+
+    const MSG_CATEGORY_PILL = {
+        'General': 'background:#eef2f1;color:#0b1f1c;', 'Missing Day': 'background:#fef3c7;color:#92400e;',
+        'Claim': 'background:#e0f2fe;color:#075985;', 'Charge': 'background:#fee2e2;color:#991b1b;', 'Income': 'background:#dcfce7;color:#166534;'
+    };
+
+    function renderEmployeeMessages() {
+        const container = document.getElementById('messages-feed');
+        if (!container) return;
+        const filterEmp = document.getElementById('msg-filter-employee')?.value || '';
+        const list = filterEmp ? employeeMessages.filter(m => m.employee_id === filterEmp) : employeeMessages;
+        if (!list.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">No messages yet.</div>'; return; }
+
+        container.innerHTML = list.map(m => {
+            const emp = employees.find(e => e.id === m.employee_id);
+            const empName = emp ? `${emp.first_name} ${emp.last_name}` : m.employee_id;
+            const linkedBadge = m.linked_table
+                ? `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)} ${escHtml(m.linked_id || '')}</span>`
+                : `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)}</span>`;
+            const isMine = m.posted_by === currentUsername;
+            const canDelete = isMine || canEdit();
+            const visLine = isMine
+                ? '🔒 Posted by you — visible to you and staff only'
+                : (m.posted_by_role && m.posted_by_role !== 'User' ? '🌐 Visible to all Medium+ staff' : '🔒 Visible to staff and the poster only');
+            return `
+                <div class="rec-card" style="margin-bottom:10px;">
+                    <div style="padding:12px 14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                                <span class="type-pill">${escHtml(empName)} · ${m.employee_id}</span>
+                                ${linkedBadge}
+                            </div>
+                            <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${escHtml(m.posted_by)}${m.posted_by_role ? ' (' + m.posted_by_role + ')' : ''} · ${new Date(m.created_at).toLocaleString()}</span>
+                        </div>
+                        <div style="font-size:13.5px; line-height:1.5; margin-bottom:8px;">${escHtml(m.message)}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:11px; color:var(--text-muted);">${visLine}</span>
+                            ${canDelete ? `<span class="del-btn" onclick="deleteEmployeeMessage(${m.id})">✕ Delete</span>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    async function renderMessagesTab() {
+        populateMessageEmployeeDropdowns();
+        setMessageCategory('General');
+        await fetchEmployeeMessages();
+        renderEmployeeMessages();
     }
 
     async function renderPayroll() {
