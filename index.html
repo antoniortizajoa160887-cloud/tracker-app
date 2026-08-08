@@ -192,7 +192,15 @@
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
-    body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0.75rem; line-height: 1.4; overflow-x: hidden; width: 100%; overscroll-behavior-y: contain; }
+    body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0.75rem; line-height: 1.4; overflow-x: hidden; width: 100%; }
+    /* Only touch-primary devices (phones/tablets) get this — it stops iOS's
+       native bounce from visually clashing with the hand-built pull-to-
+       refresh indicator, but on a mouse/trackpad device it blocks normal
+       scroll-chaining out of the app's many nested scrollable containers
+       (table wrappers, schedule lists) back to the page, which looks
+       exactly like "scrolling stopped working" the moment the cursor is
+       over one of those. Keeping it touch-only avoids that entirely. */
+    @media (pointer: coarse) { body { overscroll-behavior-y: contain; } }
     h1 { margin-top: 0; font-size: 1.35rem; color: var(--secondary); letter-spacing: -0.01em; }
     h2 { margin-top: 0; font-size: 1.05rem; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; color: var(--secondary); }
     .container { width: 100%; max-width: 1600px; margin: 0 auto; }
@@ -1513,8 +1521,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.52';
+    const APP_VERSION = 'v2.53';
     const CHANGELOG = [
+        { version: 'v2.53', date: '2026-08-06', notes: 'Fixed mouse scrolling. Traced it to a setting added a few versions back specifically to smooth out a small visual glitch on iPhone (where the phone\'s own natural bounce-scroll was fighting the pull-to-refresh indicator) — that setting was applied everywhere, including desktop, where it had no business being and could interfere with scrolling through the app\'s tables and lists with a mouse. It now only applies on touchscreens, where it was actually needed, and never touches mouse/trackpad scrolling at all.' },
         { version: 'v2.52', date: '2026-08-06', notes: 'Fixed the Messages text box — the app\'s dark themes style every input and dropdown to match, but textareas had been completely skipped from that styling since Messages introduced the first one, so it was showing up as a plain white browser box that clashed with everything around it. It now matches the rest of the app in all three themes, same border, background, and focus behavior as every other field.' },
         { version: 'v2.51', date: '2026-08-06', notes: 'Charges now has a "Paid" status option (it was missing — only Queued/Deducting/Absorbed/Tk from check existed before). And the automatic "mark as Paid once it\'s actually finished" behavior that claims already had now runs for charges and additional income too — a charge or income item that reaches $0 and stays there for a week gets automatically switched to Paid overnight, exactly the same rule claims have used all along. Verified this against real payoff data (a charge and an income item, each fully paid off) before turning it on.' },
         { version: 'v2.50', date: '2026-08-06', notes: 'Fixed claim and charge schedules disappearing once something is Paid or Absorbed — Statement and the print buttons were showing "No schedule to project" for anything already resolved, even though the real payment history obviously still happened and should still be viewable. Verified against a real resolved claim before shipping: it now correctly shows all 4 of its actual weekly payments again. Also simplified the wording on Messages — it now just says "Messages are kept private" instead of spelling out the exact role rule every time.' },
