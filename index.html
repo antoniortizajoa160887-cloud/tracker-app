@@ -1503,8 +1503,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.46';
+    const APP_VERSION = 'v2.47';
     const CHANGELOG = [
+        { version: 'v2.47', date: '2026-08-06', notes: 'Added real PWA behavior and pull-to-refresh. Installed copies of the app now load instantly and stay usable if the connection briefly drops, though your actual data always requires a live connection — this app doesn\'t try to show you stale numbers when offline. Pull-to-refresh: pull down from the top of any screen to re-sync the current tab\'s data, the same gesture you\'d expect from any phone app — this matters especially once installed, since installed apps don\'t get the browser\'s built-in pull-to-refresh. One deployment note: this required a second file, sw.js, alongside index.html — upload both to the same folder in GitHub. If sw.js isn\'t there, the app still works completely normally, it just won\'t have the offline-shell behavior until it is.' },
         { version: 'v2.46', date: '2026-08-06', notes: 'New: Messages — a new tab under HR & Payroll for notes tied to an employee, and optionally to one specific claim, charge, or additional income item. Meant for things like flagging a missing day or leaving a note on why a claim amount changed. Visibility works exactly as designed: everyone can see their own messages, Medium-level staff and above see every message, and View Only accounts never see another View Only account\'s messages — only their own, plus anything staff wrote back on their thread. View Only accounts can only post about their own employee record. Every post and delete is recorded in the audit log like everything else in the app.' },
         { version: 'v2.45', date: '2026-08-06', notes: 'View Only accounts no longer see the Vehicles tab — fleet info is now Medium role and above only, matching how View Only\'s access already works everywhere else in the app.' },
         { version: 'v2.44', date: '2026-08-06', notes: 'A big Statement/Payroll/Daily Pay update. Printing: each claim and charge in Statement now has its own "Print schedule" button (full week-by-week payment history, one item at a time), and each employee\'s Payroll detail has a "Print payslip" button — each prints just that one thing, not everything at once. Statement: removed the separate "Statement as of" date field entirely — it now uses the same Prev/Next/This week navigation as Payroll and Daily Pay, and every number on the page is driven purely by whichever week is selected, with no hidden fallback to today\'s date anywhere. Statement also gained bubble indicators at the top — claims/charges/additional income counts and their dollar totals — matching the style already used on the Claims tab. Daily Pay, Payroll, and Statement now all open to last week by default instead of the current week (the "This week" button still correctly jumps to the real current week when tapped).' },
@@ -7119,6 +7120,70 @@
         if (notice) notice.style.display = 'block';
     }
     checkExistingSession();
+
+    // ---- PWA: service worker (optional — silently does nothing if sw.js
+    // isn't deployed alongside this file, so this never breaks the app) ----
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(() => {}); // sw.js not deployed yet — fine, just skip PWA install/offline-shell support until it is
+        });
+    }
+
+    // ---- Pull-to-refresh ---------------------------------------------
+    // Standalone/installed PWAs have no browser chrome, so there's no
+    // native pull-to-refresh gesture to rely on there — build a simple one
+    // by hand. Only triggers when the page is scrolled all the way to the
+    // top (so it never fights with normal scrolling), and re-fetches data
+    // for whichever tab is currently open instead of a full page reload,
+    // so navigation/filter state isn't lost.
+    (function setupPullToRefresh() {
+        const indicator = document.createElement('div');
+        indicator.id = 'ptr-indicator';
+        indicator.style.cssText = 'position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; background:var(--surface); color:var(--primary); font-size:13px; font-weight:700; z-index:9999; transition:height 0.15s ease; box-shadow:0 2px 6px rgba(0,0,0,0.08);';
+        indicator.textContent = '↓ Pull to refresh';
+        document.body.prepend(indicator);
+
+        let startY = null, pulling = false, refreshing = false;
+        const THRESHOLD = 70;
+
+        document.addEventListener('touchstart', (e) => {
+            if (refreshing) return;
+            if (window.scrollY > 0) { startY = null; return; }
+            const authVisible = document.getElementById('auth-container') && document.getElementById('auth-container').style.display !== 'none';
+            if (authVisible) { startY = null; return; } // don't fight the login screen
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!pulling || startY === null || refreshing) return;
+            const delta = e.touches[0].clientY - startY;
+            if (delta <= 0) { indicator.style.height = '0'; return; }
+            const capped = Math.min(delta * 0.5, 90); // resistance, so it doesn't feel like it's flying open
+            indicator.style.height = capped + 'px';
+            indicator.textContent = capped >= THRESHOLD ? '↑ Release to refresh' : '↓ Pull to refresh';
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            if (!pulling) return;
+            pulling = false;
+            const height = parseInt(indicator.style.height, 10) || 0;
+            if (height >= THRESHOLD && !refreshing) {
+                refreshing = true;
+                indicator.textContent = '⟳ Refreshing…';
+                indicator.style.height = '50px';
+                fetchAllDataFromCloud()
+                    .catch((err) => console.error('Pull-to-refresh failed:', err))
+                    .finally(() => {
+                        refreshing = false;
+                        indicator.style.height = '0';
+                    });
+            } else {
+                indicator.style.height = '0';
+            }
+            startY = null;
+        });
+    })();
 </script>
 
 
