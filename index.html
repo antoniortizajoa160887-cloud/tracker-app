@@ -1230,7 +1230,7 @@
             </div>
         </div>
         <div class="note-box" id="msg-visibility-note" style="display:flex; align-items:flex-start; gap:8px;">
-            <span>🔒</span><span>Only you and Medium-level staff and above will be able to see this message.</span>
+            <span>🔒</span><span>Messages are kept private.</span>
         </div>
         <button type="button" class="btn" onclick="postEmployeeMessage()">Post Message</button>
     </div>
@@ -1511,8 +1511,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.49';
+    const APP_VERSION = 'v2.50';
     const CHANGELOG = [
+        { version: 'v2.50', date: '2026-08-06', notes: 'Fixed claim and charge schedules disappearing once something is Paid or Absorbed — Statement and the print buttons were showing "No schedule to project" for anything already resolved, even though the real payment history obviously still happened and should still be viewable. Verified against a real resolved claim before shipping: it now correctly shows all 4 of its actual weekly payments again. Also simplified the wording on Messages — it now just says "Messages are kept private" instead of spelling out the exact role rule every time.' },
         { version: 'v2.49', date: '2026-08-06', notes: 'To answer directly: once the app is installed as a home screen shortcut, tapping it does NOT go through whatever browser the phone has set as default — it opens straight into its own standalone window, completely independent of that setting. That was already true, but added one missing piece (a "scope" setting) to make browsers honor this more consistently. The one real limit, worth being upfront about since it\'s an Apple restriction, not something any app can work around: on iPhone, the shortcut only opens standalone if it was installed through Safari specifically — installing via Chrome or another browser on iPhone doesn\'t get the same standalone treatment, because Apple only allows it through Safari\'s own install flow. On Android, this isn\'t a limitation — Chrome, Edge, and Samsung Internet all install and launch it standalone correctly.' },
         { version: 'v2.48', date: '2026-08-06', notes: 'Direct answer on the last update: yes, Android and iOS both work, but they behave a little differently, so here\'s the honest breakdown. Android (Chrome): full support out of the box — installs with a real icon, opens in its own window, works offline for the app shell, pull-to-refresh works. iOS (Safari): also fully supported, but Apple only lets you install by tapping Share → "Add to Home Screen" — there\'s no automatic "Install" prompt like Android has, that\'s an Apple platform limitation, not something any app can add. Found and fixed one real gap while double-checking this: without a couple of Apple-specific tags, iOS would have opened the installed app back inside Safari\'s browser bar instead of as its own clean app window, and would have shown the long full title under the icon instead of "Tracker" — both are fixed now. Also added a small screen-bounce fix so the pull-to-refresh gesture doesn\'t visually fight with iPhone\'s own natural scroll-bounce.' },
         { version: 'v2.47', date: '2026-08-06', notes: 'Added real PWA behavior and pull-to-refresh. Installed copies of the app now load instantly and stay usable if the connection briefly drops, though your actual data always requires a live connection — this app doesn\'t try to show you stale numbers when offline. Pull-to-refresh: pull down from the top of any screen to re-sync the current tab\'s data, the same gesture you\'d expect from any phone app — this matters especially once installed, since installed apps don\'t get the browser\'s built-in pull-to-refresh. One deployment note: this required a second file, sw.js, alongside index.html — upload both to the same folder in GitHub. If sw.js isn\'t there, the app still works completely normally, it just won\'t have the offline-shell behavior until it is.' },
@@ -1904,12 +1905,16 @@
     // balance reaches $0, applying rate changes and skipping pause weeks.
     function buildClaimSchedule(claim, asOf) {
         const owed = Math.max(0, (parseFloat(claim.claim_amount) || 0) - (parseFloat(claim.absorbed_amount) || 0));
-        // See remainingBalanceAsOf's comment above — same fix, same reasoning.
-        const viewingPast = asOf && asOf < todayStr();
-        const resolved = !viewingPast && (claim.status === 'Absorbed' || claim.status === 'Tk from check' || claim.status === 'Paid');
+        // No resolved-status shortcut here on purpose — claimBalance() already
+        // handles "resolved, so $0 as of today/future" on its own before ever
+        // calling this function. This function's job is to walk the REAL
+        // recorded history (start_date, rate changes, pauses) and show it —
+        // that history doesn't stop being real just because the claim later
+        // got marked Paid/Absorbed, and callers that want the full schedule
+        // table (Statement, printing) need it regardless of current status.
         const rows = [];
-        if (resolved || !claim.start_date || owed <= 0) {
-            return { rows, owed, balanceAsOf: resolved ? 0 : owed, endDate: null };
+        if (!claim.start_date || owed <= 0) {
+            return { rows, owed, balanceAsOf: owed, endDate: null };
         }
         let bal = owed;
         let d = new Date(claim.start_date + 'T00:00:00Z');
@@ -1989,11 +1994,12 @@
     }
     function buildChargeSchedule(charge, asOf) {
         const owed = Math.max(0, parseFloat(charge.amount) || 0);
-        const viewingPast = asOf && asOf < todayStr();
-        const resolved = !viewingPast && (charge.status === 'Absorbed' || charge.status === 'Tk from check');
+        // Same reasoning as buildClaimSchedule above — chargeBalance() already
+        // handles the resolved-status shortcut on its own; this function
+        // always shows the real recorded history.
         const rows = [];
-        if (resolved || !charge.start_date || owed <= 0) {
-            return { rows, owed, balanceAsOf: resolved ? 0 : owed, endDate: null };
+        if (!charge.start_date || owed <= 0) {
+            return { rows, owed, balanceAsOf: owed, endDate: null };
         }
         let bal = owed;
         let d = new Date(charge.start_date + 'T00:00:00Z');
