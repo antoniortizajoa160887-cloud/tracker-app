@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Logistics & HR Claims Dashboard</title>
+
+    <!-- PWA: installable, standalone-window, offline-capable via sw.js -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#08101A">
+    <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+    <link rel="icon" href="icons/favicon-16.png" sizes="16x16">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ULHR Dashboard">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+
     <script>(function(){try{var t=localStorage.getItem('tracker_theme');if(t==='dark'||t==='dark-emerald'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
