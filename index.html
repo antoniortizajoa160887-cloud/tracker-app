@@ -2939,8 +2939,24 @@
 
     function computeNextEmpId(type) {
         const letter = type === 'Staff' ? 'S' : type === 'Contractor' ? 'C' : type === 'Provider' ? 'P' : type === 'Owner' ? 'O' : type === 'Manager' ? 'M' : 'E';
-        const count = employees.filter(emp => emp.person_type === type).length + 1;
-        return `${idPrefix()}${String(count).padStart(settings.empDigits, '0')}${letter}`;
+        // Derive the next number from the highest existing ID that ends in this
+        // letter (scoped to the active company prefix), rather than counting
+        // records by person_type. Counting by type breaks whenever a record's
+        // person_type doesn't match its ID's letter suffix (e.g. a Contractor
+        // whose ID happens to end in 'E'), which undercounts the sequence and
+        // can produce an ID that's already taken.
+        const prefix = idPrefix();
+        let maxNum = 0;
+        employees.forEach(emp => {
+            const empId = String(emp.id || '');
+            if (prefix && !empId.startsWith(prefix)) return;
+            if (!empId.endsWith(letter)) return;
+            const numPart = empId.slice(prefix.length, empId.length - 1);
+            const n = parseInt(numPart, 10);
+            if (!isNaN(n) && n > maxNum) maxNum = n;
+        });
+        const count = maxNum + 1;
+        return `${prefix}${String(count).padStart(settings.empDigits, '0')}${letter}`;
     }
     function updateNextEmpId() {
         const el = document.getElementById('next-emp-id-display');
