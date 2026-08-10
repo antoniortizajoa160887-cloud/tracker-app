@@ -208,23 +208,56 @@
     /* Auth Screen */
     #auth-container { max-width: 380px; width: 100%; margin: 4rem auto; background: var(--surface); padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid var(--border); text-align: center; }
     @media (max-width: 600px) { #auth-container { max-width: 100%; margin: 2rem auto; } }
+
+    /* Login screen: always a fixed dark "brand" card, independent of the
+       Interface Theme the person eventually picks for the dashboard itself
+       (that choice only takes effect once they're signed in). */
+    body.auth-mode { background: radial-gradient(ellipse 900px 700px at 20% 15%, #16283e 0%, #0a1420 55%, #060a10 100%) fixed; min-height: 100vh; }
+    body.auth-mode #auth-container {
+        max-width: 420px; margin: 6vh auto; background: #12151f; border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 22px; padding: 2.25rem 2rem 2rem; box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    @media (max-width: 600px) { body.auth-mode #auth-container { margin: 3vh auto; } }
+    body.auth-mode #auth-container h2 { color: #f1f5f9; font-size: 1.5rem; font-weight: 800; margin: 0 0 6px; }
+    body.auth-mode #auth-container .login-subtitle { color: #8ea3bd; font-size: 0.82rem; margin: 0 0 1.6rem; }
+    body.auth-mode #auth-container label.field-label { display: none; }
+    body.auth-mode #auth-container input[type="text"],
+    body.auth-mode #auth-container input[type="password"] {
+        background: #f4f6f8; border: none; border-radius: 12px; padding: 13px 16px; min-height: 46px;
+        font-size: 15px; color: #16232E;
+    }
+    body.auth-mode #auth-container input::placeholder { color: #7c8a99; }
+    body.auth-mode #auth-container .btn { border-radius: 12px; padding: 13px 16px; font-size: 15px; letter-spacing: 0.01em; }
+    body.auth-mode #auth-container hr.login-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 1.4rem 0 1.1rem; }
+    body.auth-mode #auth-container .interface-theme-label { color: #7c8ea3; font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+    body.auth-mode #auth-container .theme-dot { width: 26px; height: 26px; border-radius: 50%; border: none; cursor: pointer; padding: 0; box-shadow: 0 0 0 2px #12151f, 0 0 0 3px rgba(255,255,255,0.12); transition: 0.15s; }
+    body.auth-mode #auth-container .theme-dot:hover { transform: scale(1.08); }
+    body.auth-mode #auth-container .theme-dot.active-theme-dot { box-shadow: 0 0 0 2px #12151f, 0 0 0 3px #fff; }
+    body.auth-mode #auth-container .theme-dot-light { background: linear-gradient(135deg, #6ee7b7, #059669); }
+    body.auth-mode #auth-container .theme-dot-ocean { background: linear-gradient(135deg, #38bdf8, #1d4ed8); }
+    body.auth-mode #auth-container .theme-dot-emerald { background: linear-gradient(135deg, #86efac, #15803d); }
     #app-container { display: none; }
     
-    /* Tabs - Scrollable on Mobile */
-    .tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; border-bottom: 2px solid var(--border); margin-bottom: 1rem; background: var(--surface); padding: 0 0.5rem; border-radius: 8px 8px 0 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-overflow-scrolling: touch; }
+    /* Tabs - Scrollable on Mobile. Navy bar with a white rounded "pill" for
+       the active tab, icon + label in each button. */
+    .tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; align-items: center; gap: 4px; margin-bottom: 1rem; background: var(--navy); padding: 6px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-overflow-scrolling: touch; }
     .tabs::-webkit-scrollbar { display: none; }
-    .tab-btn { background: none; border: none; padding: 0.9rem 0.9rem; min-height: 44px; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
-    .tab-btn:hover { color: var(--navy); }
-    .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+    .tab-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; padding: 0.7rem 0.9rem; min-height: 40px; font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.65); cursor: pointer; border-radius: 10px; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+    .tab-btn svg { flex-shrink: 0; }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: var(--navy); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .tab-btn.active svg.icon-dollar { color: var(--primary); }
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.3s; }
 
     /* Two-level nav: Logistics / HR & Payroll / Administration, each expands
-       its own row of tabs below when tapped. */
-    .tab-groups { display: flex; flex-wrap: nowrap; overflow-x: auto; background: var(--navy); border-radius: 8px 8px 0 0; padding: 0 0.5rem; -webkit-overflow-scrolling: touch; }
-    .group-btn { background: none; border: none; padding: 0.85rem 1rem; min-height: 44px; font-size: 0.88rem; font-weight: 800; color: rgba(255,255,255,0.65); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
-    .group-btn.active { color: #fff; border-bottom-color: #fff; }
-    .tabs.sub-tabs { display: none; border-radius: 0; margin-bottom: 1rem; }
+       its own row of tabs below when tapped. Same navy-bar / white-pill
+       treatment as the sub-tabs for a consistent look. */
+    .tab-groups { display: flex; flex-wrap: nowrap; overflow-x: auto; align-items: center; gap: 4px; background: var(--navy); border-radius: 8px 8px 0 0; padding: 6px; -webkit-overflow-scrolling: touch; }
+    .group-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; padding: 0.7rem 1rem; min-height: 40px; font-size: 0.88rem; font-weight: 800; color: rgba(255,255,255,0.65); cursor: pointer; border-radius: 10px; white-space: nowrap; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+    .group-btn:hover { color: #fff; }
+    .group-btn.active { color: var(--navy); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .tabs.sub-tabs { display: none; border-radius: 0 0 8px 8px; margin-top: -6px; margin-bottom: 1rem; }
     .tabs.sub-tabs.open { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
@@ -244,9 +277,13 @@
     input[type="date"], input[type="time"], input[type="datetime-local"] { -webkit-appearance: none; appearance: none; height: 44px; }
     input:focus, select:focus, textarea:focus { border-color: var(--navy); background: #fff; }
     [data-theme="dark"] textarea:focus, [data-theme="dark-emerald"] textarea:focus { background: var(--surface-2); }
-    .btn { background: var(--navy); color: white; border: none; padding: 10px 14px; font-size: 14px; font-weight: 700; border-radius: 6px; cursor: pointer; width: 100%; transition: 0.2s; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: var(--primary); color: white; border: none; padding: 12px 18px; font-size: 14px; font-weight: 700; border-radius: 12px; cursor: pointer; width: 100%; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
     @media(min-width: 600px) { .btn { width: auto; } }
-    .btn:hover { background: var(--navy-dark); }
+    .btn:hover { filter: brightness(0.94); }
+    .btn svg { flex-shrink: 0; }
+    .btn-icon-plus, .btn-icon-save { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; background-color: currentColor; }
+    .btn-icon-plus { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E") center/contain no-repeat; }
+    .btn-icon-save { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'/%3E%3Cpath d='M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7'/%3E%3Cpath d='M7 3v4a1 1 0 0 0 1 1h7'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'/%3E%3Cpath d='M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7'/%3E%3Cpath d='M7 3v4a1 1 0 0 0 1 1h7'/%3E%3C/svg%3E") center/contain no-repeat; }
     
     /* Tables */
     .table-wrapper { overflow-x: auto; margin-top: 0.5rem; border: 1px solid var(--border); border-radius: 6px; max-height: 500px; -webkit-overflow-scrolling: touch; position: relative; }
@@ -433,7 +470,7 @@
     }
 </style>
 </head>
-<body>
+<body class="auth-mode">
 <div id="print-area"></div>
 
 <div id="env-warning" style="display:none; background:#fef3c7; border-bottom:3px solid #f59e0b; color:#78350f; padding:14px 16px; font-size:0.9rem; text-align:center; position:sticky; top:0; z-index:1000;">
@@ -457,19 +494,21 @@
             <div style="font-size:0.62rem; letter-spacing:0.09em; text-transform:uppercase; color:var(--primary); font-weight:700; margin-top:2px;">Logistics · HR · Claims</div>
         </div>
     </div>
-    <h2 data-i18n="login_title">Secure Login</h2>
+    <h2 data-i18n="login_title">Tracker Login</h2>
+    <p class="login-subtitle" data-i18n="login_subtitle">Enter your details to access the dashboard</p>
     <div style="margin-bottom: 1rem; text-align: left;">
-        <label data-i18n="username_label">Username</label>
-        <input type="text" id="login-username" placeholder="Enter username" data-i18n-placeholder="username_ph">
+        <label class="field-label" data-i18n="username_label">Username</label>
+        <input type="text" id="login-username" placeholder="Username" data-i18n-placeholder="username_ph" aria-label="Username">
     </div>
     <div style="margin-bottom: 1.5rem; text-align: left;">
-        <label data-i18n="password_label">Password</label>
-        <input type="password" id="login-password" placeholder="••••••••">
+        <label class="field-label" data-i18n="password_label">Password</label>
+        <input type="password" id="login-password" placeholder="Password" data-i18n-placeholder="password_ph" aria-label="Password">
     </div>
     <button type="button" class="btn" style="width: 100%;" id="login-btn" onclick="handleLoginClick()" data-i18n="sign_in_btn">Sign In</button>
     <p id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem;"></p>
     <p id="login-timeout-notice" data-i18n="timeout_notice" style="color: #b45309; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
-    <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
+    <div style="margin-top:1.25rem; padding-top:1rem;">
+        <hr class="login-divider">
         <!-- Language picker hidden until full translation coverage is done —
              see id="language-picker-block" below and its Settings-tab twin.
              Re-show both once every tab is translated, not before. -->
@@ -480,11 +519,11 @@
                 <button type="button" class="btn-small" id="login-lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
             </div>
         </div>
-        <div data-i18n="appearance_label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Appearance</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
-            <button type="button" class="btn-small" id="login-theme-btn-light" onclick="setTheme('light')" style="margin:0;">☀ Light (current)</button>
-            <button type="button" class="btn-small" id="login-theme-btn-ocean" onclick="setTheme('dark')" style="margin:0;">🌊 Ocean</button>
-            <button type="button" class="btn-small" id="login-theme-btn-emerald" onclick="setTheme('dark-emerald')" style="margin:0;">🟢 Emerald</button>
+        <div class="interface-theme-label" data-i18n="login_theme_label">Interface Theme</div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+            <button type="button" class="theme-dot theme-dot-light" id="login-theme-btn-light" onclick="setTheme('light')" title="Light"></button>
+            <button type="button" class="theme-dot theme-dot-ocean" id="login-theme-btn-ocean" onclick="setTheme('dark')" title="Ocean"></button>
+            <button type="button" class="theme-dot theme-dot-emerald" id="login-theme-btn-emerald" onclick="setTheme('dark-emerald')" title="Emerald"></button>
         </div>
     </div>
 </div>
@@ -583,34 +622,34 @@
     </div>
 
 <div class="tab-groups" id="tab-groups">
-    <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
-    <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr" data-i18n="group_hr">HR &amp; Payroll</button>
-    <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin" data-i18n="group_admin">Administration</button>
+    <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg> <span data-i18n="group_logistics">Logistics</span></button>
+    <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg> <span data-i18n="group_hr">HR &amp; Payroll</span></button>
+    <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.3.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.4a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.3.2a2 2 0 0 1 1 1.7V20a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.3-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.4a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.3-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> <span data-i18n="group_admin">Administration</span></button>
 </div>
 <div class="tabs sub-tabs open" id="grp-logistics">
-    <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker" data-i18n="tab_tracker">Route Tracker</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report" data-i18n="tab_report">Daily Report</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Vehicles</button>
+    <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg> <span data-i18n="tab_tracker">Route Tracker</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><circle cx="18" cy="18" r="4"/><path d="M18 16.5V18l1 1"/></svg> <span data-i18n="tab_report">Daily Report</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg> <span data-i18n="tab_vehicles">Vehicles</span></button>
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
-    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges" data-i18n="tab_charges">Charges &amp; Income</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> <span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span data-i18n="tab_employees">Employees</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg> <span data-i18n="tab_claims">Claims</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges"><svg class="icon-dollar" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> <span data-i18n="tab_charges">Charges &amp; Income</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg> <span data-i18n="tab_dailypay">Daily Pay</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg> Provider Pay</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg> <span data-i18n="tab_statement">Statement</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll"><svg class="icon-dollar" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> <span data-i18n="tab_payroll">Payroll</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg> Messages</button>
 </div>
 <div class="tabs sub-tabs" id="grp-admin">
-    <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;" data-i18n="tab_users">Users</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;" data-i18n="tab_companies">Companies</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;" data-i18n="tab_approvals">Approvals</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;" data-i18n="tab_log">Log</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.3.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.4a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.3.2a2 2 0 0 1 1 1.7V20a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.3-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.4a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.3-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> <span data-i18n="tab_settings">Settings</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h3.5"/><circle cx="18" cy="18" r="3"/><path d="M18 14.5v1"/><path d="M18 20.5v1"/><path d="M21.1 16.25l-.87.5"/><path d="M15.77 19.25l-.87.5"/><path d="M14.9 16.25l.87.5"/><path d="M21.23 19.25l-.87-.5"/></svg> <span data-i18n="tab_users">Users</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg> <span data-i18n="tab_companies">Companies</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg> <span data-i18n="tab_approvals">Approvals</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg> <span data-i18n="tab_log">Log</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> <span data-i18n="tab_data">Data Sync</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/><path d="M9 8h1"/></svg> <span data-i18n="tab_changelog">Changelog</span></button>
 </div>
 
 <!-- TAB 1: ROUTE TRACKER -->
@@ -634,7 +673,7 @@
                 <div class="field"><label>Deductions</label><input type="number" id="f-deductions" step="0.01" value="0"></div>
                 <div class="field"><label>Extra Pay</label><input type="number" id="f-extra" step="0.01" value="0"></div>
             </div>
-            <button type="submit" class="btn" style="margin-top:0.5rem;">+ Add Route</button>
+            <button type="submit" class="btn" style="margin-top:0.5rem;"><span class="btn-icon-plus"></span> Add Route</button>
         </form>
     </div>
     <div class="card" style="padding:0; border:none; box-shadow:none;">
@@ -710,7 +749,7 @@
                 <div class="field"><label>Insurance Expiry</label><input type="date" id="vInsExp"></div>
             </div>
             <div class="form-row"><div class="field field-wide"><label>Notes</label><input type="text" id="vNotes"></div></div>
-            <button type="submit" class="btn" id="vehicle-save-btn">+ Add Vehicle</button>
+            <button type="submit" class="btn" id="vehicle-save-btn"><span class="btn-icon-plus"></span> Add Vehicle</button>
             <button type="button" class="btn-small" id="vehicle-cancel-btn" style="display:none;background:#64748b;" onclick="cancelVehicleEdit()">Cancel edit</button>
         </form>
     </div>
@@ -813,7 +852,7 @@
             </div>
             <div class="note-box" style="margin-top:8px;" data-i18n="employee_note">Set <strong>Daily Rate</strong> for anyone whose pay changes week to week — enter their day-by-day amounts in the <strong>Daily Pay</strong> tab. On edit, leave <strong>SSN/ITIN</strong> blank to keep the stored number unchanged. Driver license, work permit, medical card and notes are shown openly in the directory; the SSN/ITIN stays hidden.</div>
             <div style="margin-top:0.5rem;">
-                <button type="submit" class="btn" id="emp-save-btn" data-i18n="add_employee">+ Add Employee</button>
+                <button type="submit" class="btn" id="emp-save-btn" data-i18n="add_employee"><span class="btn-icon-plus"></span> Add Employee</button>
                 <button type="button" class="btn-small" id="emp-cancel-btn" style="display:none;background:#64748b;" onclick="cancelEmployeeEdit()" data-i18n="cancel_edit">Cancel edit</button>
             </div>
         </form>
@@ -876,7 +915,7 @@
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="cNotes"></div>
             </div>
             <div class="note-box" data-i18n="weeks_needed_note">Weeks needed = claim amount ÷ weekly deduction (rounded up), calculated automatically.</div>
-            <button type="submit" class="btn" id="claim-save-btn" data-i18n="save_claim">+ Save Claim</button>
+            <button type="submit" class="btn" id="claim-save-btn" data-i18n="save_claim"><span class="btn-icon-save"></span> Save Claim</button>
             <button type="button" class="btn-small" id="claim-cancel-btn" style="display:none;background:#64748b;" onclick="cancelClaimEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
 
@@ -964,7 +1003,7 @@
                 <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="gStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Paid">Paid</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="gNotes"></div>
             </div>
-            <button type="submit" class="btn" id="charge-save-btn" data-i18n="save_charge">+ Save Charge</button>
+            <button type="submit" class="btn" id="charge-save-btn" data-i18n="save_charge"><span class="btn-icon-save"></span> Save Charge</button>
             <button type="button" class="btn-small" id="charge-cancel-btn" style="display:none;background:#64748b;" onclick="cancelChargeEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
 
@@ -1041,7 +1080,7 @@
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="iNotes"></div>
             </div>
             <div class="note-box" data-i18n="income_note">Additional income is <strong>added</strong> to the employee's pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.</div>
-            <button type="submit" class="btn" data-i18n="save_income">+ Save Income</button>
+            <button type="submit" class="btn" data-i18n="save_income"><span class="btn-icon-save"></span> Save Income</button>
         </form>
     </div>
 
@@ -1405,7 +1444,7 @@
                 </div>
                 <div class="field"><label>Assign to Employee</label><select id="new-user-employee" required><option value="">— Select employee —</option></select></div>
             </div>
-            <button type="submit" class="btn" style="margin-top:0.5rem;">+ Create User</button>
+            <button type="submit" class="btn" style="margin-top:0.5rem;"><span class="btn-icon-plus"></span> Create User</button>
         </form>
     </div>
     <div class="panel">
@@ -1441,7 +1480,7 @@
             <div class="field"><label>Manager</label><input type="text" id="new-company-manager" placeholder="Manager name"></div>
             <div class="field"><label>Manager Phone #</label><input type="tel" id="new-company-manager-phone" placeholder="(555) 555-5555"></div>
         </div>
-        <button class="btn" style="margin-top:0.75rem;" id="company-save-btn" onclick="createCompany()">+ Add Company</button>
+        <button class="btn" style="margin-top:0.75rem;" id="company-save-btn" onclick="createCompany()"><span class="btn-icon-plus"></span> Add Company</button>
         <button type="button" class="btn-small" id="company-cancel-btn" style="display:none;background:#64748b;margin-top:0.75rem;" onclick="cancelCompanyEdit()">Cancel</button>
     </div>
     <div class="panel">
@@ -1562,6 +1601,31 @@
         if (authBox) authBox.style.display = 'none';
         throw new Error('Required libraries (Supabase and/or XLSX) failed to load — this environment likely blocks the CDN they are hosted on. Open this file directly in a regular browser instead.');
     }
+
+    // Small inline icon set (stroke-based, currentColor) used across nav tabs
+    // and action buttons so we're not dependent on an icon font/CDN.
+    const ICONS = {
+        plus: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+        save: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>',
+        users: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        fileText: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+        dollar: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+        truck: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>',
+        route: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>',
+        bell: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+        calendarClock: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><circle cx="18" cy="18" r="4"/><path d="M18 16.5V18l1 1"/></svg>',
+        wallet: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>',
+        receipt: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>',
+        messages: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>',
+        settings: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.3.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.4a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.3.2a2 2 0 0 1 1 1.7V20a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.3-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.4a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.3-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+        userCog: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h3.5"/><circle cx="18" cy="18" r="3"/><path d="M18 14.5v1"/><path d="M18 20.5v1"/><path d="M21.1 16.25l-.87.5"/><path d="M15.77 19.25l-.87.5"/><path d="M14.9 16.25l.87.5"/><path d="M21.23 19.25l-.87-.5"/></svg>',
+        building: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>',
+        checkCheck: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+        clipboardList: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/><path d="M9 8h1"/></svg>',
+        refreshCw: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>',
+        history: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>'
+    };
+    function icon(name) { return ICONS[name] || ''; }
 
     const SUPABASE_URL = 'https://ofnveuguvwsvcxyidfdr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbnZldWd1dndzdmN4eWlkZmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MTM2MjMsImV4cCI6MjEwMTA4OTYyM30.-KAbO5eRUhYtcpX9_6vtgbt-onK5RPvmeQPSq6riI_E';
@@ -2248,6 +2312,7 @@
 
     function initAppSession() {
         document.getElementById('auth-container').style.display = 'none';
+        document.body.classList.remove('auth-mode');
         document.getElementById('app-container').style.display = 'block';
         const welcomeName = (currentUser && currentUser.first_name)
             ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim()
@@ -2576,7 +2641,7 @@
         document.getElementById('new-company-manager').value = c.manager || '';
         document.getElementById('new-company-manager-phone').value = c.manager_phone || '';
         document.getElementById('company-form-titletext').textContent = `Editing ${c.name} — ${c.code}`;
-        document.getElementById('company-save-btn').textContent = 'Save changes';
+        document.getElementById('company-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save changes';
         document.getElementById('company-cancel-btn').style.display = 'inline-block';
         document.getElementById('tab-companies').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -2589,7 +2654,7 @@
         document.getElementById('new-company-code').disabled = false;
         document.getElementById('new-company-name').disabled = false;
         document.getElementById('company-form-titletext').textContent = 'Add Company';
-        document.getElementById('company-save-btn').textContent = '+ Add Company';
+        document.getElementById('company-save-btn').innerHTML = '<span class="btn-icon-plus"></span> Add Company';
         document.getElementById('company-cancel-btn').style.display = 'none';
         if (currentUserRole !== 'SuperAdmin') document.getElementById('company-form-panel').style.display = 'none';
     }
@@ -3056,7 +3121,7 @@
         document.getElementById('emp-payrate').value = emp.pay_rate || '';
 
         document.getElementById('employee-form-titletext').textContent = `Editing ${emp.first_name} ${emp.last_name} — ${id}`;
-        document.getElementById('emp-save-btn').textContent = 'Save changes';
+        document.getElementById('emp-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save changes';
         document.getElementById('emp-cancel-btn').style.display = 'inline-block';
         document.getElementById('employee-form').classList.add('editing');
         updateNextEmpId();
@@ -3068,7 +3133,7 @@
         document.getElementById('employee-form').reset();
         document.getElementById('emp-idnum').placeholder = 'XXX-XX-XXXX';
         document.getElementById('employee-form-titletext').textContent = 'New Contact';
-        document.getElementById('emp-save-btn').textContent = '+ Add Employee';
+        document.getElementById('emp-save-btn').innerHTML = '<span class="btn-icon-plus"></span> Add Employee';
         document.getElementById('emp-cancel-btn').style.display = 'none';
         document.getElementById('employee-form').classList.remove('editing');
         updateNextEmpId();
@@ -6136,7 +6201,7 @@
         document.getElementById('cAbsorbed').value = (c.absorbed_amount ?? '');
         document.getElementById('cNotes').value = c.notes || '';
         document.getElementById('claim-form-titletext').textContent = `Editing ${id}`;
-        document.getElementById('claim-save-btn').textContent = 'Save changes';
+        document.getElementById('claim-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save changes';
         document.getElementById('claim-cancel-btn').style.display = '';
         document.getElementById('claim-edit-extra').style.display = '';
         const panel = document.getElementById('claim-form').closest('.panel');
@@ -6150,7 +6215,7 @@
         document.getElementById('claim-form').reset();
         document.getElementById('cEmployee').value = '';
         document.getElementById('claim-form-titletext').textContent = 'New Claim';
-        document.getElementById('claim-save-btn').textContent = '+ Save Claim';
+        document.getElementById('claim-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save Claim';
         document.getElementById('claim-cancel-btn').style.display = 'none';
         document.getElementById('claim-edit-extra').style.display = 'none';
         refreshIdPreviews();
@@ -6255,7 +6320,7 @@
         const empSel = document.getElementById('ci-employee');
         if (empSel) empSel.value = ch.employee_id || '';
         document.getElementById('charge-form-titletext').textContent = `Editing ${id}`;
-        document.getElementById('charge-save-btn').textContent = 'Save changes';
+        document.getElementById('charge-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save changes';
         document.getElementById('charge-cancel-btn').style.display = '';
         document.getElementById('charge-edit-extra').style.display = '';
         const panel = document.getElementById('charge-form').closest('.panel');
@@ -6268,7 +6333,7 @@
         editingChargeId = null;
         document.getElementById('charge-form').reset();
         document.getElementById('charge-form-titletext').textContent = 'New Charge';
-        document.getElementById('charge-save-btn').textContent = '+ Save Charge';
+        document.getElementById('charge-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save Charge';
         document.getElementById('charge-cancel-btn').style.display = 'none';
         document.getElementById('charge-edit-extra').style.display = 'none';
         refreshIdPreviews();
@@ -6571,8 +6636,10 @@
             tab_charges: 'Charges & Income', tab_dailypay: 'Daily Pay', tab_statement: 'Statement',
             tab_payroll: 'Payroll', tab_settings: 'Settings', tab_users: 'Users', tab_companies: 'Companies',
             tab_approvals: 'Approvals', tab_log: 'Log', tab_data: 'Data Sync', tab_changelog: 'Changelog',
-            login_title: 'Secure Login', username_label: 'Username', username_ph: 'Enter username',
-            password_label: 'Password', sign_in_btn: 'Sign In',
+            login_title: 'Tracker Login', login_subtitle: 'Enter your details to access the dashboard',
+            username_label: 'Username', username_ph: 'Username',
+            password_label: 'Password', password_ph: 'Password', sign_in_btn: 'Sign In',
+            login_theme_label: 'Interface Theme',
             timeout_notice: 'You were signed out after 5 minutes of inactivity.',
             language_label: 'Language',
             language_note: 'Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)',
@@ -6628,8 +6695,10 @@
             tab_charges: 'Cargos e Ingresos', tab_dailypay: 'Pago Diario', tab_statement: 'Estado de Cuenta',
             tab_payroll: 'Nómina', tab_settings: 'Configuración', tab_users: 'Usuarios', tab_companies: 'Compañías',
             tab_approvals: 'Aprobaciones', tab_log: 'Registro', tab_data: 'Sincronización de Datos', tab_changelog: 'Historial de Cambios',
-            login_title: 'Iniciar Sesión', username_label: 'Usuario', username_ph: 'Ingrese su usuario',
-            password_label: 'Contraseña', sign_in_btn: 'Iniciar Sesión',
+            login_title: 'Acceso a Tracker', login_subtitle: 'Ingrese sus datos para acceder al panel',
+            username_label: 'Usuario', username_ph: 'Usuario',
+            password_label: 'Contraseña', password_ph: 'Contraseña', sign_in_btn: 'Iniciar Sesión',
+            login_theme_label: 'Tema de la Interfaz',
             timeout_notice: 'Se cerró su sesión después de 5 minutos de inactividad.',
             language_label: 'Idioma',
             language_note: 'Elija su idioma. Esto se guarda solo en este dispositivo, así que otras personas conectadas en otro lugar mantienen su propia preferencia. (También disponible en la pantalla de inicio de sesión.)',
@@ -6748,13 +6817,18 @@
     function updateThemeButtons() {
         let cur = 'light';
         try { cur = localStorage.getItem('tracker_theme') || 'light'; } catch (e) {}
-        [ '', 'login-' ].forEach(prefix => {
-            const lb = document.getElementById(prefix + 'theme-btn-light');
-            const ob = document.getElementById(prefix + 'theme-btn-ocean');
-            const eb = document.getElementById(prefix + 'theme-btn-emerald');
-            if (lb) { lb.style.background = cur === 'light' ? 'var(--navy)' : '#64748b'; lb.textContent = cur === 'light' ? '☀ Light (current)' : '☀ Light'; }
-            if (ob) { ob.style.background = cur === 'dark' ? 'var(--navy)' : '#64748b'; ob.textContent = cur === 'dark' ? '🌊 Ocean (current)' : '🌊 Ocean'; }
-            if (eb) { eb.style.background = cur === 'dark-emerald' ? 'var(--navy)' : '#64748b'; eb.textContent = cur === 'dark-emerald' ? '🟢 Emerald (current)' : '🟢 Emerald'; }
+        // Settings tab: original text-pill buttons with a "(current)" label.
+        const lb = document.getElementById('theme-btn-light');
+        const ob = document.getElementById('theme-btn-ocean');
+        const eb = document.getElementById('theme-btn-emerald');
+        if (lb) { lb.style.background = cur === 'light' ? 'var(--navy)' : '#64748b'; lb.textContent = cur === 'light' ? '☀ Light (current)' : '☀ Light'; }
+        if (ob) { ob.style.background = cur === 'dark' ? 'var(--navy)' : '#64748b'; ob.textContent = cur === 'dark' ? '🌊 Ocean (current)' : '🌊 Ocean'; }
+        if (eb) { eb.style.background = cur === 'dark-emerald' ? 'var(--navy)' : '#64748b'; eb.textContent = cur === 'dark-emerald' ? '🟢 Emerald (current)' : '🟢 Emerald'; }
+        // Login screen: plain color-swatch dots — a ring highlights the active one.
+        const loginMap = { light: 'login-theme-btn-light', dark: 'login-theme-btn-ocean', 'dark-emerald': 'login-theme-btn-emerald' };
+        ['login-theme-btn-light', 'login-theme-btn-ocean', 'login-theme-btn-emerald'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('active-theme-dot', id === loginMap[cur]);
         });
     }
 
@@ -7508,14 +7582,14 @@
         document.getElementById('vInsPol').value = v.insurance_policy || '';
         document.getElementById('vInsExp').value = v.insurance_expiry || '';
         document.getElementById('vNotes').value = v.notes || '';
-        document.getElementById('vehicle-save-btn').textContent = 'Save Changes';
+        document.getElementById('vehicle-save-btn').innerHTML = '<span class="btn-icon-save"></span> Save Changes';
         document.getElementById('vehicle-cancel-btn').style.display = 'inline-block';
         document.getElementById('vehicle-form-panel').scrollIntoView({ behavior: 'smooth' });
     }
 
     function cancelVehicleEdit() {
         editingVehicleId = null;
-        document.getElementById('vehicle-save-btn').textContent = '+ Add Vehicle';
+        document.getElementById('vehicle-save-btn').innerHTML = '<span class="btn-icon-plus"></span> Add Vehicle';
         document.getElementById('vehicle-cancel-btn').style.display = 'none';
         document.getElementById('vehicle-form').reset();
     }
