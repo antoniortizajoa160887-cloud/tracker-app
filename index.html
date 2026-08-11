@@ -765,6 +765,7 @@
 <div class="tab-groups" id="tab-groups">
     <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
     <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr" data-i18n="group_hr">HR &amp; Payroll</button>
+    <button class="group-btn" onclick="openGroup('grp-expiring')" id="btn-grp-expiring">Expiring Documents</button>
     <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin" data-i18n="group_admin">Administration</button>
 </div>
 <div class="tabs sub-tabs open" id="grp-logistics">
@@ -783,9 +784,11 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
 </div>
+<div class="tabs sub-tabs" id="grp-expiring">
+    <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
+</div>
 <div class="tabs sub-tabs" id="grp-admin">
     <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;" data-i18n="tab_users">Users</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;" data-i18n="tab_companies">Companies</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;" data-i18n="tab_approvals">Approvals</button>
@@ -1788,8 +1791,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.70';
+    const APP_VERSION = 'v2.71';
     const CHANGELOG = [
+        { version: 'v2.71', date: '2026-08-06', notes: 'Expiring Documents is now its own section in the sidebar, no longer tucked under Administration — and View Only accounts can now see it too, with the same "your own information only" rule already used everywhere else in the app: they\'ll only ever see their own driver license, work permit, and medical card expirations, never anyone else\'s, and never fleet items, since a truck isn\'t personal to any one person the way those documents are.' },
         { version: 'v2.70', date: '2026-08-06', notes: 'Went back and fixed the messaging refresh properly this time. The last fix only softened what got rebuilt every few seconds — this one stops it from touching anything on screen at all unless a message actually came in. So now, if nothing new has happened, the background check runs quietly and nothing visibly moves, resets, or interrupts you — not the dropdowns, not your typing, nothing. Also made sending a message feel a bit smoother: the message box stays focused right after you hit send, so you can keep typing your next line without having to click back into it.' },
         { version: 'v2.69', date: '2026-08-06', notes: 'Three changes. Fixed the ⋮ menu text going unreadable on hover — Change Password and Sign Out now stay clearly visible the whole time your mouse is over them, in every theme. New "Expiring Documents" tab (under Administration) — one combined, soonest-first list of everything with an expiration date already on file: fleet registration and insurance, plus driver license, work permit, and medical card for every employee, instead of having to check each one individually. Search results now open as their own full page instead of a small popup, similar to a search engine\'s results page — the search bar itself works exactly the same as before, just Enter to search.' },
         { version: 'v2.68', date: '2026-08-06', notes: 'Fixed the Messages dropdowns closing on their own — the background check for new messages was quietly rebuilding those dropdowns every few seconds even when nothing in them had actually changed, and rebuilding a dropdown while it\'s open is exactly what makes it snap shut on you. It only touches those dropdowns now when something about them genuinely needs to change, so they\'ll stay open exactly as long as you\'re using them.' },
@@ -2441,7 +2445,7 @@
     function openTab(evt, tabName) {
         // View Only users may only open their 6 permitted tabs.
         if (currentUserRole === 'User') {
-            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll','tab-messages'];
+            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll','tab-messages','tab-expiring'];
             if (!allowed.includes(tabName)) return;
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -2473,7 +2477,8 @@
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
         'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-messages'],
-        'grp-admin': ['tab-settings', 'tab-expiring', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
+        'grp-expiring': ['tab-expiring'],
+        'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
 
     // Open a group: show its sub-tab row, hide the others, and switch to its
@@ -2606,7 +2611,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay','btn-tab-expiring'].forEach(id => {
+            ['btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -3410,12 +3415,22 @@
             const d = new Date(dateStr);
             return isNaN(d) ? null : Math.floor((d - new Date()) / 86400000);
         };
-        vehicles.forEach(v => {
-            const label = v.truck_number || v.id;
-            if (v.reg_expiry) items.push({ category: 'Fleet', who: label, doc: 'Registration', date: v.reg_expiry, days: daysUntil(v.reg_expiry), kind: 'vehicles', id: v.id });
-            if (v.insurance_expiry) items.push({ category: 'Fleet', who: label, doc: 'Insurance', date: v.insurance_expiry, days: daysUntil(v.insurance_expiry), kind: 'vehicles', id: v.id });
-        });
-        employees.forEach(e => {
+        const isViewOnly = currentUserRole === 'User';
+        const myEmpId = currentUser && currentUser.employee_id;
+        // View Only sees only their own document expirations, matching the
+        // same "own information only" policy applied everywhere else in
+        // the app — and Fleet is excluded entirely for them, since a
+        // vehicle isn't personal to any one employee the way DL/work
+        // permit/medical card are.
+        if (!isViewOnly) {
+            vehicles.forEach(v => {
+                const label = v.truck_number || v.id;
+                if (v.reg_expiry) items.push({ category: 'Fleet', who: label, doc: 'Registration', date: v.reg_expiry, days: daysUntil(v.reg_expiry), kind: 'vehicles', id: v.id });
+                if (v.insurance_expiry) items.push({ category: 'Fleet', who: label, doc: 'Insurance', date: v.insurance_expiry, days: daysUntil(v.insurance_expiry), kind: 'vehicles', id: v.id });
+            });
+        }
+        const employeeScope = isViewOnly ? employees.filter(e => e.id === myEmpId) : employees;
+        employeeScope.forEach(e => {
             const d = getEmpDetail(e.id);
             const name = `${e.first_name} ${e.last_name}`;
             if (d.dl_expiration) items.push({ category: 'Employee', who: name, doc: 'Driver License', date: d.dl_expiration, days: daysUntil(d.dl_expiration), kind: 'employees', id: e.id });
@@ -3429,8 +3444,11 @@
         const grid = document.getElementById('expiring-stats-grid');
         const body = document.getElementById('expiring-tbody');
         if (!body) return;
+        const isViewOnly = currentUserRole === 'User';
+        const categoryField = document.getElementById('expiring-category')?.closest('.field');
+        if (categoryField) categoryField.style.display = isViewOnly ? 'none' : ''; // Fleet's excluded for them anyway — nothing to filter by category
         const windowDays = parseInt(document.getElementById('expiring-window').value, 10) || 60;
-        const category = document.getElementById('expiring-category').value;
+        const category = isViewOnly ? '' : document.getElementById('expiring-category').value;
         const query = (document.getElementById('expiring-search').value || '').toLowerCase();
 
         let items = buildExpiringDocumentsList().filter(i => i.days <= windowDays);
