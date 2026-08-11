@@ -281,6 +281,7 @@
         #app-sidebar #btn-tab-log::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h13v18H6a2 2 0 01-2-2V5a2 2 0 012-2z'/%3E%3Cpath d='M9 8h7M9 12h7M9 16h4'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-data::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 0113.7-5.7M20 12a8 8 0 01-13.7 5.7'/%3E%3Cpath d='M17.5 3v3.8h-3.8M6.5 21v-3.8h3.8'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-changelog::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3.3 2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-expiring::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v5l-2.5 2M8 3.5l2 2M16 3.5l-2 2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
     }
     
     /* ---- Messages: two-pane chat layout ---- */
@@ -570,12 +571,9 @@
         transition: transform 0.15s, border-color 0.15s;
     }
     .header-theme-swatch.active { border-color: var(--primary); transform: scale(1.12); }
-    /* Header dropdown version — sits on var(--surface), which is theme-
-       dependent (white in Light theme) unlike the login card's always-dark
-       backdrop, so a white active-ring would be invisible there. Use the
-       brand accent color instead, which reads clearly against light AND
-       dark surfaces alike. */
-    .header-theme-swatch.active { border-color: var(--primary); transform: scale(1.12); }
+    #user-menu-dropdown button:hover { background: var(--surface-2) !important; }
+    #user-menu-dropdown button:first-of-type:hover { color: var(--text) !important; }
+    #user-menu-dropdown button:last-of-type:hover { color: #ef4444 !important; }
 </style>
 </head>
 <body>
@@ -649,16 +647,6 @@
 
 <!-- Version badge — always visible, tap to see the changelog -->
 <div id="version-badge" onclick="toggleVersionLog()" style="position:fixed; bottom:8px; right:8px; background:rgba(15,23,42,0.82); color:#fff; font-size:10px; font-family:var(--mono); padding:4px 9px; border-radius:12px; z-index:9998; cursor:pointer; letter-spacing:0.02em; box-shadow:0 2px 6px rgba(0,0,0,0.2);">v0.0</div>
-
-<div id="global-search-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9997; align-items:flex-start; justify-content:center; padding:60px 16px 16px;" onclick="if(event.target===this) closeGlobalSearch()">
-    <div style="background:var(--surface); border-radius:12px; padding:0; max-width:640px; width:100%; max-height:75vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.35); overflow:hidden;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border);">
-            <h2 style="margin:0; font-size:1rem;" id="global-search-title">Search results</h2>
-            <span class="del-btn" onclick="closeGlobalSearch()">✕ Close</span>
-        </div>
-        <div id="global-search-results" style="overflow-y:auto; padding:8px 0;"></div>
-    </div>
-</div>
 
 <div id="version-log-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:flex-end; justify-content:center;" onclick="if(event.target===this) toggleVersionLog()">
     <div style="background:var(--surface); border-radius:14px 14px 0 0; padding:18px 18px 26px; max-width:480px; width:100%; max-height:70vh; overflow-y:auto;">
@@ -797,6 +785,7 @@
 </div>
 <div class="tabs sub-tabs" id="grp-admin">
     <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;" data-i18n="tab_users">Users</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;" data-i18n="tab_companies">Companies</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;" data-i18n="tab_approvals">Approvals</button>
@@ -1561,6 +1550,39 @@
     </div>
 </div>
 
+<!-- TAB: EXPIRING DOCUMENTS -->
+<div id="tab-expiring" class="tab-content">
+    <div class="panel">
+        <h2>Expiring Documents</h2>
+        <div class="note-box">Registration and insurance from Fleet, plus driver license, work permit, and medical card from Employees — all in one place, soonest first. Already-expired items show at the top.</div>
+        <div class="form-row" style="margin-top:8px; margin-bottom:0; align-items:flex-end;">
+            <div class="field">
+                <label>Show within</label>
+                <select id="expiring-window" onchange="renderExpiringDocuments()">
+                    <option value="30">30 days</option>
+                    <option value="60" selected>60 days</option>
+                    <option value="90">90 days</option>
+                    <option value="365">1 year</option>
+                    <option value="99999">Everything on file</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Category</label>
+                <select id="expiring-category" onchange="renderExpiringDocuments()">
+                    <option value="">All categories</option>
+                    <option value="Fleet">Fleet only</option>
+                    <option value="Employee">Employee documents only</option>
+                </select>
+            </div>
+            <div class="field field-wide"><input type="text" id="expiring-search" placeholder="Search name, truck #..." oninput="renderExpiringDocuments()"></div>
+        </div>
+    </div>
+    <div class="stat-grid" id="expiring-stats-grid" style="margin-bottom:12px;"></div>
+    <div class="panel">
+        <div id="expiring-tbody"></div>
+    </div>
+</div>
+
 <!-- TAB 8: USERS -->
 <div id="tab-users" class="tab-content">
     <div class="panel">
@@ -1719,6 +1741,16 @@
         <div id="changelog-tbody" class="record-grid"></div>
     </div>
 </div>
+
+<!-- Search results — a real page, not a popup, matching how a search
+     engine's results page works. Not part of the sidebar nav; opened
+     directly via runGlobalSearch() and closed by navigating to any tab. -->
+<div id="tab-search-results" class="tab-content">
+    <div class="panel" style="padding-bottom:6px;">
+        <h2 id="global-search-title" style="margin:0;">Search results</h2>
+    </div>
+    <div id="global-search-results"></div>
+</div>
 </div>
 
 <script>
@@ -1756,8 +1788,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.68';
+    const APP_VERSION = 'v2.70';
     const CHANGELOG = [
+        { version: 'v2.70', date: '2026-08-06', notes: 'Went back and fixed the messaging refresh properly this time. The last fix only softened what got rebuilt every few seconds — this one stops it from touching anything on screen at all unless a message actually came in. So now, if nothing new has happened, the background check runs quietly and nothing visibly moves, resets, or interrupts you — not the dropdowns, not your typing, nothing. Also made sending a message feel a bit smoother: the message box stays focused right after you hit send, so you can keep typing your next line without having to click back into it.' },
+        { version: 'v2.69', date: '2026-08-06', notes: 'Three changes. Fixed the ⋮ menu text going unreadable on hover — Change Password and Sign Out now stay clearly visible the whole time your mouse is over them, in every theme. New "Expiring Documents" tab (under Administration) — one combined, soonest-first list of everything with an expiration date already on file: fleet registration and insurance, plus driver license, work permit, and medical card for every employee, instead of having to check each one individually. Search results now open as their own full page instead of a small popup, similar to a search engine\'s results page — the search bar itself works exactly the same as before, just Enter to search.' },
         { version: 'v2.68', date: '2026-08-06', notes: 'Fixed the Messages dropdowns closing on their own — the background check for new messages was quietly rebuilding those dropdowns every few seconds even when nothing in them had actually changed, and rebuilding a dropdown while it\'s open is exactly what makes it snap shut on you. It only touches those dropdowns now when something about them genuinely needs to change, so they\'ll stay open exactly as long as you\'re using them.' },
         { version: 'v2.67', date: '2026-08-06', notes: 'Finished the search bar — there\'s now a real search box at the top of the app (employees, claims, charges, income, fleet all included), and typing something and hitting Enter opens a results page you can click straight into. Messages now feels closer to a live chat — while that tab is open, it checks for new messages every few seconds automatically, no need to reload. While going through this, found and fixed a real gap: resizing the window while on the Fleet tab didn\'t switch between the phone-style and desktop-style layouts the way every other tab already does — it now does. Sidebar, Messages, and everything else built this session already auto-adjust correctly on resize since they\'re built with responsive CSS, which works the same whether you\'re in a browser tab, on a phone, or in the installed app — verified that holds true across all of them.' },
         { version: 'v2.66', date: '2026-08-06', notes: 'Two big changes. First, sidebar icons are now real line icons matching the new design, not emoji — cleaner and consistent across every device. Second, Messages is fully rebuilt to match the sample you shared: a real two-pane chat, contact list on the left with search and category filters, an open conversation on the right with message bubbles and a message box at the bottom, instead of the old flat list with a compose form up top. Everything you type just sends straight into the open conversation now — no more picking who or what you\'re replying to first. The privacy rules underneath are exactly the same as before: View Only sees their own conversation and any staff replies in it, never anyone else\'s, and still can\'t delete messages — this was purely a new coat of paint on the same secure foundation, verified against real accounts before shipping.' },
@@ -1850,11 +1884,17 @@
     function runGlobalSearch() {
         const raw = (document.getElementById('global-search-input')?.value || '').trim();
         const q = raw.toLowerCase();
-        const overlay = document.getElementById('global-search-overlay');
         const results = document.getElementById('global-search-results');
         const title = document.getElementById('global-search-title');
-        if (!overlay || !results) return;
-        if (!q) { closeGlobalSearch(); return; }
+        if (!results) return;
+        if (!q) return;
+
+        // Show the results page the same way openTab() shows any other tab —
+        // this isn't in the sidebar nav, so no nav button gets marked active.
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tab-search-results').classList.add('active');
+        stopMessagePolling();
 
         const empName = id => { const e = employees.find(x => x.id === id); return e ? `${e.first_name} ${e.last_name}` : id; };
 
@@ -1868,14 +1908,15 @@
         title.textContent = `Search results for "${raw}" (${totalCount})`;
 
         if (!totalCount) {
-            results.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 16px; font-size:0.85rem;">No matches. Try a different name, ID, or term.</div>';
-            overlay.style.display = 'flex';
+            results.innerHTML = '<div class="panel" style="text-align:center; color:var(--text-muted); padding:30px 16px; font-size:0.85rem;">No matches. Try a different name, ID, or term.</div>';
             return;
         }
 
         const section = (label, items, renderRow) => !items.length ? '' : `
-            <div style="padding:6px 18px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); background:var(--surface-2);">${label} (${items.length})</div>
-            ${items.slice(0, 8).map(renderRow).join('')}`;
+            <div class="panel" style="padding-bottom:6px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:6px;">${label} (${items.length})</div>
+                ${items.map(renderRow).join('')}
+            </div>`;
 
         results.innerHTML =
             section('Employees', empMatches, e => `
@@ -1903,20 +1944,14 @@
                     <span class="type-pill">${escHtml(v.truck_number || v.id)}</span>
                     <span style="font-size:11px; color:var(--text-muted);">${escHtml(v.year || '')} ${escHtml(v.make || '')} ${escHtml(v.model || '')} · ${escHtml(v.plate || '')}</span>
                 </div>`);
-
-        overlay.style.display = 'flex';
-    }
-
-    function closeGlobalSearch() {
-        const overlay = document.getElementById('global-search-overlay');
-        if (overlay) overlay.style.display = 'none';
     }
 
     // Jumps to the right tab and pre-fills that tab's own search box with
     // an identifying value, so the clicked record is right there instead
-    // of just landing on a generic tab.
+    // of just landing on a generic tab. openTab() itself already hides the
+    // search-results page like any other tab, so no separate "close" step
+    // is needed here anymore.
     function goToSearchResult(kind, id) {
-        closeGlobalSearch();
         const map = {
             employees: { tab: 'tab-employees', input: 'employee-search', fn: 'renderEmployees' },
             claims: { tab: 'tab-claims', input: 'claim-search', fn: 'filterClaims' },
@@ -1930,7 +1965,8 @@
         const input = document.getElementById(cfg.input);
         if (input) { input.value = id; }
         if (typeof window[cfg.fn] === 'function') window[cfg.fn]();
-        document.getElementById('global-search-input').value = '';
+        const gsi = document.getElementById('global-search-input');
+        if (gsi) gsi.value = '';
     }
 
     function toggleVersionLog() {
@@ -2429,6 +2465,7 @@
         if(tabName === 'tab-approvals') renderApprovals();
         if(tabName === 'tab-log') renderLog();
         if(tabName === 'tab-settings') renderSettingsLists();
+        if(tabName === 'tab-expiring') renderExpiringDocuments();
         if(tabName === 'tab-changelog') renderChangelogTab();
     }
 
@@ -2436,7 +2473,7 @@
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
         'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-messages'],
-        'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
+        'grp-admin': ['tab-settings', 'tab-expiring', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
 
     // Open a group: show its sub-tab row, hide the others, and switch to its
@@ -2569,7 +2606,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
+            ['btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay','btn-tab-expiring'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -3362,6 +3399,73 @@
         if (diff < 0) return ` <span class="exp-pill exp-over">expired</span>`;
         if (diff <= days) return ` <span class="exp-pill exp-soon">${diff}d</span>`;
         return '';
+    }
+
+    // Consolidated view of every expiry date already tracked across the
+    // app (Fleet reg/insurance, employee DL/work permit/medical card) —
+    // no new data, just one combined list instead of hunting per-tab.
+    function buildExpiringDocumentsList() {
+        const items = [];
+        const daysUntil = dateStr => {
+            const d = new Date(dateStr);
+            return isNaN(d) ? null : Math.floor((d - new Date()) / 86400000);
+        };
+        vehicles.forEach(v => {
+            const label = v.truck_number || v.id;
+            if (v.reg_expiry) items.push({ category: 'Fleet', who: label, doc: 'Registration', date: v.reg_expiry, days: daysUntil(v.reg_expiry), kind: 'vehicles', id: v.id });
+            if (v.insurance_expiry) items.push({ category: 'Fleet', who: label, doc: 'Insurance', date: v.insurance_expiry, days: daysUntil(v.insurance_expiry), kind: 'vehicles', id: v.id });
+        });
+        employees.forEach(e => {
+            const d = getEmpDetail(e.id);
+            const name = `${e.first_name} ${e.last_name}`;
+            if (d.dl_expiration) items.push({ category: 'Employee', who: name, doc: 'Driver License', date: d.dl_expiration, days: daysUntil(d.dl_expiration), kind: 'employees', id: e.id });
+            if (d.work_permit_exp) items.push({ category: 'Employee', who: name, doc: 'Work Permit', date: d.work_permit_exp, days: daysUntil(d.work_permit_exp), kind: 'employees', id: e.id });
+            if (d.medical_card_exp) items.push({ category: 'Employee', who: name, doc: 'Medical Card', date: d.medical_card_exp, days: daysUntil(d.medical_card_exp), kind: 'employees', id: e.id });
+        });
+        return items.filter(i => i.days !== null).sort((a, b) => a.days - b.days);
+    }
+
+    function renderExpiringDocuments() {
+        const grid = document.getElementById('expiring-stats-grid');
+        const body = document.getElementById('expiring-tbody');
+        if (!body) return;
+        const windowDays = parseInt(document.getElementById('expiring-window').value, 10) || 60;
+        const category = document.getElementById('expiring-category').value;
+        const query = (document.getElementById('expiring-search').value || '').toLowerCase();
+
+        let items = buildExpiringDocumentsList().filter(i => i.days <= windowDays);
+        if (category) items = items.filter(i => i.category === category);
+        if (query) items = items.filter(i => `${i.who} ${i.doc}`.toLowerCase().includes(query));
+
+        const expiredCount = items.filter(i => i.days < 0).length;
+        const soonCount = items.filter(i => i.days >= 0 && i.days <= 14).length;
+        if (grid) grid.innerHTML = `
+            <div class="stat-card"><div class="stat-label">Already expired</div><div class="stat-value" style="color:#dc2626;">${expiredCount}</div></div>
+            <div class="stat-card"><div class="stat-label">Within 14 days</div><div class="stat-value" style="color:#d97706;">${soonCount}</div></div>
+            <div class="stat-card"><div class="stat-label">Total shown</div><div class="stat-value">${items.length}</div></div>`;
+
+        if (!items.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing expiring in this window.</div>'; return; }
+
+        const rows = items.map(i => {
+            const statusPill = i.days < 0
+                ? `<span class="exp-pill exp-over">expired ${Math.abs(i.days)}d ago</span>`
+                : i.days <= 14 ? `<span class="exp-pill exp-soon">${i.days}d left</span>` : `<span class="type-pill">${i.days}d left</span>`;
+            return `
+                <div class="rec-card" style="margin-bottom:8px; cursor:pointer;" onclick="goToSearchResult('${i.kind}','${i.id}')">
+                    <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; padding:11px 14px;">
+                        <div>
+                            <span class="type-pill">${i.category}</span>
+                            <strong style="margin-left:6px;">${escHtml(i.who)}</strong>
+                            <span style="color:var(--text-muted); font-size:0.8rem;"> · ${i.doc}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:0.78rem; color:var(--text-muted);">${i.date}</span>
+                            ${statusPill}
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+        body.innerHTML = rows;
     }
 
     // Shared block of extra fields shown once an employee is expanded —
@@ -5939,10 +6043,23 @@
     let convoFilter = '';
     let composeCategory = 'General';
 
+    let lastMessagesSnapshot = '';
+    function messagesSnapshotKey() {
+        // Cheap fingerprint of the current message set — used to detect
+        // whether a poll actually found anything new, so a background
+        // check with nothing new can skip touching the DOM at all instead
+        // of rebuilding it (and disrupting typing/open dropdowns) for no
+        // reason every single cycle.
+        return employeeMessages.map(m => m.id + ':' + m.created_at).join('|');
+    }
     async function fetchEmployeeMessages() {
         const { data, error } = await supabaseClient.rpc('get_employee_messages', { p_actor: currentUsername, p_company: currentCompany, p_employee_id: null });
-        if (error) { console.error('get_employee_messages:', error); employeeMessages = []; return; }
+        if (error) { console.error('get_employee_messages:', error); employeeMessages = []; lastMessagesSnapshot = messagesSnapshotKey(); return false; }
         employeeMessages = data || [];
+        const newSnap = messagesSnapshotKey();
+        const changed = newSnap !== lastMessagesSnapshot;
+        lastMessagesSnapshot = newSnap;
+        return changed;
     }
 
     // Groups the flat message list into one "conversation" per employee —
@@ -6151,6 +6268,7 @@
         textEl.value = '';
         await fetchEmployeeMessages();
         renderConversationList();
+        textEl.focus();
     }
 
     async function deleteEmployeeMessage(id) {
@@ -6193,7 +6311,8 @@
     function startMessagePolling() {
         stopMessagePolling();
         messagePollTimer = setInterval(async () => {
-            await fetchEmployeeMessages();
+            const changed = await fetchEmployeeMessages();
+            if (!changed) return; // nothing new — leave the DOM alone entirely, don't disrupt typing/open dropdowns for no reason
             renderConversationList(true);
         }, 5000);
     }
