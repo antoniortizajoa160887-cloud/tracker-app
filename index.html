@@ -1756,8 +1756,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.67';
+    const APP_VERSION = 'v2.68';
     const CHANGELOG = [
+        { version: 'v2.68', date: '2026-08-06', notes: 'Fixed the Messages dropdowns closing on their own — the background check for new messages was quietly rebuilding those dropdowns every few seconds even when nothing in them had actually changed, and rebuilding a dropdown while it\'s open is exactly what makes it snap shut on you. It only touches those dropdowns now when something about them genuinely needs to change, so they\'ll stay open exactly as long as you\'re using them.' },
         { version: 'v2.67', date: '2026-08-06', notes: 'Finished the search bar — there\'s now a real search box at the top of the app (employees, claims, charges, income, fleet all included), and typing something and hitting Enter opens a results page you can click straight into. Messages now feels closer to a live chat — while that tab is open, it checks for new messages every few seconds automatically, no need to reload. While going through this, found and fixed a real gap: resizing the window while on the Fleet tab didn\'t switch between the phone-style and desktop-style layouts the way every other tab already does — it now does. Sidebar, Messages, and everything else built this session already auto-adjust correctly on resize since they\'re built with responsive CSS, which works the same whether you\'re in a browser tab, on a phone, or in the installed app — verified that holds true across all of them.' },
         { version: 'v2.66', date: '2026-08-06', notes: 'Two big changes. First, sidebar icons are now real line icons matching the new design, not emoji — cleaner and consistent across every device. Second, Messages is fully rebuilt to match the sample you shared: a real two-pane chat, contact list on the left with search and category filters, an open conversation on the right with message bubbles and a message box at the bottom, instead of the old flat list with a compose form up top. Everything you type just sends straight into the open conversation now — no more picking who or what you\'re replying to first. The privacy rules underneath are exactly the same as before: View Only sees their own conversation and any staff replies in it, never anyone else\'s, and still can\'t delete messages — this was purely a new coat of paint on the same secure foundation, verified against real accounts before shipping.' },
         { version: 'v2.65', date: '2026-08-06', notes: 'Theme switching is back in the app itself — no more signing out just to change it. Tap the ⋮ menu, top right, and the three theme circles are right there, no label text above them. Same colors as the login screen, and switching updates instantly without closing the menu, so you can click through and compare before deciding. Change Password and Sign Out are still in that same menu, just below the colors now.' },
@@ -5972,9 +5973,17 @@
         renderConversationList();
     }
 
-    function renderConversationList() {
+    function renderConversationList(isPoll) {
         const container = document.getElementById('msg-conversation-list');
         if (!container) return;
+        // A background poll firing while the "+ New" employee picker is
+        // open would otherwise wipe it out mid-use (it's a temporary node
+        // inserted directly into this container, not part of the normal
+        // conversation list this function rebuilds). Skip the rebuild
+        // entirely in that case — the poll will pick the list back up on
+        // its next run once the picker's been dismissed either way.
+        if (isPoll && document.getElementById('msg-new-convo-select')) return;
+
         const query = (document.getElementById('msg-search')?.value || '').toLowerCase();
         let convos = buildConversations();
         if (convoFilter) convos = convos.filter(c => c.categories.has(convoFilter));
@@ -6045,11 +6054,13 @@
         showComposerFor(empId, c.empName);
     }
 
+    let composerShownForEmpId = null; // which conversation the composer is currently built for
     function showComposerFor(empId, empName) {
         const header = document.getElementById('msg-thread-header');
         const composer = document.getElementById('msg-composer');
         const empty = document.getElementById('msg-empty-state');
         if (!empId) {
+            composerShownForEmpId = null;
             if (header) header.style.display = 'none';
             if (composer) composer.style.display = 'none';
             if (empty) empty.style.display = 'flex';
@@ -6058,7 +6069,15 @@
         if (empty) empty.style.display = 'none';
         if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(empName || empId)} · ${empId}</span>`; }
         if (composer) { composer.style.display = 'flex'; }
-        onComposeCategoryChange();
+        // Only rebuild the category/linked-record controls when the open
+        // conversation actually changes — not on a background poll refresh
+        // of the SAME conversation, which would otherwise force-close
+        // msg-compose-linked out from under anyone with it open (native
+        // <select> elements close when their options are rebuilt).
+        if (composerShownForEmpId !== empId) {
+            composerShownForEmpId = empId;
+            onComposeCategoryChange();
+        }
     }
 
     let renderedThreadEmpId = null; // which conversation msg-thread-body currently shows
@@ -6175,7 +6194,7 @@
         stopMessagePolling();
         messagePollTimer = setInterval(async () => {
             await fetchEmployeeMessages();
-            renderConversationList();
+            renderConversationList(true);
         }, 5000);
     }
     function stopMessagePolling() {
