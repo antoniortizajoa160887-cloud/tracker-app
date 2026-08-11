@@ -1378,22 +1378,22 @@
 
 <!-- TAB: WEEK IN DEPOSIT -->
 <div id="tab-weekdeposit" class="tab-content">
-    <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Start a Deposit <span class="caret">&#9662;</span></h2>
-        <div class="note-box">A savings goal, built up week by week — enter the total goal and how much comes out each week, and this tracks how much has been saved and how much is left automatically.</div>
+    <div class="note-box" style="margin-bottom:12px;">These are read from the existing <strong>Semana de Fondo</strong> charges already recorded on the Charges &amp; Income tab — a savings goal, built up week by week. This view doesn't create new ones; add a new deposit the same way as any other charge, using "Semana de Fondo" as the charge type.</div>
+    <div class="panel" id="weekdeposit-form-panel" style="display:none;">
+        <h2>Edit Deposit</h2>
         <form id="weekdeposit-form" style="margin-top:8px;">
             <div class="form-row">
                 <div class="field field-wide">
                     <label>Employee</label>
-                    <select id="wd-employee" required><option value="">— Select employee —</option></select>
+                    <select id="wd-employee" required disabled></select>
                 </div>
                 <div class="field"><label>Savings Goal ($)</label><input type="number" id="wd-goal" min="0" step="0.01" required></div>
                 <div class="field"><label>Weekly Saving ($)</label><input type="number" id="wd-weekly" min="0" step="0.01" required></div>
                 <div class="field"><label>Start Date</label><input type="date" id="wd-start" required></div>
                 <div class="field field-wide"><label>Notes</label><input type="text" id="wd-notes" placeholder="optional"></div>
             </div>
-            <button type="submit" class="btn" id="wd-submit-btn">+ Start Deposit</button>
-            <button type="button" class="btn-small" id="wd-cancel-btn" style="display:none; background:#64748b;" onclick="cancelWeekDepositEdit()">Cancel edit</button>
+            <button type="submit" class="btn" id="wd-submit-btn">💾 Save changes</button>
+            <button type="button" class="btn-small" id="wd-cancel-btn" style="background:#64748b;" onclick="cancelWeekDepositEdit()">Cancel</button>
         </form>
     </div>
     <div class="stat-grid" id="weekdeposit-stats-grid" style="margin-bottom:12px;"></div>
@@ -1856,8 +1856,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.73';
+    const APP_VERSION = 'v2.74';
     const CHANGELOG = [
+        { version: 'v2.74', date: '2026-08-06', notes: 'Fixed a real problem with Week in Deposit before it caused any confusion: it was built looking for a charge type that didn\'t match your real data, so it would have shown up completely empty despite your 9 existing "Semana de Fondo" entries being right there. Fixed to read the correct existing category, and it also no longer offers to create new ones — it\'s a dedicated savings-style view of what you already record on Charges & Income, not a separate place to add them. You can still edit or remove an existing entry directly from this tab; new ones get added the normal way, tagged "Semana de Fondo" like always.' },
         { version: 'v2.73', date: '2026-08-06', notes: 'Finished the sidebar/theme rework and shipped two new things. Change Password, Sign Out, and the theme picker are now three individual, always-visible items at the bottom of the sidebar on desktop — no menu to open first — while phone stays exactly as it was, up top. Statement now shows View Only accounts their own information immediately, no more picking themselves from a list with only one name in it. Fleet search now also matches by Vehicle ID, not just truck #/plate/VIN. And there\'s a brand new "Week in Deposit" tab for tracking savings-style deposits — set a goal and a weekly amount, and it shows exactly how much has been saved and how much is left, week by week, with its own icon in the sidebar.' },
         { version: 'v2.72', date: '2026-08-06', notes: 'Two small fixes. Expiring Documents now has its icon in the sidebar, matching every other section. And on desktop, Change Password / Sign Out now anchor to the bottom of the left sidebar instead of sitting up in the header — a cleaner, more standard spot for account actions. Phone and tablet are untouched — they stay right where they were, up top.' },
         { version: 'v2.71', date: '2026-08-06', notes: 'Expiring Documents is now its own section in the sidebar, no longer tucked under Administration — and View Only accounts can now see it too, with the same "your own information only" rule already used everywhere else in the app: they\'ll only ever see their own driver license, work permit, and medical card expirations, never anyone else\'s, and never fleet items, since a truck isn\'t personal to any one person the way those documents are.' },
@@ -5035,7 +5036,7 @@
     // Deposit". Reuses chargeBalance()/buildChargeSchedule() untouched, so
     // it inherits the same already-tested calculation logic and the same
     // server-side role scoping the rest of Charges already has.
-    const WEEK_DEPOSIT_TYPE = 'Week in Deposit';
+    const WEEK_DEPOSIT_TYPE = 'Semana de Fondo';
     let editingWeekDepositId = null;
 
     function populateWeekDepositEmployeeDropdown() {
@@ -5050,36 +5051,26 @@
 
     document.getElementById('weekdeposit-form').addEventListener('submit', async function (e) {
         e.preventDefault();
-        if (!canEdit()) return;
-        const empId = document.getElementById('wd-employee').value;
-        if (!empId) { alert('Select an employee.'); return; }
+        if (!canEdit() || !editingWeekDepositId) return; // this form is edit-only — new deposits are created via the normal Charges tab, using the existing "Semana de Fondo" charge type
         const fields = {
-            employee_id: empId, charge_type: WEEK_DEPOSIT_TYPE,
+            employee_id: document.getElementById('wd-employee').value,
+            charge_type: WEEK_DEPOSIT_TYPE,
             amount: parseFloat(document.getElementById('wd-goal').value) || 0,
             weekly_deduction: parseFloat(document.getElementById('wd-weekly').value) || 0,
             start_date: document.getElementById('wd-start').value || null,
             end_date: null, status: 'Deducting',
             notes: document.getElementById('wd-notes').value.trim()
         };
-        if (editingWeekDepositId) {
-            const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: editingWeekDepositId, p_fields: fields });
-            if (error) { alert('Error: ' + error.message); return; }
-            if (data) alert(data);
-            cancelWeekDepositEdit();
-        } else {
-            const co = requireWriteCompany();
-            if (!co) return;
-            const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
-            const payload = Object.assign({ charge_id: chargeId, company_code: co }, fields);
-            const { error } = await supabaseClient.from('charges').insert([payload]);
-            if (error) { alert('Error starting deposit: ' + error.message); return; }
-            document.getElementById('weekdeposit-form').reset();
-        }
+        const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: editingWeekDepositId, p_fields: fields });
+        if (error) { alert('Error: ' + error.message); return; }
+        if (data) alert(data);
+        cancelWeekDepositEdit();
         await fetchChargesFromCloud();
         renderWeekDeposit();
     });
 
     function editWeekDeposit(id) {
+        if (!canEdit()) return;
         const ch = charges.find(c => c.charge_id === id);
         if (!ch) return;
         editingWeekDepositId = id;
@@ -5088,15 +5079,13 @@
         document.getElementById('wd-weekly').value = ch.weekly_deduction;
         document.getElementById('wd-start').value = ch.start_date || '';
         document.getElementById('wd-notes').value = ch.notes || '';
-        document.getElementById('wd-submit-btn').textContent = '💾 Save changes';
-        document.getElementById('wd-cancel-btn').style.display = '';
-        document.getElementById('weekdeposit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('weekdeposit-form-panel').style.display = '';
+        document.getElementById('weekdeposit-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function cancelWeekDepositEdit() {
         editingWeekDepositId = null;
         document.getElementById('weekdeposit-form').reset();
-        document.getElementById('wd-submit-btn').textContent = '+ Start Deposit';
-        document.getElementById('wd-cancel-btn').style.display = 'none';
+        document.getElementById('weekdeposit-form-panel').style.display = 'none';
     }
     async function deleteWeekDeposit(id) {
         await deleteCharge(id); // handles its own confirm + canEdit() check + re-fetch
@@ -5105,9 +5094,7 @@
 
     function renderWeekDeposit() {
         populateWeekDepositEmployeeDropdown();
-        const editable = canEdit();
-        const formPanel = document.getElementById('weekdeposit-form')?.closest('.panel');
-        if (formPanel) formPanel.style.display = editable ? '' : 'none';
+        // The edit panel only ever shows via editWeekDeposit() — no default-open create form anymore, since new "Semana de Fondo" deposits are created through the normal Charges tab, not duplicated here.
 
         const statusFilter = document.getElementById('weekdeposit-status-filter')?.value || '';
         const query = (document.getElementById('weekdeposit-search')?.value || '').toLowerCase();
