@@ -1856,8 +1856,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.74';
+    const APP_VERSION = 'v2.75';
     const CHANGELOG = [
+        { version: 'v2.75', date: '2026-08-06', notes: 'Fixed the error that broke the whole app in the last update — a real mistake on my end while cleaning up Week in Deposit, a leftover reference to something I\'d removed. Confirmed this time by actually running the exact code with real data before shipping, not just checking it looks right. Also fixed the ⋮ menu on phones opening in the wrong spot and getting cut off along the edge — it now opens directly under the button itself and stays fully on screen, calculated from the button\'s real position instead of a fixed guess.' },
         { version: 'v2.74', date: '2026-08-06', notes: 'Fixed a real problem with Week in Deposit before it caused any confusion: it was built looking for a charge type that didn\'t match your real data, so it would have shown up completely empty despite your 9 existing "Semana de Fondo" entries being right there. Fixed to read the correct existing category, and it also no longer offers to create new ones — it\'s a dedicated savings-style view of what you already record on Charges & Income, not a separate place to add them. You can still edit or remove an existing entry directly from this tab; new ones get added the normal way, tagged "Semana de Fondo" like always.' },
         { version: 'v2.73', date: '2026-08-06', notes: 'Finished the sidebar/theme rework and shipped two new things. Change Password, Sign Out, and the theme picker are now three individual, always-visible items at the bottom of the sidebar on desktop — no menu to open first — while phone stays exactly as it was, up top. Statement now shows View Only accounts their own information immediately, no more picking themselves from a list with only one name in it. Fleet search now also matches by Vehicle ID, not just truck #/plate/VIN. And there\'s a brand new "Week in Deposit" tab for tracking savings-style deposits — set a goal and a weekly amount, and it shows exactly how much has been saved and how much is left, week by week, with its own icon in the sidebar.' },
         { version: 'v2.72', date: '2026-08-06', notes: 'Two small fixes. Expiring Documents now has its icon in the sidebar, matching every other section. And on desktop, Change Password / Sign Out now anchor to the bottom of the left sidebar instead of sitting up in the header — a cleaner, more standard spot for account actions. Phone and tablet are untouched — they stay right where they were, up top.' },
@@ -2777,8 +2778,27 @@
     function toggleUserMenu(evt) {
         if (evt) evt.stopPropagation();
         const dd = document.getElementById('user-menu-dropdown');
-        if (!dd) return;
-        dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+        const btn = document.getElementById('user-menu-btn');
+        if (!dd || !btn) return;
+        const opening = dd.style.display === 'none' || !dd.style.display;
+        if (opening) {
+            // Position from the button's real on-screen location instead of
+            // relying on CSS right:0 relative to its wrapper — on mobile
+            // the wrapper doesn't always sit at the header's right edge,
+            // which was pushing the dropdown partly off-screen.
+            const r = btn.getBoundingClientRect();
+            const ddWidth = 190;
+            let left = r.right - ddWidth;
+            left = Math.max(10, Math.min(left, window.innerWidth - ddWidth - 10));
+            dd.style.position = 'fixed';
+            dd.style.top = (r.bottom + 6) + 'px';
+            dd.style.left = left + 'px';
+            dd.style.right = 'auto';
+            dd.style.bottom = 'auto';
+            dd.style.width = ddWidth + 'px';
+            dd.style.minWidth = '0';
+        }
+        dd.style.display = opening ? 'block' : 'none';
     }
     // Close the menu on any click elsewhere, and on Escape.
     document.addEventListener('click', (e) => {
@@ -5103,6 +5123,7 @@
         let list = charges.filter(c => c.charge_type === WEEK_DEPOSIT_TYPE);
         if (statusFilter) list = list.filter(c => c.status === statusFilter);
         if (query) list = list.filter(c => `${c.charge_id} ${empName(c.employee_id)}`.toLowerCase().includes(query));
+        const editable = canEdit(); // still needed below for each row's Edit/Delete buttons, even though it's no longer used for the create-panel (that's edit-only now, shown via editWeekDeposit())
 
         const grid = document.getElementById('weekdeposit-stats-grid');
         let totalSaved = 0, totalRemaining = 0;
