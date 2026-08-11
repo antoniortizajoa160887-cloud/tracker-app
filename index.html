@@ -241,9 +241,17 @@
         #app-sidebar {
             position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
             display: flex; flex-direction: column; overflow-y: auto;
-            background: #0f1720; padding: 14px 10px 20px; z-index: 500;
+            background: #0f1720; padding: 14px 10px 64px; z-index: 500;
             border-right: 1px solid rgba(255,255,255,0.06);
         }
+        /* Change Password / Sign Out anchor to the bottom of the sidebar on
+           desktop — mobile leaves this untouched in the header (no DOM
+           move, just a visual reposition via fixed positioning, same
+           approach used for the sidebar itself). The dropdown has to open
+           upward here since the button now sits at the bottom of the
+           screen instead of near the top. */
+        body.logged-in #user-menu-wrap { position: fixed; left: 12px; bottom: 14px; z-index: 501; }
+        body.logged-in #user-menu-dropdown { top: auto; bottom: 46px; }
         .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
         #app-sidebar .tab-groups { flex-direction: column; overflow: visible; background: none; border-radius: 0; padding: 0; gap: 2px; }
         #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 10px 12px; color: #8b98a5; }
@@ -262,6 +270,7 @@
         #app-sidebar #btn-grp-logistics::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h11v9H3zM14 10h4l3 3v3h-7z'/%3E%3Ccircle cx='7' cy='18' r='1.6'/%3E%3Ccircle cx='17.5' cy='18' r='1.6'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-grp-hr::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='7' r='3'/%3E%3Cpath d='M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6'/%3E%3Ccircle cx='17' cy='8' r='2.3'/%3E%3Cpath d='M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-grp-admin::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.9 2.9l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.9-2.9l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.6-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.9-2.9l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.6V3a2 2 0 114 0v.2a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.9 2.9l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.6 1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.6 1z'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-grp-expiring::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v5l-2.5 2M8 3.5l2 2M16 3.5l-2 2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-tracker::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h11v9H3zM14 10h4l3 3v3h-7z'/%3E%3Ccircle cx='7' cy='18' r='1.6'/%3E%3Ccircle cx='17.5' cy='18' r='1.6'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-report::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20V10M10 20V4M16 20v-7M22 20H2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-vehicles::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 17h1M20 17h1M5 17h10l2-5-3-3H8L5 10z'/%3E%3Ccircle cx='8.5' cy='17' r='1.8'/%3E%3Ccircle cx='16.5' cy='17' r='1.8'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
@@ -713,7 +722,7 @@
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-            <div style="display:flex; align-items:center; gap:8px; position:relative;">
+            <div id="user-menu-wrap" style="display:flex; align-items:center; gap:8px; position:relative;">
                 <button class="btn-small" id="user-menu-btn" style="margin:0; width:40px; height:40px; min-height:40px; padding:0; font-size:18px; line-height:1;" onclick="toggleUserMenu(event)" title="More options">⋮</button>
                 <div id="user-menu-dropdown" style="display:none; position:absolute; top:46px; right:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.18); min-width:180px; z-index:600; overflow:hidden;">
                     <div style="display:flex; gap:8px; justify-content:center; padding:12px 14px; border-bottom:1px solid var(--border);">
@@ -1791,8 +1800,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.71';
+    const APP_VERSION = 'v2.72';
     const CHANGELOG = [
+        { version: 'v2.72', date: '2026-08-06', notes: 'Two small fixes. Expiring Documents now has its icon in the sidebar, matching every other section. And on desktop, Change Password / Sign Out now anchor to the bottom of the left sidebar instead of sitting up in the header — a cleaner, more standard spot for account actions. Phone and tablet are untouched — they stay right where they were, up top.' },
         { version: 'v2.71', date: '2026-08-06', notes: 'Expiring Documents is now its own section in the sidebar, no longer tucked under Administration — and View Only accounts can now see it too, with the same "your own information only" rule already used everywhere else in the app: they\'ll only ever see their own driver license, work permit, and medical card expirations, never anyone else\'s, and never fleet items, since a truck isn\'t personal to any one person the way those documents are.' },
         { version: 'v2.70', date: '2026-08-06', notes: 'Went back and fixed the messaging refresh properly this time. The last fix only softened what got rebuilt every few seconds — this one stops it from touching anything on screen at all unless a message actually came in. So now, if nothing new has happened, the background check runs quietly and nothing visibly moves, resets, or interrupts you — not the dropdowns, not your typing, nothing. Also made sending a message feel a bit smoother: the message box stays focused right after you hit send, so you can keep typing your next line without having to click back into it.' },
         { version: 'v2.69', date: '2026-08-06', notes: 'Three changes. Fixed the ⋮ menu text going unreadable on hover — Change Password and Sign Out now stay clearly visible the whole time your mouse is over them, in every theme. New "Expiring Documents" tab (under Administration) — one combined, soonest-first list of everything with an expiration date already on file: fleet registration and insurance, plus driver license, work permit, and medical card for every employee, instead of having to check each one individually. Search results now open as their own full page instead of a small popup, similar to a search engine\'s results page — the search bar itself works exactly the same as before, just Enter to search.' },
