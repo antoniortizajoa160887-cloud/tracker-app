@@ -236,6 +236,7 @@
        defined just above — this block only adds overrides, it never
        removes or changes the mobile rules. ---- */
     .sidebar-logo { display: none; }
+    #sidebar-account-bar { display: none; }
     @media (min-width: 900px) {
         body.logged-in #app-container { margin-left: 240px; }
         #app-sidebar {
@@ -244,14 +245,16 @@
             background: #0f1720; padding: 14px 10px 64px; z-index: 500;
             border-right: 1px solid rgba(255,255,255,0.06);
         }
-        /* Change Password / Sign Out anchor to the bottom of the sidebar on
-           desktop — mobile leaves this untouched in the header (no DOM
-           move, just a visual reposition via fixed positioning, same
-           approach used for the sidebar itself). The dropdown has to open
-           upward here since the button now sits at the bottom of the
-           screen instead of near the top. */
-        body.logged-in #user-menu-wrap { position: fixed; left: 12px; bottom: 14px; z-index: 501; }
-        body.logged-in #user-menu-dropdown { top: auto; bottom: 46px; }
+        /* Change Password / Sign Out / theme now live as individual buttons
+           at the bottom of the sidebar on desktop (see #sidebar-account-bar
+           below) — the original header dropdown is hidden there entirely
+           and left fully intact for mobile, which still uses it unchanged. */
+        body.logged-in #user-menu-wrap { display: none; }
+        #sidebar-account-bar { display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+        #sidebar-account-bar .theme-swatch-row { justify-content: flex-start; padding: 4px 10px 8px; }
+        #sidebar-account-bar button.sidebar-account-btn { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 9px 10px; font-size: 0.8rem; color: #93a4b8; cursor: pointer; }
+        #sidebar-account-bar button.sidebar-account-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        #sidebar-account-btn-signout:hover { color: #f87171 !important; }
         .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
         #app-sidebar .tab-groups { flex-direction: column; overflow: visible; background: none; border-radius: 0; padding: 0; gap: 2px; }
         #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 10px 12px; color: #8b98a5; }
@@ -278,6 +281,7 @@
         #app-sidebar #btn-tab-employees::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='3.4'/%3E%3Cpath d='M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-claims::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h10a1 1 0 011 1v16l-3-2-3 2-3-2-3 2V4a1 1 0 011-1z'/%3E%3Cpath d='M9 8h6M9 12h6M9 16h3'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-charges::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5v9M15 9.8c0-1.3-1.3-2.3-3-2.3s-3 .9-3 2.1c0 1.3 1.3 1.8 3 2.2 1.7.4 3 .9 3 2.2 0 1.2-1.3 2.1-3 2.1s-3-1-3-2.3'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-weekdeposit::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5c0-1 .6-1.8 1.5-2.2L6 9c.5-1.8 2.3-3.5 5-3.5 3 0 5 1.8 5.6 4h1.4c1.1 0 1.5 1.4.6 2l-1.6 1v2.5c0 .8-.7 1.5-1.5 1.5H14v1.5h-2V17h-2.5c-.6 0-1-.3-1.3-.8L7.5 15H6c-1.1 0-2-.9-2-2z'/%3E%3Ccircle cx='15' cy='11.5' r='0.6' fill='%239aa7b5'/%3E%3Cpath d='M6.5 9.5V8'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-dailypay::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='2'/%3E%3Cpath d='M3.5 9.5h17M8 3v3.5M16 3v3.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-providerpay::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12v18l-1.7-1.2L15 21l-1.5-1.2L12 21l-1.5-1.2L9 21l-1.3-1.2L6 21z'/%3E%3Cpath d='M8.5 8h7M8.5 11.5h7M8.5 15h4.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-statement::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h8l3.5 3.5V21H7z'/%3E%3Cpath d='M15 3v3.5h3.5M9.5 12h5M9.5 15.5h5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
@@ -787,6 +791,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges" data-i18n="tab_charges">Charges &amp; Income</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-weekdeposit')" id="btn-tab-weekdeposit">Week in Deposit</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
@@ -805,6 +810,19 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
 </div>
+    <!-- Desktop-only: individual account actions anchored to the bottom of
+         the sidebar. Mobile keeps the original ⋮ header dropdown, hidden
+         here, fully untouched — see #user-menu-wrap's display:none rule
+         inside the @media(min-width:900px) block above. -->
+    <div id="sidebar-account-bar">
+        <div class="theme-swatch-row">
+            <button type="button" class="theme-swatch" id="sidebar-theme-btn-light" onclick="setTheme('light')" style="background:#10b981;" title="Light"></button>
+            <button type="button" class="theme-swatch" id="sidebar-theme-btn-ocean" onclick="setTheme('dark')" style="background:#2dd4bf;" title="Ocean"></button>
+            <button type="button" class="theme-swatch" id="sidebar-theme-btn-emerald" onclick="setTheme('dark-emerald')" style="background:#22c55e;" title="Emerald"></button>
+        </div>
+        <button type="button" class="sidebar-account-btn" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+        <button type="button" class="sidebar-account-btn" id="sidebar-account-btn-signout" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
+    </div>
     </nav>
 
 <!-- TAB 1: ROUTE TRACKER -->
@@ -1358,6 +1376,44 @@
     </div>
 </div>
 
+<!-- TAB: WEEK IN DEPOSIT -->
+<div id="tab-weekdeposit" class="tab-content">
+    <div class="panel">
+        <h2 class="panel-head" onclick="toggleCollapse(this)">Start a Deposit <span class="caret">&#9662;</span></h2>
+        <div class="note-box">A savings goal, built up week by week — enter the total goal and how much comes out each week, and this tracks how much has been saved and how much is left automatically.</div>
+        <form id="weekdeposit-form" style="margin-top:8px;">
+            <div class="form-row">
+                <div class="field field-wide">
+                    <label>Employee</label>
+                    <select id="wd-employee" required><option value="">— Select employee —</option></select>
+                </div>
+                <div class="field"><label>Savings Goal ($)</label><input type="number" id="wd-goal" min="0" step="0.01" required></div>
+                <div class="field"><label>Weekly Saving ($)</label><input type="number" id="wd-weekly" min="0" step="0.01" required></div>
+                <div class="field"><label>Start Date</label><input type="date" id="wd-start" required></div>
+                <div class="field field-wide"><label>Notes</label><input type="text" id="wd-notes" placeholder="optional"></div>
+            </div>
+            <button type="submit" class="btn" id="wd-submit-btn">+ Start Deposit</button>
+            <button type="button" class="btn-small" id="wd-cancel-btn" style="display:none; background:#64748b;" onclick="cancelWeekDepositEdit()">Cancel edit</button>
+        </form>
+    </div>
+    <div class="stat-grid" id="weekdeposit-stats-grid" style="margin-bottom:12px;"></div>
+    <div class="panel">
+        <div class="form-row" style="margin-bottom:10px;">
+            <div class="field"><label>Status</label>
+                <select id="weekdeposit-status-filter" onchange="renderWeekDeposit()">
+                    <option value="">All statuses</option>
+                    <option value="Deducting" selected>Deducting</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Absorbed">Absorbed</option>
+                </select>
+            </div>
+            <div class="field field-wide"><input type="text" id="weekdeposit-search" placeholder="Search name or ID..." oninput="renderWeekDeposit()"></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('weekdeposit')">✕ Clear filters</button>
+        </div>
+        <div id="weekdeposit-tbody"></div>
+    </div>
+</div>
+
 <!-- TAB: PROVIDER PAY -->
 <div id="tab-providerpay" class="tab-content">
     <div class="panel" style="margin-bottom:12px;">
@@ -1800,8 +1856,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.72';
+    const APP_VERSION = 'v2.73';
     const CHANGELOG = [
+        { version: 'v2.73', date: '2026-08-06', notes: 'Finished the sidebar/theme rework and shipped two new things. Change Password, Sign Out, and the theme picker are now three individual, always-visible items at the bottom of the sidebar on desktop — no menu to open first — while phone stays exactly as it was, up top. Statement now shows View Only accounts their own information immediately, no more picking themselves from a list with only one name in it. Fleet search now also matches by Vehicle ID, not just truck #/plate/VIN. And there\'s a brand new "Week in Deposit" tab for tracking savings-style deposits — set a goal and a weekly amount, and it shows exactly how much has been saved and how much is left, week by week, with its own icon in the sidebar.' },
         { version: 'v2.72', date: '2026-08-06', notes: 'Two small fixes. Expiring Documents now has its icon in the sidebar, matching every other section. And on desktop, Change Password / Sign Out now anchor to the bottom of the left sidebar instead of sitting up in the header — a cleaner, more standard spot for account actions. Phone and tablet are untouched — they stay right where they were, up top.' },
         { version: 'v2.71', date: '2026-08-06', notes: 'Expiring Documents is now its own section in the sidebar, no longer tucked under Administration — and View Only accounts can now see it too, with the same "your own information only" rule already used everywhere else in the app: they\'ll only ever see their own driver license, work permit, and medical card expirations, never anyone else\'s, and never fleet items, since a truck isn\'t personal to any one person the way those documents are.' },
         { version: 'v2.70', date: '2026-08-06', notes: 'Went back and fixed the messaging refresh properly this time. The last fix only softened what got rebuilt every few seconds — this one stops it from touching anything on screen at all unless a message actually came in. So now, if nothing new has happened, the background check runs quietly and nothing visibly moves, resets, or interrupts you — not the dropdowns, not your typing, nothing. Also made sending a message feel a bit smoother: the message box stays focused right after you hit send, so you can keep typing your next line without having to click back into it.' },
@@ -2455,7 +2512,7 @@
     function openTab(evt, tabName) {
         // View Only users may only open their 6 permitted tabs.
         if (currentUserRole === 'User') {
-            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-statement','tab-payroll','tab-messages','tab-expiring'];
+            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-weekdeposit','tab-statement','tab-payroll','tab-messages','tab-expiring'];
             if (!allowed.includes(tabName)) return;
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -2468,6 +2525,7 @@
         if(tabName === 'tab-messages') renderMessagesTab();
         if(tabName === 'tab-claims') renderClaims();
         if(tabName === 'tab-charges') { renderCharges(); renderIncome(); }
+        if(tabName === 'tab-weekdeposit') renderWeekDeposit();
         if(tabName === 'tab-report') renderDailyReport();
         if(tabName === 'tab-users') fetchUsersList();
         if(tabName === 'tab-statement') populateStatementDropdown();
@@ -2486,7 +2544,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-messages'],
+        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-messages'],
         'grp-expiring': ['tab-expiring'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
@@ -3557,6 +3615,11 @@
             case 'charges':
                 setVal('charge-search', '');
                 renderCharges();
+                break;
+            case 'weekdeposit':
+                setVal('weekdeposit-status-filter', 'Deducting');
+                setVal('weekdeposit-search', '');
+                renderWeekDeposit();
                 break;
             case 'income':
                 setVal('income-search', '');
@@ -4966,6 +5029,138 @@
         }
     }
 
+    // ===== WEEK IN DEPOSIT ("semana de fondo") ============================
+    // Not a new data type — this is a dedicated, savings-goal-framed view
+    // over the same charges table, filtered to charge_type "Week in
+    // Deposit". Reuses chargeBalance()/buildChargeSchedule() untouched, so
+    // it inherits the same already-tested calculation logic and the same
+    // server-side role scoping the rest of Charges already has.
+    const WEEK_DEPOSIT_TYPE = 'Week in Deposit';
+    let editingWeekDepositId = null;
+
+    function populateWeekDepositEmployeeDropdown() {
+        const sel = document.getElementById('wd-employee');
+        if (!sel) return;
+        const isViewOnly = currentUserRole === 'User';
+        const myEmpId = currentUser && currentUser.employee_id;
+        const scoped = isViewOnly ? employees.filter(e => e.id === myEmpId) : employees;
+        const sorted = scoped.slice().sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
+        sel.innerHTML = '<option value="">— Select employee —</option>' + sorted.map(e => `<option value="${e.id}">${employeeOptionLabel(e)}</option>`).join('');
+    }
+
+    document.getElementById('weekdeposit-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (!canEdit()) return;
+        const empId = document.getElementById('wd-employee').value;
+        if (!empId) { alert('Select an employee.'); return; }
+        const fields = {
+            employee_id: empId, charge_type: WEEK_DEPOSIT_TYPE,
+            amount: parseFloat(document.getElementById('wd-goal').value) || 0,
+            weekly_deduction: parseFloat(document.getElementById('wd-weekly').value) || 0,
+            start_date: document.getElementById('wd-start').value || null,
+            end_date: null, status: 'Deducting',
+            notes: document.getElementById('wd-notes').value.trim()
+        };
+        if (editingWeekDepositId) {
+            const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: editingWeekDepositId, p_fields: fields });
+            if (error) { alert('Error: ' + error.message); return; }
+            if (data) alert(data);
+            cancelWeekDepositEdit();
+        } else {
+            const co = requireWriteCompany();
+            if (!co) return;
+            const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
+            const payload = Object.assign({ charge_id: chargeId, company_code: co }, fields);
+            const { error } = await supabaseClient.from('charges').insert([payload]);
+            if (error) { alert('Error starting deposit: ' + error.message); return; }
+            document.getElementById('weekdeposit-form').reset();
+        }
+        await fetchChargesFromCloud();
+        renderWeekDeposit();
+    });
+
+    function editWeekDeposit(id) {
+        const ch = charges.find(c => c.charge_id === id);
+        if (!ch) return;
+        editingWeekDepositId = id;
+        document.getElementById('wd-employee').value = ch.employee_id;
+        document.getElementById('wd-goal').value = ch.amount;
+        document.getElementById('wd-weekly').value = ch.weekly_deduction;
+        document.getElementById('wd-start').value = ch.start_date || '';
+        document.getElementById('wd-notes').value = ch.notes || '';
+        document.getElementById('wd-submit-btn').textContent = '💾 Save changes';
+        document.getElementById('wd-cancel-btn').style.display = '';
+        document.getElementById('weekdeposit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function cancelWeekDepositEdit() {
+        editingWeekDepositId = null;
+        document.getElementById('weekdeposit-form').reset();
+        document.getElementById('wd-submit-btn').textContent = '+ Start Deposit';
+        document.getElementById('wd-cancel-btn').style.display = 'none';
+    }
+    async function deleteWeekDeposit(id) {
+        await deleteCharge(id); // handles its own confirm + canEdit() check + re-fetch
+        renderWeekDeposit();
+    }
+
+    function renderWeekDeposit() {
+        populateWeekDepositEmployeeDropdown();
+        const editable = canEdit();
+        const formPanel = document.getElementById('weekdeposit-form')?.closest('.panel');
+        if (formPanel) formPanel.style.display = editable ? '' : 'none';
+
+        const statusFilter = document.getElementById('weekdeposit-status-filter')?.value || '';
+        const query = (document.getElementById('weekdeposit-search')?.value || '').toLowerCase();
+        const empName = id => { const e = employees.find(x => x.id === id); return e ? `${e.first_name} ${e.last_name}` : id; };
+
+        let list = charges.filter(c => c.charge_type === WEEK_DEPOSIT_TYPE);
+        if (statusFilter) list = list.filter(c => c.status === statusFilter);
+        if (query) list = list.filter(c => `${c.charge_id} ${empName(c.employee_id)}`.toLowerCase().includes(query));
+
+        const grid = document.getElementById('weekdeposit-stats-grid');
+        let totalSaved = 0, totalRemaining = 0;
+        const rows = list.map(c => {
+            const goal = Math.max(0, parseFloat(c.amount) || 0);
+            const remaining = chargeBalance(c);
+            const saved = Math.max(0, +(goal - remaining).toFixed(2));
+            totalSaved += saved; totalRemaining += remaining;
+            const pct = goal > 0 ? Math.min(100, Math.round((saved / goal) * 100)) : 0;
+            const sched = buildChargeSchedule(c, null);
+            const scheduleRows = sched.rows.map(r => `<tr><td>${r.date}</td><td>${r.paused ? '<em style="color:var(--text-muted);">paused</em>' : formatMoney(r.deducted)}</td><td>${formatMoney(goal - r.balance)}</td><td>${formatMoney(r.balance)}</td></tr>`).join('');
+            return `
+                <div class="panel collapsed" style="margin-bottom:8px;">
+                    <div class="panel-head" onclick="toggleCollapse(this)">
+                        <span style="font-size:13px;"><span class="type-pill">${c.charge_id}</span> <b>${escHtml(empName(c.employee_id))}</b> · <span class="status-badge status-${c.status}">${c.status}</span></span>
+                        <span class="caret">&#9662;</span>
+                    </div>
+                    <div>
+                        <div style="background:var(--surface-2); border-radius:6px; height:8px; margin:8px 0 4px; overflow:hidden;"><div style="background:var(--primary); height:100%; width:${pct}%;"></div></div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${pct}% of goal</div>
+                        <div class="form-row" style="margin:0 0 8px;align-items:center;">
+                            <div class="field"><label>Goal</label><div class="money">${formatMoney(goal)}</div></div>
+                            <div class="field"><label>Weekly saving</label><div>${formatMoney(c.weekly_deduction)}</div></div>
+                            <div class="field"><label>Saved so far</label><div class="money" style="color:#059669;">${formatMoney(saved)}</div></div>
+                            <div class="field"><label>Remaining to goal</label><div class="money">${formatMoney(remaining)}</div></div>
+                            <div class="field"><label>Start</label><div>${c.start_date || '-'}</div></div>
+                        </div>
+                        ${editable ? `<div class="rec-actions" style="margin-bottom:8px;">
+                            <button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); editWeekDeposit('${c.charge_id}')">✎ Edit</button>
+                            <button class="del-btn" onclick="event.stopPropagation(); deleteWeekDeposit('${c.charge_id}')">✕ Delete</button>
+                        </div>` : ''}
+                        ${sched.rows.length ? `<div class="table-wrapper" style="max-height:260px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Saved that week</th><th style="text-align:left;">Total saved</th><th style="text-align:left;">Remaining</th></tr></thead><tbody>${scheduleRows}</tbody></table></div>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+
+        if (grid) grid.innerHTML = `
+            <div class="stat-card"><div class="stat-label">Active deposits</div><div class="stat-value">${list.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Total saved</div><div class="stat-value" style="color:#059669;">${formatMoney(totalSaved)}</div></div>
+            <div class="stat-card"><div class="stat-label">Total remaining</div><div class="stat-value">${formatMoney(totalRemaining)}</div></div>`;
+
+        const body = document.getElementById('weekdeposit-tbody');
+        if (body) body.innerHTML = rows || '<div style="text-align:center; color:var(--text-muted); padding:20px;">No deposits found.</div>';
+    }
+
     // ===== ADDITIONAL INCOME (mirror of charges, but ADDS to pay) =====
     let incomeTableMissing = false;
 
@@ -5192,6 +5387,10 @@
         // clear it rather than silently keep showing a now-filtered-out person's statement.
         if (prev && filtered.some(e => e.id === prev)) { sel.value = prev; }
         else if (prev) { sel.value = ''; }
+        // View Only only ever has their own single record to pick from (the
+        // employees array is already server-side scoped to just them) — show
+        // it directly instead of making them click a dropdown with one option.
+        if (!sel.value && currentUserRole === 'User' && filtered.length === 1) sel.value = filtered[0].id;
         renderStatement(); // always, so the week label + stat bubbles are correct even before any employee is picked
     }
 
@@ -7271,6 +7470,12 @@
             const el = document.getElementById(id);
             if (el) el.classList.toggle('active', id === headerSwatchFor[cur]);
         });
+        // Sidebar account bar (desktop) — same idea again.
+        const sidebarSwatchFor = { light: 'sidebar-theme-btn-light', dark: 'sidebar-theme-btn-ocean', 'dark-emerald': 'sidebar-theme-btn-emerald' };
+        ['sidebar-theme-btn-light', 'sidebar-theme-btn-ocean', 'sidebar-theme-btn-emerald'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('active', id === sidebarSwatchFor[cur]);
+        });
     }
 
     function renderSettingsLists() {
@@ -8103,7 +8308,7 @@
         const query = (document.getElementById('vehicle-search')?.value || '').toLowerCase();
         let list = vehicles.filter(v => {
             if (!query) return true;
-            const hay = `${v.truck_number || ''} ${v.year} ${v.make} ${v.model} ${v.plate || ''} ${v.vin || ''}`.toLowerCase();
+            const hay = `${v.id} ${v.truck_number || ''} ${v.year} ${v.make} ${v.model} ${v.plate || ''} ${v.vin || ''}`.toLowerCase();
             return hay.includes(query);
         });
         list = applySort(list, 'vehicles', {
