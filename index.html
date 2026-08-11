@@ -323,6 +323,11 @@
     }
 
     /* Layouts & Forms */
+    .global-search-wrap { position: relative; margin: 4px 0 2px; }
+    .global-search-wrap input { padding-left: 34px; margin: 0; }
+    .global-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: 0.6; pointer-events: none; }
+    .global-search-result { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 18px; cursor: pointer; flex-wrap: wrap; }
+    .global-search-result:hover { background: var(--surface-2); }
     .card, .panel { background: var(--surface); border-radius: 8px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); margin-bottom: 12px; border: 1px solid var(--border); }
     .grid-form, .form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
     .field { flex: 1 1 100%; min-width: 100%; margin-bottom: 0; }
@@ -645,6 +650,16 @@
 <!-- Version badge — always visible, tap to see the changelog -->
 <div id="version-badge" onclick="toggleVersionLog()" style="position:fixed; bottom:8px; right:8px; background:rgba(15,23,42,0.82); color:#fff; font-size:10px; font-family:var(--mono); padding:4px 9px; border-radius:12px; z-index:9998; cursor:pointer; letter-spacing:0.02em; box-shadow:0 2px 6px rgba(0,0,0,0.2);">v0.0</div>
 
+<div id="global-search-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9997; align-items:flex-start; justify-content:center; padding:60px 16px 16px;" onclick="if(event.target===this) closeGlobalSearch()">
+    <div style="background:var(--surface); border-radius:12px; padding:0; max-width:640px; width:100%; max-height:75vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.35); overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border);">
+            <h2 style="margin:0; font-size:1rem;" id="global-search-title">Search results</h2>
+            <span class="del-btn" onclick="closeGlobalSearch()">✕ Close</span>
+        </div>
+        <div id="global-search-results" style="overflow-y:auto; padding:8px 0;"></div>
+    </div>
+</div>
+
 <div id="version-log-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:flex-end; justify-content:center;" onclick="if(event.target===this) toggleVersionLog()">
     <div style="background:var(--surface); border-radius:14px 14px 0 0; padding:18px 18px 26px; max-width:480px; width:100%; max-height:70vh; overflow-y:auto;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -696,6 +711,10 @@
                 <h1 id="app-title" style="margin:0;">Unified Logistics &amp; HR Claims Dashboard</h1>
             </div>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;"><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong> · <span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></p>
+        </div>
+        <div class="global-search-wrap">
+            <span class="global-search-icon">🔍</span>
+            <input type="text" id="global-search-input" placeholder="Search employees, claims, charges, fleet..." onkeydown="if(event.key==='Enter'){runGlobalSearch();}">
         </div>
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -1737,8 +1756,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.66';
+    const APP_VERSION = 'v2.67';
     const CHANGELOG = [
+        { version: 'v2.67', date: '2026-08-06', notes: 'Finished the search bar — there\'s now a real search box at the top of the app (employees, claims, charges, income, fleet all included), and typing something and hitting Enter opens a results page you can click straight into. Messages now feels closer to a live chat — while that tab is open, it checks for new messages every few seconds automatically, no need to reload. While going through this, found and fixed a real gap: resizing the window while on the Fleet tab didn\'t switch between the phone-style and desktop-style layouts the way every other tab already does — it now does. Sidebar, Messages, and everything else built this session already auto-adjust correctly on resize since they\'re built with responsive CSS, which works the same whether you\'re in a browser tab, on a phone, or in the installed app — verified that holds true across all of them.' },
         { version: 'v2.66', date: '2026-08-06', notes: 'Two big changes. First, sidebar icons are now real line icons matching the new design, not emoji — cleaner and consistent across every device. Second, Messages is fully rebuilt to match the sample you shared: a real two-pane chat, contact list on the left with search and category filters, an open conversation on the right with message bubbles and a message box at the bottom, instead of the old flat list with a compose form up top. Everything you type just sends straight into the open conversation now — no more picking who or what you\'re replying to first. The privacy rules underneath are exactly the same as before: View Only sees their own conversation and any staff replies in it, never anyone else\'s, and still can\'t delete messages — this was purely a new coat of paint on the same secure foundation, verified against real accounts before shipping.' },
         { version: 'v2.65', date: '2026-08-06', notes: 'Theme switching is back in the app itself — no more signing out just to change it. Tap the ⋮ menu, top right, and the three theme circles are right there, no label text above them. Same colors as the login screen, and switching updates instantly without closing the menu, so you can click through and compare before deciding. Change Password and Sign Out are still in that same menu, just below the colors now.' },
         { version: 'v2.64', date: '2026-08-06', notes: 'Fixed sidebar text turning invisible on hover in Light theme — the sidebar itself always stays dark by design (a consistent look regardless of which theme you\'re using), but on hover the text was picking up a color meant for the light background elsewhere in the app, going dark-on-dark against the sidebar. Now it always turns white on hover in the sidebar, no matter which theme is active.' },
@@ -1821,6 +1841,97 @@
         const b = document.getElementById('version-badge');
         if (b) b.textContent = APP_VERSION;
     }
+    // ===== Global search =====================================================
+    // Searches whatever's already loaded client-side for the current user
+    // (employees/claims/charges/income/vehicles) — these arrays are already
+    // scoped to what that user's role/company can see via their normal
+    // fetch functions, so this needs no new permission logic of its own.
+    function runGlobalSearch() {
+        const raw = (document.getElementById('global-search-input')?.value || '').trim();
+        const q = raw.toLowerCase();
+        const overlay = document.getElementById('global-search-overlay');
+        const results = document.getElementById('global-search-results');
+        const title = document.getElementById('global-search-title');
+        if (!overlay || !results) return;
+        if (!q) { closeGlobalSearch(); return; }
+
+        const empName = id => { const e = employees.find(x => x.id === id); return e ? `${e.first_name} ${e.last_name}` : id; };
+
+        const empMatches = employees.filter(e => `${e.first_name} ${e.last_name} ${e.id} ${e.department || ''}`.toLowerCase().includes(q));
+        const claimMatches = claims.filter(c => `${c.claim_id} ${c.damage_type || ''} ${c.carrier_claim_number || ''} ${c.customer_claim_number || ''} ${empName(c.employee_id)}`.toLowerCase().includes(q));
+        const chargeMatches = charges.filter(c => `${c.charge_id} ${c.charge_type || ''} ${empName(c.employee_id)}`.toLowerCase().includes(q));
+        const incomeMatches = additionalIncome.filter(i => `${i.income_id} ${i.income_type || ''} ${empName(i.employee_id)}`.toLowerCase().includes(q));
+        const vehicleMatches = vehicles.filter(v => `${v.truck_number || ''} ${v.make || ''} ${v.model || ''} ${v.plate || ''} ${v.vin || ''}`.toLowerCase().includes(q));
+
+        const totalCount = empMatches.length + claimMatches.length + chargeMatches.length + incomeMatches.length + vehicleMatches.length;
+        title.textContent = `Search results for "${raw}" (${totalCount})`;
+
+        if (!totalCount) {
+            results.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 16px; font-size:0.85rem;">No matches. Try a different name, ID, or term.</div>';
+            overlay.style.display = 'flex';
+            return;
+        }
+
+        const section = (label, items, renderRow) => !items.length ? '' : `
+            <div style="padding:6px 18px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); background:var(--surface-2);">${label} (${items.length})</div>
+            ${items.slice(0, 8).map(renderRow).join('')}`;
+
+        results.innerHTML =
+            section('Employees', empMatches, e => `
+                <div class="global-search-result" onclick="goToSearchResult('employees','${e.id}')">
+                    <span class="type-pill">${escHtml(e.first_name)} ${escHtml(e.last_name)}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${e.id} · ${escHtml(e.person_type || '')}</span>
+                </div>`) +
+            section('Claims', claimMatches, c => `
+                <div class="global-search-result" onclick="goToSearchResult('claims','${c.claim_id}')">
+                    <span class="type-pill">${c.claim_id}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${escHtml(empName(c.employee_id))} · ${escHtml(c.damage_type || '')} · ${formatMoney(c.claim_amount)}</span>
+                </div>`) +
+            section('Charges', chargeMatches, c => `
+                <div class="global-search-result" onclick="goToSearchResult('charges','${c.charge_id}')">
+                    <span class="type-pill">${c.charge_id}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${escHtml(empName(c.employee_id))} · ${escHtml(c.charge_type || '')} · ${formatMoney(c.amount)}</span>
+                </div>`) +
+            section('Additional Income', incomeMatches, i => `
+                <div class="global-search-result" onclick="goToSearchResult('income','${i.income_id}')">
+                    <span class="type-pill">${i.income_id}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${escHtml(empName(i.employee_id))} · ${escHtml(i.income_type || '')} · ${formatMoney(i.amount)}</span>
+                </div>`) +
+            section('Fleet', vehicleMatches, v => `
+                <div class="global-search-result" onclick="goToSearchResult('vehicles','${v.id}')">
+                    <span class="type-pill">${escHtml(v.truck_number || v.id)}</span>
+                    <span style="font-size:11px; color:var(--text-muted);">${escHtml(v.year || '')} ${escHtml(v.make || '')} ${escHtml(v.model || '')} · ${escHtml(v.plate || '')}</span>
+                </div>`);
+
+        overlay.style.display = 'flex';
+    }
+
+    function closeGlobalSearch() {
+        const overlay = document.getElementById('global-search-overlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    // Jumps to the right tab and pre-fills that tab's own search box with
+    // an identifying value, so the clicked record is right there instead
+    // of just landing on a generic tab.
+    function goToSearchResult(kind, id) {
+        closeGlobalSearch();
+        const map = {
+            employees: { tab: 'tab-employees', input: 'employee-search', fn: 'renderEmployees' },
+            claims: { tab: 'tab-claims', input: 'claim-search', fn: 'filterClaims' },
+            charges: { tab: 'tab-charges', input: 'charge-search', fn: 'renderCharges' },
+            income: { tab: 'tab-charges', input: 'income-search', fn: 'renderIncome' },
+            vehicles: { tab: 'tab-vehicles', input: 'vehicle-search', fn: 'renderVehicles' }
+        };
+        const cfg = map[kind];
+        if (!cfg) return;
+        openTab(null, cfg.tab);
+        const input = document.getElementById(cfg.input);
+        if (input) { input.value = id; }
+        if (typeof window[cfg.fn] === 'function') window[cfg.fn]();
+        document.getElementById('global-search-input').value = '';
+    }
+
     function toggleVersionLog() {
         const ov = document.getElementById('version-log-overlay');
         if (!ov) return;
@@ -1918,7 +2029,9 @@
         const map = {
             'tab-employees': renderEmployees, 'tab-claims': renderClaims,
             'tab-payroll': renderPayroll, 'tab-users': fetchUsersList,
-            'tab-companies': renderCompanies, 'tab-approvals': renderApprovals, 'tab-log': renderLog
+            'tab-companies': renderCompanies, 'tab-approvals': renderApprovals, 'tab-log': renderLog,
+            'tab-vehicles': renderVehicles
+            // tab-dailypay has its own dedicated matchMedia listener elsewhere (near renderDailyPay) — not duplicated here.
         };
         const fn = map[active.id];
         if (fn) fn();
@@ -2296,6 +2409,7 @@
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if (tabName !== 'tab-messages') stopMessagePolling();
         document.getElementById(tabName).classList.add('active');
         if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
         if(tabName === 'tab-notifications') renderNotifications();
@@ -5947,9 +6061,13 @@
         onComposeCategoryChange();
     }
 
+    let renderedThreadEmpId = null; // which conversation msg-thread-body currently shows
     function renderConversationThread(empId, messages) {
         const body = document.getElementById('msg-thread-body');
         if (!body) return;
+        const isSameConvo = renderedThreadEmpId === empId;
+        const wasNearBottom = isSameConvo && (body.scrollTop + body.clientHeight) >= (body.scrollHeight - 60);
+        renderedThreadEmpId = empId;
         if (!messages.length) { body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:20px;">No messages yet — say hello below.</div>'; return; }
 
         let html = '';
@@ -5977,7 +6095,7 @@
                 </div>`;
         });
         body.innerHTML = html;
-        body.scrollTop = body.scrollHeight;
+        if (!isSameConvo || wasNearBottom) body.scrollTop = body.scrollHeight;
     }
 
     function onComposeCategoryChange() {
@@ -6042,12 +6160,35 @@
             </div>`);
     }
 
+    // "Live" updates via polling, not Postgres Realtime — deliberately.
+    // This app's login is a custom app_users table, not Supabase Auth, so
+    // every browser tab shares the same anon connection regardless of who's
+    // logged into the app itself. Postgres RLS (and Realtime, which is
+    // built on it) has no way to tell those tabs apart, so any policy
+    // permissive enough for Realtime to broadcast something would broadcast
+    // it to every connected tab — undermining the View Only privacy model
+    // this feature was built around. Polling re-runs the exact same
+    // permission-checked RPC every tab already uses, so it can't leak
+    // anything a normal reload wouldn't.
+    let messagePollTimer = null;
+    function startMessagePolling() {
+        stopMessagePolling();
+        messagePollTimer = setInterval(async () => {
+            await fetchEmployeeMessages();
+            renderConversationList();
+        }, 5000);
+    }
+    function stopMessagePolling() {
+        if (messagePollTimer) { clearInterval(messagePollTimer); messagePollTimer = null; }
+    }
+
     async function renderMessagesTab() {
         activeConvoEmpId = null;
         convoFilter = '';
         composeCategory = 'General';
         await fetchEmployeeMessages();
         renderConversationList();
+        startMessagePolling();
     }
 
     async function renderPayroll() {
