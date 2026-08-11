@@ -254,6 +254,31 @@
         #app-sidebar .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.04); }
         #app-sidebar .tab-btn.active { background: var(--primary); color: #06251c; }
         #header-logo-icon { display: none; } /* sidebar already shows the logo on desktop */
+
+        /* Icons — desktop sidebar only, pure CSS so button markup/translations/openTab are untouched */
+        #app-sidebar .group-btn::before, #app-sidebar .tab-btn::before { margin-right: 8px; display: inline-block; width: 16px; text-align: center; }
+        #app-sidebar #btn-grp-logistics::before { content: '🚚'; }
+        #app-sidebar #btn-grp-hr::before { content: '👥'; }
+        #app-sidebar #btn-grp-admin::before { content: '⚙️'; }
+        #app-sidebar #btn-tab-tracker::before { content: '🚚'; }
+        #app-sidebar #btn-tab-report::before { content: '📊'; }
+        #app-sidebar #btn-tab-vehicles::before { content: '🚛'; }
+        #app-sidebar #btn-tab-notifications::before { content: '🔔'; }
+        #app-sidebar #btn-tab-employees::before { content: '👤'; }
+        #app-sidebar #btn-tab-claims::before { content: '📋'; }
+        #app-sidebar #btn-tab-charges::before { content: '💰'; }
+        #app-sidebar #btn-tab-dailypay::before { content: '📅'; }
+        #app-sidebar #btn-tab-providerpay::before { content: '🧾'; }
+        #app-sidebar #btn-tab-statement::before { content: '📄'; }
+        #app-sidebar #btn-tab-payroll::before { content: '💵'; }
+        #app-sidebar #btn-tab-messages::before { content: '💬'; }
+        #app-sidebar #btn-tab-settings::before { content: '⚙️'; }
+        #app-sidebar #btn-tab-users::before { content: '🔑'; }
+        #app-sidebar #btn-tab-companies::before { content: '🏢'; }
+        #app-sidebar #btn-tab-approvals::before { content: '✅'; }
+        #app-sidebar #btn-tab-log::before { content: '📜'; }
+        #app-sidebar #btn-tab-data::before { content: '🔄'; }
+        #app-sidebar #btn-tab-changelog::before { content: '🕘'; }
     }
     
     /* Layouts & Forms */
@@ -623,8 +648,13 @@
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-                <button class="btn-small" style="margin:0; white-space:nowrap; height:40px; min-height:40px;" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-                <button class="btn-small" style="background:#ef4444; margin:0; white-space:nowrap; height:40px; min-height:40px;" onclick="logout()" data-i18n="sign_out_btn">Sign Out</button>
+            <div style="display:flex; align-items:center; gap:8px; position:relative;">
+                <button class="btn-small" id="user-menu-btn" style="margin:0; width:40px; height:40px; min-height:40px; padding:0; font-size:18px; line-height:1;" onclick="toggleUserMenu(event)" title="More options">⋮</button>
+                <div id="user-menu-dropdown" style="display:none; position:absolute; top:46px; right:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.18); min-width:180px; z-index:600; overflow:hidden;">
+                    <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+                    <button type="button" onclick="logout()" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:#ef4444; font-size:0.85rem; cursor:pointer; font-weight:700;" data-i18n="sign_out_btn">Sign Out</button>
+                </div>
+            </div>
             </div>
         </div>
     </div>
@@ -670,7 +700,7 @@
 <div class="tabs sub-tabs open" id="grp-logistics">
     <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker" data-i18n="tab_tracker">Route Tracker</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report" data-i18n="tab_report">Daily Report</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Vehicles</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Fleet</button>
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
     <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
@@ -778,7 +808,7 @@
                 <div class="field"><label>Truck #</label><input type="text" id="vTruckNum" placeholder="Company ID #"></div>
                 <div class="field"><label>Year</label><input type="text" id="vYear" required></div>
                 <div class="field"><label>Make</label><input type="text" id="vMake" placeholder="e.g. Freightliner" required></div>
-                <div class="field"><label>Model</label><input type="text" id="vModel" placeholder="e.g. Cascadia" required></div>
+                <div class="field"><label>Model</label><input type="text" id="vModel" placeholder="e.g. Cascadia"></div>
             </div>
             <div class="form-row">
                 <div class="field"><label>License Plate</label><input type="text" id="vPlate"></div>
@@ -1406,15 +1436,6 @@
         </div>
     </div>
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="appearance_label">Appearance <span class="caret">&#9662;</span></h2>
-        <div class="note-box">Choose how the app looks. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
-        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <button type="button" class="btn-small" id="theme-btn-light" onclick="setTheme('light')" style="margin:0;">☀ Light (current)</button>
-            <button type="button" class="btn-small" id="theme-btn-ocean" onclick="setTheme('dark')" style="margin:0;">🌊 Ocean</button>
-            <button type="button" class="btn-small" id="theme-btn-emerald" onclick="setTheme('dark-emerald')" style="margin:0;">🟢 Emerald</button>
-        </div>
-    </div>
-    <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)">ID Configuration <span class="caret">&#9662;</span></h2>
         <div class="note-box">Changes here only affect <strong>new</strong> IDs going forward — Employee, Claim, and Charge IDs already assigned won't change. The ID <strong>prefix is the company code</strong> (set when a company is added), so switch companies up top to control it.</div>
         <form id="id-config-form">
@@ -1667,8 +1688,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.62';
+    const APP_VERSION = 'v2.63';
     const CHANGELOG = [
+        { version: 'v2.63', date: '2026-08-06', notes: 'Several redesign refinements: the desktop sidebar now has icons next to every item. "Vehicles" is renamed to "Fleet" throughout (the tab and its summary count) — individual vehicle records still say "vehicle," since that reads naturally ("Add Vehicle" to your fleet). Model is now optional when adding a vehicle. Removed the duplicate theme picker from Settings — Appearance now lives in exactly one place, the login screen, instead of two. The Change Password / Sign Out buttons in the header are now tucked behind a single ⋮ menu instead of sitting out as two separate buttons, closer to how the new design keeps headers clean — that\'s my read of "add the 3 dot," happy to adjust if you pictured something different. Also caught and fixed a real bug while making Model optional: the vehicle-creation activity log was quietly concatenating year + make + model together, and in the database, joining anything with a missing piece like that wipes out the whole line — so vehicles saved without a model would\'ve shown up in the audit log as a blank entry instead of "2022 Ford." Fixed and verified before shipping.' },
         { version: 'v2.62', date: '2026-08-06', notes: 'Redesign, phase 2: navigation is now a fixed sidebar on desktop, matching the new design — logo at top, Logistics/HR & Payroll/Administration as sections you click through, docked to the left instead of a bar across the top. On phone and tablet, navigation looks exactly like it did before this update — nothing changed there, on purpose, since a sidebar doesn\'t make sense on a narrow screen. Built this carefully: it\'s the exact same navigation buttons and permissions logic as always (including what View Only accounts can and can\'t see), just repositioned by CSS depending on screen size — nothing about how tabs, groups, or role-based hiding actually work underneath was touched.' },
         { version: 'v2.61', date: '2026-08-06', notes: 'Redesigned the login screen to match the new look — a dark gradient backdrop with soft glow, a cleaner "Tracker Login" heading with subtitle, and the theme picker is now three small color circles instead of a row of text buttons, so you can see each theme\'s actual color at a glance. This backdrop stays a consistent dark look regardless of which of the 3 in-app themes is selected — it\'s a first-impression / branding moment, not something that needs to preview your chosen theme. Caught one real thing before shipping: the "Tracker" wordmark at the top would have gone nearly invisible for anyone on Light theme, since it was using a color that flips dark-on-light vs light-on-dark depending on theme, but the new card background is always dark. Fixed to a fixed light color so it\'s always readable.' },
         { version: 'v2.60', date: '2026-08-06', notes: 'Redesign, phase 1 of several: applied the new design system\'s typography and focus styling everywhere. Genuinely good news while doing this — the new look\'s colors, card shadows, rounded corners, and striped tables were already almost entirely matching what this app already had, so this phase was smaller and safer than expected. Two real additions: numbers, IDs, and currency values across the whole app now render in JetBrains Mono (the technical monospace font the new design specifically calls for), and every input field now shows a small emerald accent on its left edge when focused. Next up is the bigger piece — reworking navigation into a sidebar layout — which I\'m tackling as its own focused step since it touches how every single tab in the app is switched to.' },
@@ -2473,6 +2495,27 @@
     function stopIdleWatch() {
         clearTimeout(idleTimer); clearTimeout(idleWarnTimer); clearInterval(idleCountdownInt);
     }
+
+    function toggleUserMenu(evt) {
+        if (evt) evt.stopPropagation();
+        const dd = document.getElementById('user-menu-dropdown');
+        if (!dd) return;
+        dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+    }
+    // Close the menu on any click elsewhere, and on Escape.
+    document.addEventListener('click', (e) => {
+        const dd = document.getElementById('user-menu-dropdown');
+        const btn = document.getElementById('user-menu-btn');
+        if (dd && dd.style.display === 'block' && !dd.contains(e.target) && e.target !== btn) {
+            dd.style.display = 'none';
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const dd = document.getElementById('user-menu-dropdown');
+            if (dd) dd.style.display = 'none';
+        }
+    });
 
     function toggleChangePasswordCard() {
         const card = document.getElementById('change-password-card');
@@ -6636,7 +6679,7 @@
             new_password: 'New Password', confirm_new_password: 'Confirm New Password',
             save_password: 'Save Password', cancel: 'Cancel',
             group_logistics: 'Logistics', group_hr: 'HR & Payroll', group_admin: 'Administration',
-            tab_tracker: 'Route Tracker', tab_report: 'Daily Report', tab_vehicles: 'Vehicles',
+            tab_tracker: 'Route Tracker', tab_report: 'Daily Report', tab_vehicles: 'Fleet',
             tab_notifications: 'Notifications', tab_employees: 'Employees', tab_claims: 'Claims',
             tab_charges: 'Charges & Income', tab_dailypay: 'Daily Pay', tab_statement: 'Statement',
             tab_payroll: 'Payroll', tab_settings: 'Settings', tab_users: 'Users', tab_companies: 'Companies',
@@ -6693,7 +6736,7 @@
             new_password: 'Nueva Contraseña', confirm_new_password: 'Confirmar Nueva Contraseña',
             save_password: 'Guardar Contraseña', cancel: 'Cancelar',
             group_logistics: 'Logística', group_hr: 'RR. HH. y Nómina', group_admin: 'Administración',
-            tab_tracker: 'Rastreador de Rutas', tab_report: 'Informe Diario', tab_vehicles: 'Vehículos',
+            tab_tracker: 'Rastreador de Rutas', tab_report: 'Informe Diario', tab_vehicles: 'Flota',
             tab_notifications: 'Notificaciones', tab_employees: 'Empleados', tab_claims: 'Reclamos',
             tab_charges: 'Cargos e Ingresos', tab_dailypay: 'Pago Diario', tab_statement: 'Estado de Cuenta',
             tab_payroll: 'Nómina', tab_settings: 'Configuración', tab_users: 'Usuarios', tab_companies: 'Compañías',
@@ -7679,7 +7722,7 @@
             const expiringReg = vehicles.filter(v => v.reg_expiry && expBadge(v.reg_expiry, 30)).length;
             const expiringIns = vehicles.filter(v => v.insurance_expiry && expBadge(v.insurance_expiry, 30)).length;
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Vehicles</div><div class="stat-value">${vehicles.length}</div></div>
+                <div class="stat-card"><div class="stat-label">Fleet</div><div class="stat-value">${vehicles.length}</div></div>
                 <div class="stat-card"><div class="stat-label">Reg. expiring/expired</div><div class="stat-value">${expiringReg}</div></div>
                 <div class="stat-card"><div class="stat-label">Insurance expiring/expired</div><div class="stat-value">${expiringIns}</div></div>`;
         }
