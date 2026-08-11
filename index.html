@@ -251,36 +251,77 @@
         #app-sidebar .tabs.sub-tabs { flex-direction: column; padding: 2px 4px 10px 18px; margin-bottom: 0; }
         #app-sidebar .tabs.sub-tabs.open { display: flex; }
         #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; }
-        #app-sidebar .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.04); }
+        #app-sidebar .tab-btn:hover { color: #fff !important; background: rgba(255,255,255,0.04); }
         #app-sidebar .tab-btn.active { background: var(--primary); color: #06251c; }
         #header-logo-icon { display: none; } /* sidebar already shows the logo on desktop */
 
-        /* Icons — desktop sidebar only, pure CSS so button markup/translations/openTab are untouched */
-        #app-sidebar .group-btn::before, #app-sidebar .tab-btn::before { margin-right: 8px; display: inline-block; width: 16px; text-align: center; }
-        #app-sidebar #btn-grp-logistics::before { content: '🚚'; }
-        #app-sidebar #btn-grp-hr::before { content: '👥'; }
-        #app-sidebar #btn-grp-admin::before { content: '⚙️'; }
-        #app-sidebar #btn-tab-tracker::before { content: '🚚'; }
-        #app-sidebar #btn-tab-report::before { content: '📊'; }
-        #app-sidebar #btn-tab-vehicles::before { content: '🚛'; }
-        #app-sidebar #btn-tab-notifications::before { content: '🔔'; }
-        #app-sidebar #btn-tab-employees::before { content: '👤'; }
-        #app-sidebar #btn-tab-claims::before { content: '📋'; }
-        #app-sidebar #btn-tab-charges::before { content: '💰'; }
-        #app-sidebar #btn-tab-dailypay::before { content: '📅'; }
-        #app-sidebar #btn-tab-providerpay::before { content: '🧾'; }
-        #app-sidebar #btn-tab-statement::before { content: '📄'; }
-        #app-sidebar #btn-tab-payroll::before { content: '💵'; }
-        #app-sidebar #btn-tab-messages::before { content: '💬'; }
-        #app-sidebar #btn-tab-settings::before { content: '⚙️'; }
-        #app-sidebar #btn-tab-users::before { content: '🔑'; }
-        #app-sidebar #btn-tab-companies::before { content: '🏢'; }
-        #app-sidebar #btn-tab-approvals::before { content: '✅'; }
-        #app-sidebar #btn-tab-log::before { content: '📜'; }
-        #app-sidebar #btn-tab-data::before { content: '🔄'; }
-        #app-sidebar #btn-tab-changelog::before { content: '🕘'; }
+        /* Icons — desktop sidebar only, real line-icon SVGs (not emoji) via
+           background-image data URIs on ::before, since CSS content: can't
+           hold SVG markup directly — this keeps button HTML/JS untouched. */
+        #app-sidebar .group-btn::before, #app-sidebar .tab-btn::before { margin-right: 0; }
+        #app-sidebar #btn-grp-logistics::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h11v9H3zM14 10h4l3 3v3h-7z'/%3E%3Ccircle cx='7' cy='18' r='1.6'/%3E%3Ccircle cx='17.5' cy='18' r='1.6'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-grp-hr::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='7' r='3'/%3E%3Cpath d='M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6'/%3E%3Ccircle cx='17' cy='8' r='2.3'/%3E%3Cpath d='M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-grp-admin::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.9 2.9l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.9-2.9l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.6-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.9-2.9l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.6V3a2 2 0 114 0v.2a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.9 2.9l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.6 1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.6 1z'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-tracker::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h11v9H3zM14 10h4l3 3v3h-7z'/%3E%3Ccircle cx='7' cy='18' r='1.6'/%3E%3Ccircle cx='17.5' cy='18' r='1.6'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-report::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20V10M10 20V4M16 20v-7M22 20H2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-vehicles::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 17h1M20 17h1M5 17h10l2-5-3-3H8L5 10z'/%3E%3Ccircle cx='8.5' cy='17' r='1.8'/%3E%3Ccircle cx='16.5' cy='17' r='1.8'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-notifications::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3a5 5 0 00-5 5v3.4c0 .6-.2 1.2-.6 1.7L5 15h14l-1.4-1.9a2.7 2.7 0 01-.6-1.7V8a5 5 0 00-5-5z'/%3E%3Cpath d='M9.5 18a2.5 2.5 0 005 0'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-employees::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='3.4'/%3E%3Cpath d='M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-claims::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h10a1 1 0 011 1v16l-3-2-3 2-3-2-3 2V4a1 1 0 011-1z'/%3E%3Cpath d='M9 8h6M9 12h6M9 16h3'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-charges::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5v9M15 9.8c0-1.3-1.3-2.3-3-2.3s-3 .9-3 2.1c0 1.3 1.3 1.8 3 2.2 1.7.4 3 .9 3 2.2 0 1.2-1.3 2.1-3 2.1s-3-1-3-2.3'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-dailypay::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='2'/%3E%3Cpath d='M3.5 9.5h17M8 3v3.5M16 3v3.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-providerpay::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12v18l-1.7-1.2L15 21l-1.5-1.2L12 21l-1.5-1.2L9 21l-1.3-1.2L6 21z'/%3E%3Cpath d='M8.5 8h7M8.5 11.5h7M8.5 15h4.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-statement::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h8l3.5 3.5V21H7z'/%3E%3Cpath d='M15 3v3.5h3.5M9.5 12h5M9.5 15.5h5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-payroll::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='6' width='19' height='12.5' rx='2'/%3E%3Ccircle cx='12' cy='12.3' r='2.6'/%3E%3Cpath d='M6 6v-.5A1.5 1.5 0 017.5 4h9A1.5 1.5 0 0118 5.5V6'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-messages::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5.5h16v11H9l-4 3.5v-3.5H4z'/%3E%3Cpath d='M8 10h8M8 13h5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-settings::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.9 2.9l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.9-2.9l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.6-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.9-2.9l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.6V3a2 2 0 114 0v.2a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.9 2.9l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.6 1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.6 1z'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-users::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='3.2'/%3E%3Cpath d='M2.5 20c0-3.6 2.5-6.3 5.5-6.3s5.5 2.7 5.5 6.3'/%3E%3Cpath d='M15.5 5.5a3 3 0 010 5.8M18.5 20c0-2.9-1.6-5.2-4-6'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-companies::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='3' width='10' height='18'/%3E%3Crect x='14' y='9' width='6' height='12'/%3E%3Cpath d='M7 7h1M11 7h1M7 11h1M11 11h1M7 15h1M11 15h1M17 13h1M17 17h1'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-approvals::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8 12.5l2.5 2.5L16 9.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-log::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h13v18H6a2 2 0 01-2-2V5a2 2 0 012-2z'/%3E%3Cpath d='M9 8h7M9 12h7M9 16h4'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-data::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 0113.7-5.7M20 12a8 8 0 01-13.7 5.7'/%3E%3Cpath d='M17.5 3v3.8h-3.8M6.5 21v-3.8h3.8'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-changelog::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3.3 2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
     }
     
+    /* ---- Messages: two-pane chat layout ---- */
+    .msg-shell { display: flex; height: 70vh; min-height: 420px; max-height: 720px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+    .msg-list-pane { width: 280px; min-width: 220px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--surface-2); }
+    .msg-list-search { padding: 10px; border-bottom: 1px solid var(--border); }
+    .msg-list-search input { margin: 0; }
+    .msg-cat-pills { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .msg-pill { border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+    .msg-pill.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+    #msg-conversation-list { flex: 1; overflow-y: auto; }
+    .msg-convo-item { padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .msg-convo-item:hover { background: rgba(0,0,0,0.02); }
+    .msg-convo-item.active { background: var(--active-bg); border-left: 3px solid var(--primary); padding-left: 9px; }
+    .msg-convo-name { font-weight: 700; font-size: 0.85rem; color: var(--text); }
+    .msg-convo-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+    .msg-convo-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .msg-convo-snippet { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .msg-thread-pane { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .msg-thread-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .msg-thread-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .msg-day-sep { text-align: center; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; margin: 12px 0 6px; }
+    .msg-bubble-row { display: flex; flex-direction: column; max-width: 78%; margin-bottom: 4px; }
+    .msg-bubble-row.mine { align-self: flex-end; align-items: flex-end; }
+    .msg-bubble-row.theirs { align-self: flex-start; align-items: flex-start; }
+    .msg-bubble-meta { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; padding: 0 4px; }
+    .msg-bubble { padding: 8px 12px; border-radius: 14px; font-size: 0.83rem; line-height: 1.45; word-wrap: break-word; position: relative; }
+    .msg-bubble-row.mine .msg-bubble { background: var(--primary); color: #06251c; border-bottom-right-radius: 4px; }
+    .msg-bubble-row.theirs .msg-bubble { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg-bubble-cat { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; margin-bottom: 4px; }
+    .msg-bubble-del { font-size: 10px; color: var(--text-muted); cursor: pointer; margin-top: 2px; padding: 0 4px; visibility: hidden; }
+    .msg-bubble-row:hover .msg-bubble-del { visibility: visible; }
+    .msg-composer { display: none; gap: 8px; padding: 10px; border-top: 1px solid var(--border); align-items: center; }
+    .msg-composer input[type="text"] { margin: 0; flex: 1; min-height: 40px; }
+    .msg-empty-state { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px; }
+    @media (max-width: 700px) {
+        .msg-shell { flex-direction: column; height: auto; max-height: none; }
+        .msg-list-pane { width: 100%; max-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+        .msg-thread-pane { min-height: 400px; }
+    }
+
     /* Layouts & Forms */
     .card, .panel { background: var(--surface); border-radius: 8px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); margin-bottom: 12px; border: 1px solid var(--border); }
     .grid-form, .form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
@@ -513,6 +554,23 @@
         transition: transform 0.15s, border-color 0.15s;
     }
     .theme-swatch.active { border-color: #fff; transform: scale(1.12); }
+    /* Header dropdown version — sits on var(--surface), which is theme-
+       dependent (white in Light theme) unlike the login card's always-dark
+       backdrop, so a white active-ring would be invisible there. Fully
+       independent class (not sharing .theme-swatch) so there's no
+       source-order ambiguity between the two active-ring colors. */
+    .header-theme-swatch {
+        width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
+        cursor: pointer; padding: 0; box-shadow: 0 0 0 1px rgba(0,0,0,0.12) inset;
+        transition: transform 0.15s, border-color 0.15s;
+    }
+    .header-theme-swatch.active { border-color: var(--primary); transform: scale(1.12); }
+    /* Header dropdown version — sits on var(--surface), which is theme-
+       dependent (white in Light theme) unlike the login card's always-dark
+       backdrop, so a white active-ring would be invisible there. Use the
+       brand accent color instead, which reads clearly against light AND
+       dark surfaces alike. */
+    .header-theme-swatch.active { border-color: var(--primary); transform: scale(1.12); }
 </style>
 </head>
 <body>
@@ -651,6 +709,11 @@
             <div style="display:flex; align-items:center; gap:8px; position:relative;">
                 <button class="btn-small" id="user-menu-btn" style="margin:0; width:40px; height:40px; min-height:40px; padding:0; font-size:18px; line-height:1;" onclick="toggleUserMenu(event)" title="More options">⋮</button>
                 <div id="user-menu-dropdown" style="display:none; position:absolute; top:46px; right:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.18); min-width:180px; z-index:600; overflow:hidden;">
+                    <div style="display:flex; gap:8px; justify-content:center; padding:12px 14px; border-bottom:1px solid var(--border);">
+                        <button type="button" class="header-theme-swatch" id="header-theme-btn-light" onclick="setTheme('light')" style="background:#10b981;" title="Light"></button>
+                        <button type="button" class="header-theme-swatch" id="header-theme-btn-ocean" onclick="setTheme('dark')" style="background:#2dd4bf;" title="Ocean"></button>
+                        <button type="button" class="header-theme-swatch" id="header-theme-btn-emerald" onclick="setTheme('dark-emerald')" style="background:#22c55e;" title="Emerald"></button>
+                    </div>
                     <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
                     <button type="button" onclick="logout()" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:#ef4444; font-size:0.85rem; cursor:pointer; font-weight:700;" data-i18n="sign_out_btn">Sign Out</button>
                 </div>
@@ -1373,53 +1436,39 @@
 
 <!-- TAB: MESSAGES -->
 <div id="tab-messages" class="tab-content">
-    <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">New Message <span class="caret">&#9662;</span></h2>
-        <div class="form-row">
-            <div class="field field-wide">
-                <label>Employee</label>
-                <select id="msg-employee" onchange="onMessageEmployeeChange()"><option value="">— Select employee —</option></select>
+    <div class="msg-shell">
+        <div class="msg-list-pane">
+            <div class="msg-list-search" style="display:flex; gap:6px; align-items:center;">
+                <input type="text" id="msg-search" placeholder="Search messages..." oninput="renderConversationList()" style="flex:1; margin:0;">
+                <button type="button" class="btn-small" style="margin:0; min-height:40px; background:var(--navy);" onclick="startNewConversation()" title="New conversation">+</button>
             </div>
-        </div>
-        <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); margin:6px 0;">Regarding</label>
-        <div class="regarding-toggle" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-            <button type="button" class="btn-small msg-cat-btn active" data-cat="General" onclick="setMessageCategory('General')" style="border-radius:999px;">General note</button>
-            <button type="button" class="btn-small msg-cat-btn" data-cat="Missing Day" onclick="setMessageCategory('Missing Day')" style="border-radius:999px;background:#64748b;">Missing day</button>
-            <button type="button" class="btn-small msg-cat-btn" data-cat="Claim" onclick="setMessageCategory('Claim')" style="border-radius:999px;background:#64748b;">Claim</button>
-            <button type="button" class="btn-small msg-cat-btn" data-cat="Charge" onclick="setMessageCategory('Charge')" style="border-radius:999px;background:#64748b;">Charge</button>
-            <button type="button" class="btn-small msg-cat-btn" data-cat="Income" onclick="setMessageCategory('Income')" style="border-radius:999px;background:#64748b;">Additional income</button>
-        </div>
-        <div class="form-row" id="msg-linked-row" style="display:none;">
-            <div class="field field-wide">
-                <label id="msg-linked-label">Linked record</label>
-                <select id="msg-linked-select"><option value="">— Select —</option></select>
+            <div class="msg-cat-pills" id="msg-cat-pills">
+                <button type="button" class="msg-pill active" data-cat="" onclick="setConvoFilter('')">All</button>
+                <button type="button" class="msg-pill" data-cat="Claim" onclick="setConvoFilter('Claim')">Claims</button>
+                <button type="button" class="msg-pill" data-cat="General" onclick="setConvoFilter('General')">General</button>
+                <button type="button" class="msg-pill" data-cat="Missing Day" onclick="setConvoFilter('Missing Day')">Missing Day</button>
+                <button type="button" class="msg-pill" data-cat="Charge" onclick="setConvoFilter('Charge')">Charges</button>
+                <button type="button" class="msg-pill" data-cat="Income" onclick="setConvoFilter('Income')">Income</button>
             </div>
+            <div id="msg-conversation-list"></div>
         </div>
-        <div id="msg-reply-banner" style="display:none; background:var(--surface-2); border-left:3px solid var(--primary); border-radius:6px; padding:8px 10px; margin-bottom:10px; font-size:12px; justify-content:space-between; align-items:center; gap:8px;">
-            <span>↩ Replying to: <em id="msg-reply-snippet" style="color:var(--text-muted);"></em></span>
-            <span class="del-btn" onclick="cancelReply()">✕ Cancel</span>
-        </div>
-        <div class="form-row">
-            <div class="field field-wide">
-                <label>Message</label>
-                <textarea id="msg-text" rows="3" placeholder="e.g. Called about Tuesday 8/4 — says he was sick, no route logged that day."></textarea>
+        <div class="msg-thread-pane">
+            <div id="msg-thread-header" class="msg-thread-header" style="display:none;"></div>
+            <div id="msg-thread-body" class="msg-thread-body"></div>
+            <div id="msg-composer" class="msg-composer" style="display:none;">
+                <select id="msg-compose-category" title="Regarding" onchange="onComposeCategoryChange()" style="width:auto; min-width:110px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;">
+                    <option value="General">General</option>
+                    <option value="Missing Day">Missing day</option>
+                    <option value="Claim">Claim</option>
+                    <option value="Charge">Charge</option>
+                    <option value="Income">Income</option>
+                </select>
+                <select id="msg-compose-linked" style="display:none; width:auto; min-width:150px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;"></select>
+                <input type="text" id="msg-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){postEmployeeMessage();}">
+                <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="postEmployeeMessage()">➤</button>
             </div>
+            <div id="msg-empty-state" class="msg-empty-state">Select a conversation to view messages, or nothing yet if none exist for people you can see.</div>
         </div>
-        <div class="note-box" id="msg-visibility-note" style="display:flex; align-items:flex-start; gap:8px;">
-            <span>🔒</span><span>Messages are kept private.</span>
-        </div>
-        <button type="button" class="btn" onclick="postEmployeeMessage()">Post Message</button>
-    </div>
-
-    <div class="panel">
-        <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide">
-                <label>Filter by employee</label>
-                <select id="msg-filter-employee" onchange="renderEmployeeMessages()"><option value="">All employees you can see</option></select>
-            </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('messages')">✕ Clear filters</button>
-        </div>
-        <div id="messages-feed"></div>
     </div>
 </div>
 
@@ -1688,8 +1737,11 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.63';
+    const APP_VERSION = 'v2.66';
     const CHANGELOG = [
+        { version: 'v2.66', date: '2026-08-06', notes: 'Two big changes. First, sidebar icons are now real line icons matching the new design, not emoji — cleaner and consistent across every device. Second, Messages is fully rebuilt to match the sample you shared: a real two-pane chat, contact list on the left with search and category filters, an open conversation on the right with message bubbles and a message box at the bottom, instead of the old flat list with a compose form up top. Everything you type just sends straight into the open conversation now — no more picking who or what you\'re replying to first. The privacy rules underneath are exactly the same as before: View Only sees their own conversation and any staff replies in it, never anyone else\'s, and still can\'t delete messages — this was purely a new coat of paint on the same secure foundation, verified against real accounts before shipping.' },
+        { version: 'v2.65', date: '2026-08-06', notes: 'Theme switching is back in the app itself — no more signing out just to change it. Tap the ⋮ menu, top right, and the three theme circles are right there, no label text above them. Same colors as the login screen, and switching updates instantly without closing the menu, so you can click through and compare before deciding. Change Password and Sign Out are still in that same menu, just below the colors now.' },
+        { version: 'v2.64', date: '2026-08-06', notes: 'Fixed sidebar text turning invisible on hover in Light theme — the sidebar itself always stays dark by design (a consistent look regardless of which theme you\'re using), but on hover the text was picking up a color meant for the light background elsewhere in the app, going dark-on-dark against the sidebar. Now it always turns white on hover in the sidebar, no matter which theme is active.' },
         { version: 'v2.63', date: '2026-08-06', notes: 'Several redesign refinements: the desktop sidebar now has icons next to every item. "Vehicles" is renamed to "Fleet" throughout (the tab and its summary count) — individual vehicle records still say "vehicle," since that reads naturally ("Add Vehicle" to your fleet). Model is now optional when adding a vehicle. Removed the duplicate theme picker from Settings — Appearance now lives in exactly one place, the login screen, instead of two. The Change Password / Sign Out buttons in the header are now tucked behind a single ⋮ menu instead of sitting out as two separate buttons, closer to how the new design keeps headers clean — that\'s my read of "add the 3 dot," happy to adjust if you pictured something different. Also caught and fixed a real bug while making Model optional: the vehicle-creation activity log was quietly concatenating year + make + model together, and in the database, joining anything with a missing piece like that wipes out the whole line — so vehicles saved without a model would\'ve shown up in the audit log as a blank entry instead of "2022 Ford." Fixed and verified before shipping.' },
         { version: 'v2.62', date: '2026-08-06', notes: 'Redesign, phase 2: navigation is now a fixed sidebar on desktop, matching the new design — logo at top, Logistics/HR & Payroll/Administration as sections you click through, docked to the left instead of a bar across the top. On phone and tablet, navigation looks exactly like it did before this update — nothing changed there, on purpose, since a sidebar doesn\'t make sense on a narrow screen. Built this carefully: it\'s the exact same navigation buttons and permissions logic as always (including what View Only accounts can and can\'t see), just repositioned by CSS depending on screen size — nothing about how tabs, groups, or role-based hiding actually work underneath was touched.' },
         { version: 'v2.61', date: '2026-08-06', notes: 'Redesigned the login screen to match the new look — a dark gradient backdrop with soft glow, a cleaner "Tracker Login" heading with subtitle, and the theme picker is now three small color circles instead of a row of text buttons, so you can see each theme\'s actual color at a glance. This backdrop stays a consistent dark look regardless of which of the 3 in-app themes is selected — it\'s a first-impression / branding moment, not something that needs to preview your chosen theme. Caught one real thing before shipping: the "Tracker" wordmark at the top would have gone nearly invisible for anyone on Light theme, since it was using a color that flips dark-on-light vs light-on-dark depending on theme, but the new card background is always dark. Fixed to a fixed light color so it\'s always readable.' },
@@ -3288,8 +3340,8 @@
                 renderVehicles();
                 break;
             case 'messages':
-                setVal('msg-filter-employee', '');
-                renderEmployeeMessages();
+                setVal('msg-search', '');
+                setConvoFilter('');
                 break;
         }
     }
@@ -5768,103 +5820,9 @@
 
     // ===== MESSAGES ========================================================
     let employeeMessages = [];
-    let messageCategory = 'General';
-    let replyingToId = null;
-
-    function populateMessageEmployeeDropdowns() {
-        const isViewOnly = currentUserRole === 'User';
-        const myEmpId = currentUser && currentUser.employee_id;
-        const scoped = isViewOnly ? employees.filter(e => e.id === myEmpId) : employees;
-        const sorted = scoped.slice().sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
-        const opts = sorted.map(e => `<option value="${e.id}">${employeeOptionLabel(e)}</option>`).join('');
-
-        const empSel = document.getElementById('msg-employee');
-        if (empSel) {
-            empSel.innerHTML = '<option value="">— Select employee —</option>' + opts;
-            if (isViewOnly && sorted.length === 1) empSel.value = sorted[0].id; // nothing to choose, so pick it for them
-        }
-        const filterSel = document.getElementById('msg-filter-employee');
-        if (filterSel) {
-            const prev = filterSel.value;
-            filterSel.innerHTML = '<option value="">All employees you can see</option>' + opts;
-            if (sorted.some(e => e.id === prev)) filterSel.value = prev;
-        }
-        onMessageEmployeeChange();
-    }
-
-    function setMessageCategory(cat) {
-        messageCategory = cat;
-        document.querySelectorAll('.msg-cat-btn').forEach(b => {
-            const active = b.getAttribute('data-cat') === cat;
-            b.style.background = active ? 'var(--navy)' : '#64748b';
-        });
-        const row = document.getElementById('msg-linked-row');
-        const label = document.getElementById('msg-linked-label');
-        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
-        if (map[cat]) {
-            row.style.display = '';
-            label.textContent = cat === 'Claim' ? 'Linked claim' : cat === 'Charge' ? 'Linked charge' : 'Linked income record';
-            onMessageEmployeeChange();
-        } else {
-            row.style.display = 'none';
-        }
-    }
-
-    // Repopulates the linked-record dropdown for whichever employee + category is currently selected.
-    function onMessageEmployeeChange() {
-        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
-        const table = map[messageCategory];
-        const sel = document.getElementById('msg-linked-select');
-        if (!sel || !table) return;
-        const empId = document.getElementById('msg-employee').value;
-        const source = table === 'claims' ? claims : table === 'charges' ? charges : additionalIncome;
-        const idField = table === 'claims' ? 'claim_id' : table === 'charges' ? 'charge_id' : 'income_id';
-        const labelField = table === 'claims' ? 'damage_type' : table === 'charges' ? 'charge_type' : 'income_type';
-        const items = empId ? source.filter(x => x.employee_id === empId) : [];
-        sel.innerHTML = '<option value="">— Select —</option>' + items.map(x => `<option value="${x[idField]}">${x[idField]} · ${x[labelField] || ''}</option>`).join('');
-    }
-
-    async function postEmployeeMessage() {
-        const empId = document.getElementById('msg-employee').value;
-        const text = document.getElementById('msg-text').value.trim();
-        if (!empId) { alert('Select an employee first.'); return; }
-        if (!text) { alert('Write a message first.'); return; }
-        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
-        const linkedTable = map[messageCategory] || null;
-        const linkedId = linkedTable ? (document.getElementById('msg-linked-select').value || null) : null;
-        if (linkedTable && !linkedId) { alert(`Select which ${messageCategory.toLowerCase()} this is about, or switch to "General note".`); return; }
-
-        const { error } = await supabaseClient.rpc('post_employee_message', {
-            p_actor: currentUsername, p_employee_id: empId, p_category: messageCategory,
-            p_linked_table: linkedTable, p_linked_id: linkedId, p_message: text, p_reply_to_id: replyingToId
-        });
-        if (error) { alert('Error: ' + error.message); return; }
-        document.getElementById('msg-text').value = '';
-        cancelReply();
-        await fetchEmployeeMessages();
-        renderEmployeeMessages();
-    }
-
-    // Clicking Reply on a message locks the employee picker to that
-    // message's employee (a reply must stay on the same thread) and shows
-    // a small banner so it's clear what's being replied to.
-    function startReply(id, snippet, empId) {
-        replyingToId = id;
-        const empSel = document.getElementById('msg-employee');
-        if (empSel) { empSel.value = empId; empSel.disabled = true; onMessageEmployeeChange(); }
-        const banner = document.getElementById('msg-reply-banner');
-        banner.style.display = 'flex';
-        document.getElementById('msg-reply-snippet').textContent = snippet.length > 80 ? snippet.slice(0, 80) + '…' : snippet;
-        document.getElementById('msg-text').focus();
-        document.getElementById('msg-employee').closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    function cancelReply() {
-        replyingToId = null;
-        const empSel = document.getElementById('msg-employee');
-        if (empSel) empSel.disabled = false;
-        const banner = document.getElementById('msg-reply-banner');
-        if (banner) banner.style.display = 'none';
-    }
+    let activeConvoEmpId = null;
+    let convoFilter = '';
+    let composeCategory = 'General';
 
     async function fetchEmployeeMessages() {
         const { data, error } = await supabaseClient.rpc('get_employee_messages', { p_actor: currentUsername, p_company: currentCompany, p_employee_id: null });
@@ -5872,12 +5830,81 @@
         employeeMessages = data || [];
     }
 
-    async function deleteEmployeeMessage(id) {
-        if (!confirm('Delete this message?')) return;
-        const { error } = await supabaseClient.rpc('delete_employee_message', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
-        await fetchEmployeeMessages();
-        renderEmployeeMessages();
+    // Groups the flat message list into one "conversation" per employee —
+    // matches how View Only naturally only ever has one (their own,
+    // already scoped server-side by get_employee_messages), and gives
+    // Medium+ a contact-list feel for everyone they can see.
+    function buildConversations() {
+        const byEmp = {};
+        employeeMessages.forEach(m => {
+            if (!byEmp[m.employee_id]) byEmp[m.employee_id] = [];
+            byEmp[m.employee_id].push(m);
+        });
+        return Object.keys(byEmp).map(empId => {
+            const msgs = byEmp[empId].slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const last = msgs[msgs.length - 1];
+            const emp = employees.find(e => e.id === empId);
+            return {
+                empId, empName: emp ? `${emp.first_name} ${emp.last_name}` : empId,
+                messages: msgs, last, lastActivity: new Date(last.created_at).getTime(),
+                categories: new Set(msgs.map(m => m.category))
+            };
+        }).sort((a, b) => b.lastActivity - a.lastActivity);
+    }
+
+    function setConvoFilter(cat) {
+        convoFilter = cat;
+        document.querySelectorAll('.msg-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-cat') === cat));
+        renderConversationList();
+    }
+
+    function renderConversationList() {
+        const container = document.getElementById('msg-conversation-list');
+        if (!container) return;
+        const query = (document.getElementById('msg-search')?.value || '').toLowerCase();
+        let convos = buildConversations();
+        if (convoFilter) convos = convos.filter(c => c.categories.has(convoFilter));
+        if (query) convos = convos.filter(c => `${c.empName} ${c.empId}`.toLowerCase().includes(query) || c.messages.some(m => m.message.toLowerCase().includes(query)));
+
+        if (!convos.length) {
+            const isViewOnly = currentUserRole === 'User';
+            const myEmpId = currentUser && currentUser.employee_id;
+            if (isViewOnly && myEmpId && !convoFilter && !query) {
+                // Their only possible conversation is with themselves — open
+                // it directly instead of making them find "+ New" for what
+                // is, for them, not really a "new" conversation at all.
+                container.innerHTML = '';
+                selectConversation(myEmpId);
+                return;
+            }
+            container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No conversations yet.</div>';
+            if (!employeeMessages.length) showComposerFor(null);
+            return;
+        }
+        // Keep the current conversation open if it's still in the filtered
+        // list; otherwise fall back to the most recent one.
+        if (!convos.some(c => c.empId === activeConvoEmpId)) activeConvoEmpId = convos[0].empId;
+
+        container.innerHTML = convos.map(c => {
+            const snippet = escHtml(c.last.message.length > 46 ? c.last.message.slice(0, 46) + '…' : c.last.message);
+            return `
+                <div class="msg-convo-item${c.empId === activeConvoEmpId ? ' active' : ''}" onclick="selectConversation('${c.empId}')">
+                    <div class="msg-convo-meta">
+                        <span class="msg-convo-name">${escHtml(c.empName)}</span>
+                        <span class="msg-convo-time">${fmtMsgTime(c.last.created_at)}</span>
+                    </div>
+                    <span class="type-pill" style="${MSG_CATEGORY_PILL[c.last.category] || ''} font-size:9px; padding:1px 6px;">${escHtml(c.last.category)}</span>
+                    <div class="msg-convo-snippet">${snippet}</div>
+                </div>`;
+        }).join('');
+
+        selectConversation(activeConvoEmpId);
+    }
+
+    function fmtMsgTime(iso) {
+        const d = new Date(iso), now = new Date();
+        const sameDay = d.toDateString() === now.toDateString();
+        return sameDay ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 
     const MSG_CATEGORY_PILL = {
@@ -5885,85 +5912,142 @@
         'Claim': 'background:#e0f2fe;color:#075985;', 'Charge': 'background:#fee2e2;color:#991b1b;', 'Income': 'background:#dcfce7;color:#166534;'
     };
 
-    // One message card's HTML — used for both thread roots and replies
-    // (replies get extra left-indent/border via the `indent` flag).
-    function messageCardHtml(m, indent) {
-        const emp = employees.find(e => e.id === m.employee_id);
-        const empName = emp ? `${emp.first_name} ${emp.last_name}` : m.employee_id;
-        const linkedBadge = m.linked_table
-            ? `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)} ${escHtml(m.linked_id || '')}</span>`
-            : `<span class="type-pill" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)}</span>`;
-        const isMine = String(m.posted_by || '').trim().toLowerCase() === String(currentUsername || '').trim().toLowerCase();
-        const canDelete = canEdit(); // Medium+ only — View Only can send/reply but never delete, not even their own
-        const visLine = isMine
-            ? '🔒 Posted by you — visible to you and staff only'
-            : (m.posted_by_role && m.posted_by_role !== 'User' ? '🌐 Visible to all Medium+ staff' : '🔒 Visible to staff and the poster only');
-        const snippetForReply = m.message.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-        return `
-            <div class="rec-card" style="margin-bottom:8px; ${indent ? 'margin-left:22px; border-left:3px solid var(--border);' : ''}">
-                <div style="padding:12px 14px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
-                        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                            ${indent ? '<span style="color:var(--text-muted);">↳</span>' : ''}
-                            <span class="type-pill">${escHtml(empName)} · ${m.employee_id}</span>
-                            ${linkedBadge}
-                        </div>
-                        <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${escHtml(m.posted_by)}${m.posted_by_role ? ' (' + m.posted_by_role + ')' : ''} · ${new Date(m.created_at).toLocaleString()}</span>
-                    </div>
-                    <div style="font-size:13.5px; line-height:1.5; margin-bottom:8px;">${escHtml(m.message)}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:11px; color:var(--text-muted);">${visLine}</span>
-                        <span style="display:flex; gap:12px; align-items:center;">
-                            <span class="del-btn" style="color:var(--primary);" onclick="startReply(${m.id}, '${snippetForReply}', '${m.employee_id}')">↩ Reply</span>
-                            ${canDelete ? `<span class="del-btn" onclick="deleteEmployeeMessage(${m.id})">✕ Delete</span>` : ''}
-                        </span>
-                    </div>
-                </div>
-            </div>`;
+    function selectConversation(empId) {
+        activeConvoEmpId = empId;
+        document.querySelectorAll('.msg-convo-item').forEach(el => el.classList.remove('active'));
+        const convos = buildConversations();
+        const c = convos.find(x => x.empId === empId);
+        // Re-mark the matching list item active without a full list re-render (avoids losing scroll position).
+        document.querySelectorAll('#msg-conversation-list .msg-convo-item').forEach(el => {
+            if (el.getAttribute('onclick') === `selectConversation('${empId}')`) el.classList.add('active');
+        });
+        if (!c) {
+            const emp = employees.find(e => e.id === empId);
+            showComposerFor(empId, emp ? `${emp.first_name} ${emp.last_name}` : empId);
+            renderConversationThread(empId, []);
+            return;
+        }
+        renderConversationThread(empId, c.messages);
+        showComposerFor(empId, c.empName);
     }
 
-    function renderEmployeeMessages() {
-        const container = document.getElementById('messages-feed');
-        if (!container) return;
-        const filterEmp = document.getElementById('msg-filter-employee')?.value || '';
-        const list = filterEmp ? employeeMessages.filter(m => m.employee_id === filterEmp) : employeeMessages;
-        if (!list.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">No messages yet.</div>'; return; }
-
-        // Group into threads: every message with no reply_to_id is a root;
-        // everything else attaches under its root (found by following
-        // reply_to_id up the chain) so a whole conversation stays together
-        // and reads top-to-bottom, oldest first, instead of a flat feed
-        // where a reply could be far away from what it's replying to.
-        const byId = {};
-        list.forEach(m => { byId[m.id] = m; });
-        function threadRootOf(m) {
-            let cur = m, guard = 0;
-            while (cur.reply_to_id && byId[cur.reply_to_id] && guard < 50) { cur = byId[cur.reply_to_id]; guard++; }
-            return cur.id;
+    function showComposerFor(empId, empName) {
+        const header = document.getElementById('msg-thread-header');
+        const composer = document.getElementById('msg-composer');
+        const empty = document.getElementById('msg-empty-state');
+        if (!empId) {
+            if (header) header.style.display = 'none';
+            if (composer) composer.style.display = 'none';
+            if (empty) empty.style.display = 'flex';
+            return;
         }
-        const threads = {}; // rootId -> { root, replies: [] }
-        list.forEach(m => {
-            const rootId = threadRootOf(m);
-            if (!threads[rootId]) threads[rootId] = { root: byId[rootId], replies: [] };
-            if (m.id !== rootId) threads[rootId].replies.push(m);
-        });
-        // Threads ordered by their most recent activity (root or any reply), newest first.
-        const orderedRoots = Object.values(threads)
-            .map(t => ({ ...t, lastActivity: Math.max(new Date(t.root.created_at).getTime(), ...t.replies.map(r => new Date(r.created_at).getTime())) }))
-            .sort((a, b) => b.lastActivity - a.lastActivity);
+        if (empty) empty.style.display = 'none';
+        if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(empName || empId)} · ${empId}</span>`; }
+        if (composer) { composer.style.display = 'flex'; }
+        onComposeCategoryChange();
+    }
 
-        container.innerHTML = orderedRoots.map(t => {
-            const replySorted = t.replies.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            return messageCardHtml(t.root, false) + replySorted.map(r => messageCardHtml(r, true)).join('');
-        }).join('');
+    function renderConversationThread(empId, messages) {
+        const body = document.getElementById('msg-thread-body');
+        if (!body) return;
+        if (!messages.length) { body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:20px;">No messages yet — say hello below.</div>'; return; }
+
+        let html = '';
+        let lastDay = null;
+        const canDelete = canEdit(); // Medium+ only — View Only can send but never delete, not even their own
+        messages.forEach(m => {
+            const day = new Date(m.created_at).toDateString();
+            if (day !== lastDay) {
+                const isToday = day === new Date().toDateString();
+                const isYesterday = day === new Date(Date.now() - 86400000).toDateString();
+                html += `<div class="msg-day-sep">${isToday ? 'Today' : isYesterday ? 'Yesterday' : new Date(m.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</div>`;
+                lastDay = day;
+            }
+            const isMine = String(m.posted_by || '').trim().toLowerCase() === String(currentUsername || '').trim().toLowerCase();
+            const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const linkedTxt = m.linked_table ? ` ${escHtml(m.linked_id || '')}` : '';
+            html += `
+                <div class="msg-bubble-row ${isMine ? 'mine' : 'theirs'}">
+                    <div class="msg-bubble-meta">${escHtml(m.posted_by)}${m.posted_by_role ? ' · ' + m.posted_by_role : ''} · ${timeStr}</div>
+                    <div class="msg-bubble">
+                        <span class="msg-bubble-cat" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)}${linkedTxt}</span><br>
+                        ${escHtml(m.message)}
+                    </div>
+                    ${canDelete ? `<span class="msg-bubble-del" onclick="deleteEmployeeMessage(${m.id})">✕ Delete</span>` : ''}
+                </div>`;
+        });
+        body.innerHTML = html;
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function onComposeCategoryChange() {
+        composeCategory = document.getElementById('msg-compose-category').value;
+        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
+        const table = map[composeCategory];
+        const sel = document.getElementById('msg-compose-linked');
+        if (!sel) return;
+        if (!table) { sel.style.display = 'none'; return; }
+        const source = table === 'claims' ? claims : table === 'charges' ? charges : additionalIncome;
+        const idField = table === 'claims' ? 'claim_id' : table === 'charges' ? 'charge_id' : 'income_id';
+        const labelField = table === 'claims' ? 'damage_type' : table === 'charges' ? 'charge_type' : 'income_type';
+        const items = activeConvoEmpId ? source.filter(x => x.employee_id === activeConvoEmpId) : [];
+        sel.innerHTML = '<option value="">— Which one? —</option>' + items.map(x => `<option value="${x[idField]}">${x[idField]} · ${x[labelField] || ''}</option>`).join('');
+        sel.style.display = '';
+    }
+
+    async function postEmployeeMessage() {
+        if (!activeConvoEmpId) { alert('Select or start a conversation first.'); return; }
+        const textEl = document.getElementById('msg-compose-text');
+        const text = textEl.value.trim();
+        if (!text) return;
+        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
+        const linkedTable = map[composeCategory] || null;
+        const linkedSel = document.getElementById('msg-compose-linked');
+        const linkedId = linkedTable ? (linkedSel.value || null) : null;
+        if (linkedTable && !linkedId) { alert(`Select which ${composeCategory.toLowerCase()} this is about, or switch to "General".`); return; }
+
+        const { error } = await supabaseClient.rpc('post_employee_message', {
+            p_actor: currentUsername, p_employee_id: activeConvoEmpId, p_category: composeCategory,
+            p_linked_table: linkedTable, p_linked_id: linkedId, p_message: text, p_reply_to_id: null
+        });
+        if (error) { alert('Error: ' + error.message); return; }
+        textEl.value = '';
+        await fetchEmployeeMessages();
+        renderConversationList();
+    }
+
+    async function deleteEmployeeMessage(id) {
+        if (!confirm('Delete this message?')) return;
+        const { error } = await supabaseClient.rpc('delete_employee_message', { p_actor: currentUsername, p_id: id });
+        if (error) { alert('Error: ' + error.message); return; }
+        await fetchEmployeeMessages();
+        renderConversationList();
+    }
+
+    // "+ New" — start a conversation with someone not in the list yet
+    // (View Only never needs this; get_employee_messages already scopes
+    // them to their own single conversation).
+    function startNewConversation() {
+        const isViewOnly = currentUserRole === 'User';
+        const myEmpId = currentUser && currentUser.employee_id;
+        const scoped = isViewOnly ? employees.filter(e => e.id === myEmpId) : employees;
+        const sorted = scoped.slice().sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
+        const opts = sorted.map(e => `<option value="${e.id}">${employeeOptionLabel(e)}</option>`).join('');
+        const list = document.getElementById('msg-conversation-list');
+        list.insertAdjacentHTML('afterbegin', `
+            <div style="padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2);">
+                <select id="msg-new-convo-select" onchange="if(this.value){selectConversation(this.value); this.closest('div').remove();}" autofocus>
+                    <option value="">— Pick an employee —</option>${opts}
+                </select>
+            </div>`);
     }
 
     async function renderMessagesTab() {
-        cancelReply();
-        populateMessageEmployeeDropdowns();
-        setMessageCategory('General');
+        activeConvoEmpId = null;
+        convoFilter = '';
+        composeCategory = 'General';
         await fetchEmployeeMessages();
-        renderEmployeeMessages();
+        renderConversationList();
     }
 
     async function renderPayroll() {
@@ -6873,6 +6957,12 @@
         ['login-theme-btn-light', 'login-theme-btn-ocean', 'login-theme-btn-emerald'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.toggle('active', id === swatchFor[cur]);
+        });
+        // Header dropdown — same idea, quick access without signing out.
+        const headerSwatchFor = { light: 'header-theme-btn-light', dark: 'header-theme-btn-ocean', 'dark-emerald': 'header-theme-btn-emerald' };
+        ['header-theme-btn-light', 'header-theme-btn-ocean', 'header-theme-btn-emerald'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('active', id === headerSwatchFor[cur]);
         });
     }
 
