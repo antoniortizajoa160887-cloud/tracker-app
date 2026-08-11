@@ -1401,8 +1401,8 @@
         <div class="form-row" style="margin-bottom:10px;">
             <div class="field"><label>Status</label>
                 <select id="weekdeposit-status-filter" onchange="renderWeekDeposit()">
-                    <option value="">All statuses</option>
-                    <option value="Deducting" selected>Deducting</option>
+                    <option value="" selected>All statuses</option>
+                    <option value="Deducting">Deducting</option>
                     <option value="Paid">Paid</option>
                     <option value="Absorbed">Absorbed</option>
                 </select>
@@ -1856,8 +1856,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.75';
+    const APP_VERSION = 'v2.76';
     const CHANGELOG = [
+        { version: 'v2.76', date: '2026-08-06', notes: 'Two pieces done, more coming. Week in Deposit now defaults to showing every status and groups results by status (Deducting together, Paid together, etc.) so it\'s easy to see what\'s actively being saved vs. already reached its goal. Expiring Documents is fully reworked — a truck or employee with more than one thing coming up (like registration AND insurance) now shows once, not twice, expanding to show everything for that truck/employee together, with the most urgent one setting the red/amber warning you see at a glance. Tap it to jump straight to editing that record. Still ahead: this same status-grouping treatment for Claims, Charges, and Additional Income.' },
         { version: 'v2.75', date: '2026-08-06', notes: 'Fixed the error that broke the whole app in the last update — a real mistake on my end while cleaning up Week in Deposit, a leftover reference to something I\'d removed. Confirmed this time by actually running the exact code with real data before shipping, not just checking it looks right. Also fixed the ⋮ menu on phones opening in the wrong spot and getting cut off along the edge — it now opens directly under the button itself and stays fully on screen, calculated from the button\'s real position instead of a fixed guess.' },
         { version: 'v2.74', date: '2026-08-06', notes: 'Fixed a real problem with Week in Deposit before it caused any confusion: it was built looking for a charge type that didn\'t match your real data, so it would have shown up completely empty despite your 9 existing "Semana de Fondo" entries being right there. Fixed to read the correct existing category, and it also no longer offers to create new ones — it\'s a dedicated savings-style view of what you already record on Charges & Income, not a separate place to add them. You can still edit or remove an existing entry directly from this tab; new ones get added the normal way, tagged "Semana de Fondo" like always.' },
         { version: 'v2.73', date: '2026-08-06', notes: 'Finished the sidebar/theme rework and shipped two new things. Change Password, Sign Out, and the theme picker are now three individual, always-visible items at the bottom of the sidebar on desktop — no menu to open first — while phone stays exactly as it was, up top. Statement now shows View Only accounts their own information immediately, no more picking themselves from a list with only one name in it. Fleet search now also matches by Vehicle ID, not just truck #/plate/VIN. And there\'s a brand new "Week in Deposit" tab for tracking savings-style deposits — set a goal and a weekly amount, and it shows exactly how much has been saved and how much is left, week by week, with its own icon in the sidebar.' },
@@ -3540,38 +3541,62 @@
         const category = isViewOnly ? '' : document.getElementById('expiring-category').value;
         const query = (document.getElementById('expiring-search').value || '').toLowerCase();
 
-        let items = buildExpiringDocumentsList().filter(i => i.days <= windowDays);
-        if (category) items = items.filter(i => i.category === category);
-        if (query) items = items.filter(i => `${i.who} ${i.doc}`.toLowerCase().includes(query));
+        // Group every tracked document by whoever it belongs to (one truck
+        // or employee = one group), not one row per document — a truck
+        // with both registration AND insurance coming up shows once, with
+        // both listed inside, instead of twice.
+        const all = buildExpiringDocumentsList();
+        const groupMap = {};
+        all.forEach(i => {
+            const key = i.kind + ':' + i.id;
+            if (!groupMap[key]) groupMap[key] = { kind: i.kind, id: i.id, who: i.who, category: i.category, docs: [] };
+            groupMap[key].docs.push(i);
+        });
+        let groups = Object.values(groupMap).map(g => {
+            g.docs.sort((a, b) => a.days - b.days); // most urgent doc first within the group
+            g.minDays = g.docs[0].days; // drives the group's own badge + sort order
+            return g;
+        });
+        // A group shows if ANY of its documents falls inside the selected
+        // window — once it qualifies, every document for that truck/
+        // employee displays, even ones further out, so the full picture
+        // is visible in one place rather than needing to piece it together.
+        groups = groups.filter(g => g.docs.some(d => d.days <= windowDays));
+        if (category) groups = groups.filter(g => g.category === category);
+        if (query) groups = groups.filter(g => `${g.who} ${g.docs.map(d => d.doc).join(' ')}`.toLowerCase().includes(query));
+        groups.sort((a, b) => a.minDays - b.minDays);
 
-        const expiredCount = items.filter(i => i.days < 0).length;
-        const soonCount = items.filter(i => i.days >= 0 && i.days <= 14).length;
+        const expiredCount = groups.filter(g => g.minDays < 0).length;
+        const soonCount = groups.filter(g => g.minDays >= 0 && g.minDays <= 14).length;
         if (grid) grid.innerHTML = `
             <div class="stat-card"><div class="stat-label">Already expired</div><div class="stat-value" style="color:#dc2626;">${expiredCount}</div></div>
             <div class="stat-card"><div class="stat-label">Within 14 days</div><div class="stat-value" style="color:#d97706;">${soonCount}</div></div>
-            <div class="stat-card"><div class="stat-label">Total shown</div><div class="stat-value">${items.length}</div></div>`;
+            <div class="stat-card"><div class="stat-label">Total shown</div><div class="stat-value">${groups.length}</div></div>`;
 
-        if (!items.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing expiring in this window.</div>'; return; }
+        if (!groups.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing expiring in this window.</div>'; return; }
 
-        const rows = items.map(i => {
-            const statusPill = i.days < 0
-                ? `<span class="exp-pill exp-over">expired ${Math.abs(i.days)}d ago</span>`
-                : i.days <= 14 ? `<span class="exp-pill exp-soon">${i.days}d left</span>` : `<span class="type-pill">${i.days}d left</span>`;
-            return `
-                <div class="rec-card" style="margin-bottom:8px; cursor:pointer;" onclick="goToSearchResult('${i.kind}','${i.id}')">
-                    <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; padding:11px 14px;">
-                        <div>
-                            <span class="type-pill">${i.category}</span>
-                            <strong style="margin-left:6px;">${escHtml(i.who)}</strong>
-                            <span style="color:var(--text-muted); font-size:0.8rem;"> · ${i.doc}</span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span style="font-size:0.78rem; color:var(--text-muted);">${i.date}</span>
-                            ${statusPill}
-                        </div>
+        const pillFor = days => days < 0
+            ? `<span class="exp-pill exp-over">expired ${Math.abs(days)}d ago</span>`
+            : days <= 14 ? `<span class="exp-pill exp-soon">${days}d left</span>` : `<span class="type-pill">${days}d left</span>`;
+
+        const rows = groups.map(g => `
+            <div class="panel collapsed" style="margin-bottom:8px;">
+                <div class="panel-head" onclick="toggleCollapse(this)">
+                    <span style="font-size:13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span class="type-pill">${g.category}</span>
+                        <b>${escHtml(g.who)}</b>
+                        ${pillFor(g.minDays)}
+                        <span style="color:var(--text-muted); font-size:0.75rem;">${g.docs.length} document${g.docs.length > 1 ? 's' : ''}</span>
+                    </span>
+                    <span class="caret">&#9662;</span>
+                </div>
+                <div>
+                    <div class="rec-detail-grid" style="margin:8px 0;">
+                        ${g.docs.map(d => `<div><div class="k">${escHtml(d.doc)}</div><div class="v">${d.date} ${pillFor(d.days)}</div></div>`).join('')}
                     </div>
-                </div>`;
-        }).join('');
+                    <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); goToSearchResult('${g.kind}','${g.id}')">✎ Edit ${g.kind === 'vehicles' ? 'vehicle' : 'employee'} record</button>
+                </div>
+            </div>`).join('');
         body.innerHTML = rows;
     }
 
@@ -3638,7 +3663,7 @@
                 renderCharges();
                 break;
             case 'weekdeposit':
-                setVal('weekdeposit-status-filter', 'Deducting');
+                setVal('weekdeposit-status-filter', '');
                 setVal('weekdeposit-search', '');
                 renderWeekDeposit();
                 break;
@@ -5127,7 +5152,7 @@
 
         const grid = document.getElementById('weekdeposit-stats-grid');
         let totalSaved = 0, totalRemaining = 0;
-        const rows = list.map(c => {
+        const cardHtml = c => {
             const goal = Math.max(0, parseFloat(c.amount) || 0);
             const remaining = chargeBalance(c);
             const saved = Math.max(0, +(goal - remaining).toFixed(2));
@@ -5158,7 +5183,21 @@
                         ${sched.rows.length ? `<div class="table-wrapper" style="max-height:260px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Saved that week</th><th style="text-align:left;">Total saved</th><th style="text-align:left;">Remaining</th></tr></thead><tbody>${scheduleRows}</tbody></table></div>` : ''}
                     </div>
                 </div>`;
-        }).join('');
+        };
+        // Grouped by status (Deducting/Queued/Paid/Absorbed/Tk from check
+        // order, matching Statement's own grouping) so it's easy to see
+        // what's actively being deducted vs. already paid off at a glance.
+        const STATUS_ORDER = ['Deducting', 'Queued', 'Paid', 'Absorbed', 'Tk from check'];
+        const statusesPresent = [...new Set(list.map(c => c.status))].sort((a, b) => {
+            const ia = STATUS_ORDER.indexOf(a), ib = STATUS_ORDER.indexOf(b);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        let rows = '';
+        statusesPresent.forEach(status => {
+            const group = list.filter(c => c.status === status);
+            rows += `<div class="detail-subhead" style="margin:12px 0 6px;"><span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:normal;">(${group.length})</span></div>`;
+            group.forEach(c => { rows += cardHtml(c); });
+        });
 
         if (grid) grid.innerHTML = `
             <div class="stat-card"><div class="stat-label">Active deposits</div><div class="stat-value">${list.length}</div></div>
