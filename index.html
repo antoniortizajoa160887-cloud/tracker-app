@@ -1902,8 +1902,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.81';
+    const APP_VERSION = 'v2.82';
     const CHANGELOG = [
+        { version: 'v2.82', date: '2026-08-06', notes: 'Claims, Charges, and Additional Income now show the same progress bar as Week in Deposit when you expand one — a quick visual for how much of the total has been paid off so far, right above the details.' },
         { version: 'v2.81', date: '2026-08-06', notes: 'Charges & Income now get the same status-by-status grouping as Claims, Statement, and Week in Deposit — organized by what\'s currently Deducting, Queued, Paid, and so on, each group foldable by tapping its header. This closes out the grouping work across every relevant tab.' },
         { version: 'v2.80', date: '2026-08-06', notes: 'Looked into the printing-from-the-installed-app issue directly — this turns out to be a genuine, long-standing Safari limitation on iPhone/iPad that goes back many years and has never been fixed by Apple, not something wrong in Tracker. Printing from an app added to the home screen just doesn\'t work reliably on iOS, full stop. Rather than leave the button silently doing nothing, every print button now checks for this and tells you plainly: open the same page in Safari instead of the home screen icon, and print from there — that always works, since your browser screenshot showed printing working perfectly (all 67 pages, one per person) from Safari itself.' },
         { version: 'v2.79', date: '2026-08-06', notes: 'Fixed why the mobile drawer wasn\'t showing up at all — the ☰ button that opens it had two style rules fighting each other, and the wrong one was winning every time regardless of screen size, so it never appeared no matter what device you were on. Should actually show up now.' },
@@ -4384,8 +4385,20 @@
         attemptPrint();
     }
 
+    // Shared progress-bar visual (same style already used in Week in
+    // Deposit) — reused wherever a total gets fulfilled incrementally over
+    // weeks: claims/charges being paid down, income being paid out.
+    function progressBarHtml(pct) {
+        pct = Math.max(0, Math.min(100, pct || 0));
+        return `<div style="background:var(--surface-2); border-radius:6px; height:8px; margin:8px 0 4px; overflow:hidden;"><div style="background:var(--primary); height:100%; width:${pct}%;"></div></div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${pct}% paid</div>`;
+    }
+
     function claimDetailHtml(c, empName, weeks, bal, endDate, editable) {
+        const owed = Math.max(0, (parseFloat(c.claim_amount) || 0) - (parseFloat(c.absorbed_amount) || 0));
+        const pct = owed > 0 ? Math.round(((owed - bal) / owed) * 100) : 0;
         return `
+            ${progressBarHtml(pct)}
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
@@ -5164,6 +5177,7 @@
                         <span class="rec-right" style="color:#dc2626;">${formatMoney(bal)} <span class="status-badge status-${ch.status}">${ch.status}</span></span>
                     </div>
                     <div class="rec-card-body">
+                        ${progressBarHtml((parseFloat(ch.amount) || 0) > 0 ? Math.round(((parseFloat(ch.amount) - bal) / parseFloat(ch.amount)) * 100) : 0)}
                         <div class="rec-detail-grid">
                             <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
                             <div><div class="k">Charge type</div><div class="v">${ch.charge_type}</div></div>
@@ -5488,6 +5502,7 @@
                         <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${i.status}</span></span>
                     </div>
                     <div class="rec-card-body">
+                        ${progressBarHtml((parseFloat(i.amount) || 0) > 0 ? Math.round(((parseFloat(i.amount) - rem) / parseFloat(i.amount)) * 100) : 0)}
                         <div class="rec-detail-grid">
                             <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
                             <div><div class="k">Income type</div><div class="v">${i.income_type}</div></div>
