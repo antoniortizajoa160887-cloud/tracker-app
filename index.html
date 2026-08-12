@@ -279,8 +279,8 @@
         #sidebar-account-bar { display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
         #sidebar-account-bar .theme-swatch-row { justify-content: flex-start; padding: 4px 10px 8px; }
         #sidebar-account-bar button.sidebar-account-btn { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 9px 10px; font-size: 0.8rem; color: #93a4b8; cursor: pointer; }
-        #sidebar-account-bar button.sidebar-account-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
-        #sidebar-account-btn-signout:hover { color: #f87171 !important; }
+        #sidebar-account-bar button.sidebar-account-btn:hover { background: rgba(255,255,255,0.06) !important; color: #fff !important; }
+        #sidebar-account-bar button#sidebar-account-btn-signout:hover { color: #f87171 !important; }
         .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
         #app-sidebar .tab-groups { flex-direction: column; overflow: visible; background: none; border-radius: 0; padding: 0; gap: 2px; }
         #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 10px 12px; color: #8b98a5; }
@@ -289,7 +289,8 @@
         #app-sidebar #grp-notifications, #app-sidebar #grp-messages { padding-left: 4px; }
         #app-sidebar .tabs.sub-tabs.open { display: flex; }
         #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; }
-        #app-sidebar .tab-btn:hover { color: #fff !important; background: rgba(255,255,255,0.04); }
+        #app-sidebar .group-btn:hover { color: #fff !important; background: rgba(255,255,255,0.06) !important; }
+        #app-sidebar .tab-btn:hover { color: #fff !important; background: rgba(255,255,255,0.06) !important; }
         #app-sidebar .tab-btn.active { background: var(--primary); color: #06251c; }
 
         /* Icons — same nav content whether it's the desktop sidebar or the
@@ -1918,8 +1919,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.87';
+    const APP_VERSION = 'v2.88';
     const CHANGELOG = [
+        { version: 'v2.88', date: '2026-08-06', notes: 'Fixed both issues. Notifications and Messages were being closed automatically the instant any other section in the sidebar was opened, which is why they never actually stayed visible — now they\'re correctly excluded from that behavior and stay put. Also strengthened the sidebar\'s hover styling everywhere (including one spot — the section headers like Logistics/HR & Payroll — that had no hover styling defined at all, which could plausibly explain the white-on-white you saw) so text is guaranteed readable on hover no matter what.' },
         { version: 'v2.87', date: '2026-08-06', notes: 'Last piece from the big batch — Summary Reports. Payroll, Claims, Charges, Additional Income, and Week in Deposit each now have their own "📊 Summary Report" buttons, in Excel and PDF. These are real reports, not raw data — totals, breakdowns by status and type, generated fresh each time — not individualized by employee, exactly as asked. One note on the PDF side: it uses the same print system as everything else in the app (so the standalone-app printing limitation on iPhone/iPad applies here too, with the same clear heads-up if it comes up) — "download as PDF" happens by choosing Save as PDF from the print screen, same as printing a payslip.' },
         { version: 'v2.86', date: '2026-08-06', notes: 'Third batch. Fleet service records can now track mileage — how many miles were on it when the service was done, and the mileage the next one is due at. Shows right in the service log for each vehicle. Last piece left: summary reports for Payroll, Claims, Charges, Income, and Week in Deposit, downloadable in Excel and PDF.' },
         { version: 'v2.85', date: '2026-08-06', notes: 'Second batch. Claims\' table now shows the same columns as Charges — Employee ID, Weekly rate, Weeks, Start, and Ends alongside what was already there, so both read the same way. "Paid So Far" and "Balance" now line up on the left instead of the right in every detail view, matching their neighboring fields. Still ahead: summary reports for Payroll/Claims/Charges/Income/Week in Deposit, and new mileage fields for Fleet service records.' },
@@ -2661,7 +2663,11 @@
     // Open a group: show its sub-tab row, hide the others, and switch to its
     // first tab that's actually visible for this role.
     function openGroup(groupId) {
-        document.querySelectorAll('.tabs.sub-tabs').forEach(g => g.classList.remove('open'));
+        // #grp-notifications/#grp-messages share the .tabs.sub-tabs class
+        // for visual styling but are NOT part of the toggle system — they're
+        // permanently-open standalone sections above the account bar, so
+        // they're excluded here to avoid getting closed by this sweep.
+        document.querySelectorAll('.tabs.sub-tabs:not(#grp-notifications):not(#grp-messages)').forEach(g => g.classList.remove('open'));
         document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
         const g = document.getElementById(groupId);
         if (g) g.classList.add('open');
@@ -2705,7 +2711,7 @@
             });
         }
         if (activeGroup) {
-            document.querySelectorAll('.tabs.sub-tabs').forEach(g => g.classList.remove('open'));
+            document.querySelectorAll('.tabs.sub-tabs:not(#grp-notifications):not(#grp-messages)').forEach(g => g.classList.remove('open'));
             document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
             const g = document.getElementById(activeGroup);
             if (g) g.classList.add('open');
