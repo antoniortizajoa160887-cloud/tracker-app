@@ -515,6 +515,8 @@
     .rec-qs-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
     .rec-qs-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
     .exp-pill { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+    .rec-group-row td { background: var(--surface-2); padding: 8px 10px; font-size: 12px; border-top: 2px solid var(--border); }
+    .rec-group-header { background: var(--surface-2); padding: 8px 10px; font-size: 12px; border-radius: 6px; margin: 10px 0 4px; }
     .exp-soon { background: var(--amber-bg); color: var(--amber); }
     .exp-over { background: var(--quit-bg); color: var(--quit); }
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
@@ -1459,7 +1461,7 @@
             <span class="wk-label" id="payroll-week-label">—</span>
             <button class="btn-small" onclick="shiftPayrollWeek(1)">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayrollWeek()">This week</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()">🖨 Print All (net pay &gt; 0)</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()">🖨 Print All</button>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
@@ -1856,8 +1858,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.76';
+    const APP_VERSION = 'v2.77';
     const CHANGELOG = [
+        { version: 'v2.77', date: '2026-08-06', notes: 'Payroll\'s "Print All" is simplified to just that name, and fixed to match what you asked: each person now prints on their own page, formatted exactly like printing that one person by hand — their own header, their own week line — instead of one combined summary page. Also added a small fix across every print button in the app for a phone-specific issue where the print preview could come up blank — should now consistently show the content every time. Claims is now grouped by status (Deducting together, Paid together, and so on), same treatment Statement and Week in Deposit already got. Charges and Additional Income are still ahead of us for that same grouping — continuing next.' },
         { version: 'v2.76', date: '2026-08-06', notes: 'Two pieces done, more coming. Week in Deposit now defaults to showing every status and groups results by status (Deducting together, Paid together, etc.) so it\'s easy to see what\'s actively being saved vs. already reached its goal. Expiring Documents is fully reworked — a truck or employee with more than one thing coming up (like registration AND insurance) now shows once, not twice, expanding to show everything for that truck/employee together, with the most urgent one setting the red/amber warning you see at a glance. Tap it to jump straight to editing that record. Still ahead: this same status-grouping treatment for Claims, Charges, and Additional Income.' },
         { version: 'v2.75', date: '2026-08-06', notes: 'Fixed the error that broke the whole app in the last update — a real mistake on my end while cleaning up Week in Deposit, a leftover reference to something I\'d removed. Confirmed this time by actually running the exact code with real data before shipping, not just checking it looks right. Also fixed the ⋮ menu on phones opening in the wrong spot and getting cut off along the edge — it now opens directly under the button itself and stays fully on screen, calculated from the button\'s real position instead of a fixed guess.' },
         { version: 'v2.74', date: '2026-08-06', notes: 'Fixed a real problem with Week in Deposit before it caused any confusion: it was built looking for a charge type that didn\'t match your real data, so it would have shown up completely empty despite your 9 existing "Semana de Fondo" entries being right there. Fixed to read the correct existing category, and it also no longer offers to create new ones — it\'s a dedicated savings-style view of what you already record on Charges & Income, not a separate place to add them. You can still edit or remove an existing entry directly from this tab; new ones get added the normal way, tagged "Semana de Fondo" like always.' },
@@ -2150,6 +2153,26 @@
     try {
         window.matchMedia('(min-width: 600px)').addEventListener('change', reRenderActiveCardTable);
     } catch (e) { /* older browsers: ignore */ }
+
+    // Shared status-grouping order across Claims/Charges/Income — any
+    // status not listed here (e.g. Income's own "Paying"/"Stopped") still
+    // groups correctly, just sorted after the known ones alphabetically.
+    const REC_STATUS_ORDER = ['Deducting', 'Paying', 'Queued', 'Paid', 'Absorbed', 'Tk from check', 'Stopped'];
+    function groupByStatus(list, statusField) {
+        statusField = statusField || 'status';
+        const groups = {};
+        list.forEach(item => {
+            const s = item[statusField] || '(no status)';
+            if (!groups[s]) groups[s] = [];
+            groups[s].push(item);
+        });
+        const statuses = Object.keys(groups).sort((a, b) => {
+            const ia = REC_STATUS_ORDER.indexOf(a), ib = REC_STATUS_ORDER.indexOf(b);
+            if (ia === -1 && ib === -1) return a.localeCompare(b);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        return statuses.map(s => ({ status: s, items: groups[s] }));
+    }
 
     function toggleRecCard(table, id) {
         const set = recExpanded[table];
@@ -4237,7 +4260,7 @@
             <h2>Weekly Schedule</h2>
             ${rows ? `<table><thead><tr><th>Date</th><th>Deducted</th><th>Running Balance</th></tr></thead><tbody>${rows}</tbody></table>` : '<div>No schedule to print — this claim is resolved or missing a start date/weekly amount.</div>'}
         `;
-        window.print();
+        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
     }
 
     // ---- Print: charge payment schedule ----------------------------------
@@ -4265,7 +4288,7 @@
             <h2>Weekly Schedule</h2>
             ${rows ? `<table><thead><tr><th>Date</th><th>Deducted</th><th>Running Balance</th></tr></thead><tbody>${rows}</tbody></table>` : '<div>No schedule to print — this charge is resolved or missing a start date/weekly amount.</div>'}
         `;
-        window.print();
+        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
     }
 
     // ---- Print: whole statement for the selected employee ---------------
@@ -4282,7 +4305,7 @@
             ${statsGrid ? statsGrid.outerHTML : ''}
             ${content.innerHTML}
         `;
-        window.print();
+        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
     }
 
     function claimDetailHtml(c, empName, weeks, bal, endDate, editable) {
@@ -4316,7 +4339,9 @@
             container.className = '';
             if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>'; return; }
             let rows = '';
-            list.forEach(c => {
+            groupByStatus(list).forEach(({ status, items }) => {
+                rows += `<tr class="rec-group-row"><td colspan="7"><span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                items.forEach(c => {
                 const emp = employees.find(e => e.id === c.employee_id);
                 const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
                 const sched = buildClaimSchedule(c, null);
@@ -4336,6 +4361,7 @@
                 <tr class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}" style="display:${open ? 'table-row' : 'none'};">
                     <td colspan="7" style="padding:12px; background:var(--surface-2);">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</td>
                 </tr>`;
+                });
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
@@ -4346,7 +4372,9 @@
 
         container.className = 'record-grid';
         container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>';
-        list.forEach(c => {
+        groupByStatus(list).forEach(({ status, items }) => {
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1;"><span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            items.forEach(c => {
             const emp = employees.find(e => e.id === c.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
             const sched = buildClaimSchedule(c, null);
@@ -4364,6 +4392,7 @@
                     </div>
                     <div class="rec-card-body">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</div>
                 </div>`);
+            });
         });
         applyTranslations();
     }
@@ -6277,20 +6306,25 @@
             </tbody></table>
             ${detail}
         `;
-        window.print();
+        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
     }
 
     // Prints everyone currently shown in Payroll (same filters/sort already
-    // on screen) whose net pay for the selected week is above zero — one
-    // combined document instead of clicking Print on each person.
+    // on screen) whose net pay for the selected week is above zero — each
+    // person gets their own page, formatted exactly like printing that one
+    // person individually (same header style, own page break), rather than
+    // one combined document with a single summary header up top.
     function printAllPayroll() {
         const qualifying = lastPayrollCalc.filter(c => c.net > 0);
         if (!qualifying.length) { alert('No one in the current view has a net amount to pay for this week.'); return; }
-        const sections = qualifying.map(c => {
+        const weekLabel = fmtWeekLabel(payrollSunday());
+        const printedDate = new Date().toLocaleDateString();
+        const sections = qualifying.map((c, idx) => {
             const detail = payrollDetailHtml(c.emp, c.payType, c.base, c.routePay, c.ded, c.income);
             return `
-                <div style="page-break-inside:avoid; margin-bottom:22px; padding-bottom:16px; border-bottom:2px solid #ccc;">
-                    <h2>${escHtml(c.emp.first_name)} ${escHtml(c.emp.last_name)} (${c.emp.id})</h2>
+                <div style="${idx > 0 ? 'page-break-before:always;' : ''}">
+                    <h1>Payroll — ${escHtml(c.emp.first_name)} ${escHtml(c.emp.last_name)} (${c.emp.id})</h1>
+                    <div class="print-meta">Week of ${weekLabel} · Printed ${printedDate}</div>
                     <table><tbody>
                         <tr><td>Base pay</td><td>${formatMoney(c.base)}</td></tr>
                         <tr><td>Route pay</td><td>${formatMoney(c.routePay)}</td></tr>
@@ -6302,13 +6336,8 @@
                     ${detail}
                 </div>`;
         }).join('');
-        const grandNet = qualifying.reduce((a, c) => a + c.net, 0);
-        document.getElementById('print-area').innerHTML = `
-            <h1>Payroll — All with net pay due</h1>
-            <div class="print-meta">Week of ${fmtWeekLabel(payrollSunday())} · ${qualifying.length} of ${lastPayrollCalc.length} people (net pay &gt; $0) · Total net: ${formatMoney(grandNet)} · Printed ${new Date().toLocaleDateString()}</div>
-            ${sections}
-        `;
-        window.print();
+        document.getElementById('print-area').innerHTML = sections;
+        setTimeout(() => window.print(), 60);
     }
 
     // ===== MESSAGES ========================================================
