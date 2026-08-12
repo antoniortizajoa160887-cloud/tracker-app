@@ -1902,8 +1902,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.79';
+    const APP_VERSION = 'v2.80';
     const CHANGELOG = [
+        { version: 'v2.80', date: '2026-08-06', notes: 'Looked into the printing-from-the-installed-app issue directly — this turns out to be a genuine, long-standing Safari limitation on iPhone/iPad that goes back many years and has never been fixed by Apple, not something wrong in Tracker. Printing from an app added to the home screen just doesn\'t work reliably on iOS, full stop. Rather than leave the button silently doing nothing, every print button now checks for this and tells you plainly: open the same page in Safari instead of the home screen icon, and print from there — that always works, since your browser screenshot showed printing working perfectly (all 67 pages, one per person) from Safari itself.' },
         { version: 'v2.79', date: '2026-08-06', notes: 'Fixed why the mobile drawer wasn\'t showing up at all — the ☰ button that opens it had two style rules fighting each other, and the wrong one was winning every time regardless of screen size, so it never appeared no matter what device you were on. Should actually show up now.' },
         { version: 'v2.78', date: '2026-08-06', notes: 'Mobile navigation is now the drawer style from the samples — tap the ☰ icon top-left to slide in the same menu your desktop sidebar already has (same sections, same icons, same order), tap anywhere outside it or pick a destination to close it. Desktop is completely unchanged. Also: every place with grouped statuses (Claims, Statement, Week in Deposit) can now be collapsed and expanded per group, not just viewed — tap a status header to fold it away. One honest note on scope: this covers the navigation itself, not the denser card styling or new Home screen shown as illustration in the sample images — those are still ahead if you\'d like them built too. Charges and Additional Income are also still pending their status-grouping.' },
         { version: 'v2.77', date: '2026-08-06', notes: 'Payroll\'s "Print All" is simplified to just that name, and fixed to match what you asked: each person now prints on their own page, formatted exactly like printing that one person by hand — their own header, their own week line — instead of one combined summary page. Also added a small fix across every print button in the app for a phone-specific issue where the print preview could come up blank — should now consistently show the content every time. Claims is now grouped by status (Deducting together, Paid together, and so on), same treatment Statement and Week in Deposit already got. Charges and Additional Income are still ahead of us for that same grouping — continuing next.' },
@@ -3361,6 +3362,21 @@
     let employeeDetails = {};        // employee_id -> { id_type, driver_license, dl_expiration, work_permit, work_permit_exp, medical_card, medical_card_exp, notes }
     let empDetailsMissing = false;
 
+    // iOS Safari has never reliably supported window.print() when a site is
+    // running standalone (added to the home screen) — the print dialog
+    // either never appears or appears and silently fails. This is a
+    // long-standing WebKit limitation with no fix available from page
+    // JavaScript, so rather than call window.print() and let it do nothing,
+    // detect the situation and tell the person plainly what to do instead.
+    function attemptPrint() {
+        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone) {
+            alert('Printing doesn\'t work reliably from the installed app icon — this is a long-standing Safari limitation on iPhone/iPad, not something in Tracker itself.\n\nTo print: open this same page in Safari (not the home screen icon) and print from there.');
+            return;
+        }
+        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
+    }
+
     function escHtml(s) {
         return String(s == null ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -4319,7 +4335,7 @@
             <h2>Weekly Schedule</h2>
             ${rows ? `<table><thead><tr><th>Date</th><th>Deducted</th><th>Running Balance</th></tr></thead><tbody>${rows}</tbody></table>` : '<div>No schedule to print — this claim is resolved or missing a start date/weekly amount.</div>'}
         `;
-        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
+        attemptPrint();
     }
 
     // ---- Print: charge payment schedule ----------------------------------
@@ -4347,7 +4363,7 @@
             <h2>Weekly Schedule</h2>
             ${rows ? `<table><thead><tr><th>Date</th><th>Deducted</th><th>Running Balance</th></tr></thead><tbody>${rows}</tbody></table>` : '<div>No schedule to print — this charge is resolved or missing a start date/weekly amount.</div>'}
         `;
-        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
+        attemptPrint();
     }
 
     // ---- Print: whole statement for the selected employee ---------------
@@ -4364,7 +4380,7 @@
             ${statsGrid ? statsGrid.outerHTML : ''}
             ${content.innerHTML}
         `;
-        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
+        attemptPrint();
     }
 
     function claimDetailHtml(c, empName, weeks, bal, endDate, editable) {
@@ -6381,7 +6397,7 @@
             </tbody></table>
             ${detail}
         `;
-        setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
+        attemptPrint();
     }
 
     // Prints everyone currently shown in Payroll (same filters/sort already
@@ -6412,7 +6428,7 @@
                 </div>`;
         }).join('');
         document.getElementById('print-area').innerHTML = sections;
-        setTimeout(() => window.print(), 60);
+        attemptPrint();
     }
 
     // ===== MESSAGES ========================================================
