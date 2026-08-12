@@ -1902,8 +1902,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.82';
+    const APP_VERSION = 'v2.83';
     const CHANGELOG = [
+        { version: 'v2.83', date: '2026-08-06', notes: 'Charges and Additional Income are now expandable/collapsible on desktop too, same as Claims already was — click any row to see its full details, including the progress bar. And Statement now shows that same progress bar for every individual claim, charge, and income entry when you expand it, not just in their own tabs.' },
         { version: 'v2.82', date: '2026-08-06', notes: 'Claims, Charges, and Additional Income now show the same progress bar as Week in Deposit when you expand one — a quick visual for how much of the total has been paid off so far, right above the details.' },
         { version: 'v2.81', date: '2026-08-06', notes: 'Charges & Income now get the same status-by-status grouping as Claims, Statement, and Week in Deposit — organized by what\'s currently Deducting, Queued, Paid, and so on, each group foldable by tapping its header. This closes out the grouping work across every relevant tab.' },
         { version: 'v2.80', date: '2026-08-06', notes: 'Looked into the printing-from-the-installed-app issue directly — this turns out to be a genuine, long-standing Safari limitation on iPhone/iPad that goes back many years and has never been fixed by Apple, not something wrong in Tracker. Printing from an app added to the home screen just doesn\'t work reliably on iOS, full stop. Rather than leave the button silently doing nothing, every print button now checks for this and tells you plainly: open the same page in Safari instead of the home screen icon, and print from there — that always works, since your browser screenshot showed printing working perfectly (all 67 pages, one per person) from Safari itself.' },
@@ -5093,6 +5094,27 @@
         }
     });
 
+    function chargeDetailHtml(ch, empName, weeks, bal, endDate, editable) {
+        const owed = Math.max(0, parseFloat(ch.amount) || 0);
+        const pct = owed > 0 ? Math.round(((owed - bal) / owed) * 100) : 0;
+        return `
+            ${progressBarHtml(pct)}
+            <div class="rec-detail-grid">
+                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
+                <div><div class="k">Charge type</div><div class="v">${ch.charge_type}</div></div>
+                <div><div class="k">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
+                <div><div class="k">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
+                <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
+                <div><div class="k">Start ded.</div><div class="v">${ch.start_date || '-'}</div></div>
+                <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
+            </div>
+            ${editable ? `<div class="rec-actions">
+                <button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
+                <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>
+            </div>` : ''}`;
+    }
+
     function renderCharges() {
         const query = (document.getElementById('charge-search')?.value || '').toLowerCase();
         let list = charges.filter(ch => {
@@ -5130,9 +5152,10 @@
                 const sched = buildChargeSchedule(ch, null);
                 const bal = chargeBalance(ch);
                 const endDate = sched.endDate || (ch.end_date || '-');
-                rows += `<tr>
-                    <td class="id-cell">${ch.charge_id}</td>
-                    <td>${empName}</td>
+                const open = recExpanded.charges.has(ch.charge_id);
+                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('charges','${ch.charge_id}')">
+                    <td class="id-cell"><span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span> ${ch.charge_id}</td>
+                    <td>${escHtml(empName)}</td>
                     <td class="id-cell">${ch.employee_id}</td>
                     <td>${ch.charge_type}</td>
                     <td>${formatMoney(ch.amount)}</td>
@@ -5142,7 +5165,10 @@
                     <td>${ch.start_date || '-'}</td>
                     <td>${endDate}</td>
                     <td><span class="status-badge status-${ch.status}">${ch.status}</span></td>
-                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editCharge('${ch.charge_id}')">✎</button><button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕</button>` : ''}</td>
+                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editCharge('${ch.charge_id}')">✎</button><button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕</button>` : ''}</td>
+                </tr>
+                <tr class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}" style="display:${open ? 'table-row' : 'none'};">
+                    <td colspan="12" style="padding:12px; background:var(--surface-2);">${chargeDetailHtml(ch, empName, weeks, bal, endDate, editable)}</td>
                 </tr>`;
                 });
             });
@@ -5176,22 +5202,7 @@
                         <span class="rec-sub">${ch.charge_id}</span>
                         <span class="rec-right" style="color:#dc2626;">${formatMoney(bal)} <span class="status-badge status-${ch.status}">${ch.status}</span></span>
                     </div>
-                    <div class="rec-card-body">
-                        ${progressBarHtml((parseFloat(ch.amount) || 0) > 0 ? Math.round(((parseFloat(ch.amount) - bal) / parseFloat(ch.amount)) * 100) : 0)}
-                        <div class="rec-detail-grid">
-                            <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
-                            <div><div class="k">Charge type</div><div class="v">${ch.charge_type}</div></div>
-                            <div><div class="k">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
-                            <div><div class="k">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
-                            <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
-                            <div><div class="k">Start ded.</div><div class="v">${ch.start_date || '-'}</div></div>
-                            <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
-                        </div>
-                        ${editable ? `<div class="rec-actions">
-                            <button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
-                            <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>
-                        </div>` : ''}
-                    </div>
+                    <div class="rec-card-body">${chargeDetailHtml(ch, empName, weeks, bal, endDate, editable)}</div>
                 </div>`);
             });
         });
@@ -5418,6 +5429,27 @@
         fetchIncomeFromCloud();
     });
 
+    function incomeDetailHtml(i, empName, weeks, rem, endDate, editable) {
+        const owed = Math.max(0, parseFloat(i.amount) || 0);
+        const pct = owed > 0 ? Math.round(((owed - rem) / owed) * 100) : 0;
+        return `
+            ${progressBarHtml(pct)}
+            <div class="rec-detail-grid">
+                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
+                <div><div class="k">Income type</div><div class="v">${i.income_type}</div></div>
+                <div><div class="k">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
+                <div><div class="k">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
+                <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
+                <div><div class="k">Start</div><div class="v">${i.start_date || '-'}</div></div>
+                <div><div class="k">Ends</div><div class="v">${endDate}</div></div>
+            </div>
+            ${editable ? `<div class="rec-actions">
+                <button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
+                <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>
+            </div>` : ''}`;
+    }
+
     function renderIncome() {
         const query = (document.getElementById('income-search')?.value || '').toLowerCase();
         let list = additionalIncome.filter(i => {
@@ -5456,9 +5488,10 @@
                 const weeks = weeksNeeded(i.amount, i.weekly_amount);
                 const rem = incomeRemaining(i);
                 const endDate = projectedEndDate(i.start_date, i.amount, i.weekly_amount) || (i.end_date || '-');
-                rows += `<tr>
-                    <td class="id-cell">${i.income_id}</td>
-                    <td>${empName}</td>
+                const open = recExpanded.income.has(i.income_id);
+                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('income','${i.income_id}')">
+                    <td class="id-cell"><span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span> ${i.income_id}</td>
+                    <td>${escHtml(empName)}</td>
                     <td class="id-cell">${i.employee_id}</td>
                     <td>${i.income_type}</td>
                     <td>${formatMoney(i.amount)}</td>
@@ -5468,7 +5501,10 @@
                     <td>${i.start_date || '-'}</td>
                     <td>${endDate}</td>
                     <td><span class="status-badge status-${i.status}">${i.status}</span></td>
-                    <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editIncome('${i.income_id}')">✎</button><button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕</button>` : ''}</td>
+                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editIncome('${i.income_id}')">✎</button><button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕</button>` : ''}</td>
+                </tr>
+                <tr class="rec-card${open ? ' open' : ''}" id="rec-income-${i.income_id}" style="display:${open ? 'table-row' : 'none'};">
+                    <td colspan="12" style="padding:12px; background:var(--surface-2);">${incomeDetailHtml(i, empName, weeks, rem, endDate, editable)}</td>
                 </tr>`;
                 });
             });
@@ -5501,22 +5537,7 @@
                         <span class="rec-sub">${i.income_id}</span>
                         <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${i.status}</span></span>
                     </div>
-                    <div class="rec-card-body">
-                        ${progressBarHtml((parseFloat(i.amount) || 0) > 0 ? Math.round(((parseFloat(i.amount) - rem) / parseFloat(i.amount)) * 100) : 0)}
-                        <div class="rec-detail-grid">
-                            <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
-                            <div><div class="k">Income type</div><div class="v">${i.income_type}</div></div>
-                            <div><div class="k">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
-                            <div><div class="k">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
-                            <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
-                            <div><div class="k">Start</div><div class="v">${i.start_date || '-'}</div></div>
-                            <div><div class="k">Ends</div><div class="v">${endDate}</div></div>
-                        </div>
-                        ${editable ? `<div class="rec-actions">
-                            <button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
-                            <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>
-                        </div>` : ''}
-                    </div>
+                    <div class="rec-card-body">${incomeDetailHtml(i, empName, weeks, rem, endDate, editable)}</div>
                 </div>`);
             });
         });
@@ -5633,6 +5654,7 @@
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
+                    ${progressBarHtml(owed > 0 ? Math.round((paidSoFar / owed) * 100) : 0)}
                     <div class="form-row" style="margin:6px 0 4px;align-items:center;">
                         <div class="field"><label>Company</label><div>${c.company_name ? escHtml(c.company_name) : '—'}</div></div>
                         <div class="field"><label>Claimant account</label><div>${c.claimant_account ? escHtml(c.claimant_account) : '—'}</div></div>
@@ -5667,6 +5689,7 @@
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
+                    ${progressBarHtml(owed > 0 ? Math.round((paidSoFar / owed) * 100) : 0)}
                     <div class="form-row" style="margin:6px 0 0;align-items:center;">
                         <div class="field"><label>Weekly rate</label><div>${formatMoney(chargeRateOn(ch, asOf))}</div></div>
                         <div class="field"><label>Weeks</label><div>${weeks}</div></div>
@@ -5744,6 +5767,7 @@
                             <span class="caret">&#9662;</span>
                         </div>
                         <div>
+                            ${progressBarHtml((parseFloat(i.amount) || 0) > 0 ? Math.round((paidSoFar / parseFloat(i.amount)) * 100) : 0)}
                             <div class="form-row" style="margin:6px 0 0;align-items:center;">
                                 <div class="field"><label>Weekly</label><div style="color:#059669;">+${formatMoney(i.weekly_amount)}</div></div>
                                 <div class="field"><label>Weeks</label><div>${weeks}</div></div>
