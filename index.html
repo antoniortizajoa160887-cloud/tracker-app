@@ -355,8 +355,10 @@
     .msg-bubble-cat { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; margin-bottom: 4px; }
     .msg-bubble-del { font-size: 10px; color: var(--text-muted); cursor: pointer; margin-top: 2px; padding: 0 4px; visibility: hidden; }
     .msg-bubble-row:hover .msg-bubble-del { visibility: visible; }
-    .msg-composer { display: none; gap: 8px; padding: 10px; border-top: 1px solid var(--border); align-items: center; }
-    .msg-composer input[type="text"] { margin: 0; flex: 1; min-height: 40px; }
+    .msg-composer { display: none; flex-direction: column; gap: 8px; padding: 10px; border-top: 1px solid var(--border); }
+    .msg-composer-selects { display: flex; gap: 8px; flex-wrap: wrap; }
+    .msg-composer-input-row { display: flex; gap: 8px; align-items: center; }
+    .msg-composer-input-row input[type="text"] { margin: 0; flex: 1; min-height: 40px; }
     .msg-empty-state { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px; }
     @media (max-width: 700px) {
         .msg-shell { flex-direction: column; height: auto; max-height: none; }
@@ -1258,6 +1260,8 @@
             <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildChargesSummaryReport())">📊 Summary Report (PDF)</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import</button>
             <input type="file" id="charges-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importChargesExcel(event)">
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="document.getElementById('week-deposit-import-input').click()">⬆️ Import Semana de Fondo</button>
+            <input type="file" id="week-deposit-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importWeekInDepositExcel(event)">
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
@@ -1581,16 +1585,20 @@
             <div id="msg-thread-header" class="msg-thread-header" style="display:none;"></div>
             <div id="msg-thread-body" class="msg-thread-body"></div>
             <div id="msg-composer" class="msg-composer" style="display:none;">
-                <select id="msg-compose-category" title="Regarding" onchange="onComposeCategoryChange()" style="width:auto; min-width:110px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;">
-                    <option value="General">General</option>
-                    <option value="Missing Day">Missing day</option>
-                    <option value="Claim">Claim</option>
-                    <option value="Charge">Charge</option>
-                    <option value="Income">Income</option>
-                </select>
-                <select id="msg-compose-linked" style="display:none; width:auto; min-width:150px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;"></select>
-                <input type="text" id="msg-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){postEmployeeMessage();}">
-                <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="postEmployeeMessage()">➤</button>
+                <div class="msg-composer-selects">
+                    <select id="msg-compose-category" title="Regarding" onchange="onComposeCategoryChange()" style="width:auto; min-width:110px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;">
+                        <option value="General">General</option>
+                        <option value="Missing Day">Missing day</option>
+                        <option value="Claim">Claim</option>
+                        <option value="Charge">Charge</option>
+                        <option value="Income">Income</option>
+                    </select>
+                    <select id="msg-compose-linked" style="display:none; width:auto; min-width:150px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;"></select>
+                </div>
+                <div class="msg-composer-input-row">
+                    <input type="text" id="msg-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){postEmployeeMessage();}">
+                    <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="postEmployeeMessage()">➤</button>
+                </div>
             </div>
             <div id="msg-empty-state" class="msg-empty-state">Select a conversation to view messages, or nothing yet if none exist for people you can see.</div>
         </div>
@@ -1919,8 +1927,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.88';
+    const APP_VERSION = 'v2.89';
     const CHANGELOG = [
+        { version: 'v2.89', date: '2026-08-12', notes: 'Two fixes. The Messages typing box no longer gets squeezed when you pick "Claim", "Charge", or "Income" (which shows a second "Which one?" dropdown) — the category pickers now sit on their own row above the typing box, so the typing box always keeps its full width. Also added a new "⬆️ Import Semana de Fondo" button on Charges & Income: upload the weekly deposit tracking spreadsheet (employee names in column A, one dated column per week, goal amount in the "cantidad final" column) and it creates a real "Semana de Fondo" charge for every employee who doesn\'t already have one, reproducing their exact week-by-week saved amounts — once an employee\'s goal is reached, no further weeks are shown, matching the existing charge balance engine\'s own behavior rather than needing a separate rule for it. Employees who already have a Semana de Fondo charge, or who can\'t be matched to a name in the roster, are skipped and reported at the end.' },
         { version: 'v2.88', date: '2026-08-06', notes: 'Fixed both issues. Notifications and Messages were being closed automatically the instant any other section in the sidebar was opened, which is why they never actually stayed visible — now they\'re correctly excluded from that behavior and stay put. Also strengthened the sidebar\'s hover styling everywhere (including one spot — the section headers like Logistics/HR & Payroll — that had no hover styling defined at all, which could plausibly explain the white-on-white you saw) so text is guaranteed readable on hover no matter what.' },
         { version: 'v2.87', date: '2026-08-06', notes: 'Last piece from the big batch — Summary Reports. Payroll, Claims, Charges, Additional Income, and Week in Deposit each now have their own "📊 Summary Report" buttons, in Excel and PDF. These are real reports, not raw data — totals, breakdowns by status and type, generated fresh each time — not individualized by employee, exactly as asked. One note on the PDF side: it uses the same print system as everything else in the app (so the standalone-app printing limitation on iPhone/iPad applies here too, with the same clear heads-up if it comes up) — "download as PDF" happens by choosing Save as PDF from the print screen, same as printing a payslip.' },
         { version: 'v2.86', date: '2026-08-06', notes: 'Third batch. Fleet service records can now track mileage — how many miles were on it when the service was done, and the mileage the next one is due at. Shows right in the service log for each vehicle. Last piece left: summary reports for Payroll, Claims, Charges, Income, and Week in Deposit, downloadable in Excel and PDF.' },
@@ -2544,8 +2553,21 @@
         return rate;
     }
     function chargeFutureRateExists(charge, dateStr) {
-        if ((parseFloat(charge.weekly_deduction) || 0) > 0) return true;
-        return (chargeRateChanges[charge.charge_id] || []).some(ch => (parseFloat(ch.weekly_amount) || 0) > 0);
+        // Only counts as "a future rate exists" if some rate change actually
+        // takes effect AFTER this date with a positive amount — not just
+        // whether the charge's original base rate was ever positive. This
+        // function is only reached once the CURRENT rate has already
+        // resolved to $0 (via chargeRateOn), which for a charge with any
+        // rate-change history means something already zeroed it out at or
+        // before this date — the untouched original base value shouldn't
+        // keep the schedule walking forward indefinitely (previously it
+        // did, since the old check looked at charge.weekly_deduction alone
+        // regardless of any later override, which could run the schedule
+        // out to the 2000-week guard limit — decades of "empty" $0 weeks —
+        // whenever a charge's rate history ended at $0, e.g. an
+        // in-progress savings goal whose real deposit history stops before
+        // the goal is reached).
+        return (chargeRateChanges[charge.charge_id] || []).some(ch => String(ch.effective_date) > dateStr && (parseFloat(ch.weekly_amount) || 0) > 0);
     }
     function isChargePausedOn(charge, dateStr) {
         return (chargePauses[charge.charge_id] || []).some(p => {
@@ -4811,6 +4833,183 @@
         event.target.value = '';
         fetchChargesFromCloud();
     }
+    // "Week in Deposit" import — creates new "Semana de Fondo" savings-goal
+    // charges straight from the weekly deposit tracking spreadsheet: column
+    // A = employee name, columns B onward = one date per week with that
+    // week's deducted/saved amount, then summary columns further right for
+    // "already paid" / the goal amount / what's still owed. Builds each
+    // employee's week-by-week history as a charge_rate_changes step
+    // function (one entry per week the amount actually changes) so the
+    // existing chargeBalance()/buildChargeSchedule() engine reproduces the
+    // exact same numbers — that engine already caps a week's deduction to
+    // whatever balance remains and stops walking forward once it hits zero,
+    // which is exactly "no dates shown after the goal is reached", with no
+    // special-casing needed here. Only creates a charge for employees who
+    // don't already have a "Semana de Fondo" charge on file.
+    async function importWeekInDepositExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        const co = requireWriteCompany();
+        if (!co) { event.target.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = async function(evt) {
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const ws = workbook.Sheets[sheetName];
+                if (!ws['!ref']) { alert('The file appears to be empty.'); return; }
+                const range = XLSX.utils.decode_range(ws['!ref']);
+
+                // Date columns: column B (index 1) onward, for as long as the
+                // header row holds a real Excel date (numeric cell type).
+                let dateColCount = 0;
+                while (true) {
+                    const cell = ws[XLSX.utils.encode_cell({ r: 0, c: 1 + dateColCount })];
+                    if (!cell || cell.t !== 'n') break;
+                    dateColCount++;
+                }
+                if (dateColCount < 1) { alert('Could not find any week/date columns starting at column B — check the file format.'); return; }
+
+                // Locate the goal ("cantidad final") column among the summary
+                // headers after the date block by text match, not a fixed
+                // column letter, so a re-export with a shifted column still
+                // reads the right one.
+                let goalCol = -1;
+                for (let c = 1 + dateColCount; c <= range.e.c; c++) {
+                    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+                    const h = cell ? String(cell.v || '').toLowerCase() : '';
+                    if (h.includes('final') || h.includes('goal') || h.includes('meta')) { goalCol = c; break; }
+                }
+                if (goalCol < 0) { alert('Could not find the goal amount column (expected a header containing "final" or "goal") after the date columns.'); return; }
+
+                // Rebuild the week dates from column B's date, stepping +7
+                // days per column, rather than trusting every stored date —
+                // this file's later columns roll into the next year but keep
+                // the same year number as the first pass through the
+                // calendar, which would otherwise place those weeks before
+                // the ones they actually follow.
+                const baseCell = ws[XLSX.utils.encode_cell({ r: 0, c: 1 })];
+                const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                const baseDate = new Date(excelEpoch.getTime() + baseCell.v * 86400000);
+                if (isNaN(baseDate)) { alert("Could not read the first week's date in column B."); return; }
+                const dateStrs = [];
+                for (let i = 0; i < dateColCount; i++) {
+                    const d = new Date(baseDate);
+                    d.setUTCDate(d.getUTCDate() + 7 * i);
+                    dateStrs.push(d.toISOString().split('T')[0]);
+                }
+                const stopperDate = new Date(baseDate);
+                stopperDate.setUTCDate(stopperDate.getUTCDate() + 7 * dateColCount);
+                const stopperDateStr = stopperDate.toISOString().split('T')[0];
+
+                const newCharges = [];
+                const newRateChanges = [];
+                const unmatched = []; // {row, name}
+                let alreadyHas = 0, noGoal = 0, createdCount = 0;
+
+                for (let r = 1; r <= range.e.r; r++) {
+                    const nameCell = ws[XLSX.utils.encode_cell({ r, c: 0 })];
+                    const name = nameCell ? String(nameCell.v || '').trim() : '';
+                    if (!name) continue;
+                    const empId = matchEmployeeByName(name);
+                    if (!empId) { unmatched.push({ row: r + 1, name }); continue; }
+                    if (charges.some(c => c.employee_id === empId && c.charge_type === WEEK_DEPOSIT_TYPE)) { alreadyHas++; continue; }
+
+                    const goalCell = ws[XLSX.utils.encode_cell({ r, c: goalCol })];
+                    const goal = parseFloat(goalCell ? goalCell.v : 0) || 0;
+                    if (goal <= 0) { noGoal++; continue; }
+
+                    const weekly = [];
+                    for (let i = 0; i < dateColCount; i++) {
+                        const cell = ws[XLSX.utils.encode_cell({ r, c: 1 + i })];
+                        const v = cell ? parseFloat(cell.v) : NaN;
+                        weekly.push(isNaN(v) ? 0 : v);
+                    }
+                    const totalSaved = weekly.reduce((a, b) => a + b, 0);
+                    const reached = totalSaved >= goal - 0.004;
+
+                    const rcRows = [];
+                    let prevRate = weekly[0];
+                    for (let i = 1; i < dateColCount; i++) {
+                        if (Math.abs(weekly[i] - prevRate) > 0.004) {
+                            rcRows.push({ effective_date: dateStrs[i], weekly_amount: weekly[i] });
+                            prevRate = weekly[i];
+                        }
+                    }
+                    // Caps the schedule from projecting forever at the last
+                    // known rate past the edge of what this file actually
+                    // records — a no-op once the goal is already reached by
+                    // then, since the balance hits zero first either way.
+                    rcRows.push({ effective_date: stopperDateStr, weekly_amount: 0 });
+
+                    const chargeId = `${idPrefix()}${String(charges.length + createdCount + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
+                    createdCount++;
+                    newCharges.push({
+                        charge_id: chargeId, company_code: co, employee_id: empId, charge_type: WEEK_DEPOSIT_TYPE,
+                        amount: goal, weekly_deduction: weekly[0], start_date: dateStrs[0], end_date: null,
+                        status: reached ? 'Paid' : 'Deducting', notes: 'Imported from Week in Deposit spreadsheet'
+                    });
+                    rcRows.forEach(rc => newRateChanges.push({ company_code: co, charge_id: chargeId, effective_date: rc.effective_date, weekly_amount: rc.weekly_amount }));
+                }
+
+                if (!newCharges.length) {
+                    let msg = 'Nothing to import.';
+                    if (alreadyHas) msg += ` ${alreadyHas} employee(s) already have a "Semana de Fondo" charge.`;
+                    if (noGoal) msg += ` ${noGoal} employee(s) had no goal amount.`;
+                    if (unmatched.length) msg += ` ${unmatched.length} name(s) couldn't be matched to an employee.`;
+                    alert(msg);
+                    event.target.value = '';
+                    return;
+                }
+
+                let insertFailed = 0;
+                for (let i = 0; i < newCharges.length; i += 50) {
+                    const batch = newCharges.slice(i, i + 50);
+                    const { error } = await supabaseClient.from('charges').insert(batch);
+                    if (error) { insertFailed += batch.length; console.error('week-in-deposit charges import batch failed:', error.message); }
+                }
+                for (let i = 0; i < newRateChanges.length; i += 50) {
+                    const batch = newRateChanges.slice(i, i + 50);
+                    const { error } = await supabaseClient.from('charge_rate_changes').insert(batch);
+                    if (error) console.error('week-in-deposit rate changes import batch failed:', error.message);
+                }
+
+                await fetchChargesFromCloud();
+                await loadChargeHistory();
+                renderCharges();
+
+                let msg = `Created ${newCharges.length - insertFailed} "Semana de Fondo" charge(s)` + (insertFailed ? `, ${insertFailed} failed (see browser console)` : '') + '.';
+                if (alreadyHas) msg += `\n${alreadyHas} employee(s) already had one and were skipped.`;
+                if (noGoal) msg += `\n${noGoal} employee(s) had no goal amount and were skipped.`;
+                if (unmatched.length) {
+                    msg += `\n${unmatched.length} name(s) couldn't be matched to an employee — a correction file was downloaded.`;
+                    downloadWeekDepositCorrectionReport(unmatched, sheetName);
+                }
+                alert(msg);
+                event.target.value = '';
+            } catch (err) {
+                alert('Error importing file: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function downloadWeekDepositCorrectionReport(unmatched, sourceSheetName) {
+        const rows = unmatched.map(u => ({
+            'Row in source file': u.row,
+            'Name as entered': u.name,
+            'Correct Employee ID or Name': '',
+            'Notes': ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [{ wch: 16 }, { wch: 34 }, { wch: 28 }, { wch: 30 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Corrections needed');
+        XLSX.writeFile(wb, `Week_in_Deposit_Corrections_${sourceSheetName}.xlsx`);
+    }
+
     async function importIncomeExcel(event) {
         if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
         const wb = await readWorkbookFromEvent(event); if (!wb) return;
