@@ -1167,6 +1167,8 @@
             <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportClaimsExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildClaimsSummaryReport(), 'claims_summary.xlsx')">📊 Summary Report (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildClaimsSummaryReport())">📊 Summary Report (PDF)</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()" data-i18n="import_excel_csv">Import Excel/CSV</button>
             <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
         </div>
@@ -1251,6 +1253,8 @@
             <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()" data-i18n-placeholder="search_charges_ph"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportChargesExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildChargesSummaryReport(), 'charges_summary.xlsx')">📊 Summary Report (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildChargesSummaryReport())">📊 Summary Report (PDF)</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import</button>
             <input type="file" id="charges-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importChargesExcel(event)">
         </div>
@@ -1300,6 +1304,8 @@
             <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()" data-i18n-placeholder="search_income_ph"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportIncomeExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildIncomeSummaryReport(), 'income_summary.xlsx')">📊 Summary Report (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildIncomeSummaryReport())">📊 Summary Report (PDF)</button>
             <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('income-import-input').click()">⬆️ Import</button>
             <input type="file" id="income-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importIncomeExcel(event)">
         </div>
@@ -1447,6 +1453,8 @@
             </div>
             <div class="field field-wide"><input type="text" id="weekdeposit-search" placeholder="Search name or ID..." oninput="renderWeekDeposit()"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('weekdeposit')">✕ Clear filters</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildWeekDepositSummaryReport(), 'week_in_deposit_summary.xlsx')">📊 Summary Report (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildWeekDepositSummaryReport())">📊 Summary Report (PDF)</button>
         </div>
         <div id="weekdeposit-tbody"></div>
     </div>
@@ -1498,6 +1506,8 @@
             <button class="btn-small" onclick="shiftPayrollWeek(1)">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayrollWeek()">This week</button>
             <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()">🖨 Print All</button>
+            <button class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildPayrollSummaryReport(), 'payroll_summary.xlsx')">📊 Summary Report (Excel)</button>
+            <button class="btn-small" style="background:#0f766e;" onclick="printReport(buildPayrollSummaryReport())">📊 Summary Report (PDF)</button>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
@@ -1908,8 +1918,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.86';
+    const APP_VERSION = 'v2.87';
     const CHANGELOG = [
+        { version: 'v2.87', date: '2026-08-06', notes: 'Last piece from the big batch — Summary Reports. Payroll, Claims, Charges, Additional Income, and Week in Deposit each now have their own "📊 Summary Report" buttons, in Excel and PDF. These are real reports, not raw data — totals, breakdowns by status and type, generated fresh each time — not individualized by employee, exactly as asked. One note on the PDF side: it uses the same print system as everything else in the app (so the standalone-app printing limitation on iPhone/iPad applies here too, with the same clear heads-up if it comes up) — "download as PDF" happens by choosing Save as PDF from the print screen, same as printing a payslip.' },
         { version: 'v2.86', date: '2026-08-06', notes: 'Third batch. Fleet service records can now track mileage — how many miles were on it when the service was done, and the mileage the next one is due at. Shows right in the service log for each vehicle. Last piece left: summary reports for Payroll, Claims, Charges, Income, and Week in Deposit, downloadable in Excel and PDF.' },
         { version: 'v2.85', date: '2026-08-06', notes: 'Second batch. Claims\' table now shows the same columns as Charges — Employee ID, Weekly rate, Weeks, Start, and Ends alongside what was already there, so both read the same way. "Paid So Far" and "Balance" now line up on the left instead of the right in every detail view, matching their neighboring fields. Still ahead: summary reports for Payroll/Claims/Charges/Income/Week in Deposit, and new mileage fields for Fleet service records.' },
         { version: 'v2.84', date: '2026-08-06', notes: 'First batch from a large request — more coming right after this. Fixed a real bug: the "printing doesn\'t work" warning was showing up on desktop too, not just iPhone/iPad — turns out the check I used also matched Windows/Mac apps installed from the browser, which don\'t actually have that problem, only iOS Safari does. Narrowed it down so desktop prints normally again. Auto sign-out is now 10 minutes instead of 5. Notifications and Messages have moved out of HR & Payroll and now sit on their own, right above the theme circles at the bottom of the sidebar. Still ahead: summary reports for Payroll/Claims/Charges/Income/Week in Deposit, left-aligning "Paid So Far"/"Balance" everywhere, matching Claims\' table style to Charges, and new mileage fields for Fleet service records.' },
@@ -8754,6 +8765,172 @@
 
     // sheets: [{ name, rows }] — every export, individual or combined, goes
     // through this so the format is always identical either way.
+    // ===== SUMMARY REPORTS (Payroll/Claims/Charges/Income/Week in Deposit) =
+    // Report-style output, not raw row dumps: a title, generated date, and
+    // labeled stat lines grouped under section headings. Excel uses
+    // aoa_to_sheet (array-of-arrays) rather than json_to_sheet specifically
+    // so it reads like a report (title, sections) instead of a data table
+    // with headers. PDF reuses the same #print-area + attemptPrint()
+    // machinery every other print button already uses — proven, and
+    // already handles the iOS-standalone limitation correctly.
+    function reportToAOA(report) {
+        const aoa = [[report.title], [report.subtitle || ''], [`Generated ${new Date().toLocaleString()}`], []];
+        report.sections.forEach(sec => {
+            aoa.push([sec.heading]);
+            sec.rows.forEach(r => aoa.push(r));
+            aoa.push([]);
+        });
+        return aoa;
+    }
+    function downloadReportExcel(report, filename) {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(reportToAOA(report));
+        ws['!cols'] = [{ wch: 34 }, { wch: 22 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+        XLSX.writeFile(wb, filename);
+    }
+    function printReport(report) {
+        const body = report.sections.map(sec => `
+            <h2 style="margin-top:18px;">${escHtml(sec.heading)}</h2>
+            <table><tbody>${sec.rows.map(r => `<tr><td>${escHtml(r[0])}</td><td>${escHtml(String(r[1]))}</td></tr>`).join('')}</tbody></table>`).join('');
+        document.getElementById('print-area').innerHTML = `
+            <h1>${escHtml(report.title)}</h1>
+            <div class="print-meta">${escHtml(report.subtitle || '')} · Generated ${new Date().toLocaleString()}</div>
+            ${body}`;
+        attemptPrint();
+    }
+
+    function buildPayrollSummaryReport() {
+        const calc = lastPayrollCalc || [];
+        const totalGross = calc.reduce((a, c) => a + c.gross, 0);
+        const totalDed = calc.reduce((a, c) => a + c.ded, 0);
+        const totalNet = calc.reduce((a, c) => a + c.net, 0);
+        const byType = {};
+        calc.forEach(c => {
+            const t = c.payType || 'Weekly';
+            if (!byType[t]) byType[t] = { count: 0, net: 0 };
+            byType[t].count++; byType[t].net += c.net;
+        });
+        return {
+            title: 'Payroll Summary Report',
+            subtitle: `Week of ${fmtWeekLabel(payrollSunday())} · ${currentCompany || 'All companies'}`,
+            sections: [
+                { heading: 'Overview', rows: [
+                    ['People', calc.length],
+                    ['Total Gross', formatMoney(totalGross)],
+                    ['Total Deductions', formatMoney(totalDed)],
+                    ['Total Net Pay', formatMoney(totalNet)]
+                ]},
+                { heading: 'By Pay Type', rows: Object.keys(byType).map(t => [t, `${byType[t].count} people · ${formatMoney(byType[t].net)} net`]) }
+            ]
+        };
+    }
+
+    function buildClaimsSummaryReport() {
+        const totalAmount = claims.reduce((a, c) => a + (parseFloat(c.claim_amount) || 0), 0);
+        const totalAbsorbed = claims.reduce((a, c) => a + (parseFloat(c.absorbed_amount) || 0), 0);
+        const totalBalance = claims.reduce((a, c) => a + claimBalance(c), 0);
+        const byStatus = {}, byType = {};
+        claims.forEach(c => {
+            byStatus[c.status] = (byStatus[c.status] || 0) + 1;
+            const t = c.damage_type || 'Unspecified';
+            if (!byType[t]) byType[t] = { count: 0, amount: 0 };
+            byType[t].count++; byType[t].amount += parseFloat(c.claim_amount) || 0;
+        });
+        return {
+            title: 'Claims Summary Report',
+            subtitle: `${currentCompany || 'All companies'} · As of ${todayStr()}`,
+            sections: [
+                { heading: 'Overview', rows: [
+                    ['Total Claims', claims.length],
+                    ['Total Claimed', formatMoney(totalAmount)],
+                    ['Total Absorbed', formatMoney(totalAbsorbed)],
+                    ['Total Balance Remaining', formatMoney(totalBalance)]
+                ]},
+                { heading: 'By Status', rows: Object.keys(byStatus).map(s => [s, byStatus[s]]) },
+                { heading: 'By Damage Type', rows: Object.keys(byType).map(t => [t, `${byType[t].count} claims · ${formatMoney(byType[t].amount)}`]) }
+            ]
+        };
+    }
+
+    function buildChargesSummaryReport() {
+        const totalAmount = charges.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+        const totalBalance = charges.reduce((a, c) => a + chargeBalance(c), 0);
+        const byStatus = {}, byType = {};
+        charges.forEach(c => {
+            byStatus[c.status] = (byStatus[c.status] || 0) + 1;
+            const t = c.charge_type || 'Unspecified';
+            if (!byType[t]) byType[t] = { count: 0, amount: 0 };
+            byType[t].count++; byType[t].amount += parseFloat(c.amount) || 0;
+        });
+        return {
+            title: 'Charges Summary Report',
+            subtitle: `${currentCompany || 'All companies'} · As of ${todayStr()}`,
+            sections: [
+                { heading: 'Overview', rows: [
+                    ['Total Charges', charges.length],
+                    ['Total Charged', formatMoney(totalAmount)],
+                    ['Total Balance Remaining', formatMoney(totalBalance)]
+                ]},
+                { heading: 'By Status', rows: Object.keys(byStatus).map(s => [s, byStatus[s]]) },
+                { heading: 'By Charge Type', rows: Object.keys(byType).map(t => [t, `${byType[t].count} charges · ${formatMoney(byType[t].amount)}`]) }
+            ]
+        };
+    }
+
+    function buildIncomeSummaryReport() {
+        const totalAmount = additionalIncome.reduce((a, i) => a + (parseFloat(i.amount) || 0), 0);
+        const totalRemaining = additionalIncome.reduce((a, i) => a + incomeRemaining(i), 0);
+        const byStatus = {}, byType = {};
+        additionalIncome.forEach(i => {
+            byStatus[i.status] = (byStatus[i.status] || 0) + 1;
+            const t = i.income_type || 'Unspecified';
+            if (!byType[t]) byType[t] = { count: 0, amount: 0 };
+            byType[t].count++; byType[t].amount += parseFloat(i.amount) || 0;
+        });
+        return {
+            title: 'Additional Income Summary Report',
+            subtitle: `${currentCompany || 'All companies'} · As of ${todayStr()}`,
+            sections: [
+                { heading: 'Overview', rows: [
+                    ['Total Income Records', additionalIncome.length],
+                    ['Total Income', formatMoney(totalAmount)],
+                    ['Total Remaining To Pay', formatMoney(totalRemaining)]
+                ]},
+                { heading: 'By Status', rows: Object.keys(byStatus).map(s => [s, byStatus[s]]) },
+                { heading: 'By Income Type', rows: Object.keys(byType).map(t => [t, `${byType[t].count} records · ${formatMoney(byType[t].amount)}`]) }
+            ]
+        };
+    }
+
+    function buildWeekDepositSummaryReport() {
+        const deposits = charges.filter(c => c.charge_type === WEEK_DEPOSIT_TYPE);
+        let totalGoal = 0, totalSaved = 0, totalRemaining = 0;
+        const byStatus = {};
+        deposits.forEach(c => {
+            const goal = Math.max(0, parseFloat(c.amount) || 0);
+            const remaining = chargeBalance(c);
+            totalGoal += goal; totalRemaining += remaining;
+            totalSaved += Math.max(0, +(goal - remaining).toFixed(2));
+            byStatus[c.status] = (byStatus[c.status] || 0) + 1;
+        });
+        const avgPct = totalGoal > 0 ? Math.round((totalSaved / totalGoal) * 100) : 0;
+        return {
+            title: 'Week in Deposit Summary Report',
+            subtitle: `${currentCompany || 'All companies'} · As of ${todayStr()}`,
+            sections: [
+                { heading: 'Overview', rows: [
+                    ['Total Deposits', deposits.length],
+                    ['Total Goal', formatMoney(totalGoal)],
+                    ['Total Saved', formatMoney(totalSaved)],
+                    ['Total Remaining', formatMoney(totalRemaining)],
+                    ['Average % of Goal Reached', avgPct + '%']
+                ]},
+                { heading: 'By Status', rows: Object.keys(byStatus).map(s => [s, byStatus[s]]) }
+            ]
+        };
+    }
+
     function downloadWorkbook(sheets, filename) {
         const wb = XLSX.utils.book_new();
         sheets.forEach(s => {
