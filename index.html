@@ -1902,8 +1902,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.80';
+    const APP_VERSION = 'v2.81';
     const CHANGELOG = [
+        { version: 'v2.81', date: '2026-08-06', notes: 'Charges & Income now get the same status-by-status grouping as Claims, Statement, and Week in Deposit — organized by what\'s currently Deducting, Queued, Paid, and so on, each group foldable by tapping its header. This closes out the grouping work across every relevant tab.' },
         { version: 'v2.80', date: '2026-08-06', notes: 'Looked into the printing-from-the-installed-app issue directly — this turns out to be a genuine, long-standing Safari limitation on iPhone/iPad that goes back many years and has never been fixed by Apple, not something wrong in Tracker. Printing from an app added to the home screen just doesn\'t work reliably on iOS, full stop. Rather than leave the button silently doing nothing, every print button now checks for this and tells you plainly: open the same page in Safari instead of the home screen icon, and print from there — that always works, since your browser screenshot showed printing working perfectly (all 67 pages, one per person) from Safari itself.' },
         { version: 'v2.79', date: '2026-08-06', notes: 'Fixed why the mobile drawer wasn\'t showing up at all — the ☰ button that opens it had two style rules fighting each other, and the wrong one was winning every time regardless of screen size, so it never appeared no matter what device you were on. Should actually show up now.' },
         { version: 'v2.78', date: '2026-08-06', notes: 'Mobile navigation is now the drawer style from the samples — tap the ☰ icon top-left to slide in the same menu your desktop sidebar already has (same sections, same icons, same order), tap anywhere outside it or pick a destination to close it. Desktop is completely unchanged. Also: every place with grouped statuses (Claims, Statement, Week in Deposit) can now be collapsed and expanded per group, not just viewed — tap a status header to fold it away. One honest note on scope: this covers the navigation itself, not the denser card styling or new Home screen shown as illustration in the sample images — those are still ahead if you\'d like them built too. Charges and Additional Income are also still pending their status-grouping.' },
@@ -5105,7 +5106,11 @@
             container.className = '';
             if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>'; return; }
             let rows = '';
-            list.forEach(ch => {
+            groupByStatus(list).forEach(({ status, items }) => {
+                const collapsed = collapsedStatusGroups.charges.has(status);
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('charges','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                if (collapsed) return;
+                items.forEach(ch => {
                 const emp = employees.find(e => e.id === ch.employee_id);
                 const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
                 const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
@@ -5126,6 +5131,7 @@
                     <td><span class="status-badge status-${ch.status}">${ch.status}</span></td>
                     <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editCharge('${ch.charge_id}')">✎</button><button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕</button>` : ''}</td>
                 </tr>`;
+                });
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th data-i18n="th_charge_id">Charge ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
@@ -5137,7 +5143,11 @@
 
         container.className = 'record-grid';
         container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>';
-        list.forEach(ch => {
+        groupByStatus(list).forEach(({ status, items }) => {
+            const collapsed = collapsedStatusGroups.charges.has(status);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('charges','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            if (collapsed) return;
+            items.forEach(ch => {
             const emp = employees.find(e => e.id === ch.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
             const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
@@ -5169,6 +5179,7 @@
                         </div>` : ''}
                     </div>
                 </div>`);
+            });
         });
         updateRecSortUI('charges');
         applyTranslations();
@@ -5421,7 +5432,11 @@
             container.className = '';
             if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>'; return; }
             let rows = '';
-            list.forEach(i => {
+            groupByStatus(list).forEach(({ status, items }) => {
+                const collapsed = collapsedStatusGroups.income.has(status);
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                if (collapsed) return;
+                items.forEach(i => {
                 const emp = employees.find(e => e.id === i.employee_id);
                 const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
                 const weeks = weeksNeeded(i.amount, i.weekly_amount);
@@ -5441,6 +5456,7 @@
                     <td><span class="status-badge status-${i.status}">${i.status}</span></td>
                     <td style="text-align:center; white-space:nowrap;">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editIncome('${i.income_id}')">✎</button><button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕</button>` : ''}</td>
                 </tr>`;
+                });
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
                 <th data-i18n="th_income_id">Income ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_remaining">Remaining</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
@@ -5452,7 +5468,11 @@
 
         container.className = 'record-grid';
         container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>';
-        list.forEach(i => {
+        groupByStatus(list).forEach(({ status, items }) => {
+            const collapsed = collapsedStatusGroups.income.has(status);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            if (collapsed) return;
+            items.forEach(i => {
             const emp = employees.find(e => e.id === i.employee_id);
             const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
             const weeks = weeksNeeded(i.amount, i.weekly_amount);
@@ -5483,6 +5503,7 @@
                         </div>` : ''}
                     </div>
                 </div>`);
+            });
         });
         updateRecSortUI('income');
         applyTranslations();
