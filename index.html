@@ -249,6 +249,8 @@
        the header. Same nav content/logic as desktop (openTab/openGroup
        untouched) — only the positioning differs: hidden off-screen by
        default, slides in over a scrim when opened. ---- */
+    #mobile-hamburger-btn { display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; margin-right: 8px; }
+    #mobile-hamburger-btn svg { width: 17px; height: 17px; }
     @media (max-width: 899px) {
         #app-sidebar {
             position: fixed; top: 0; left: 0; bottom: 0; width: 82%; max-width: 300px;
@@ -259,8 +261,6 @@
         #mobile-drawer-scrim.show { display: block; }
         #mobile-hamburger-btn { display: inline-flex; }
     }
-    #mobile-hamburger-btn { display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; margin-right: 8px; }
-    #mobile-hamburger-btn svg { width: 17px; height: 17px; }
 
     /* ---- Sidebar nav content styling — unconditional (applies whether
        the sidebar is the always-open desktop panel above, or the
@@ -1902,8 +1902,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.78';
+    const APP_VERSION = 'v2.79';
     const CHANGELOG = [
+        { version: 'v2.79', date: '2026-08-06', notes: 'Fixed why the mobile drawer wasn\'t showing up at all — the ☰ button that opens it had two style rules fighting each other, and the wrong one was winning every time regardless of screen size, so it never appeared no matter what device you were on. Should actually show up now.' },
         { version: 'v2.78', date: '2026-08-06', notes: 'Mobile navigation is now the drawer style from the samples — tap the ☰ icon top-left to slide in the same menu your desktop sidebar already has (same sections, same icons, same order), tap anywhere outside it or pick a destination to close it. Desktop is completely unchanged. Also: every place with grouped statuses (Claims, Statement, Week in Deposit) can now be collapsed and expanded per group, not just viewed — tap a status header to fold it away. One honest note on scope: this covers the navigation itself, not the denser card styling or new Home screen shown as illustration in the sample images — those are still ahead if you\'d like them built too. Charges and Additional Income are also still pending their status-grouping.' },
         { version: 'v2.77', date: '2026-08-06', notes: 'Payroll\'s "Print All" is simplified to just that name, and fixed to match what you asked: each person now prints on their own page, formatted exactly like printing that one person by hand — their own header, their own week line — instead of one combined summary page. Also added a small fix across every print button in the app for a phone-specific issue where the print preview could come up blank — should now consistently show the content every time. Claims is now grouped by status (Deducting together, Paid together, and so on), same treatment Statement and Week in Deposit already got. Charges and Additional Income are still ahead of us for that same grouping — continuing next.' },
         { version: 'v2.76', date: '2026-08-06', notes: 'Two pieces done, more coming. Week in Deposit now defaults to showing every status and groups results by status (Deducting together, Paid together, etc.) so it\'s easy to see what\'s actively being saved vs. already reached its goal. Expiring Documents is fully reworked — a truck or employee with more than one thing coming up (like registration AND insurance) now shows once, not twice, expanding to show everything for that truck/employee together, with the most urgent one setting the red/amber warning you see at a glance. Tap it to jump straight to editing that record. Still ahead: this same status-grouping treatment for Claims, Charges, and Additional Income.' },
