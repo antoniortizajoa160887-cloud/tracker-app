@@ -286,6 +286,7 @@
         #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 10px 12px; color: #8b98a5; }
         #app-sidebar .group-btn.active { background: rgba(255,255,255,0.06); color: #fff; }
         #app-sidebar .tabs.sub-tabs { flex-direction: column; padding: 2px 4px 10px 18px; margin-bottom: 0; }
+        #app-sidebar #grp-notifications, #app-sidebar #grp-messages { padding-left: 4px; }
         #app-sidebar .tabs.sub-tabs.open { display: flex; }
         #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; }
         #app-sidebar .tab-btn:hover { color: #fff !important; background: rgba(255,255,255,0.04); }
@@ -399,6 +400,7 @@
     tr:nth-child(even) { background-color: #f8fafc; }
     tr:hover { background-color: #f1f5f9; }
     .money { color: #065f46; font-weight: 700; font-family: var(--mono); text-align: right; }
+    .field .money { text-align: left; } /* detail/summary field grids read better left-aligned, matching their sibling fields (Weeks, Ends, etc.) — table columns of amounts keep the base right-alignment */
     .id-cell { font-family: var(--mono); font-weight: 700; color: var(--navy-dark); }
 
     /* Daily Report pivot table: 15 columns of mostly-long header labels
@@ -654,7 +656,7 @@
     </div>
     <button type="button" class="btn" style="width: 100%;" id="login-btn" onclick="handleLoginClick()" data-i18n="sign_in_btn">Sign In</button>
     <p id="login-error" style="color: #f87171; font-size: 0.85rem; margin-top: 1rem;"></p>
-    <p id="login-timeout-notice" data-i18n="timeout_notice" style="color: #fbbf24; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 5 minutes of inactivity.</p>
+    <p id="login-timeout-notice" data-i18n="timeout_notice" style="color: #fbbf24; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 10 minutes of inactivity.</p>
     <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.08);">
         <!-- Language picker hidden until full translation coverage is done —
              see id="language-picker-block" below and its Settings-tab twin.
@@ -818,7 +820,6 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Fleet</button>
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
-    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges" data-i18n="tab_charges">Charges &amp; Income</button>
@@ -827,7 +828,6 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
 </div>
 <div class="tabs sub-tabs" id="grp-expiring">
     <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
@@ -840,6 +840,12 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;" data-i18n="tab_log">Log</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
+</div>
+<div class="tabs sub-tabs open" id="grp-notifications" style="border-top:1px solid rgba(255,255,255,0.08); margin-top:6px; padding-top:6px;">
+    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
+</div>
+<div class="tabs sub-tabs open" id="grp-messages">
+    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
 </div>
     <!-- Desktop-only: individual account actions anchored to the bottom of
          the sidebar. Mobile keeps the original ⋮ header dropdown, hidden
@@ -1902,8 +1908,11 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.83';
+    const APP_VERSION = 'v2.86';
     const CHANGELOG = [
+        { version: 'v2.86', date: '2026-08-06', notes: 'Third batch. Fleet service records can now track mileage — how many miles were on it when the service was done, and the mileage the next one is due at. Shows right in the service log for each vehicle. Last piece left: summary reports for Payroll, Claims, Charges, Income, and Week in Deposit, downloadable in Excel and PDF.' },
+        { version: 'v2.85', date: '2026-08-06', notes: 'Second batch. Claims\' table now shows the same columns as Charges — Employee ID, Weekly rate, Weeks, Start, and Ends alongside what was already there, so both read the same way. "Paid So Far" and "Balance" now line up on the left instead of the right in every detail view, matching their neighboring fields. Still ahead: summary reports for Payroll/Claims/Charges/Income/Week in Deposit, and new mileage fields for Fleet service records.' },
+        { version: 'v2.84', date: '2026-08-06', notes: 'First batch from a large request — more coming right after this. Fixed a real bug: the "printing doesn\'t work" warning was showing up on desktop too, not just iPhone/iPad — turns out the check I used also matched Windows/Mac apps installed from the browser, which don\'t actually have that problem, only iOS Safari does. Narrowed it down so desktop prints normally again. Auto sign-out is now 10 minutes instead of 5. Notifications and Messages have moved out of HR & Payroll and now sit on their own, right above the theme circles at the bottom of the sidebar. Still ahead: summary reports for Payroll/Claims/Charges/Income/Week in Deposit, left-aligning "Paid So Far"/"Balance" everywhere, matching Claims\' table style to Charges, and new mileage fields for Fleet service records.' },
         { version: 'v2.83', date: '2026-08-06', notes: 'Charges and Additional Income are now expandable/collapsible on desktop too, same as Claims already was — click any row to see its full details, including the progress bar. And Statement now shows that same progress bar for every individual claim, charge, and income entry when you expand it, not just in their own tabs.' },
         { version: 'v2.82', date: '2026-08-06', notes: 'Claims, Charges, and Additional Income now show the same progress bar as Week in Deposit when you expand one — a quick visual for how much of the total has been paid off so far, right above the details.' },
         { version: 'v2.81', date: '2026-08-06', notes: 'Charges & Income now get the same status-by-status grouping as Claims, Statement, and Week in Deposit — organized by what\'s currently Deducting, Queued, Paid, and so on, each group foldable by tapping its header. This closes out the grouping work across every relevant tab.' },
@@ -2633,7 +2642,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-notifications', 'tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-messages'],
+        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll'],
         'grp-expiring': ['tab-expiring'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
     };
@@ -2821,9 +2830,9 @@
         location.reload();
     }
 
-    // ===== Idle session timeout: 5 minutes of no activity signs the user out,
+    // ===== Idle session timeout: 10 minutes of no activity signs the user out,
     // with a 30s warning first so in-progress form entries aren't lost silently. =====
-    const IDLE_LIMIT_MS = 5 * 60 * 1000;
+    const IDLE_LIMIT_MS = 10 * 60 * 1000;
     const IDLE_WARNING_MS = 30 * 1000;
     let idleTimer = null, idleWarnTimer = null, idleCountdownInt = null;
 
@@ -3372,8 +3381,16 @@
     // JavaScript, so rather than call window.print() and let it do nothing,
     // detect the situation and tell the person plainly what to do instead.
     function attemptPrint() {
-        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-        if (isStandalone) {
+        // window.navigator.standalone is a Safari-only proprietary flag —
+        // true only for an iOS/iPadOS home-screen-installed app. Deliberately
+        // NOT using the generic matchMedia('(display-mode: standalone)')
+        // check here: that also matches desktop Chrome/Edge PWA installs
+        // (confirmed via research — Windows/Chrome and Windows/Edge both
+        // report "standalone" for an installed app window), which don't
+        // have this printing limitation, so using it here was incorrectly
+        // blocking normal desktop printing too.
+        const isIOSStandalone = window.navigator.standalone === true;
+        if (isIOSStandalone) {
             alert('Printing doesn\'t work reliably from the installed app icon — this is a long-standing Safari limitation on iPhone/iPad, not something in Tracker itself.\n\nTo print: open this same page in Safari (not the home screen icon) and print from there.');
             return;
         }
@@ -4431,7 +4448,7 @@
             let rows = '';
             groupByStatus(list).forEach(({ status, items }) => {
                 const collapsed = collapsedStatusGroups.claims.has(status);
-                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('claims','${status}')"><td colspan="7"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('claims','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
                 if (collapsed) return;
                 items.forEach(c => {
                 const emp = employees.find(e => e.id === c.employee_id);
@@ -4444,19 +4461,24 @@
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('claims','${c.claim_id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span> ${c.claim_id}</td>
                     <td>${escHtml(empName)}</td>
+                    <td class="id-cell">${c.employee_id}</td>
                     <td>${c.damage_type}</td>
                     <td>${formatMoney(c.claim_amount)}</td>
+                    <td>${formatMoney(rateOn(c, todayStr()))}</td>
+                    <td>${weeks}</td>
                     <td>${formatMoney(bal)}</td>
+                    <td>${c.start_date || '-'}</td>
+                    <td>${endDate}</td>
                     <td><span class="status-badge status-${c.status}">${c.status}</span></td>
                     <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editClaim('${c.claim_id}')">✎</button><button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕</button>` : ''}</td>
                 </tr>
                 <tr class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}" style="display:${open ? 'table-row' : 'none'};">
-                    <td colspan="7" style="padding:12px; background:var(--surface-2);">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</td>
+                    <td colspan="12" style="padding:12px; background:var(--surface-2);">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</td>
                 </tr>`;
                 });
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
+                <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             applyTranslations();
             return;
@@ -7503,7 +7525,7 @@
             tab_approvals: 'Approvals', tab_log: 'Log', tab_data: 'Data Sync', tab_changelog: 'Changelog',
             login_title: 'Secure Login', username_label: 'Username', username_ph: 'Enter username',
             password_label: 'Password', sign_in_btn: 'Sign In',
-            timeout_notice: 'You were signed out after 5 minutes of inactivity.',
+            timeout_notice: 'You were signed out after 10 minutes of inactivity.',
             language_label: 'Language',
             language_note: 'Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)',
             appearance_label: 'Appearance',
@@ -8480,10 +8502,14 @@
         const dateEl = document.getElementById(`vs-date-${vehicleId}`);
         const descEl = document.getElementById(`vs-desc-${vehicleId}`);
         const typeEl = document.getElementById(`vs-type-${vehicleId}`);
+        const mileageEl = document.getElementById(`vs-mileage-${vehicleId}`);
+        const nextMileageEl = document.getElementById(`vs-next-mileage-${vehicleId}`);
         if (!dateEl.value || !descEl.value.trim()) { alert('Enter both a date and a description.'); return; }
         const { error } = await supabaseClient.rpc('add_vehicle_service', {
             p_actor: currentUsername, p_vehicle_id: vehicleId, p_service_date: dateEl.value,
-            p_description: descEl.value.trim(), p_type: typeEl.value
+            p_description: descEl.value.trim(), p_type: typeEl.value,
+            p_mileage_at_service: mileageEl.value ? parseInt(mileageEl.value, 10) : null,
+            p_next_service_mileage: nextMileageEl.value ? parseInt(nextMileageEl.value, 10) : null
         });
         if (error) { alert('Error: ' + error.message); return; }
         recExpanded.vehicles.add(vehicleId);
@@ -8505,7 +8531,7 @@
         const services = (vehicleServices[v.id] || []).slice().sort((a, b) => String(b.service_date).localeCompare(String(a.service_date)));
         const rows = services.length
             ? services.map(s => `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px;">
-                    <span><strong>${s.service_date}</strong> — ${escHtml(s.description)} <span class="status-badge ${s.type === 'Performed' ? 'status-active' : ''}" style="margin-left:6px;">${s.type}</span></span>
+                    <span><strong>${s.service_date}</strong> — ${escHtml(s.description)} <span class="status-badge ${s.type === 'Performed' ? 'status-active' : ''}" style="margin-left:6px;">${s.type}</span>${s.mileage_at_service ? ` · ${Number(s.mileage_at_service).toLocaleString()} mi` : ''}${s.next_service_mileage ? ` <span style="color:var(--text-muted);">(next at ${Number(s.next_service_mileage).toLocaleString()} mi)</span>` : ''}</span>
                     ${editable ? `<span class="del-btn" onclick="deleteVehicleService(${s.id}, '${escJsAttr(v.id)}')">✕</span>` : ''}
                 </div>`).join('')
             : '<div style="color:var(--text-muted); font-size:12px;">No service records yet.</div>';
@@ -8521,6 +8547,8 @@
                 <div class="field"><input type="date" id="vs-date-${v.id}"></div>
                 <div class="field field-wide"><input type="text" id="vs-desc-${v.id}" placeholder="e.g. Oil Change, Tire Rotation"></div>
                 <div class="field"><select id="vs-type-${v.id}"><option value="Performed">Performed</option><option value="Scheduled">Scheduled</option></select></div>
+                <div class="field"><label style="font-size:9px;">Mileage at service</label><input type="number" min="0" id="vs-mileage-${v.id}" placeholder="e.g. 45210"></div>
+                <div class="field"><label style="font-size:9px;">Next service due at</label><input type="number" min="0" id="vs-next-mileage-${v.id}" placeholder="e.g. 50210"></div>
                 <button type="button" class="btn-small" style="background:var(--navy);" onclick="addVehicleService('${escJsAttr(v.id)}')">+ Add</button>
             </div>` : ''}
             <div>${rows}</div>
