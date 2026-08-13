@@ -968,6 +968,17 @@
         </form>
     </div>
 
+    <div class="panel" id="schedule-maintenance-panel">
+        <h2>📅 Schedule Maintenance</h2>
+        <div class="form-row">
+            <div class="field field-wide"><label>Truck</label><select id="sched-maint-truck"></select></div>
+            <div class="field"><label>Date</label><input type="date" id="sched-maint-date"></div>
+            <div class="field field-wide"><label>Description</label><input type="text" id="sched-maint-desc" placeholder="e.g. Oil Change, DOT Inspection"></div>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="scheduleMaintenance()">+ Schedule</button>
+        </div>
+        <div id="upcoming-maint-list"></div>
+    </div>
+
     <div class="panel">
         <div class="stat-grid" id="vehicle-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
@@ -1927,8 +1938,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.93';
+    const APP_VERSION = 'v2.94';
     const CHANGELOG = [
+        { version: 'v2.94', date: '2026-08-13', notes: 'Three fixes/additions. (1) Deleting a charge, claim, or additional income record was leaving its \'New Charge/Claim/Income\' notification behind forever, pointing at a record that no longer existed \u2014 a real gap that\'s existed since Notifications shipped, not something new. Cleaned up 57 orphaned notifications left over from the Semana de Fondo import cleanup, and fixed delete_charge/delete_claim/delete_income to remove the matching notification going forward. (2) The Week in Deposit bulk import wrote straight to the charges/charge_rate_changes tables from the browser, which meant it left zero trace in the audit log \u2014 only a real server-side function logs to it in this app. Built a proper database function for this import (role-checked, same replace-on-rerun behavior as before, now with one real audit log entry per run) and switched the import to use it. (3) New Schedule Maintenance panel on the Fleet tab: pick a truck, a date, and a description to schedule upcoming maintenance, and an Upcoming Maintenance list right above the truck list shows everything scheduled across every truck, soonest first \u2014 tap one to jump straight to that truck\'s card. Reuses the Service Log\'s existing \'Scheduled\' vs \'Performed\' distinction that was already there per-truck, just no dedicated form or combined view existed for it before. To mark one done, delete the scheduled entry and log it as Performed on that truck\'s own Service Log once the work is actually finished.' },
         { version: 'v2.93', date: '2026-08-13', notes: 'Fixed the mobile/PWA navigation drawer closing itself the instant you tapped Logistics, HR & Payroll, Expiring Documents, or Administration, before you could pick a sub-option. Root cause: tapping a group header was designed to both reveal its sub-tab list AND immediately jump into that group\'s first tab as a sensible default \u2014 fine on desktop, where the sidebar is always open anyway, but that automatic jump is what closes the drawer (opening any tab always closes it), so on mobile it closed before you ever saw the other options. Now the drawer version of a group tap only expands the list; picking an actual sub-tab is what navigates and closes the drawer, same as it always was. Desktop is untouched \u2014 still jumps straight to a group\'s first tab when you click its header.' },
         { version: 'v2.92', date: '2026-08-13', notes: 'Fixed a bug I introduced in v2.90\'s sw.js fix: forcing a real network fetch by calling fetch(req, {cache:\'reload\'}) on the original navigation Request crashes outright on some Android WebView/Chrome builds (a spec restriction on re-fetching a \'navigate\'-mode request with overridden options), and that crash happened before the fallback code ever got a chance to run \u2014 so every page load through an already-installed app icon failed with a bare network error, and since nothing rendered there was nothing to scroll either (matches \'shows an error, can pull down to refresh but can\'t scroll\'). A brand-new browser tab was never affected, since a first-ever visit\'s first load doesn\'t go through the service worker at all. Switched to fetching a cache-busted plain URL instead of re-fetching the Request object, which achieves the same real-network guarantee without tripping that restriction. Bumped the internal cache name again so already-installed apps get a clean slate. Both index.html and sw.js need to be uploaded together again.' },
         { version: 'v2.91', date: '2026-08-13', notes: 'Made the Semana de Fondo import safe to re-run instead of a one-shot operation. Re-uploading the same or an updated file now deletes and rebuilds any charge it previously created (matched by its own \'Imported from Week in Deposit spreadsheet\' note) with fresh numbers, instead of silently skipping it forever \u2014 a hand-entered Semana de Fondo charge for someone is still always left alone. Also fixed how new charge numbers get assigned: it now always picks one past the highest charge number that currently exists anywhere in the table, instead of just counting how many charges are loaded \u2014 so deleting a charge from the middle of the sequence (for any charge type, not just this one) can never cause a future import to reuse a number that\'s already taken. Investigated the \'Saved so far\' totals looking wrong after yesterday\'s import: root cause wasn\'t the import or the balance math \u2014 9 of the newly-created charges had been manually switched from Deducting to Queued afterward, and Queued charges count as $0 saved by design everywhere else in the app (nothing was owed yet). Cleaned up yesterday\'s import in the database directly (56 charges and their 334 rate-change rows, restored to exactly the pre-import count) so it can be re-run cleanly with this fixed code.' },
@@ -5016,30 +5028,21 @@
                     return;
                 }
 
-                // Replacing a prior import run: remove the old rows first —
-                // rate changes before their parent charge — so the fresh
-                // insert below starts from a clean slate for that employee.
-                if (oldChargeIdsToReplace.length) {
-                    for (let i = 0; i < oldChargeIdsToReplace.length; i += 50) {
-                        const batch = oldChargeIdsToReplace.slice(i, i + 50);
-                        let { error } = await supabaseClient.from('charge_rate_changes').delete().in('charge_id', batch);
-                        if (error) console.error('week-in-deposit replace: rate change cleanup failed:', error.message);
-                        ({ error } = await supabaseClient.from('charges').delete().in('charge_id', batch));
-                        if (error) console.error('week-in-deposit replace: old charge cleanup failed:', error.message);
-                    }
-                }
-
-                let insertFailed = 0;
-                for (let i = 0; i < newCharges.length; i += 50) {
-                    const batch = newCharges.slice(i, i + 50);
-                    const { error } = await supabaseClient.from('charges').insert(batch);
-                    if (error) { insertFailed += batch.length; console.error('week-in-deposit charges import batch failed:', error.message); }
-                }
-                for (let i = 0; i < newRateChanges.length; i += 50) {
-                    const batch = newRateChanges.slice(i, i + 50);
-                    const { error } = await supabaseClient.from('charge_rate_changes').insert(batch);
-                    if (error) console.error('week-in-deposit rate changes import batch failed:', error.message);
-                }
+                // Replacing a prior import run, plus the fresh insert, plus
+                // an audit_log entry for the whole operation, all happen
+                // server-side in one RPC now — this used to be raw
+                // client-side .insert()/.delete() calls straight against
+                // the tables, which worked but left the whole import
+                // completely invisible in the audit log (only a proper
+                // SECURITY DEFINER RPC calls _audit() in this app; nothing
+                // does that automatically just because a row got written).
+                const { error: importError } = await supabaseClient.rpc('import_week_deposit_charges', {
+                    p_actor: currentUsername, p_company: co,
+                    p_replace_ids: oldChargeIdsToReplace.length ? oldChargeIdsToReplace : null,
+                    p_charges: newCharges, p_rate_changes: newRateChanges
+                });
+                const insertFailed = importError ? newCharges.length : 0;
+                if (importError) console.error('week-in-deposit import failed:', importError.message);
 
                 await fetchChargesFromCloud();
                 await loadChargeHistory();
@@ -8813,6 +8816,74 @@
         fetchVehiclesFromCloud();
     }
 
+    function vehicleLabel(v) {
+        return `${v.truck_number ? `#${v.truck_number} — ` : ''}${v.year || ''} ${v.make || ''} ${v.model || ''}`.trim();
+    }
+
+    // Quick top-level scheduler — a shortcut for the exact same
+    // add_vehicle_service RPC the per-vehicle Service Log form already
+    // uses (type hardcoded to 'Scheduled'), just without needing to first
+    // find and expand that specific truck's card.
+    function populateScheduleMaintenanceTruckDropdown() {
+        const sel = document.getElementById('sched-maint-truck');
+        if (!sel) return;
+        const sorted = vehicles.slice().sort((a, b) => vehicleLabel(a).localeCompare(vehicleLabel(b), undefined, { sensitivity: 'base' }));
+        sel.innerHTML = '<option value="">— Select truck —</option>' + sorted.map(v => `<option value="${v.id}">${escHtml(vehicleLabel(v))}</option>`).join('');
+    }
+
+    async function scheduleMaintenance() {
+        if (!canEdit()) return;
+        const truckEl = document.getElementById('sched-maint-truck');
+        const dateEl = document.getElementById('sched-maint-date');
+        const descEl = document.getElementById('sched-maint-desc');
+        if (!truckEl.value) { alert('Pick a truck.'); return; }
+        if (!dateEl.value || !descEl.value.trim()) { alert('Enter both a date and a description.'); return; }
+        const { error } = await supabaseClient.rpc('add_vehicle_service', {
+            p_actor: currentUsername, p_vehicle_id: truckEl.value, p_service_date: dateEl.value,
+            p_description: descEl.value.trim(), p_type: 'Scheduled',
+            p_mileage_at_service: null, p_next_service_mileage: null
+        });
+        if (error) { alert('Error: ' + error.message); return; }
+        dateEl.value = ''; descEl.value = '';
+        await fetchVehiclesFromCloud();
+    }
+
+    // Expand that truck's card in the list below and scroll to it — used
+    // when tapping an item in the Upcoming Maintenance list, so picking a
+    // reminder actually takes you to the truck it's about.
+    function jumpToVehicle(vehicleId) {
+        recExpanded.vehicles.add(vehicleId);
+        renderVehicles();
+        document.getElementById(`rec-vehicles-${vehicleId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Aggregates every truck's Scheduled (not yet Performed) service
+    // records into one soonest-first list, instead of having to open each
+    // truck's own card one at a time to see what's coming up — same idea
+    // as Expiring Documents, but for maintenance instead of paperwork.
+    function renderUpcomingMaintenance() {
+        const container = document.getElementById('upcoming-maint-list');
+        if (!container) return;
+        const today = todayStr();
+        const editable = canEdit();
+        const rows = [];
+        vehicles.forEach(v => {
+            (vehicleServices[v.id] || []).forEach(s => {
+                if (s.type === 'Scheduled' && s.service_date >= today) rows.push({ ...s, vehicleId: v.id, vehicleLabel: vehicleLabel(v) });
+            });
+        });
+        rows.sort((a, b) => String(a.service_date).localeCompare(String(b.service_date)));
+        if (!rows.length) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:6px 0;">No upcoming maintenance scheduled.</div>';
+            return;
+        }
+        container.innerHTML = rows.map(r => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 4px; border-bottom:1px solid var(--border); font-size:13px; cursor:pointer;" onclick="jumpToVehicle('${escJsAttr(r.vehicleId)}')">
+                <span><strong>${r.service_date}</strong> — ${escHtml(r.vehicleLabel)} · ${escHtml(r.description)}${expBadge(r.service_date, 14) || ''}</span>
+                ${editable ? `<span class="del-btn" onclick="event.stopPropagation(); deleteVehicleService(${r.id}, '${escJsAttr(r.vehicleId)}')">✕</span>` : ''}
+            </div>`).join('');
+    }
+
     // Shared service-log block — used by both the desktop detail row and the
     // mobile card body, same pattern as employeeDetailHtml.
     function vehicleDetailHtml(v) {
@@ -8849,6 +8920,8 @@
     }
 
     function renderVehicles() {
+        populateScheduleMaintenanceTruckDropdown();
+        renderUpcomingMaintenance();
         const query = (document.getElementById('vehicle-search')?.value || '').toLowerCase();
         let list = vehicles.filter(v => {
             if (!query) return true;
