@@ -1927,8 +1927,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.90';
+    const APP_VERSION = 'v2.91';
     const CHANGELOG = [
+        { version: 'v2.91', date: '2026-08-13', notes: 'Made the Semana de Fondo import safe to re-run instead of a one-shot operation. Re-uploading the same or an updated file now deletes and rebuilds any charge it previously created (matched by its own \'Imported from Week in Deposit spreadsheet\' note) with fresh numbers, instead of silently skipping it forever \u2014 a hand-entered Semana de Fondo charge for someone is still always left alone. Also fixed how new charge numbers get assigned: it now always picks one past the highest charge number that currently exists anywhere in the table, instead of just counting how many charges are loaded \u2014 so deleting a charge from the middle of the sequence (for any charge type, not just this one) can never cause a future import to reuse a number that\'s already taken. Investigated the \'Saved so far\' totals looking wrong after yesterday\'s import: root cause wasn\'t the import or the balance math \u2014 9 of the newly-created charges had been manually switched from Deducting to Queued afterward, and Queued charges count as $0 saved by design everywhere else in the app (nothing was owed yet). Cleaned up yesterday\'s import in the database directly (56 charges and their 334 rate-change rows, restored to exactly the pre-import count) so it can be re-run cleanly with this fixed code.' },
         { version: 'v2.90', date: '2026-08-13', notes: 'Fixed the installed Android/iOS app icon serving a stale, out-of-date copy of the app (confirmed: worked fine in every regular browser tab, only the installed icon was affected). Root cause was in sw.js, the separate file that makes the installed icon work: it fetched the app shell with the browser\'s default HTTP caching still in play, so \'network-first\' wasn\'t actually a hard guarantee — the browser could quietly hand back an old cached copy of index.html before the service worker\'s own logic ever got a say. Fixed by forcing a true bypass of the browser\'s HTTP cache on every shell fetch, and bumped the internal cache name so this device\'s existing installed copy gets a clean slate rather than carrying old cached files forward. This requires uploading BOTH files — index.html and the updated sw.js — to the same GitHub folder; index.html itself didn\'t need any changes to fix this, only sw.js did. After uploading, fully close the installed app (swipe it away, not just background it) and reopen it once to pick up the fix.' },
         { version: 'v2.89', date: '2026-08-12', notes: 'Two fixes. The Messages typing box no longer gets squeezed when you pick "Claim", "Charge", or "Income" (which shows a second "Which one?" dropdown) — the category pickers now sit on their own row above the typing box, so the typing box always keeps its full width. Also added a new "⬆️ Import Semana de Fondo" button on Charges & Income: upload the weekly deposit tracking spreadsheet (employee names in column A, one dated column per week, goal amount in the "cantidad final" column) and it creates a real "Semana de Fondo" charge for every employee who doesn\'t already have one, reproducing their exact week-by-week saved amounts — once an employee\'s goal is reached, no further weeks are shown, matching the existing charge balance engine\'s own behavior rather than needing a separate rule for it. Employees who already have a Semana de Fondo charge, or who can\'t be matched to a name in the roster, are skipped and reported at the end. Caught and fixed a real bug while testing this against your actual file before shipping: charges whose goal wasn\'t fully reached in the data were computing an "Ends" date decades in the future (an existing bug in how the app decided whether a charge\'s deduction schedule was still "live" going forward) — fixed so it correctly stops projecting once it runs past what the file actually records. Also: a couple of employees had a one-week negative amount in the source file (a correction/withdrawal); since a weekly amount can\'t go negative anywhere else in this app, those are treated as $0 for that week and flagged by name in the import summary so you can double-check them.' },
         { version: 'v2.88', date: '2026-08-06', notes: 'Fixed both issues. Notifications and Messages were being closed automatically the instant any other section in the sidebar was opened, which is why they never actually stayed visible — now they\'re correctly excluded from that behavior and stay put. Also strengthened the sidebar\'s hover styling everywhere (including one spot — the section headers like Logistics/HR & Payroll — that had no hover styling defined at all, which could plausibly explain the white-on-white you saw) so text is guaranteed readable on hover no matter what.' },
@@ -4834,19 +4835,42 @@
         event.target.value = '';
         fetchChargesFromCloud();
     }
-    // "Week in Deposit" import — creates new "Semana de Fondo" savings-goal
-    // charges straight from the weekly deposit tracking spreadsheet: column
-    // A = employee name, columns B onward = one date per week with that
-    // week's deducted/saved amount, then summary columns further right for
-    // "already paid" / the goal amount / what's still owed. Builds each
+    // "Week in Deposit" import — creates/refreshes "Semana de Fondo" savings-
+    // goal charges straight from the weekly deposit tracking spreadsheet:
+    // column A = employee name, columns B onward = one date per week with
+    // that week's deducted/saved amount, then summary columns further right
+    // for "already paid" / the goal amount / what's still owed. Builds each
     // employee's week-by-week history as a charge_rate_changes step
     // function (one entry per week the amount actually changes) so the
     // existing chargeBalance()/buildChargeSchedule() engine reproduces the
     // exact same numbers — that engine already caps a week's deduction to
     // whatever balance remains and stops walking forward once it hits zero,
     // which is exactly "no dates shown after the goal is reached", with no
-    // special-casing needed here. Only creates a charge for employees who
-    // don't already have a "Semana de Fondo" charge on file.
+    // special-casing needed here.
+    //
+    // Safe to re-run: an employee who already has a Semana de Fondo charge
+    // FROM A PRIOR RUN OF THIS SAME IMPORT (identified by its notes) gets
+    // that old charge and its rate changes deleted and replaced with fresh
+    // ones from the new file — so re-uploading an updated spreadsheet
+    // rewrites the numbers instead of silently skipping everyone. An
+    // employee whose existing Semana de Fondo charge was entered manually
+    // (no such note) is left alone and skipped, to protect hand-entered
+    // data this import didn't create.
+    //
+    // New charge_id numbers are always one past the highest existing charge
+    // number across ALL charges (any type, not just this one) — never
+    // charges.length — so a manually deleted charge anywhere in the middle
+    // of the sequence can never cause two charges to collide on the same
+    // ID, and numbers only ever move forward, never get reused.
+    function nextChargeNumber() {
+        let max = 0;
+        charges.forEach(c => {
+            const m = String(c.charge_id || '').match(/(\d+)/);
+            if (m) max = Math.max(max, parseInt(m[1], 10));
+        });
+        return max;
+    }
+
     async function importWeekInDepositExcel(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -4887,8 +4911,8 @@
 
                 // Rebuild the week dates from column B's date, stepping +7
                 // days per column, rather than trusting every stored date —
-                // this file's later columns roll into the next year but keep
-                // the same year number as the first pass through the
+                // this file's later columns can roll into the next year but
+                // keep the same year number as the first pass through the
                 // calendar, which would otherwise place those weeks before
                 // the ones they actually follow.
                 const baseCell = ws[XLSX.utils.encode_cell({ r: 0, c: 1 })];
@@ -4909,7 +4933,9 @@
                 const newRateChanges = [];
                 const unmatched = []; // {row, name}
                 const negativeFlags = []; // employee names with a negative (correction/withdrawal) week, treated as $0
-                let alreadyHas = 0, noGoal = 0, createdCount = 0;
+                const oldChargeIdsToReplace = []; // prior-import charges being rewritten
+                let protectedSkip = 0, noGoal = 0;
+                let nextNum = nextChargeNumber();
 
                 for (let r = 1; r <= range.e.r; r++) {
                     const nameCell = ws[XLSX.utils.encode_cell({ r, c: 0 })];
@@ -4917,7 +4943,15 @@
                     if (!name) continue;
                     const empId = matchEmployeeByName(name);
                     if (!empId) { unmatched.push({ row: r + 1, name }); continue; }
-                    if (charges.some(c => c.employee_id === empId && c.charge_type === WEEK_DEPOSIT_TYPE)) { alreadyHas++; continue; }
+
+                    const existing = charges.find(c => c.employee_id === empId && c.charge_type === WEEK_DEPOSIT_TYPE);
+                    if (existing) {
+                        if (existing.notes === 'Imported from Week in Deposit spreadsheet') {
+                            oldChargeIdsToReplace.push(existing.charge_id);
+                        } else {
+                            protectedSkip++; continue; // manually entered — never touched by this import
+                        }
+                    }
 
                     const goalCell = ws[XLSX.utils.encode_cell({ r, c: goalCol })];
                     const goal = parseFloat(goalCell ? goalCell.v : 0) || 0;
@@ -4950,8 +4984,8 @@
                     // then, since the balance hits zero first either way.
                     rcRows.push({ effective_date: stopperDateStr, weekly_amount: 0 });
 
-                    const chargeId = `${idPrefix()}${String(charges.length + createdCount + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
-                    createdCount++;
+                    nextNum++;
+                    const chargeId = `${idPrefix()}${String(nextNum).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
                     newCharges.push({
                         charge_id: chargeId, company_code: co, employee_id: empId, charge_type: WEEK_DEPOSIT_TYPE,
                         amount: goal, weekly_deduction: weekly[0], start_date: dateStrs[0], end_date: null,
@@ -4962,12 +4996,25 @@
 
                 if (!newCharges.length) {
                     let msg = 'Nothing to import.';
-                    if (alreadyHas) msg += ` ${alreadyHas} employee(s) already have a "Semana de Fondo" charge.`;
+                    if (protectedSkip) msg += ` ${protectedSkip} employee(s) have a manually-entered "Semana de Fondo" charge and were left alone.`;
                     if (noGoal) msg += ` ${noGoal} employee(s) had no goal amount.`;
                     if (unmatched.length) msg += ` ${unmatched.length} name(s) couldn't be matched to an employee.`;
                     alert(msg);
                     event.target.value = '';
                     return;
+                }
+
+                // Replacing a prior import run: remove the old rows first —
+                // rate changes before their parent charge — so the fresh
+                // insert below starts from a clean slate for that employee.
+                if (oldChargeIdsToReplace.length) {
+                    for (let i = 0; i < oldChargeIdsToReplace.length; i += 50) {
+                        const batch = oldChargeIdsToReplace.slice(i, i + 50);
+                        let { error } = await supabaseClient.from('charge_rate_changes').delete().in('charge_id', batch);
+                        if (error) console.error('week-in-deposit replace: rate change cleanup failed:', error.message);
+                        ({ error } = await supabaseClient.from('charges').delete().in('charge_id', batch));
+                        if (error) console.error('week-in-deposit replace: old charge cleanup failed:', error.message);
+                    }
                 }
 
                 let insertFailed = 0;
@@ -4986,8 +5033,13 @@
                 await loadChargeHistory();
                 renderCharges();
 
-                let msg = `Created ${newCharges.length - insertFailed} "Semana de Fondo" charge(s)` + (insertFailed ? `, ${insertFailed} failed (see browser console)` : '') + '.';
-                if (alreadyHas) msg += `\n${alreadyHas} employee(s) already had one and were skipped.`;
+                const replacedCount = oldChargeIdsToReplace.length;
+                const createdCount = newCharges.length - replacedCount;
+                let msg = '';
+                if (createdCount > 0) msg += `Created ${createdCount} new "Semana de Fondo" charge(s). `;
+                if (replacedCount > 0) msg += `Refreshed ${replacedCount} existing one(s) from this file with updated numbers. `;
+                if (insertFailed) msg += `${insertFailed} failed to save (see browser console). `;
+                if (protectedSkip) msg += `\n${protectedSkip} employee(s) already have a manually-entered charge and were left alone.`;
                 if (noGoal) msg += `\n${noGoal} employee(s) had no goal amount and were skipped.`;
                 if (unmatched.length) {
                     msg += `\n${unmatched.length} name(s) couldn't be matched to an employee — a correction file was downloaded.`;
