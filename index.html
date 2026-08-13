@@ -811,8 +811,9 @@
                 <div style="font-size:0.58rem; letter-spacing:0.08em; text-transform:uppercase; color:#5eead4; font-weight:700;">Logistics · HR · Claims</div>
             </div>
         </div>
+<button class="group-btn active" onclick="openHomeTab(event)" id="btn-tab-home" style="border-top:1px solid rgba(255,255,255,0.08); margin-bottom:4px; padding-bottom:0.85rem;">🏠 Home</button>
 <div class="tab-groups" id="tab-groups">
-    <button class="group-btn active" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
+    <button class="group-btn" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
     <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr" data-i18n="group_hr">HR &amp; Payroll</button>
     <button class="group-btn" onclick="openGroup('grp-expiring')" id="btn-grp-expiring">Expiring Documents</button>
     <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin" data-i18n="group_admin">Administration</button>
@@ -866,8 +867,17 @@
     </nav>
     <div id="mobile-drawer-scrim" onclick="toggleMobileDrawer()"></div>
 
+<!-- TAB: HOME -->
+<div id="tab-home" class="tab-content active">
+    <div class="panel">
+        <h2 id="home-welcome" style="margin-bottom:2px;">Welcome</h2>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Here's where things stand right now.</div>
+        <div class="stat-grid" id="home-stats-grid"></div>
+    </div>
+</div>
+
 <!-- TAB 1: ROUTE TRACKER -->
-<div id="tab-tracker" class="tab-content active">
+<div id="tab-tracker" class="tab-content">
     <div class="card" id="tracker-form-card">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Log New Route <span class="caret">&#9662;</span></h2>
         <form id="route-form">
@@ -1938,8 +1948,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.94';
+    const APP_VERSION = 'v2.95';
     const CHANGELOG = [
+        { version: 'v2.95', date: '2026-08-13', notes: 'New Home dashboard. A \'\U0001F3E0 Home\' button now sits at the very top of the sidebar, above Logistics, and is where you land right after logging in (View Only still lands on their own Employees record as before \u2014 Home shows company-wide numbers that don\'t fit their \'your own records only\' access level, so it\'s hidden for them same as Fleet/Settings already are). The page itself shows 8 stat cards \u2014 Active Employees, Open Claims, Active Charges, Semana de Fondo progress, Income This Week, Fleet, Expiring Soon, and Unread Notifications \u2014 each tappable to jump straight to that section. Built entirely from data the app already has loaded for other tabs, so there\'s no extra loading time and the numbers are always in sync. Caught and fixed a real bug before shipping: Home isn\'t part of the existing Logistics/HR/Expiring/Administration group system, and an existing piece of sidebar logic didn\'t know that \u2014 it would\'ve stripped Home\'s highlight the instant you logged in and incorrectly lit up Logistics instead, even with Home\'s content the one actually on screen. Verified every number on the dashboard (open balances, this week\'s income window, savings-goal totals) by actually running the calculations with realistic fake data before shipping, not just checking the code reads correctly.' },
         { version: 'v2.94', date: '2026-08-13', notes: 'Three fixes/additions. (1) Deleting a charge, claim, or additional income record was leaving its \'New Charge/Claim/Income\' notification behind forever, pointing at a record that no longer existed \u2014 a real gap that\'s existed since Notifications shipped, not something new. Cleaned up 57 orphaned notifications left over from the Semana de Fondo import cleanup, and fixed delete_charge/delete_claim/delete_income to remove the matching notification going forward. (2) The Week in Deposit bulk import wrote straight to the charges/charge_rate_changes tables from the browser, which meant it left zero trace in the audit log \u2014 only a real server-side function logs to it in this app. Built a proper database function for this import (role-checked, same replace-on-rerun behavior as before, now with one real audit log entry per run) and switched the import to use it. (3) New Schedule Maintenance panel on the Fleet tab: pick a truck, a date, and a description to schedule upcoming maintenance, and an Upcoming Maintenance list right above the truck list shows everything scheduled across every truck, soonest first \u2014 tap one to jump straight to that truck\'s card. Reuses the Service Log\'s existing \'Scheduled\' vs \'Performed\' distinction that was already there per-truck, just no dedicated form or combined view existed for it before. To mark one done, delete the scheduled entry and log it as Performed on that truck\'s own Service Log once the work is actually finished.' },
         { version: 'v2.93', date: '2026-08-13', notes: 'Fixed the mobile/PWA navigation drawer closing itself the instant you tapped Logistics, HR & Payroll, Expiring Documents, or Administration, before you could pick a sub-option. Root cause: tapping a group header was designed to both reveal its sub-tab list AND immediately jump into that group\'s first tab as a sensible default \u2014 fine on desktop, where the sidebar is always open anyway, but that automatic jump is what closes the drawer (opening any tab always closes it), so on mobile it closed before you ever saw the other options. Now the drawer version of a group tap only expands the list; picking an actual sub-tab is what navigates and closes the drawer, same as it always was. Desktop is untouched \u2014 still jumps straight to a group\'s first tab when you click its header.' },
         { version: 'v2.92', date: '2026-08-13', notes: 'Fixed a bug I introduced in v2.90\'s sw.js fix: forcing a real network fetch by calling fetch(req, {cache:\'reload\'}) on the original navigation Request crashes outright on some Android WebView/Chrome builds (a spec restriction on re-fetching a \'navigate\'-mode request with overridden options), and that crash happened before the fallback code ever got a chance to run \u2014 so every page load through an already-installed app icon failed with a bare network error, and since nothing rendered there was nothing to scroll either (matches \'shows an error, can pull down to refresh but can\'t scroll\'). A brand-new browser tab was never affected, since a first-ever visit\'s first load doesn\'t go through the service worker at all. Switched to fetching a cache-busted plain URL instead of re-fetching the Request object, which achieves the same real-network guarantee without tripping that restriction. Bumped the internal cache name again so already-installed apps get a clean slate. Both index.html and sw.js need to be uploaded together again.' },
@@ -2688,6 +2699,25 @@
         if(tabName === 'tab-settings') renderSettingsLists();
         if(tabName === 'tab-expiring') renderExpiringDocuments();
         if(tabName === 'tab-changelog') renderChangelogTab();
+        if(tabName === 'tab-home') renderHomeDashboard();
+    }
+
+    // Home isn't part of the group system (TAB_GROUPS) — it's a standalone
+    // top-level nav item styled like a group button but always leading
+    // straight to its one tab, same as Notifications/Messages already do
+    // with the .tab-btn styling further down the sidebar. openTab() only
+    // ever manages .tab-btn's active highlight, not .group-btn's (that's
+    // openGroup()'s job) — so a plain openTab(event,'tab-home') call would
+    // highlight Home without ever clearing whichever real group was
+    // previously active, leaving two nav items highlighted at once. This
+    // wrapper clears that state first, and collapses whatever group's
+    // sub-tab row was open, so Home always leaves the nav in a clean,
+    // unambiguous state.
+    function openHomeTab(evt) {
+        document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+        if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        document.querySelectorAll('.tabs.sub-tabs:not(#grp-notifications):not(#grp-messages)').forEach(g => g.classList.remove('open'));
+        openTab(evt, 'tab-home');
     }
 
     // ===== Two-level nav: which tabs live under which group =====
@@ -2738,6 +2768,17 @@
     // (so a role-driven landing tab, like View Only's Employees, opens under
     // the right group automatically).
     function refreshGroupVisibility() {
+        // If Home is the tab actually showing, leave it alone entirely —
+        // it isn't part of TAB_GROUPS, so without this check the fallback
+        // below (which always picks SOME group to highlight when it can't
+        // find the active tab in any group's list) would strip Home's own
+        // active highlight and incorrectly light up Logistics instead,
+        // even though Logistics' content isn't what's on screen. Same
+        // bug shape as #13 in memory — a new element not accounted for by
+        // an existing sweep/fallback written before it existed.
+        const homeContent = document.getElementById('tab-home');
+        if (homeContent && homeContent.classList.contains('active')) return;
+
         let activeGroup = null;
         Object.keys(TAB_GROUPS).forEach(groupId => {
             const tabs = TAB_GROUPS[groupId];
@@ -2842,7 +2883,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
+            ['btn-tab-home','btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -3292,6 +3333,7 @@
         if (typeof renderIncome === 'function') renderIncome();
         await loadNotifications();
         await fetchVehiclesFromCloud();
+        if (typeof renderHomeDashboard === 'function') renderHomeDashboard();
     }
 
     // Supabase's API caps a single request's returned rows (commonly 1000,
@@ -8917,6 +8959,75 @@
                 <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editVehicle('${escJsAttr(v.id)}')">Edit</button>
                 <button class="del-btn" onclick="deleteVehicle('${escJsAttr(v.id)}')">✕ Delete</button>
             </div>` : ''}`;
+    }
+
+    // Home dashboard — a company-wide snapshot built entirely from data
+    // already loaded for other tabs (no separate fetch needed), so it's
+    // always in sync with whatever's currently in memory. Only shown to
+    // Administrator/Medium/SuperAdmin — View Only's whole model is "your
+    // own records only", and these are company-wide aggregates, so it's
+    // hidden from them the same way Fleet/Settings/etc. already are rather
+    // than trying to build a scoped-down version of it.
+    function renderHomeDashboard() {
+        const grid = document.getElementById('home-stats-grid');
+        if (!grid) return;
+
+        const welcomeName = (currentUser && currentUser.first_name) ? currentUser.first_name : currentUsername;
+        const welcomeEl = document.getElementById('home-welcome');
+        if (welcomeEl) welcomeEl.textContent = `Welcome, ${welcomeName}`;
+
+        const activeEmployees = employees.filter(e => e.status === 'Active').length;
+
+        const openClaims = claims.filter(c => claimBalance(c) > 0.004);
+        const openClaimsTotal = openClaims.reduce((a, c) => a + claimBalance(c), 0);
+
+        const otherCharges = charges.filter(c => c.charge_type !== WEEK_DEPOSIT_TYPE);
+        const openCharges = otherCharges.filter(c => chargeBalance(c) > 0.004);
+        const openChargesTotal = openCharges.reduce((a, c) => a + chargeBalance(c), 0);
+
+        const savingsGoals = charges.filter(c => c.charge_type === WEEK_DEPOSIT_TYPE);
+        const savingsInProgress = savingsGoals.filter(c => chargeBalance(c) > 0.004).length;
+        const savingsSavedTotal = savingsGoals.reduce((a, c) => {
+            const goal = Math.max(0, parseFloat(c.amount) || 0);
+            return a + Math.max(0, goal - chargeBalance(c));
+        }, 0);
+
+        const weekStart = ymd(weekStartSunday(new Date()));
+        const weekEndExclusive = ymd(new Date(new Date(weekStart + 'T00:00:00Z').getTime() + 7 * 86400000));
+        const incomeThisWeek = additionalIncome.filter(i => i.start_date && i.start_date >= weekStart && i.start_date < weekEndExclusive);
+        const incomeThisWeekTotal = incomeThisWeek.reduce((a, i) => a + (parseFloat(i.amount) || 0), 0);
+
+        const expiringSoon = (typeof buildExpiringDocumentsList === 'function' ? buildExpiringDocumentsList() : []).filter(d => d.days !== null && d.days <= 30).length;
+        const unreadNotifs = notifications.filter(n => !n.read_at).length;
+
+        const card = (label, value, sub, onclick) => `
+            <div class="stat-card"${onclick ? ` style="cursor:pointer;" onclick="${onclick}"` : ''}>
+                <div class="stat-label">${label}</div>
+                <div class="stat-value">${value}</div>
+                ${sub ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${sub}</div>` : ''}
+            </div>`;
+
+        grid.innerHTML =
+            card('Active Employees', activeEmployees, '', "openHomeShortcut('tab-employees')") +
+            card('Open Claims', openClaims.length, formatMoney(openClaimsTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
+            card('Active Charges', openCharges.length, formatMoney(openChargesTotal) + ' outstanding', "openHomeShortcut('tab-charges')") +
+            card('Semana de Fondo', savingsInProgress + ' in progress', formatMoney(savingsSavedTotal) + ' saved so far', "openHomeShortcut('tab-weekdeposit')") +
+            card('Income This Week', formatMoney(incomeThisWeekTotal), incomeThisWeek.length + ' record(s)', "openHomeShortcut('tab-charges')") +
+            card('Fleet', vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')") +
+            card('Expiring Soon', expiringSoon, 'within 30 days', "openHomeShortcut('tab-expiring')") +
+            card('Unread Notifications', unreadNotifs, '', "openHomeShortcut('tab-notifications')");
+    }
+
+    // Home's stat cards jump to a real group's tab — reuses the same
+    // group-lookup TAB_GROUPS already has, so a card always opens through
+    // the right group (marking that group's header active, expanding its
+    // sub-tab row) instead of just switching tab-content in isolation.
+    function openHomeShortcut(tabName) {
+        const groupId = Object.keys(TAB_GROUPS).find(g => TAB_GROUPS[g].includes(tabName));
+        if (groupId) { openGroup(groupId); }
+        openTab(null, tabName);
+        const btn = document.getElementById('btn-' + tabName);
+        if (btn) btn.classList.add('active');
     }
 
     function renderVehicles() {
