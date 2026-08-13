@@ -1927,9 +1927,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.89';
+    const APP_VERSION = 'v2.90';
     const CHANGELOG = [
-        { version: 'v2.89', date: '2026-08-12', notes: 'Two fixes. The Messages typing box no longer gets squeezed when you pick "Claim", "Charge", or "Income" (which shows a second "Which one?" dropdown) — the category pickers now sit on their own row above the typing box, so the typing box always keeps its full width. Also added a new "⬆️ Import Semana de Fondo" button on Charges & Income: upload the weekly deposit tracking spreadsheet (employee names in column A, one dated column per week, goal amount in the "cantidad final" column) and it creates a real "Semana de Fondo" charge for every employee who doesn\'t already have one, reproducing their exact week-by-week saved amounts — once an employee\'s goal is reached, no further weeks are shown, matching the existing charge balance engine\'s own behavior rather than needing a separate rule for it. Employees who already have a Semana de Fondo charge, or who can\'t be matched to a name in the roster, are skipped and reported at the end.' },
+        { version: 'v2.90', date: '2026-08-13', notes: 'Fixed the installed Android/iOS app icon serving a stale, out-of-date copy of the app (confirmed: worked fine in every regular browser tab, only the installed icon was affected). Root cause was in sw.js, the separate file that makes the installed icon work: it fetched the app shell with the browser\'s default HTTP caching still in play, so \'network-first\' wasn\'t actually a hard guarantee — the browser could quietly hand back an old cached copy of index.html before the service worker\'s own logic ever got a say. Fixed by forcing a true bypass of the browser\'s HTTP cache on every shell fetch, and bumped the internal cache name so this device\'s existing installed copy gets a clean slate rather than carrying old cached files forward. This requires uploading BOTH files — index.html and the updated sw.js — to the same GitHub folder; index.html itself didn\'t need any changes to fix this, only sw.js did. After uploading, fully close the installed app (swipe it away, not just background it) and reopen it once to pick up the fix.' },
+        { version: 'v2.89', date: '2026-08-12', notes: 'Two fixes. The Messages typing box no longer gets squeezed when you pick "Claim", "Charge", or "Income" (which shows a second "Which one?" dropdown) — the category pickers now sit on their own row above the typing box, so the typing box always keeps its full width. Also added a new "⬆️ Import Semana de Fondo" button on Charges & Income: upload the weekly deposit tracking spreadsheet (employee names in column A, one dated column per week, goal amount in the "cantidad final" column) and it creates a real "Semana de Fondo" charge for every employee who doesn\'t already have one, reproducing their exact week-by-week saved amounts — once an employee\'s goal is reached, no further weeks are shown, matching the existing charge balance engine\'s own behavior rather than needing a separate rule for it. Employees who already have a Semana de Fondo charge, or who can\'t be matched to a name in the roster, are skipped and reported at the end. Caught and fixed a real bug while testing this against your actual file before shipping: charges whose goal wasn\'t fully reached in the data were computing an "Ends" date decades in the future (an existing bug in how the app decided whether a charge\'s deduction schedule was still "live" going forward) — fixed so it correctly stops projecting once it runs past what the file actually records. Also: a couple of employees had a one-week negative amount in the source file (a correction/withdrawal); since a weekly amount can\'t go negative anywhere else in this app, those are treated as $0 for that week and flagged by name in the import summary so you can double-check them.' },
         { version: 'v2.88', date: '2026-08-06', notes: 'Fixed both issues. Notifications and Messages were being closed automatically the instant any other section in the sidebar was opened, which is why they never actually stayed visible — now they\'re correctly excluded from that behavior and stay put. Also strengthened the sidebar\'s hover styling everywhere (including one spot — the section headers like Logistics/HR & Payroll — that had no hover styling defined at all, which could plausibly explain the white-on-white you saw) so text is guaranteed readable on hover no matter what.' },
         { version: 'v2.87', date: '2026-08-06', notes: 'Last piece from the big batch — Summary Reports. Payroll, Claims, Charges, Additional Income, and Week in Deposit each now have their own "📊 Summary Report" buttons, in Excel and PDF. These are real reports, not raw data — totals, breakdowns by status and type, generated fresh each time — not individualized by employee, exactly as asked. One note on the PDF side: it uses the same print system as everything else in the app (so the standalone-app printing limitation on iPhone/iPad applies here too, with the same clear heads-up if it comes up) — "download as PDF" happens by choosing Save as PDF from the print screen, same as printing a payslip.' },
         { version: 'v2.86', date: '2026-08-06', notes: 'Third batch. Fleet service records can now track mileage — how many miles were on it when the service was done, and the mileage the next one is due at. Shows right in the service log for each vehicle. Last piece left: summary reports for Payroll, Claims, Charges, Income, and Week in Deposit, downloadable in Excel and PDF.' },
@@ -4907,6 +4908,7 @@
                 const newCharges = [];
                 const newRateChanges = [];
                 const unmatched = []; // {row, name}
+                const negativeFlags = []; // employee names with a negative (correction/withdrawal) week, treated as $0
                 let alreadyHas = 0, noGoal = 0, createdCount = 0;
 
                 for (let r = 1; r <= range.e.r; r++) {
@@ -4922,11 +4924,15 @@
                     if (goal <= 0) { noGoal++; continue; }
 
                     const weekly = [];
+                    let hadNegative = false;
                     for (let i = 0; i < dateColCount; i++) {
                         const cell = ws[XLSX.utils.encode_cell({ r, c: 1 + i })];
                         const v = cell ? parseFloat(cell.v) : NaN;
-                        weekly.push(isNaN(v) ? 0 : v);
+                        const clean = isNaN(v) ? 0 : v;
+                        if (clean < 0) hadNegative = true;
+                        weekly.push(Math.max(0, clean)); // charge_rate_changes can't hold a negative weekly amount (the manual entry form rejects it too), so a correction/withdrawal week is treated as $0 rather than dropped or misapplied
                     }
+                    if (hadNegative) negativeFlags.push(name);
                     const totalSaved = weekly.reduce((a, b) => a + b, 0);
                     const reached = totalSaved >= goal - 0.004;
 
@@ -4986,6 +4992,9 @@
                 if (unmatched.length) {
                     msg += `\n${unmatched.length} name(s) couldn't be matched to an employee — a correction file was downloaded.`;
                     downloadWeekDepositCorrectionReport(unmatched, sheetName);
+                }
+                if (negativeFlags.length) {
+                    msg += `\n${negativeFlags.length} employee(s) had a negative amount in one week (a correction/withdrawal) that was treated as $0, since a rate can't go negative in this app: ${negativeFlags.join(', ')}. Double-check those against the source file.`;
                 }
                 alert(msg);
                 event.target.value = '';

@@ -6,7 +6,7 @@
 // gets cached, and even that uses network-first so a real update is never
 // hidden behind an old cached copy.
 
-const CACHE_NAME = 'tracker-shell-v1';
+const CACHE_NAME = 'tracker-shell-v2';
 const SHELL_URLS = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {
@@ -35,8 +35,16 @@ self.addEventListener('fetch', (event) => {
     // straight to the network untouched.
     if (url.origin !== self.location.origin) return;
 
+    // 'reload' forces the browser past its own HTTP cache for this request,
+    // straight to the real network — without it, "network-first" wasn't a
+    // real guarantee: the browser's ordinary HTTP cache could quietly hand
+    // back an old cached response for something like index.html before this
+    // handler ever got a say, especially on a host that doesn't send strict
+    // no-cache headers for HTML. That's the most likely reason the app shell
+    // can go stale specifically on the installed icon (which reuses the same
+    // long-lived process/cache) while a fresh browser tab always looks fine.
     event.respondWith(
-        fetch(req)
+        fetch(req, { cache: 'reload' })
             .then((res) => {
                 const copy = res.clone();
                 caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
