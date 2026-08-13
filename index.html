@@ -888,7 +888,7 @@
 <!-- TAB 1: ROUTE TRACKER -->
 <div id="tab-tracker" class="tab-content">
     <div class="card" id="tracker-form-card">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Log New Route <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="route-form-titletext">Log New Route</span> <span class="caret">&#9662;</span></h2>
         <form id="route-form">
             <div class="grid-form">
                 <div class="field"><label>Delivery Date</label><input type="date" id="f-date" required></div>
@@ -906,7 +906,8 @@
                 <div class="field"><label>Deductions</label><input type="number" id="f-deductions" step="0.01" value="0"></div>
                 <div class="field"><label>Extra Pay</label><input type="number" id="f-extra" step="0.01" value="0"></div>
             </div>
-            <button type="submit" class="btn" style="margin-top:0.5rem;">+ Add Route</button>
+            <button type="submit" class="btn" id="route-save-btn" style="margin-top:0.5rem;">+ Add Route</button>
+            <button type="button" class="btn-small" id="route-cancel-btn" style="display:none;background:#64748b;" onclick="cancelRouteEdit()">Cancel edit</button>
         </form>
     </div>
     <div class="card" style="padding:0; border:none; box-shadow:none;">
@@ -1312,7 +1313,7 @@
     <div style="height:1px;background:var(--border);margin:18px 2px 4px;"></div>
 
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)"><span data-i18n="new_additional_income">New Additional Income</span> <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="income-form-titletext" data-i18n="new_additional_income">New Additional Income</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
             <div>
                 <div style="color: #AFC6D9; font-size: 10px; text-transform: uppercase; font-weight: 700;" data-i18n="next_income_id">Next Income ID</div>
@@ -1330,7 +1331,8 @@
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="iNotes"></div>
             </div>
             <div class="note-box" data-i18n="income_note">Additional income is <strong>added</strong> to the employee's pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.</div>
-            <button type="submit" class="btn" data-i18n="save_income">+ Save Income</button>
+            <button type="submit" class="btn" id="income-save-btn" data-i18n="save_income">+ Save Income</button>
+            <button type="button" class="btn-small" id="income-cancel-btn" style="display:none;background:#64748b;" onclick="cancelIncomeEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
     </div>
 
@@ -1778,7 +1780,7 @@
     <div class="panel" id="bill-form-panel">
         <h2 id="bill-form-title">New Bill</h2>
         <div class="form-row">
-            <div class="field"><label>Vendor</label><input type="text" id="bill-vendor" placeholder="e.g. ABC Fuel Co"></div>
+            <div class="field"><label>Vendor</label><input type="text" id="bill-vendor" list="bill-vendor-providers" placeholder="e.g. ABC Fuel Co, or pick a provider"><datalist id="bill-vendor-providers"></datalist></div>
             <div class="field"><label>Vendor's Bill #</label><input type="text" id="bill-number" placeholder="e.g. INV-9001"></div>
             <div class="field"><label>Bill Date</label><input type="date" id="bill-date"></div>
             <div class="field"><label>Due Date</label><input type="date" id="bill-due-date"></div>
@@ -2019,8 +2021,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.96';
+    const APP_VERSION = 'v2.97';
     const CHANGELOG = [
+        { version: 'v2.97', date: '2026-08-13', notes: 'Four fixes. Income and Route Tracker were the only two places still using the old popup-based edit flow (a sequence of \'leave unchanged / press Cancel to stop\' prompts) \u2014 both now repopulate the form at the top and switch to an Editing mode with Save/Cancel, exactly like Claims and Charges already work; checked and confirmed nothing else in the app still uses the old popup style. Claims, Charges, and Income were all silently dropping their Notes field from the expandable detail card \u2014 fixed on all three, and traced further into Payroll: its per-employee breakdown wasn\'t even fetching notes onto the claim/charge/income line items it builds, so there was nothing to show even before the display gap \u2014 fixed both the data and the display, notes now appear under the relevant line in a payslip breakdown too. Bills Payable\'s Vendor field now suggests names from the Provider Pay roster as you type (a normal autocomplete, not a hard requirement) \u2014 pick a provider already in the system, or type any external vendor name freely, same field either way.' },
         { version: 'v2.96', date: '2026-08-13', notes: 'Two things. First, a real bug: hovering felt like the cause but it wasn\'t \u2014 the whole sidebar area for an open group (Notifications, Messages, or whichever section was expanded) was rendering with a solid white background at rest, making pale sidebar text unreadable against it. Root cause was a shared CSS class carrying over a background meant for a completely different, light-background part of the app; fixed by resetting it back to transparent for the sidebar specifically. Second: a new Financial section \u2014 \'\U0001F4B0 Financial\' now sits in the sidebar with two tabs. Invoices lets you build a real itemized invoice (date, description, rate, qty, extra, amount per line, auto-totaling as you go) for a customer, matching how your actual invoice templates are laid out; Bills Payable is a lighter-weight running list of what you owe vendors (amount, due date, paid/unpaid). Both are hidden from View Only accounts, same reasoning as Fleet. Caught a real numbering bug before shipping this: the same ID-numbering approach from v2.91\'s Semana de Fondo fix (used again here for invoice/bill numbers) breaks specifically for an ID prefix that starts with a digit \u2014 which \'3OFL\' does \u2014 silently grabbing the wrong number and risking a duplicate ID. Found it by actually running the numbering logic in Node before shipping, not just reading the code; confirmed it hadn\'t caused real damage yet (the only place it was already live, the Week in Deposit import, hasn\'t been re-run since v2.91), and fixed the shared root cause everywhere it\'s used.' },
         { version: 'v2.95', date: '2026-08-13', notes: 'New Home dashboard. A \'\U0001F3E0 Home\' button now sits at the very top of the sidebar, above Logistics, and is where you land right after logging in (View Only still lands on their own Employees record as before \u2014 Home shows company-wide numbers that don\'t fit their \'your own records only\' access level, so it\'s hidden for them same as Fleet/Settings already are). The page itself shows 8 stat cards \u2014 Active Employees, Open Claims, Active Charges, Semana de Fondo progress, Income This Week, Fleet, Expiring Soon, and Unread Notifications \u2014 each tappable to jump straight to that section. Built entirely from data the app already has loaded for other tabs, so there\'s no extra loading time and the numbers are always in sync. Caught and fixed a real bug before shipping: Home isn\'t part of the existing Logistics/HR/Expiring/Administration group system, and an existing piece of sidebar logic didn\'t know that \u2014 it would\'ve stripped Home\'s highlight the instant you logged in and incorrectly lit up Logistics instead, even with Home\'s content the one actually on screen. Verified every number on the dashboard (open balances, this week\'s income window, savings-goal totals) by actually running the calculations with realistic fake data before shipping, not just checking the code reads correctly.' },
         { version: 'v2.94', date: '2026-08-13', notes: 'Three fixes/additions. (1) Deleting a charge, claim, or additional income record was leaving its \'New Charge/Claim/Income\' notification behind forever, pointing at a record that no longer existed \u2014 a real gap that\'s existed since Notifications shipped, not something new. Cleaned up 57 orphaned notifications left over from the Semana de Fondo import cleanup, and fixed delete_charge/delete_claim/delete_income to remove the matching notification going forward. (2) The Week in Deposit bulk import wrote straight to the charges/charge_rate_changes tables from the browser, which meant it left zero trace in the audit log \u2014 only a real server-side function logs to it in this app. Built a proper database function for this import (role-checked, same replace-on-rerun behavior as before, now with one real audit log entry per run) and switched the import to use it. (3) New Schedule Maintenance panel on the Fleet tab: pick a truck, a date, and a description to schedule upcoming maintenance, and an Upcoming Maintenance list right above the truck list shows everything scheduled across every truck, soonest first \u2014 tap one to jump straight to that truck\'s card. Reuses the Service Log\'s existing \'Scheduled\' vs \'Performed\' distinction that was already there per-truck, just no dedicated form or combined view existed for it before. To mark one done, delete the scheduled entry and log it as Performed on that truck\'s own Service Log once the work is actually finished.' },
@@ -4624,6 +4627,7 @@
                 <div><div class="k">Start ded.</div><div class="v">${c.start_date || '-'}</div></div>
                 <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
             </div>
+            ${c.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(c.notes)}</div>` : ''}
             ${editable ? `<div class="rec-actions">
                 <button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
                 <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>
@@ -5568,6 +5572,7 @@
                 <div><div class="k">Start ded.</div><div class="v">${ch.start_date || '-'}</div></div>
                 <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
             </div>
+            ${ch.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(ch.notes)}</div>` : ''}
             ${editable ? `<div class="rec-actions">
                 <button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
                 <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>
@@ -5857,7 +5862,7 @@
             .filter(i => i.employee_id === empId && i.status !== 'Queued' && i.start_date && i.start_date <= asOf && remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf) > 0)
             .map(i => {
                 const remBefore = remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
-                return { id: i.income_id, label: i.income_type || 'Income', weekly: Math.min(parseFloat(i.weekly_amount) || 0, remBefore), remaining: remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf) };
+                return { id: i.income_id, label: i.income_type || 'Income', weekly: Math.min(parseFloat(i.weekly_amount) || 0, remBefore), remaining: remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf), notes: i.notes || '' };
             });
     }
 
@@ -5869,6 +5874,21 @@
         if (!incomeCo) return;
         const empId = document.getElementById('ci-employee').value;
         if (!empId) { alert('Select an employee at the top of the tab first.'); return; }
+
+        if (editingIncomeId) {
+            const { error } = await supabaseClient.rpc('edit_income', {
+                p_actor: currentUsername, p_id: editingIncomeId, p_income_type: document.getElementById('iType').value,
+                p_amount: parseFloat(document.getElementById('iAmount').value) || 0,
+                p_weekly_amount: parseFloat(document.getElementById('iWeekly').value) || 0,
+                p_start_date: document.getElementById('iStartDate').value || null,
+                p_status: document.getElementById('iStatus').value, p_notes: document.getElementById('iNotes').value.trim()
+            });
+            if (error) { alert('Error: ' + error.message); return; }
+            cancelIncomeEdit();
+            fetchIncomeFromCloud();
+            return;
+        }
+
         const incomeId = `${idPrefix()}${String(additionalIncome.length + 1).padStart(settings.chargeDigits, '0')}I`;
         const payload = {
             income_id: incomeId,
@@ -5903,6 +5923,7 @@
                 <div><div class="k">Start</div><div class="v">${i.start_date || '-'}</div></div>
                 <div><div class="k">Ends</div><div class="v">${endDate}</div></div>
             </div>
+            ${i.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(i.notes)}</div>` : ''}
             ${editable ? `<div class="rec-actions">
                 <button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
                 <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>
@@ -6004,27 +6025,36 @@
         applyTranslations();
     }
 
-    async function editIncome(id) {
+    let editingIncomeId = null;
+
+    function editIncome(id) {
         if (!canEdit()) return;
         const inc = additionalIncome.find(x => x.income_id === id);
         if (!inc) return;
-        const changed = promptFields(`Edit income ${id}`, [
-            { label: 'Income type', key: 'income_type', value: inc.income_type },
-            { label: 'Total amount', key: 'amount', value: inc.amount },
-            { label: 'Weekly amount', key: 'weekly_amount', value: inc.weekly_amount },
-            { label: 'Start date (YYYY-MM-DD)', key: 'start_date', value: inc.start_date },
-            { label: 'Status (Queued/Paying/Paid/Stopped)', key: 'status', value: inc.status },
-            { label: 'Notes', key: 'notes', value: inc.notes }
-        ]);
-        if (!Object.keys(changed).length) return;
-        if (!coerceEditFields(changed, ['amount', 'weekly_amount'], ['start_date'])) return;
-        const merged = { ...inc, ...changed };
-        const { error } = await supabaseClient.rpc('edit_income', {
-            p_actor: currentUsername, p_id: id, p_income_type: merged.income_type, p_amount: merged.amount,
-            p_weekly_amount: merged.weekly_amount, p_start_date: merged.start_date || null, p_status: merged.status, p_notes: merged.notes
-        });
-        if (error) alert('Error: ' + error.message);
-        else fetchIncomeFromCloud();
+        editingIncomeId = id;
+        const empSel = document.getElementById('ci-employee');
+        if (empSel) empSel.value = inc.employee_id || '';
+        document.getElementById('iType').value = inc.income_type || '';
+        document.getElementById('iAmount').value = (inc.amount ?? '');
+        document.getElementById('iWeekly').value = (inc.weekly_amount ?? '');
+        document.getElementById('iStartDate').value = inc.start_date || '';
+        document.getElementById('iEndDate').value = inc.end_date || '';
+        document.getElementById('iStatus').value = inc.status || 'Queued';
+        document.getElementById('iNotes').value = inc.notes || '';
+        document.getElementById('income-form-titletext').textContent = `Editing ${id}`;
+        document.getElementById('income-save-btn').textContent = 'Save changes';
+        document.getElementById('income-cancel-btn').style.display = '';
+        const panel = document.getElementById('income-form').closest('.panel');
+        if (panel) panel.classList.remove('collapsed');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelIncomeEdit() {
+        editingIncomeId = null;
+        document.getElementById('income-form').reset();
+        document.getElementById('income-form-titletext').textContent = 'New Additional Income';
+        document.getElementById('income-save-btn').textContent = '+ Save Income';
+        document.getElementById('income-cancel-btn').style.display = 'none';
     }
 
     async function deleteIncome(id) {
@@ -6278,7 +6308,7 @@
             if (balBefore > 0 && !isPausedOn(c, asOf)) {
                 const bal = claimBalance(c, asOf);
                 const weekly = Math.min(rateOn(c, asOf), balBefore);
-                items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', company: c.company_name || '', claimant: c.claimant_account || '', carrier: c.carrier_claim_number || '', customer: c.customer_claim_number || '', weekly, scheduled: weekly, balance: bal });
+                items.push({ kind: 'Claim', id: c.claim_id, label: c.damage_type || 'Claim', company: c.company_name || '', claimant: c.claimant_account || '', carrier: c.carrier_claim_number || '', customer: c.customer_claim_number || '', weekly, scheduled: weekly, balance: bal, notes: c.notes || '' });
             }
         });
         charges.filter(ch => ch.employee_id === empId && ch.status !== 'Queued' && ch.start_date && ch.start_date <= asOf).forEach(ch => {
@@ -6286,7 +6316,7 @@
             if (balBefore > 0 && !isChargePausedOn(ch, asOf)) {
                 const bal = chargeBalance(ch, asOf);
                 const weekly = Math.min(chargeRateOn(ch, asOf), balBefore);
-                items.push({ kind: 'Charge', id: ch.charge_id, label: ch.charge_type || 'Charge', weekly, scheduled: weekly, balance: bal });
+                items.push({ kind: 'Charge', id: ch.charge_id, label: ch.charge_type || 'Charge', weekly, scheduled: weekly, balance: bal, notes: ch.notes || '' });
             }
         });
         if (capAmount !== undefined && capAmount !== null) {
@@ -7407,6 +7437,7 @@
                         ${ib.map(it => `
                             <div style="padding:6px 0;border-bottom:1px solid var(--border);">
                                 <div>${it.id} · ${it.label}</div>
+                                ${it.notes ? `<div style="color:var(--text-muted); font-style:italic; margin-top:1px;">${escHtml(it.notes)}</div>` : ''}
                                 <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;">
                                     <span style="color:#059669;font-weight:700;">+${formatMoney(it.weekly)}</span>
                                     <span style="color:var(--text-muted);">Remaining: ${formatMoney(it.remaining)}</span>
@@ -7435,7 +7466,7 @@
                                 if (it.carrier) parts.push('Carrier # ' + escHtml(it.carrier));
                                 if (it.customer) parts.push('Customer # ' + escHtml(it.customer));
                                 return parts.length ? `<br><span style="color:var(--text-muted);">${parts.join(' · ')}</span>` : '';
-                            })()}${it.weekly < it.scheduled ? `<br><span style="color:var(--text-muted);">(scheduled ${formatMoney(it.scheduled)})</span>` : ''}</div>
+                            })()}${it.notes ? `<br><span style="color:var(--text-muted); font-style:italic;">${escHtml(it.notes)}</span>` : ''}${it.weekly < it.scheduled ? `<br><span style="color:var(--text-muted);">(scheduled ${formatMoney(it.scheduled)})</span>` : ''}</div>
                             <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;">
                                 <span style="color:#dc2626;font-weight:700;">−${formatMoney(it.weekly)}</span>
                                 <span style="color:var(--text-muted);">Balance: ${formatMoney(it.balance)}</span>
@@ -7744,30 +7775,46 @@
         await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
     }
 
-    async function editRoute(id) {
+    let editingRouteId = null;
+
+    function editRoute(id) {
         if (!canEdit()) return;
         const r = routes.find(x => String(x.id) === String(id));
         if (!r) return;
-        const changed = promptFields(`Edit route ${r.route_id || id}`, [
-            { label: 'Date (YYYY-MM-DD)', key: 'date', value: r.date },
-            { label: 'Company', key: 'contractor', value: r.contractor },
-            { label: 'Type', key: 'type', value: r.type },
-            { label: 'Driver', key: 'driver', value: r.driver },
-            { label: 'Route #', key: 'route_num', value: r.route_num },
-            { label: 'Route ID', key: 'route_id', value: r.route_id },
-            { label: '3rd man status', key: 'third_man_status', value: r.third_man_status },
-            { label: 'Miles', key: 'miles', value: r.miles },
-            { label: 'Manifest', key: 'manifest', value: r.manifest },
-            { label: 'Pullbacks', key: 'pullbacks', value: r.pullbacks },
-            { label: 'Incompletes', key: 'incompletes', value: r.incompletes },
-            { label: 'Deductions', key: 'deductions', value: r.deductions },
-            { label: 'Extra pay', key: 'extra_pay', value: r.extra_pay }
-        ]);
-        if (!Object.keys(changed).length) return;
-        if (!coerceEditFields(changed, ['miles', 'manifest', 'pullbacks', 'incompletes', 'deductions', 'extra_pay'], ['date'])) return;
-        const { data, error } = await supabaseClient.rpc('edit_route', { p_actor: currentUsername, p_id: parseInt(id), p_fields: changed });
-        if (error) alert('Error: ' + error.message);
-        else { alert(data || 'Saved.'); fetchRoutesFromCloud(); }
+        editingRouteId = id;
+        document.getElementById('f-date').value = r.date || '';
+        // r.contractor stores the company NAME (resolved at save time), but
+        // the dropdown's option values are company CODEs — look up the
+        // matching company to restore the right selection, not just stuff
+        // the name into a code field.
+        const matchedCo = (companies || []).find(c => (c.name || c.code) === r.contractor);
+        document.getElementById('f-contractor').value = matchedCo ? matchedCo.code : (r.contractor || '');
+        document.getElementById('f-type').value = r.type || 'Regular';
+        document.getElementById('f-3rdman').value = r.third_man_status || 'None';
+        document.getElementById('f-driver').value = r.driver || '';
+        document.getElementById('f-routeNum').value = r.route_num || '';
+        document.getElementById('f-routeId').value = r.route_id || '';
+        document.getElementById('f-miles').value = (r.miles ?? 0);
+        document.getElementById('f-manifest').value = (r.manifest ?? 0);
+        document.getElementById('f-pullbacks').value = (r.pullbacks ?? 0);
+        document.getElementById('f-incompletes').value = (r.incompletes ?? 0);
+        document.getElementById('f-dedicated').value = (r.dedicated_flat ?? 0);
+        document.getElementById('f-deductions').value = (r.deductions ?? 0);
+        document.getElementById('f-extra').value = (r.extra_pay ?? 0);
+        document.getElementById('route-form-titletext').textContent = `Editing ${r.route_id || id}`;
+        document.getElementById('route-save-btn').textContent = 'Save changes';
+        document.getElementById('route-cancel-btn').style.display = '';
+        const panel = document.getElementById('tracker-form-card');
+        if (panel) panel.classList.remove('collapsed');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelRouteEdit() {
+        editingRouteId = null;
+        document.getElementById('route-form').reset();
+        document.getElementById('route-form-titletext').textContent = 'Log New Route';
+        document.getElementById('route-save-btn').textContent = '+ Add Route';
+        document.getElementById('route-cancel-btn').style.display = 'none';
     }
 
     // --- APPROVALS & AUDIT LOG ------------------------------------------
@@ -8613,7 +8660,7 @@
     document.getElementById('route-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         let rawData = {
-            id: Date.now(),
+            id: editingRouteId || Date.now(),
             date: document.getElementById('f-date').value,
             contractor: document.getElementById('f-contractor').value,
             type: document.getElementById('f-type').value,
@@ -8637,6 +8684,23 @@
         // store the company name in the route's contractor field (keeps the
         // Daily Report grouping working), and scope the record by its code
         rawData.contractor = selCompany ? selCompany.name : (rawData.contractor || selCode);
+
+        if (editingRouteId) {
+            // edit_route diffs each key in p_fields against the row's
+            // current value and only writes (and audits) the ones that
+            // actually changed — but 'id' has no business being in that
+            // diff set at all (it happens to always match its own current
+            // value here, so the RPC's equal-value skip saves it, but
+            // that's incidental, not something to depend on for a primary
+            // key column), so it's stripped out explicitly before sending.
+            const { id: _unusedId, ...routeFields } = rawData;
+            const { data, error } = await supabaseClient.rpc('edit_route', { p_actor: currentUsername, p_id: parseInt(editingRouteId), p_fields: routeFields });
+            if (error) { alert('Error: ' + error.message); return; }
+            cancelRouteEdit();
+            fetchRoutesFromCloud();
+            return;
+        }
+
         const payload = buildRoutePayload(rawData);
         payload.company_code = routeCo;
         const { error } = await supabaseClient.from('routes').insert([payload]);
@@ -9188,7 +9252,24 @@
         fetchBillsFromCloud();
     }
 
+    // Suggests names from the Provider Pay roster (employees whose pay
+    // type is "Provider") in the Vendor field's autocomplete, since many
+    // bills payable are actually from providers already in the system —
+    // picking a suggestion just fills in their name as plain text, it
+    // doesn't require the vendor to be a provider (a fuel company, an
+    // insurance bill, etc. can still be typed in freely).
+    function populateBillVendorProviders() {
+        const dl = document.getElementById('bill-vendor-providers');
+        if (!dl) return;
+        const providerNames = employees
+            .filter(e => getPayType(e.id) === 'Provider')
+            .map(e => `${e.first_name} ${e.last_name}`.trim())
+            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        dl.innerHTML = providerNames.map(n => `<option value="${escHtml(n)}">`).join('');
+    }
+
     function renderBills() {
+        populateBillVendorProviders();
         const grid = document.getElementById('bill-stats-grid');
         if (grid) {
             const unpaid = bills.filter(b => b.status === 'Unpaid');
