@@ -438,6 +438,7 @@
     .status-Paused { background: var(--amber-bg); color: var(--amber); }
     .status-Queued { background: #EEF2F5; color: #5A6B7A; }
     .status-Unpaid { background: var(--amber-bg); color: var(--amber); }
+    .status-Released { background: var(--purple-bg); color: var(--purple); }
     .status-Tk-from-check { background: var(--purple-bg); color: var(--purple); }
 
     /* Pivot Layout & Slicers */
@@ -692,6 +693,18 @@
             You'll be signed out in <span id="idle-countdown" style="font-weight:700; color:#b45309;">30</span>s due to inactivity. Any unsaved changes could be lost.
         </div>
         <button type="button" class="btn" style="width:100%;" onclick="staySignedIn()">Stay signed in</button>
+    </div>
+</div>
+
+<div id="release-statement-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeReleaseStatement()">
+    <div style="background:var(--surface); border-radius:10px; padding:20px; max-width:460px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+        <div style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:4px;">Release Semana de Fondo</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Review before closing this account — this can't be undone from here.</div>
+        <div id="release-statement-body"></div>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+            <button type="button" class="btn-small" style="flex:1; margin:0; background:#64748b;" onclick="closeReleaseStatement()">Cancel</button>
+            <button type="button" class="btn-small" id="release-confirm-btn" style="flex:1; margin:0; background:#7c3aed;" onclick="confirmRelease()">Close Account</button>
+        </div>
     </div>
 </div>
 
@@ -2021,8 +2034,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.97';
+    const APP_VERSION = 'v2.98';
     const CHANGELOG = [
+        { version: 'v2.98', date: '2026-08-13', notes: 'New \'\U0001F513 Release\' button on each Semana de Fondo record in Week in Deposit, for when the savings are actually handed over as a check and the account needs to close. Clicking it opens a statement, not an immediate action: it checks whether that employee has any OTHER outstanding claim or charge (anything besides another Semana de Fondo record), and if so, shows exactly how much of the savings would go toward settling those first \u2014 oldest debt first \u2014 before showing the real net amount left to hand over. Only pressing \'Close Account\' on that statement actually does anything. Settling another claim/charge this way actually reduces what it shows as owed everywhere else in the app (Payroll included), not just a note saying it happened. A released account is fully excluded from every balance calculation in the app going forward (Payroll deductions, Home dashboard, Week in Deposit totals) while still correctly showing its real historical numbers if you look back at a past week from before it was released. Tested the whole flow \u2014 savings with two different outstanding debts, oldest-first settling, double-release blocked, wrong-role blocked \u2014 against a throwaway company before this ever touched real data.' },
         { version: 'v2.97', date: '2026-08-13', notes: 'Four fixes. Income and Route Tracker were the only two places still using the old popup-based edit flow (a sequence of \'leave unchanged / press Cancel to stop\' prompts) \u2014 both now repopulate the form at the top and switch to an Editing mode with Save/Cancel, exactly like Claims and Charges already work; checked and confirmed nothing else in the app still uses the old popup style. Claims, Charges, and Income were all silently dropping their Notes field from the expandable detail card \u2014 fixed on all three, and traced further into Payroll: its per-employee breakdown wasn\'t even fetching notes onto the claim/charge/income line items it builds, so there was nothing to show even before the display gap \u2014 fixed both the data and the display, notes now appear under the relevant line in a payslip breakdown too. Bills Payable\'s Vendor field now suggests names from the Provider Pay roster as you type (a normal autocomplete, not a hard requirement) \u2014 pick a provider already in the system, or type any external vendor name freely, same field either way.' },
         { version: 'v2.96', date: '2026-08-13', notes: 'Two things. First, a real bug: hovering felt like the cause but it wasn\'t \u2014 the whole sidebar area for an open group (Notifications, Messages, or whichever section was expanded) was rendering with a solid white background at rest, making pale sidebar text unreadable against it. Root cause was a shared CSS class carrying over a background meant for a completely different, light-background part of the app; fixed by resetting it back to transparent for the sidebar specifically. Second: a new Financial section \u2014 \'\U0001F4B0 Financial\' now sits in the sidebar with two tabs. Invoices lets you build a real itemized invoice (date, description, rate, qty, extra, amount per line, auto-totaling as you go) for a customer, matching how your actual invoice templates are laid out; Bills Payable is a lighter-weight running list of what you owe vendors (amount, due date, paid/unpaid). Both are hidden from View Only accounts, same reasoning as Fleet. Caught a real numbering bug before shipping this: the same ID-numbering approach from v2.91\'s Semana de Fondo fix (used again here for invoice/bill numbers) breaks specifically for an ID prefix that starts with a digit \u2014 which \'3OFL\' does \u2014 silently grabbing the wrong number and risking a duplicate ID. Found it by actually running the numbering logic in Node before shipping, not just reading the code; confirmed it hadn\'t caused real damage yet (the only place it was already live, the Week in Deposit import, hasn\'t been re-run since v2.91), and fixed the shared root cause everywhere it\'s used.' },
         { version: 'v2.95', date: '2026-08-13', notes: 'New Home dashboard. A \'\U0001F3E0 Home\' button now sits at the very top of the sidebar, above Logistics, and is where you land right after logging in (View Only still lands on their own Employees record as before \u2014 Home shows company-wide numbers that don\'t fit their \'your own records only\' access level, so it\'s hidden for them same as Fleet/Settings already are). The page itself shows 8 stat cards \u2014 Active Employees, Open Claims, Active Charges, Semana de Fondo progress, Income This Week, Fleet, Expiring Soon, and Unread Notifications \u2014 each tappable to jump straight to that section. Built entirely from data the app already has loaded for other tabs, so there\'s no extra loading time and the numbers are always in sync. Caught and fixed a real bug before shipping: Home isn\'t part of the existing Logistics/HR/Expiring/Administration group system, and an existing piece of sidebar logic didn\'t know that \u2014 it would\'ve stripped Home\'s highlight the instant you logged in and incorrectly lit up Logistics instead, even with Home\'s content the one actually on screen. Verified every number on the dashboard (open balances, this week\'s income window, savings-goal totals) by actually running the calculations with realistic fake data before shipping, not just checking the code reads correctly.' },
@@ -2719,7 +2733,7 @@
     function chargeBalance(charge, asOf) {
         const owed = Math.max(0, parseFloat(charge.amount) || 0);
         const viewingPast = asOf && asOf < todayStr();
-        if (!viewingPast && (charge.status === 'Absorbed' || charge.status === 'Tk from check' || charge.status === 'Paid')) return 0;
+        if (!viewingPast && (charge.status === 'Absorbed' || charge.status === 'Tk from check' || charge.status === 'Paid' || charge.status === 'Released')) return 0;
         if (charge.status === 'Queued') return owed;
         return buildChargeSchedule(charge, asOf || todayStr()).balanceAsOf;
     }
@@ -5795,6 +5809,7 @@
                         ${editable ? `<div class="rec-actions" style="margin-bottom:8px;">
                             <button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); editWeekDeposit('${c.charge_id}')">✎ Edit</button>
                             <button class="del-btn" onclick="event.stopPropagation(); deleteWeekDeposit('${c.charge_id}')">✕ Delete</button>
+                            ${c.status !== 'Released' ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}')">🔓 Release</button>` : ''}
                         </div>` : ''}
                         ${sched.rows.length ? `<div class="table-wrapper" style="max-height:260px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Saved that week</th><th style="text-align:left;">Total saved</th><th style="text-align:left;">Remaining</th></tr></thead><tbody>${scheduleRows}</tbody></table></div>` : ''}
                     </div>
@@ -5803,7 +5818,7 @@
         // Grouped by status (Deducting/Queued/Paid/Absorbed/Tk from check
         // order, matching Statement's own grouping) so it's easy to see
         // what's actively being deducted vs. already paid off at a glance.
-        const STATUS_ORDER = ['Deducting', 'Queued', 'Paid', 'Absorbed', 'Tk from check'];
+        const STATUS_ORDER = ['Deducting', 'Queued', 'Paid', 'Released', 'Absorbed', 'Tk from check'];
         const statusesPresent = [...new Set(list.map(c => c.status))].sort((a, b) => {
             const ia = STATUS_ORDER.indexOf(a), ib = STATUS_ORDER.indexOf(b);
             return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
@@ -5824,6 +5839,103 @@
 
         const body = document.getElementById('weekdeposit-tbody');
         if (body) body.innerHTML = rows || '<div style="text-align:center; color:var(--text-muted); padding:20px;">No deposits found.</div>';
+    }
+
+    // Releasing a Semana de Fondo account hands the employee a check for
+    // what they've saved — but if they still owe on any OTHER open claim
+    // or charge (a damage claim, a loan, anything except another Semana de
+    // Fondo record), that gets settled out of the savings first, same as
+    // it would be if the company were writing the check by hand. Computed
+    // entirely from balances the app already trusts (claimBalance/
+    // chargeBalance), oldest debt first, until either the debts or the
+    // savings run out — whichever comes first decides what's left to
+    // actually hand over.
+    let releaseStatementChargeId = null;
+
+    function computeReleaseStatement(chargeId) {
+        const wd = charges.find(c => c.charge_id === chargeId && c.charge_type === WEEK_DEPOSIT_TYPE);
+        if (!wd) return null;
+        const goal = Math.max(0, parseFloat(wd.amount) || 0);
+        const remaining = chargeBalance(wd);
+        const saved = Math.max(0, +(goal - remaining).toFixed(2));
+
+        const otherItems = [];
+        claims.filter(c => c.employee_id === wd.employee_id).forEach(c => {
+            const bal = claimBalance(c);
+            if (bal > 0.004) otherItems.push({ type: 'claim', id: c.claim_id, label: c.damage_type || 'Claim', balance: bal, start_date: c.start_date });
+        });
+        charges.filter(c => c.employee_id === wd.employee_id && c.charge_type !== WEEK_DEPOSIT_TYPE).forEach(c => {
+            const bal = chargeBalance(c);
+            if (bal > 0.004) otherItems.push({ type: 'charge', id: c.charge_id, label: c.charge_type || 'Charge', balance: bal, start_date: c.start_date });
+        });
+        otherItems.sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
+
+        let pool = saved;
+        const deductions = [];
+        otherItems.forEach(it => {
+            if (pool <= 0.004) return;
+            const applied = +Math.min(it.balance, pool).toFixed(2);
+            if (applied > 0.004) {
+                deductions.push({ ...it, applied });
+                pool = +(pool - applied).toFixed(2);
+            }
+        });
+        const netRelease = +Math.max(0, pool).toFixed(2);
+        return { charge: wd, goal, saved, deductions, netRelease };
+    }
+
+    function openReleaseStatement(chargeId) {
+        if (!canEdit()) return;
+        const stmt = computeReleaseStatement(chargeId);
+        if (!stmt) return;
+        releaseStatementChargeId = chargeId;
+        const emp = employees.find(e => e.id === stmt.charge.employee_id);
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : stmt.charge.employee_id;
+        const body = document.getElementById('release-statement-body');
+        body.innerHTML = `
+            <div class="rec-detail-grid" style="margin-bottom:10px;">
+                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k">Saved amount</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(stmt.saved)}</div></div>
+            </div>
+            ${stmt.deductions.length ? `
+                <div class="detail-subhead">Outstanding — deducted first</div>
+                <div style="font-size:12px; margin-bottom:8px;">
+                    ${stmt.deductions.map(d => `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">
+                        <span><span class="type-pill">${d.type === 'claim' ? 'Claim' : 'Charge'}</span> ${d.id} · ${escHtml(d.label)}</span>
+                        <span style="color:#dc2626; font-weight:700;">−${formatMoney(d.applied)}</span>
+                    </div>`).join('')}
+                </div>` : `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">No other outstanding claims or charges for this employee.</div>`}
+            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px; padding-top:8px; border-top:1px solid var(--border);">
+                <span>Net release to employee</span>
+                <span style="color:#059669;">${formatMoney(stmt.netRelease)}</span>
+            </div>`;
+        document.getElementById('release-statement-overlay').style.display = 'flex';
+    }
+
+    function closeReleaseStatement() {
+        releaseStatementChargeId = null;
+        document.getElementById('release-statement-overlay').style.display = 'none';
+    }
+
+    async function confirmRelease() {
+        if (!releaseStatementChargeId || !canEdit()) return;
+        const stmt = computeReleaseStatement(releaseStatementChargeId);
+        if (!stmt) return;
+        const btn = document.getElementById('release-confirm-btn');
+        btn.disabled = true; btn.textContent = 'Closing...';
+        const { error } = await supabaseClient.rpc('release_week_deposit', {
+            p_actor: currentUsername, p_charge_id: releaseStatementChargeId,
+            p_saved_amount: stmt.saved,
+            p_deductions: stmt.deductions.map(d => ({ type: d.type, id: d.id, amount: d.applied })),
+            p_net_release: stmt.netRelease
+        });
+        btn.disabled = false; btn.textContent = 'Close Account';
+        if (error) { alert('Error: ' + error.message); return; }
+        closeReleaseStatement();
+        await fetchChargesFromCloud();
+        await loadChargeHistory();
+        renderWeekDeposit();
+        alert(`Released. ${formatMoney(stmt.netRelease)} net to hand over${stmt.deductions.length ? `, ${formatMoney(stmt.saved - stmt.netRelease)} applied to ${stmt.deductions.length} outstanding record(s).` : '.'}`);
     }
 
     // ===== ADDITIONAL INCOME (mirror of charges, but ADDS to pay) =====
