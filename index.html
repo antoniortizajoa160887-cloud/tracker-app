@@ -2080,8 +2080,10 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.05';
+    const APP_VERSION = 'v3.07';
     const CHANGELOG = [
+        { version: 'v3.07', date: '2026-08-14', notes: 'Found the real cause of Release Paycheck going unresponsive: Release Last Paycheck never got the same smart starting checklist that Week in Deposit release already has \u2014 every claim/charge always opened fully unchecked, leaving no sensible default and no obvious way to reach a valid combination by hand. That\'s almost certainly how Francis Fernandez\'s screen ended up with both claims checked at once (over $2,769 selected against a $750 paycheck) \u2014 the button wasn\'t broken, it was correctly disabled because that combination genuinely doesn\'t fit, it just never offered a starting point that did. Fixed by sharing the same starting-checklist logic Week in Deposit already uses: now Release Last Paycheck opens with a sensible default too (whatever fits within the paycheck gets pre-checked, smallest first), recalculated once more the moment the real paycheck amount finishes auto-filling. Verified the exact Francis Fernandez numbers in Node: both claims correctly start unchecked (neither fits alone), the button is enabled, and the statement is immediately ready to review and confirm without any manual checkbox fiddling.' },
+        { version: 'v3.06', date: '2026-08-14', notes: 'Two things. First, verified Joel Acosta\'s \'Saved so far\' with the actual saved data and current code: it correctly computes to $100, not $1,020 \u2014 that specific bug was already fixed by an earlier update. Second, and this one was real: on the release screen, when the available money couldn\'t fully cover an outstanding claim or charge, the leftover amount wasn\'t clearly shown as being credited against it before the remainder got declared a loss \u2014 worked out to the same final numbers either way, but looked like the partial amount just vanished instead of being applied. Now it\'s explicit: for example, a $750 last check against a $2,769.78 claim clearly shows \'$750 applied first\' with \'$2,019.78 remaining will be declared a loss\' right on the statement before you confirm anything, exactly matching how the last-paycheck stage and the Week in Deposit stage are each supposed to work in sequence. Also removed the leftover \'(as of DATE)\' labels on a few Statement balance fields \u2014 the week you\'re viewing was already fully driven by the Prev/Next/This-week navigation (fixed properly back in v2.44), the label text just hadn\'t caught up. Verified the exact Francis Fernandez numbers in Node before shipping, confirmed the Active-employee early-release case (where a partial payment correctly stays open on its normal schedule) still works exactly as before.' },
         { version: 'v3.05', date: '2026-08-14', notes: 'Found the real reason Carlos Amador and Joel Acosta kept showing as needing a Last Paycheck release even after being released: a database function (get_employee_details) had a hardcoded list of fields that was never updated when Last Date Worked, Inactive Since, and the two Last Paycheck release fields were added over the last several versions \u2014 the data was always being saved correctly, the app just never actually received it back. This silently affected the whole eligibility system since it first shipped, not just this one report. Fixed. New Release History tab (HR & Payroll) \u2014 a permanent, searchable record of every release, Week in Deposit or Last Paycheck: original amount (broken out into base pay vs. additional income for Last Paycheck releases specifically), what got deducted toward other claims/charges, and the final amount that actually reached the employee, plus who released it and whether it was early. New \'\u23F0 Early Release\' button alongside the normal Release button, in both Week in Deposit and the Savings & Release Eligibility report \u2014 requires an explicit extra confirmation since it bypasses the normal 90/30-day wait on purpose. Medium accounts can now use both the normal and early Release actions, but neither executes immediately for them \u2014 both get sent to a new Pending Release Requests panel in Approvals, where an Administrator reviews the exact same settle/absorb/prepay plan the Medium user built and either approves it (which runs the real release immediately) or rejects it (nothing happens). An Administrator\'s own releases still execute directly as before, no approval needed. Every piece of this \u2014 the request/approve/reject flow, both release types, the income breakdown, direct-vs-approved tracking \u2014 was tested end-to-end against disposable test companies, including the specific numbers matching exactly, before any of it touched real data.' },
         { version: 'v3.04', date: '2026-08-14', notes: 'Fixed a real \'\$0 saved\' bug in the database (Joel Acosta and 5 others): each had genuine deposit history recorded week by week, but was stuck on a \'Queued\' status, which makes the app treat them as if nothing had started yet — corrected all 6 to \'Deducting\' to match their real history, logged in the audit trail. Second, bigger fix: an Inactive employee\'s claims and charges were still projecting deductions forever into the future, as if they were still earning a paycheck to deduct from \u2014 there isn\'t one. Every weekly schedule (Claims, Charges, Semana de Fondo, Statement, Payroll, everywhere) now stops projecting further deductions past an Inactive employee\'s actual last working day \u2014 real past history is completely untouched, this only stops inventing future weeks that were never going to happen. Verified directly against a real, currently-affected charge before shipping. Safe for the 46 already-Inactive employees predating this feature (no last-worked-date on file for most of them yet, so nothing changes for them until that gets filled in) and confirmed working correctly for the few that do have it.' },
         { version: 'v3.03', date: '2026-08-14', notes: 'Two fixes. The checkbox on the release screen was rendering as a huge, misaligned square instead of a normal small checkbox \u2014 root cause was the app\'s shared base styling for text fields (input/select/textarea) never excluded checkboxes, so it inherited full-width and a 44px minimum height meant for things like text and date fields. Added a proper override so any checkbox (this one, and any future ones) renders at a normal size and lines up with its label. Second: Release Last Paycheck now auto-fills the paycheck amount instead of starting blank \u2014 it adds up that employee\'s Daily Pay entries plus any Additional Income for the Sun\u2013Sat week containing their last worked day (not a full payroll recompute \u2014 claim/charge deductions are deliberately left out, since the release screen\'s own settle/prepay/absorb logic already handles those separately). The field stays fully editable so it can still be corrected against Statement/Payroll if something looks off, and if there\'s no Daily Pay history to derive a week from at all, it just asks for the amount by hand like before. Verified the week math and the income-eligibility filtering in Node before shipping.' },
@@ -6132,22 +6134,29 @@
         // Charges have no such field, so they only ever qualify through
         // an actual open balance.
         const items = pendingItemsForEmployee(wd.employee_id);
+        const stmt = { charge: wd, employeeId: wd.employee_id, goal, saved, items };
+        applyGreedyDefaultSelection(stmt);
+        items.sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
+        return stmt;
+    }
 
-
-        // Default selection: greedy smallest-amount-first, maximizing how
-        // many items land fully closed within the available savings — a
-        // starting point only. The person can freely check/uncheck any
-        // item afterward; this just saves them from starting blank.
-        const bySize = items.slice().sort((a, b) => (a.amount - b.amount) || String(a.start_date || '').localeCompare(String(b.start_date || '')));
-        let pool = saved;
+    // Shared by both release flows (Week in Deposit and Last Paycheck) so
+    // neither ever starts the checklist blank with the person left to
+    // work out by hand which combination fits — greedy smallest-amount-
+    // first, maximizing how many items land fully closed within what's
+    // available. Only a starting point: the person can freely check/
+    // uncheck anything afterward. Mutates stmt.items in place, so it's
+    // safe to call again later once stmt.saved changes (Last Paycheck's
+    // amount is only known after an async Daily Pay/Income lookup
+    // finishes, well after the overlay first opens with saved still 0).
+    function applyGreedyDefaultSelection(stmt) {
+        const bySize = stmt.items.slice().sort((a, b) => (a.amount - b.amount) || String(a.start_date || '').localeCompare(String(b.start_date || '')));
+        let pool = stmt.saved;
         const selectedKeys = new Set();
         bySize.forEach(it => {
             if (it.amount <= pool + 0.004) { selectedKeys.add(it.type + ':' + it.id); pool = +(pool - it.amount).toFixed(2); }
         });
-        items.forEach(it => { it.selected = selectedKeys.has(it.type + ':' + it.id); });
-        items.sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
-
-        return { charge: wd, employeeId: wd.employee_id, goal, saved, items };
+        stmt.items.forEach(it => { it.selected = selectedKeys.has(it.type + ':' + it.id); });
     }
 
     // Recomputed on load and after every checkbox toggle — never touches
@@ -6172,42 +6181,35 @@
         // while they still owe on an open claim or charge.
         let netRelease = insufficient ? 0 : +Math.max(0, stmt.saved - selectedTotal).toFixed(2);
 
-        // Only worth attempting a partial prepayment (leave the item open,
-        // let its normal weekly deduction keep going) if there's actually
-        // a normal weekly paycheck still coming for this employee to
-        // deduct from. That's never true for the Last Paycheck flow —
-        // it's a held FINAL paycheck by definition, there is no "next
-        // week" to fall back on — and for a Week in Deposit release, it's
-        // only true if the employee is still Active. An Inactive
-        // employee's Week in Deposit release is typically their last
-        // remaining chance at any income too, so anything not fully
-        // settled there goes straight to a declared loss (Absorbed)
-        // instead of sitting in Deducting forever with nothing left to
-        // ever actually collect it.
+        // Whatever's left over after fully settling the checked items is
+        // always credited against the smallest still-uncovered item —
+        // even a partial amount reduces what's owed, it's never just
+        // discarded because it can't cover the whole thing (Francis
+        // Fernandez's case: a $750 last check against a $2,769.78 claim
+        // still credits that $750 before the remaining $2,019.78 gets
+        // declared a loss — it doesn't just write off the full amount
+        // and leave the $750 unaccounted for). What differs by employee
+        // status is only what happens to the item AFTER that credit:
+        // if there's a real ongoing paycheck to fall back on (Active,
+        // Week in Deposit only — Last Paycheck is always a held FINAL
+        // paycheck, there's no "next week"), the item stays open and its
+        // normal weekly deduction continues from the smaller balance. If
+        // there's no ongoing paycheck, the remainder is immediately
+        // declared a loss too — same credit, just no waiting.
         const emp = employees.find(e => e.id === stmt.employeeId);
         const canPrepay = currentReleaseMode === 'wd' && emp && emp.status === 'Active';
 
-        // If there's genuinely not enough to cover everyone (insufficient)
-        // AND the employee has a real ongoing paycheck to fall back on,
-        // whatever's left over after fully settling the checked items is
-        // applied as a partial prepayment toward the smallest still-
-        // unchecked item, continuing to reduce what's owed. That item
-        // stays open (not Paid, not Absorbed) so its normal weekly
-        // deduction schedule just continues from the smaller balance. If
-        // there's no ongoing paycheck (Inactive, or Last Paycheck mode),
-        // no prepay happens — that item simply goes to the absorb list
-        // like everything else unselected, its full pending amount
-        // recorded as a declared loss.
-        let prepayTarget = null, prepayAmount = 0;
-        if (canPrepay && insufficient && !overCommitted) {
+        let prepayTarget = null, prepayAmount = 0, prepayStaysOpen = false;
+        if (insufficient && !overCommitted) {
             const pool = +(stmt.saved - selectedTotal).toFixed(2);
             const unselected = stmt.items.filter(i => !i.selected).sort((a, b) => (a.amount - b.amount) || String(a.start_date || '').localeCompare(String(b.start_date || '')));
             if (pool > 0.004 && unselected.length) {
                 prepayTarget = unselected[0];
                 prepayAmount = +Math.min(pool, prepayTarget.amount).toFixed(2);
+                prepayStaysOpen = canPrepay;
             }
         }
-        return { totalPending: +totalPending.toFixed(2), selectedTotal: +selectedTotal.toFixed(2), insufficient, overCommitted, netRelease, prepayTarget, prepayAmount };
+        return { totalPending: +totalPending.toFixed(2), selectedTotal: +selectedTotal.toFixed(2), insufficient, overCommitted, netRelease, prepayTarget, prepayAmount, prepayStaysOpen };
     }
 
     let currentReleaseStatement = null; // the live, mutable statement object backing the open overlay
@@ -6316,6 +6318,7 @@
         currentReleaseIsEarly = !!isEarly;
         currentReleaseEmployeeId = empId;
         currentReleaseStatement = { saved: 0, employeeId: empId, items: pendingItemsForEmployee(empId) };
+        applyGreedyDefaultSelection(currentReleaseStatement); // pool is $0 at this point, so nothing selects yet — re-run below once the real amount is known
         document.getElementById('release-statement-title').textContent = (isEarly ? '⏰ Early Release — ' : '') + 'Release Last Paycheck';
         document.getElementById('release-statement-subtitle').textContent = "Calculating this employee's final paycheck from Daily Pay and Additional Income…";
         document.getElementById('release-confirm-btn').textContent = currentUserRole === 'Medium' ? 'Send for Approval' : 'Release Paycheck';
@@ -6328,6 +6331,7 @@
             currentReleaseStatement.saved = auto.total;
             currentReleaseStatement.basePay = auto.basePay;
             currentReleaseStatement.additionalIncome = auto.additionalIncome;
+            applyGreedyDefaultSelection(currentReleaseStatement); // now that the real amount is known, pick a sensible starting checklist instead of leaving everything unchecked
         }
         document.getElementById('release-statement-subtitle').textContent = auto !== null
             ? "Auto-filled from this employee's Daily Pay + Additional Income for their last worked week — double-check against Statement/Payroll, then review before releasing. This can't be undone from here."
@@ -6375,17 +6379,20 @@
                 <div style="font-size:12px; margin-bottom:8px;">
                     ${stmt.items.map(it => {
                         const isPrepayTarget = totals.prepayTarget && totals.prepayTarget.type === it.type && totals.prepayTarget.id === it.id;
+                        const remainder = isPrepayTarget ? +(it.amount - totals.prepayAmount).toFixed(2) : 0;
                         return `<div style="display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border);">
                         <input type="checkbox" ${it.selected ? 'checked' : ''} onchange="toggleReleaseItem('${it.type}:${escJsAttr(it.id)}')">
                         <span style="flex:1; cursor:pointer; color:var(--secondary); text-decoration:underline;" onclick="jumpToReleaseItem('${it.type}','${escJsAttr(it.id)}')">
                             <span class="type-pill">${it.type === 'claim' ? 'Claim' : 'Charge'}</span> ${it.id} · ${escHtml(it.label)}
-                            ${isPrepayTarget ? `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} prepayment applied — ${formatMoney(it.amount - totals.prepayAmount)} remains, continues on its normal weekly schedule</span>` : ''}
+                            ${isPrepayTarget ? (totals.prepayStaysOpen
+                                ? `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} applied — ${formatMoney(remainder)} remains, continues on its normal weekly schedule</span>`
+                                : `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} applied first</span> — <span style="color:#dc2626; font-weight:700;">${formatMoney(remainder)} remaining will be declared a loss (Absorbed)</span>`) : ''}
                         </span>
                         <span style="font-weight:700; ${it.selected ? 'color:#dc2626;' : (isPrepayTarget ? 'color:#7c3aed;' : 'color:var(--text-muted);')}">${it.selected ? '−' : (isPrepayTarget ? '−' : '')}${formatMoney(it.selected ? it.amount : (isPrepayTarget ? totals.prepayAmount : it.amount))}</span>
                     </div>`;
                     }).join('')}
                 </div>
-                ${totals.insufficient ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Outstanding total (${formatMoney(totals.totalPending)}) is more than what's available.${totals.prepayTarget ? ' Whatever\'s left after settling checked items goes toward a partial prepayment above — none of it is released while debt remains.' : ''} Anything else left unchecked when you release will be marked <strong>Absorbed</strong> (a loss)${currentReleaseMode === 'paycheck' ? ', though it stays collectible from a future Week in Deposit release' : " — it can't stay open once this account closes"}.</div>` : ''}
+                ${totals.insufficient ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Outstanding total (${formatMoney(totals.totalPending)}) is more than what's available.${totals.prepayTarget ? ` Whatever's left after settling checked items is credited against the next item first${totals.prepayStaysOpen ? '' : ', then the remainder is declared a loss'} — none of it is released while debt remains.` : ''} Anything else left unchecked when you release will be marked <strong>Absorbed</strong> (a loss)${currentReleaseMode === 'paycheck' ? ', though it stays collectible from a future Week in Deposit release' : " — it can't stay open once this account closes"}.</div>` : ''}
                 ${totals.overCommitted ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Selected total (${formatMoney(totals.selectedTotal)}) is more than what's available — uncheck something first.</div>` : ''}
             ` : `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">No other outstanding or pending claims/charges for this employee.</div>`}
             <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px; padding-top:8px; border-top:1px solid var(--border);">
@@ -6431,13 +6438,22 @@
         if (totals.overCommitted) { alert('Uncheck something first — the selected total is more than what\'s available.'); return; }
         if (currentReleaseMode === 'paycheck' && stmt.saved <= 0) { alert('Enter the paycheck amount first.'); return; }
         const settle = stmt.items.filter(i => i.selected).map(i => ({ type: i.type, id: i.id, amount: i.amount }));
-        // The prepay target is excluded from absorb — it isn't a loss,
-        // it's a partial payment that leaves the item open with a smaller
-        // balance, continuing on its normal weekly schedule from there.
+        // When the prepay target stays open (a real ongoing paycheck to
+        // fall back on), it's excluded from absorb — it isn't a loss, it
+        // continues on its normal weekly schedule from the reduced
+        // balance. When it doesn't stay open (Last Paycheck, or an
+        // Inactive employee's Week in Deposit release), the credit and
+        // the loss happen in the same instant — so instead of a separate
+        // partial-prepay call, it goes through absorb with its FULL
+        // pending amount, which lands on the identical final balance as
+        // "credit the partial amount, then absorb the remainder" would
+        // (750 credited + 2,019.78 absorbed = the same 2,769.78 total
+        // either way) without needing two RPC calls to land on one number.
+        const prepayStaysOpen = totals.prepayTarget && totals.prepayStaysOpen;
         const absorb = totals.insufficient
-            ? stmt.items.filter(i => !i.selected && !(totals.prepayTarget && totals.prepayTarget.type === i.type && totals.prepayTarget.id === i.id)).map(i => ({ type: i.type, id: i.id, amount: i.amount }))
+            ? stmt.items.filter(i => !i.selected && !(prepayStaysOpen && totals.prepayTarget.type === i.type && totals.prepayTarget.id === i.id)).map(i => ({ type: i.type, id: i.id, amount: i.amount }))
             : [];
-        const prepay = totals.prepayTarget ? { type: totals.prepayTarget.type, id: totals.prepayTarget.id, amount: totals.prepayAmount } : null;
+        const prepay = prepayStaysOpen ? { type: totals.prepayTarget.type, id: totals.prepayTarget.id, amount: totals.prepayAmount } : null;
         const empId = currentReleaseMode === 'wd' ? stmt.employeeId : currentReleaseEmployeeId;
 
         const btn = document.getElementById('release-confirm-btn');
@@ -6967,7 +6983,7 @@
                         <div class="field"><label>Weeks to $0</label><div>${weeks}</div></div>
                         <div class="field"><label>Ends</label><div>${endDate}</div></div>
                         <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                        <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
+                        <div class="field"><label>Balance</label><div class="money">${formatMoney(bal)}</div></div>
                     </div>
                     <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printClaimSchedule('${c.claim_id}')">🖨 Print schedule</button>
                     ${sched.rows.length
@@ -6998,7 +7014,7 @@
                         <div class="field"><label>Weeks</label><div>${weeks}</div></div>
                         <div class="field"><label>Ends</label><div>${endDate}</div></div>
                         <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                        <div class="field"><label>Balance (as of ${asOf})</label><div class="money">${formatMoney(bal)}</div></div>
+                        <div class="field"><label>Balance</label><div class="money">${formatMoney(bal)}</div></div>
                         <div class="field"><label>Start</label><div>${ch.start_date || '-'}</div></div>
                     </div>
                     <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printChargeSchedule('${ch.charge_id}')">🖨 Print schedule</button>
@@ -7076,7 +7092,7 @@
                                 <div class="field"><label>Weeks</label><div>${weeks}</div></div>
                                 <div class="field"><label>Ends</label><div>${endDate}</div></div>
                                 <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                                <div class="field"><label>Remaining (as of ${asOf})</label><div class="money" style="color:#059669;">${formatMoney(rem)}</div></div>
+                                <div class="field"><label>Remaining</label><div class="money" style="color:#059669;">${formatMoney(rem)}</div></div>
                                 <div class="field"><label>Start</label><div>${i.start_date || '-'}</div></div>
                             </div>
                         </div>
