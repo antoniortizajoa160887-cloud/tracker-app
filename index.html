@@ -2059,8 +2059,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.03';
+    const APP_VERSION = 'v3.04';
     const CHANGELOG = [
+        { version: 'v3.04', date: '2026-08-14', notes: 'Fixed a real \'\$0 saved\' bug in the database (Joel Acosta and 5 others): each had genuine deposit history recorded week by week, but was stuck on a \'Queued\' status, which makes the app treat them as if nothing had started yet — corrected all 6 to \'Deducting\' to match their real history, logged in the audit trail. Second, bigger fix: an Inactive employee\'s claims and charges were still projecting deductions forever into the future, as if they were still earning a paycheck to deduct from \u2014 there isn\'t one. Every weekly schedule (Claims, Charges, Semana de Fondo, Statement, Payroll, everywhere) now stops projecting further deductions past an Inactive employee\'s actual last working day \u2014 real past history is completely untouched, this only stops inventing future weeks that were never going to happen. Verified directly against a real, currently-affected charge before shipping. Safe for the 46 already-Inactive employees predating this feature (no last-worked-date on file for most of them yet, so nothing changes for them until that gets filled in) and confirmed working correctly for the few that do have it.' },
         { version: 'v3.03', date: '2026-08-14', notes: 'Two fixes. The checkbox on the release screen was rendering as a huge, misaligned square instead of a normal small checkbox \u2014 root cause was the app\'s shared base styling for text fields (input/select/textarea) never excluded checkboxes, so it inherited full-width and a 44px minimum height meant for things like text and date fields. Added a proper override so any checkbox (this one, and any future ones) renders at a normal size and lines up with its label. Second: Release Last Paycheck now auto-fills the paycheck amount instead of starting blank \u2014 it adds up that employee\'s Daily Pay entries plus any Additional Income for the Sun\u2013Sat week containing their last worked day (not a full payroll recompute \u2014 claim/charge deductions are deliberately left out, since the release screen\'s own settle/prepay/absorb logic already handles those separately). The field stays fully editable so it can still be corrected against Statement/Payroll if something looks off, and if there\'s no Daily Pay history to derive a week from at all, it just asks for the amount by hand like before. Verified the week math and the income-eligibility filtering in Node before shipping.' },
         { version: 'v3.02', date: '2026-08-14', notes: 'Fixed a real gap in last update\'s prepayment logic, caught before it ever hit a real release: the \'leftover becomes a prepayment, the item stays open on its normal weekly schedule\' behavior only makes sense for an employee who\'s still actively earning a paycheck to deduct from \u2014 it was wrongly applying to Inactive (quit/fired) employees too, where there\'s no more weekly income to ever actually continue collecting from. Now: for an Inactive employee (or the Last Paycheck release, which by definition only ever applies to someone who\'s already gone), anything not fully covered goes straight to a declared loss instead \u2014 no dangling half-open balance waiting on a paycheck that will never come. The prepay-then-continue behavior still applies correctly when releasing Week in Deposit early for a still-Active employee, since there\'s a real next paycheck for that case. Also closed a second, related leak while fixing this: previously, whenever a release couldn\'t cover everything but the leftover fragment didn\'t qualify for a prepayment, that fragment was quietly still counted as \'net release to the employee\' \u2014 now nothing ever reaches the employee while any claim or charge remains outstanding, full stop, regardless of why. Verified all four cases in Node (Active gets a prepayment, Inactive goes straight to loss, Last Paycheck always goes straight to loss, and a genuine surplus with nothing outstanding still releases correctly) before re-confirming the database side against a throwaway company.' },
         { version: 'v3.01', date: '2026-08-14', notes: 'Two more pieces of the release rules. First: when the last-paycheck (30-day) check doesn\'t fully cover what an employee owes, whatever\'s left over after fully settling what it CAN cover no longer gets released to the employee \u2014 it\'s now held back and applied as a partial prepayment toward the next outstanding claim or charge instead. That item stays open (not Paid, not Absorbed) with a smaller balance, and its normal weekly deduction schedule just continues from there automatically \u2014 no new mechanism needed for that part, it\'s exactly how weekly deductions already work. The release statement shows this prepayment as its own line so it\'s visible before confirming, not something that just quietly happens. Money only ever reaches the employee once every single outstanding claim or charge is genuinely covered with nothing left pending. Same logic applies to a Week in Deposit release, not just the 30-day check. Second: a standing reminder now appears on Home starting Wednesday each week (through Saturday) whenever an Inactive employee\'s last paycheck is eligible for release but nobody\'s made a decision on it yet \u2014 deliberately has no dismiss button, since it\'s meant to keep showing until someone actually acts on it via the Savings & Release Eligibility report, not just gets clicked away. (The Release button in Week in Deposit was already correctly hidden from View Only accounts \u2014 checked and confirmed, no change needed there.) Tested the prepayment math end to end against a throwaway company: a $350 charge correctly dropped to $250 and stayed in its normal Deducting status with its weekly rate untouched, ready to keep collecting on its own.' },
@@ -2636,10 +2637,19 @@
         let bal = owed;
         let d = new Date(claim.start_date + 'T00:00:00Z');
         if (isNaN(d)) return { rows, owed, balanceAsOf: owed, endDate: null };
+        // Genuinely different from the "resolved status" shortcuts this
+        // function deliberately avoids above — an Inactive employee has
+        // no more paycheck to ever deduct from, so weeks past their last
+        // real one aren't just being hidden for display, they were never
+        // going to happen at all. Stopping the walk here keeps Statement/
+        // printing from projecting phantom future deductions too, not
+        // just the balance number.
+        const incomeStopped = incomeStoppedDate(claim.employee_id);
         let guard = 0;
         while (bal > 0.004 && guard < 2000) {
             guard++;
             const ds = d.toISOString().split('T')[0];
+            if (incomeStopped && ds > incomeStopped) break;
             if (isPausedOn(claim, ds)) {
                 rows.push({ date: ds, deducted: 0, balance: +bal.toFixed(2), paused: true });
             } else {
@@ -2734,10 +2744,15 @@
         let bal = owed;
         let d = new Date(charge.start_date + 'T00:00:00Z');
         if (isNaN(d)) return { rows, owed, balanceAsOf: owed, endDate: null };
+        // See buildClaimSchedule above — an Inactive employee has no more
+        // paycheck to ever deduct from, so the walk stops at their last
+        // real one instead of projecting phantom future weeks.
+        const incomeStopped = incomeStoppedDate(charge.employee_id);
         let guard = 0;
         while (bal > 0.004 && guard < 2000) {
             guard++;
             const ds = d.toISOString().split('T')[0];
+            if (incomeStopped && ds > incomeStopped) break;
             if (isChargePausedOn(charge, ds)) {
                 rows.push({ date: ds, deducted: 0, balance: +bal.toFixed(2), paused: true });
             } else {
@@ -5942,6 +5957,25 @@
     function effectiveLastDateWorked(empId) {
         const d = getEmpDetail(empId);
         return (d && d.last_date_worked) || lastDailyPayWorked[empId] || null;
+    }
+    // Once an employee is Inactive, there's no more paycheck to ever
+    // deduct from — so any claim/charge schedule for them shouldn't keep
+    // projecting further weekly deductions past their last real paycheck,
+    // even though the schedule math itself would happily keep going
+    // forever otherwise. Returns the date after which a schedule should
+    // stop walking forward for this employee, or null if they're Active
+    // (no cutoff — deductions proceed normally) or if there's genuinely
+    // no data to determine one from (safe no-op, doesn't restrict
+    // anything rather than guessing wrong). Falls back through
+    // last_date_worked → Daily Pay-derived date → inactive_since, in that
+    // order, matching the same chain weekDepositEligibleDate/
+    // lastWeekPayEligibleDate already use, so "when did income stop" is
+    // answered consistently everywhere in the app rather than by three
+    // slightly different definitions.
+    function incomeStoppedDate(empId) {
+        const emp = employees.find(e => e.id === empId);
+        if (!emp || emp.status !== 'Inactive') return null;
+        return effectiveLastDateWorked(empId) || getEmpDetail(empId).inactive_since || null;
     }
     function weekDepositEligibleDate(empId) {
         const lw = effectiveLastDateWorked(empId);
