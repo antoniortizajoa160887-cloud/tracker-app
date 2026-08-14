@@ -698,8 +698,8 @@
 
 <div id="release-statement-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeReleaseStatement()">
     <div style="background:var(--surface); border-radius:10px; padding:20px; max-width:460px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
-        <div style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:4px;">Release Semana de Fondo</div>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Review before closing this account — this can't be undone from here.</div>
+        <div id="release-statement-title" style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:4px;">Release Semana de Fondo</div>
+        <div id="release-statement-subtitle" style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Review before closing this account — this can't be undone from here.</div>
         <div id="release-statement-body"></div>
         <div style="display:flex; gap:8px; margin-top:16px;">
             <button type="button" class="btn-small" style="flex:1; margin:0; background:#64748b;" onclick="closeReleaseStatement()">Cancel</button>
@@ -850,6 +850,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">Savings &amp; Release Eligibility</button>
 </div>
 <div class="tabs sub-tabs" id="grp-expiring">
     <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
@@ -891,6 +892,7 @@
 
 <!-- TAB: HOME -->
 <div id="tab-home" class="tab-content active">
+    <div id="release-decision-reminder" style="display:none; margin-bottom:12px;"></div>
     <div class="panel">
         <h2 id="home-welcome" style="margin-bottom:2px;">Welcome</h2>
         <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Here's where things stand right now.</div>
@@ -1070,6 +1072,7 @@
 
 <!-- TAB 3: EMPLOYEES -->
 <div id="tab-employees" class="tab-content">
+    <div id="inactivity-flags-banner" style="display:none; margin-bottom:12px;"></div>
     <div class="panel">
         <h2 id="employee-form-title" class="panel-head" onclick="toggleCollapse(this)"><span id="employee-form-titletext" data-i18n="new_contact">New Contact</span> <span class="caret">&#9662;</span></h2>
         <div class="id-banner">
@@ -1090,6 +1093,13 @@
             <div class="grid-form">
                 <div class="field"><label data-i18n="phone">Phone #</label><input type="tel" id="emp-phone" placeholder="(555) 555-5555"></div>
                 <div class="field"><label data-i18n="email">Email</label><input type="email" id="emp-email" placeholder="name@example.com"></div>
+                <div class="field">
+                    <label>Last Date Worked</label>
+                    <div style="display:flex; gap:4px;">
+                        <input type="date" id="emp-lastworked" style="flex:1;">
+                        <button type="button" class="btn-small" style="margin:0; background:var(--navy); white-space:nowrap;" onclick="pullLastDateWorkedFromDailyPay()" title="Fill in from this employee's most recent Daily Pay entry">⤵ From Daily Pay</button>
+                    </div>
+                </div>
             </div>
             <div class="form-section-label" style="margin-top:10px;" data-i18n="identification">Identification</div>
             <div class="grid-form">
@@ -1608,6 +1618,20 @@
     </div>
 </div>
 
+<!-- TAB: SAVINGS & RELEASE ELIGIBILITY REPORT -->
+<div id="tab-savingsreport" class="tab-content">
+    <div class="panel">
+        <h2>Savings &amp; Release Eligibility</h2>
+        <div class="note-box">
+            Checks are issued Thursdays and handed over Saturdays. Week in Deposit can't be released earlier than <strong>90 days</strong> after an employee's Last Date Worked; that same employee's last week worked pay can't be released earlier than <strong>30 days</strong> after it. "Pending/outstanding" includes any claim or charge — any status — with a real balance, or (claims only) a leftover absorbed amount.
+        </div>
+        <div class="stat-grid" id="savingsreport-stats-grid" style="margin-top:8px;"></div>
+    </div>
+    <div class="panel">
+        <div id="savingsreport-tbody"></div>
+    </div>
+</div>
+
 <!-- TAB: MESSAGES -->
 <div id="tab-messages" class="tab-content">
     <div class="msg-shell">
@@ -2034,8 +2058,11 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v2.98';
+    const APP_VERSION = 'v3.01';
     const CHANGELOG = [
+        { version: 'v3.01', date: '2026-08-14', notes: 'Two more pieces of the release rules. First: when the last-paycheck (30-day) check doesn\'t fully cover what an employee owes, whatever\'s left over after fully settling what it CAN cover no longer gets released to the employee \u2014 it\'s now held back and applied as a partial prepayment toward the next outstanding claim or charge instead. That item stays open (not Paid, not Absorbed) with a smaller balance, and its normal weekly deduction schedule just continues from there automatically \u2014 no new mechanism needed for that part, it\'s exactly how weekly deductions already work. The release statement shows this prepayment as its own line so it\'s visible before confirming, not something that just quietly happens. Money only ever reaches the employee once every single outstanding claim or charge is genuinely covered with nothing left pending. Same logic applies to a Week in Deposit release, not just the 30-day check. Second: a standing reminder now appears on Home starting Wednesday each week (through Saturday) whenever an Inactive employee\'s last paycheck is eligible for release but nobody\'s made a decision on it yet \u2014 deliberately has no dismiss button, since it\'s meant to keep showing until someone actually acts on it via the Savings & Release Eligibility report, not just gets clicked away. (The Release button in Week in Deposit was already correctly hidden from View Only accounts \u2014 checked and confirmed, no change needed there.) Tested the prepayment math end to end against a throwaway company: a $350 charge correctly dropped to $250 and stayed in its normal Deducting status with its weekly rate untouched, ready to keep collecting on its own.' },
+        { version: 'v3.00', date: '2026-08-14', notes: 'New no-show flag on Employees: any Active Daily Pay employee whose most recent worked day falls before Thursday of the last fully-completed week (i.e. they had no work logged Thursday, Friday, or Saturday of that week \u2014 3 days in a row) now shows a warning banner at the top of Employees listing them by name, with a one-click \'Mark Inactive\' that ties straight into last week\'s release rules: it locks in today as their departure date and immediately starts the clock on holding their Week in Deposit savings (90 days) and last paycheck (30 days), exactly like manually flipping their status already did. A \'Dismiss\' option is also there for a quick false alarm, though it only lasts the session \u2014 the flag comes back next login if nothing\'s actually changed. Scoped to Daily Pay employees only (Weekly and Provider Pay don\'t log daily attendance the same way, so the check wouldn\'t mean anything for them), and never shown to View Only accounts. Verified the boundary case specifically in Node before shipping \u2014 someone who worked exactly on that cutoff Thursday correctly does NOT get flagged, only someone whose last day was before it.' },
+        { version: 'v2.99', date: '2026-08-13', notes: 'Big one: release-eligibility rules and a new report to go with them. Employees now have a Last Date Worked field (pull it straight from Daily Pay with one click, or type it in) alongside the existing Start Date. Flipping an employee to Inactive for the first time locks in today as their departure date and auto-fills Last Date Worked from Daily Pay if it wasn\'t already set \u2014 flipping status back and forth later never resets that clock once it\'s started. Two release rules now run off that date: Week in Deposit savings can\'t be released earlier than 90 days after it, and an Inactive employee\'s held last paycheck can\'t be released earlier than 30 days after it \u2014 both enforced as a hard block on the release buttons themselves, not just a note in a report. New HR & Payroll \u2192 Savings & Release Eligibility report shows everyone with open savings or an unreleased last paycheck, what they still owe elsewhere, and the earliest date for each \u2014 including the actual Thursday it\'d be issued and Saturday it\'d be handed over. The release screen itself got real upgrades: every claim or charge listed is now clickable to go review it first; \'pending\' now means any claim or charge regardless of status with either a real balance or a leftover absorbed amount (broadened from just Tk-from-check); when there isn\'t enough to cover everything, checkboxes default to settling as many items as possible at 100% (smallest first) but you can freely change the selection; anything left uncovered gets marked Absorbed instead of just left dangling \u2014 and critically, that absorbed amount is now remembered accurately so a later release (say, Week in Deposit, after an earlier last-paycheck release couldn\'t cover everything) gets a real chance to collect it, exactly as asked. The last paycheck\'s dollar amount is entered by hand in the release screen rather than auto-calculated \u2014 reconstructing an accurate historical week\'s net pay safely wasn\'t something to guess at for a real money release, so it reads off whatever Statement/Payroll already shows for that week. Found and fixed a real piece of technical debt while extending this: an old, superseded version of the release function was still sitting live as a second overload of the same name \u2014 dropped it explicitly rather than just replacing the new one, since Postgres treats different-signature functions as entirely separate until told otherwise. Every new database function was tested end to end against a disposable company \u2014 settle/absorb combinations, double-release blocking, an already-absorbed item correctly getting picked back up by a later release, wrong-role rejection \u2014 before any of it touched real data.' },
         { version: 'v2.98', date: '2026-08-13', notes: 'New \'\U0001F513 Release\' button on each Semana de Fondo record in Week in Deposit, for when the savings are actually handed over as a check and the account needs to close. Clicking it opens a statement, not an immediate action: it checks whether that employee has any OTHER outstanding claim or charge (anything besides another Semana de Fondo record), and if so, shows exactly how much of the savings would go toward settling those first \u2014 oldest debt first \u2014 before showing the real net amount left to hand over. Only pressing \'Close Account\' on that statement actually does anything. Settling another claim/charge this way actually reduces what it shows as owed everywhere else in the app (Payroll included), not just a note saying it happened. A released account is fully excluded from every balance calculation in the app going forward (Payroll deductions, Home dashboard, Week in Deposit totals) while still correctly showing its real historical numbers if you look back at a past week from before it was released. Tested the whole flow \u2014 savings with two different outstanding debts, oldest-first settling, double-release blocked, wrong-role blocked \u2014 against a throwaway company before this ever touched real data.' },
         { version: 'v2.97', date: '2026-08-13', notes: 'Four fixes. Income and Route Tracker were the only two places still using the old popup-based edit flow (a sequence of \'leave unchanged / press Cancel to stop\' prompts) \u2014 both now repopulate the form at the top and switch to an Editing mode with Save/Cancel, exactly like Claims and Charges already work; checked and confirmed nothing else in the app still uses the old popup style. Claims, Charges, and Income were all silently dropping their Notes field from the expandable detail card \u2014 fixed on all three, and traced further into Payroll: its per-employee breakdown wasn\'t even fetching notes onto the claim/charge/income line items it builds, so there was nothing to show even before the display gap \u2014 fixed both the data and the display, notes now appear under the relevant line in a payslip breakdown too. Bills Payable\'s Vendor field now suggests names from the Provider Pay roster as you type (a normal autocomplete, not a hard requirement) \u2014 pick a provider already in the system, or type any external vendor name freely, same field either way.' },
         { version: 'v2.96', date: '2026-08-13', notes: 'Two things. First, a real bug: hovering felt like the cause but it wasn\'t \u2014 the whole sidebar area for an open group (Notifications, Messages, or whichever section was expanded) was rendering with a solid white background at rest, making pale sidebar text unreadable against it. Root cause was a shared CSS class carrying over a background meant for a completely different, light-background part of the app; fixed by resetting it back to transparent for the sidebar specifically. Second: a new Financial section \u2014 \'\U0001F4B0 Financial\' now sits in the sidebar with two tabs. Invoices lets you build a real itemized invoice (date, description, rate, qty, extra, amount per line, auto-totaling as you go) for a customer, matching how your actual invoice templates are laid out; Bills Payable is a lighter-weight running list of what you owe vendors (amount, due date, paid/unpaid). Both are hidden from View Only accounts, same reasoning as Fleet. Caught a real numbering bug before shipping this: the same ID-numbering approach from v2.91\'s Semana de Fondo fix (used again here for invoice/bill numbers) breaks specifically for an ID prefix that starts with a digit \u2014 which \'3OFL\' does \u2014 silently grabbing the wrong number and risking a duplicate ID. Found it by actually running the numbering logic in Node before shipping, not just reading the code; confirmed it hadn\'t caused real damage yet (the only place it was already live, the Week in Deposit import, hasn\'t been re-run since v2.91), and fixed the shared root cause everywhere it\'s used.' },
@@ -2788,6 +2815,7 @@
         if(tabName === 'tab-settings') renderSettingsLists();
         if(tabName === 'tab-expiring') renderExpiringDocuments();
         if(tabName === 'tab-invoices') renderInvoices();
+        if(tabName === 'tab-savingsreport') renderSavingsReleaseReport();
         if(tabName === 'tab-bills') renderBills();
         if(tabName === 'tab-changelog') renderChangelogTab();
         if(tabName === 'tab-home') renderHomeDashboard();
@@ -2814,7 +2842,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll'],
+        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-savingsreport'],
         'grp-expiring': ['tab-expiring'],
         'grp-financial': ['tab-invoices', 'tab-bills'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
@@ -2975,7 +3003,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-home','btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay','btn-tab-invoices','btn-tab-bills'].forEach(id => {
+            ['btn-tab-home','btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay','btn-tab-invoices','btn-tab-bills','btn-tab-savingsreport'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -3427,6 +3455,8 @@
         await fetchVehiclesFromCloud();
         await fetchInvoicesFromCloud();
         await fetchBillsFromCloud();
+        await fetchLastDailyPayWorked();
+        if (typeof renderInactivityFlagsBanner === 'function') renderInactivityFlagsBanner();
         if (typeof renderHomeDashboard === 'function') renderHomeDashboard();
     }
 
@@ -3642,7 +3672,8 @@
             work_permit_exp: document.getElementById('emp-wpexp').value || null,
             medical_card: document.getElementById('emp-medcard').value || 'No',
             medical_card_exp: document.getElementById('emp-medexp').value || null,
-            notes: document.getElementById('emp-notes').value.trim()
+            notes: document.getElementById('emp-notes').value.trim(),
+            last_date_worked: document.getElementById('emp-lastworked').value || null
         };
         employeeDetails[empId] = payload; // optimistic
         try {
@@ -3651,7 +3682,8 @@
                 p_id_type: payload.id_type, p_driver_license: payload.driver_license, p_dl_expiration: payload.dl_expiration,
                 p_work_permit: payload.work_permit, p_work_permit_exp: payload.work_permit_exp,
                 p_medical_card: payload.medical_card, p_medical_card_exp: payload.medical_card_exp,
-                p_notes: payload.notes, p_phone: payload.phone, p_email: payload.email
+                p_notes: payload.notes, p_phone: payload.phone, p_email: payload.email,
+                p_last_date_worked: payload.last_date_worked
             });
             if (error && isMissingTable(error)) {
                 empDetailsMissing = true;
@@ -3776,6 +3808,7 @@
         document.getElementById('emp-idtype').value = d.id_type || 'SSN';
         document.getElementById('emp-phone').value = d.phone || '';
         document.getElementById('emp-email').value = d.email || '';
+        document.getElementById('emp-lastworked').value = d.last_date_worked || '';
         document.getElementById('emp-dl').value = d.driver_license || '';
         document.getElementById('emp-dlexp').value = d.dl_expiration || '';
         document.getElementById('emp-wp').value = d.work_permit || '';
@@ -4030,6 +4063,7 @@
     }
 
     function renderEmployees() {
+        renderInactivityFlagsBanner();
         const query = (document.getElementById('employee-search')?.value || '').toLowerCase();
         const statusFilter = document.getElementById('employee-status-filter')?.value || '';
         let list = employees.filter(emp => {
@@ -4139,6 +4173,7 @@
         if (!canEdit()) return;
         const emp = employees.find(e => e.id === id);
         if (!emp || emp.status === newStatus) return;
+        const wasActive = emp.status !== 'Inactive';
         const { error } = await supabaseClient.rpc('edit_employee', {
             p_actor: currentUsername, p_id: id,
             p_first: emp.first_name, p_last: emp.last_name, p_type: emp.person_type,
@@ -4146,8 +4181,20 @@
             p_start: emp.start_date || null, p_pay: parseFloat(emp.pay_rate) || 0,
             p_ssn: null, p_status: newStatus
         });
-        if (error) { alert('Error: ' + error.message); fetchEmployeesFromCloud(); }
-        else fetchEmployeesFromCloud();
+        if (error) { alert('Error: ' + error.message); fetchEmployeesFromCloud(); return; }
+        // First time going Inactive starts the 90/30-day release clocks —
+        // locks in today as inactive_since and, if nothing's set by hand
+        // already, locks in the Daily Pay-derived last-worked date too.
+        // Flipping status back and forth again later doesn't reset this
+        // (mark_employee_inactive_since only ever fills in a blank).
+        if (wasActive && newStatus === 'Inactive') {
+            await supabaseClient.rpc('mark_employee_inactive_since', {
+                p_actor: currentUsername, p_employee_id: id,
+                p_inactive_since: todayStr(), p_derived_last_worked: lastDailyPayWorked[id] || null
+            });
+            await loadEmployeeDetails();
+        }
+        fetchEmployeesFromCloud();
     }
 
     // ---- Employee CSV export / import ----------------------------------
@@ -5841,6 +5888,131 @@
         if (body) body.innerHTML = rows || '<div style="text-align:center; color:var(--text-muted); padding:20px;">No deposits found.</div>';
     }
 
+    // ===== Release eligibility (90-day Week in Deposit / 30-day last week worked) =====
+    let lastDailyPayWorked = {}; // employee_id -> 'YYYY-MM-DD', derived from Daily Pay's most recent non-OFF entry
+
+    async function fetchLastDailyPayWorked() {
+        try {
+            const { data, error } = await supabaseClient.rpc('get_last_daily_pay_worked', { p_actor: currentUsername, p_company: currentCompany });
+            if (error) { console.error('get_last_daily_pay_worked:', error); return; }
+            const map = {};
+            (data || []).forEach(r => {
+                const sun = sundayFromWeekKey(r.year, r.week);
+                const d = new Date(sun); d.setUTCDate(d.getUTCDate() + (parseInt(r.day_index, 10) || 0));
+                map[r.employee_id] = d.toISOString().split('T')[0];
+            });
+            lastDailyPayWorked = map;
+        } catch (e) { console.error('fetchLastDailyPayWorked:', e); }
+    }
+
+    function pullLastDateWorkedFromDailyPay() {
+        if (!editingEmpId) { alert('Save this employee first, then edit them to pull from Daily Pay.'); return; }
+        const found = lastDailyPayWorked[editingEmpId];
+        if (!found) { alert('No Daily Pay entries found for this employee.'); return; }
+        document.getElementById('emp-lastworked').value = found;
+    }
+
+    function addDaysStr(dateStr, days) {
+        const d = new Date(dateStr + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() + days);
+        return d.toISOString().split('T')[0];
+    }
+    // Checks are issued Thursdays and handed over Saturdays — given an
+    // earliest-ELIGIBLE date (the 90/30-day rule's result), the earliest a
+    // check can actually be ISSUED is the next Thursday on or after that
+    // date, and HANDED OVER is the Saturday right after (2 days later,
+    // same week's check run).
+    function nextThursdayOnOrAfter(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00Z');
+        const THU = 4; // Sun=0..Sat=6
+        const add = (THU - d.getUTCDay() + 7) % 7;
+        d.setUTCDate(d.getUTCDate() + add);
+        return d.toISOString().split('T')[0];
+    }
+
+    // The employee's own "Last Date Worked" field (manually set or pulled
+    // from Daily Pay) drives both rules — Week in Deposit needs 90 days
+    // from it, the last week worked's pay needs 30. Falls back to the
+    // live Daily Pay-derived date if the employee field itself was never
+    // filled in, so the report still shows something useful for anyone
+    // Daily Pay already has history for.
+    function effectiveLastDateWorked(empId) {
+        const d = getEmpDetail(empId);
+        return (d && d.last_date_worked) || lastDailyPayWorked[empId] || null;
+    }
+    function weekDepositEligibleDate(empId) {
+        const lw = effectiveLastDateWorked(empId);
+        return lw ? addDaysStr(lw, 90) : null;
+    }
+    function lastWeekPayEligibleDate(empId) {
+        const lw = effectiveLastDateWorked(empId);
+        return lw ? addDaysStr(lw, 30) : null;
+    }
+
+    // No-show detection: flags a Daily Pay employee whose most recent
+    // actual worked day falls before Thursday of the last FULLY completed
+    // week — i.e. Thu/Fri/Sat of that week all show no work, which is the
+    // "3 days in a row" the flag is watching for. Anchored to a completed
+    // week (not just "3 calendar days ago") so someone doesn't get
+    // flagged mid-week before Thursday/Friday/Saturday even happen yet —
+    // only scoped to Daily Pay employees, since Weekly/Provider pay types
+    // don't log daily attendance the same way and this check wouldn't
+    // mean anything for them. A flag clears itself the moment the
+    // employee is no longer Active (already Inactive, or shows up in
+    // Daily Pay again and their last-worked date moves forward).
+    function priorWeekThursdayStr() {
+        const currentWeekSunday = weekStartSunday(new Date());
+        const priorSat = new Date(currentWeekSunday); priorSat.setUTCDate(priorSat.getUTCDate() - 1);
+        const priorThu = new Date(priorSat); priorThu.setUTCDate(priorThu.getUTCDate() - 2);
+        return priorThu.toISOString().split('T')[0];
+    }
+    function flaggedForInactivityReview(empId) {
+        const emp = employees.find(e => e.id === empId);
+        if (!emp || emp.status !== 'Active') return false;
+        if (getPayType(empId) !== 'Daily') return false;
+        const lastWorked = lastDailyPayWorked[empId];
+        if (!lastWorked) return false; // no Daily Pay history at all yet — nothing to compare, don't flag a brand-new hire
+        return lastWorked < priorWeekThursdayStr();
+    }
+    function getInactivityFlaggedEmployees() {
+        return employees.filter(e => flaggedForInactivityReview(e.id));
+    }
+    let dismissedInactivityFlags = new Set(); // session-only — reappears next login, doesn't require a DB write to "snooze"
+    function dismissInactivityFlag(empId) {
+        dismissedInactivityFlags.add(empId);
+        renderInactivityFlagsBanner();
+    }
+    async function confirmMarkInactiveFromFlag(empId) {
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return;
+        const name = `${emp.first_name} ${emp.last_name}`;
+        if (!confirm(`Mark ${name} as Inactive? This locks in today as their departure date (if not already set) and holds their Week in Deposit savings (90 days) and last paycheck (30 days) per the release rules.`)) return;
+        await setEmployeeStatus(empId, 'Inactive');
+        dismissedInactivityFlags.delete(empId);
+        renderInactivityFlagsBanner();
+    }
+    function renderInactivityFlagsBanner() {
+        const el = document.getElementById('inactivity-flags-banner');
+        if (!el) return;
+        if (!canEdit()) { el.innerHTML = ''; el.style.display = 'none'; return; } // View Only never sees this — it's an admin action prompt, and their own employees list is scoped to just themselves anyway
+        const flagged = getInactivityFlaggedEmployees().filter(e => !dismissedInactivityFlags.has(e.id));
+        if (!flagged.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.innerHTML = `
+            <div class="note-box" style="border-left:3px solid #dc2626;">
+                <strong>⚠ ${flagged.length} employee(s) haven't shown up in Daily Pay for 3+ days in a row (through last week)</strong>
+                <div style="margin-top:8px;">
+                    ${flagged.map(e => `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12px;">
+                        <span>${escHtml(e.first_name + ' ' + e.last_name)} — last worked ${lastDailyPayWorked[e.id] || 'unknown'}</span>
+                        <span style="display:flex; gap:6px;">
+                            <button type="button" class="btn-small" style="margin:0; background:#dc2626;" onclick="confirmMarkInactiveFromFlag('${escJsAttr(e.id)}')">Mark Inactive</button>
+                            <button type="button" class="btn-small" style="margin:0; background:#64748b;" onclick="dismissInactivityFlag('${escJsAttr(e.id)}')">Dismiss</button>
+                        </span>
+                    </div>`).join('')}
+                </div>
+            </div>`;
+    }
+
     // Releasing a Semana de Fondo account hands the employee a check for
     // what they've saved — but if they still owe on any OTHER open claim
     // or charge (a damage claim, a loan, anything except another Semana de
@@ -5852,6 +6024,38 @@
     // actually hand over.
     let releaseStatementChargeId = null;
 
+    // Shared by the release statement AND the Savings & Release
+    // Eligibility report — one place computing "what does this employee
+    // still owe" so the two views can never quietly disagree with each
+    // other.
+    function pendingItemsForEmployee(empId) {
+        const items = [];
+        claims.filter(c => c.employee_id === empId).forEach(c => {
+            const bal = claimBalance(c);
+            const absorbedAmt = parseFloat(c.absorbed_amount) || 0;
+            const pending = bal > 0.004 ? bal : (absorbedAmt > 0.004 ? absorbedAmt : 0);
+            if (pending > 0.004) items.push({ type: 'claim', id: c.claim_id, label: c.damage_type || 'Claim', amount: +pending.toFixed(2), start_date: c.start_date });
+        });
+        // A charge has no absorbed_amount field to fall back on the way a
+        // claim does, but the same "still owed even though it shows as
+        // resolved" case exists here too: a charge previously marked
+        // Absorbed by an earlier release (the 30-day last-week-worked
+        // check, for instance) still has its original target sitting in
+        // `amount` — chargeBalance() reports $0 for it via the normal
+        // Absorbed-status shortcut, but that doesn't mean it was actually
+        // collected, only that an earlier attempt couldn't cover it. That
+        // uncollected amount needs to keep surfacing here so a later
+        // release (Week in Deposit) gets a chance to cover it too, same
+        // as an absorbed claim already does.
+        charges.filter(c => c.employee_id === empId && c.charge_type !== WEEK_DEPOSIT_TYPE).forEach(c => {
+            const bal = chargeBalance(c);
+            const targetAmt = Math.max(0, parseFloat(c.amount) || 0);
+            const pending = bal > 0.004 ? bal : (c.status === 'Absorbed' && targetAmt > 0.004 ? targetAmt : 0);
+            if (pending > 0.004) items.push({ type: 'charge', id: c.charge_id, label: c.charge_type || 'Charge', amount: +pending.toFixed(2), start_date: c.start_date });
+        });
+        return items;
+    }
+
     function computeReleaseStatement(chargeId) {
         const wd = charges.find(c => c.charge_id === chargeId && c.charge_type === WEEK_DEPOSIT_TYPE);
         if (!wd) return null;
@@ -5859,83 +6063,319 @@
         const remaining = chargeBalance(wd);
         const saved = Math.max(0, +(goal - remaining).toFixed(2));
 
-        const otherItems = [];
-        claims.filter(c => c.employee_id === wd.employee_id).forEach(c => {
-            const bal = claimBalance(c);
-            if (bal > 0.004) otherItems.push({ type: 'claim', id: c.claim_id, label: c.damage_type || 'Claim', balance: bal, start_date: c.start_date });
-        });
-        charges.filter(c => c.employee_id === wd.employee_id && c.charge_type !== WEEK_DEPOSIT_TYPE).forEach(c => {
-            const bal = chargeBalance(c);
-            if (bal > 0.004) otherItems.push({ type: 'charge', id: c.charge_id, label: c.charge_type || 'Charge', balance: bal, start_date: c.start_date });
-        });
-        otherItems.sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
+        // A claim or charge counts as pending here regardless of its
+        // current status — a real open balance, OR (claims only) a
+        // leftover absorbed_amount even on an already-Absorbed or
+        // Tk-from-check record, since that field is how this business
+        // flags "still owed, just not through normal weekly payroll".
+        // Charges have no such field, so they only ever qualify through
+        // an actual open balance.
+        const items = pendingItemsForEmployee(wd.employee_id);
 
+
+        // Default selection: greedy smallest-amount-first, maximizing how
+        // many items land fully closed within the available savings — a
+        // starting point only. The person can freely check/uncheck any
+        // item afterward; this just saves them from starting blank.
+        const bySize = items.slice().sort((a, b) => (a.amount - b.amount) || String(a.start_date || '').localeCompare(String(b.start_date || '')));
         let pool = saved;
-        const deductions = [];
-        otherItems.forEach(it => {
-            if (pool <= 0.004) return;
-            const applied = +Math.min(it.balance, pool).toFixed(2);
-            if (applied > 0.004) {
-                deductions.push({ ...it, applied });
-                pool = +(pool - applied).toFixed(2);
-            }
+        const selectedKeys = new Set();
+        bySize.forEach(it => {
+            if (it.amount <= pool + 0.004) { selectedKeys.add(it.type + ':' + it.id); pool = +(pool - it.amount).toFixed(2); }
         });
-        const netRelease = +Math.max(0, pool).toFixed(2);
-        return { charge: wd, goal, saved, deductions, netRelease };
+        items.forEach(it => { it.selected = selectedKeys.has(it.type + ':' + it.id); });
+        items.sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
+
+        return { charge: wd, goal, saved, items };
     }
+
+    // Recomputed on load and after every checkbox toggle — never touches
+    // the DB, purely local math for the live totals shown in the overlay.
+    function releaseTotals(stmt) {
+        const totalPending = stmt.items.reduce((a, i) => a + i.amount, 0);
+        const selectedTotal = stmt.items.filter(i => i.selected).reduce((a, i) => a + i.amount, 0);
+        const insufficient = totalPending > stmt.saved + 0.004;
+        const overCommitted = selectedTotal > stmt.saved + 0.004;
+        let netRelease = +Math.max(0, stmt.saved - selectedTotal).toFixed(2);
+
+        // If there's genuinely not enough to cover everyone (insufficient),
+        // any money left over after fully settling the checked items never
+        // goes to the employee — it's applied as a partial prepayment
+        // toward the smallest still-unchecked item instead, continuing to
+        // reduce what's owed rather than releasing cash while debt
+        // remains. That item stays open (not Paid, not Absorbed) so its
+        // normal weekly deduction schedule just continues from the new,
+        // smaller balance. Only ever a genuine surplus — nothing left
+        // pending anywhere — becomes real net release; scoped to the
+        // insufficient case specifically so a deliberately-unchecked item
+        // that would've fit isn't silently overridden into a part-payment.
+        let prepayTarget = null, prepayAmount = 0;
+        if (insufficient && !overCommitted && netRelease > 0.004) {
+            const unselected = stmt.items.filter(i => !i.selected).sort((a, b) => (a.amount - b.amount) || String(a.start_date || '').localeCompare(String(b.start_date || '')));
+            if (unselected.length) {
+                prepayTarget = unselected[0];
+                prepayAmount = +Math.min(netRelease, prepayTarget.amount).toFixed(2);
+                netRelease = +(netRelease - prepayAmount).toFixed(2);
+            }
+        }
+        return { totalPending: +totalPending.toFixed(2), selectedTotal: +selectedTotal.toFixed(2), insufficient, overCommitted, netRelease, prepayTarget, prepayAmount };
+    }
+
+    let currentReleaseStatement = null; // the live, mutable statement object backing the open overlay
+    let currentReleaseMode = 'wd'; // 'wd' = Week in Deposit, 'paycheck' = last paycheck
+    let currentReleaseEmployeeId = null; // used by paycheck mode (no charge_id to key off)
 
     function openReleaseStatement(chargeId) {
         if (!canEdit()) return;
         const stmt = computeReleaseStatement(chargeId);
         if (!stmt) return;
+
+        // Gate on eligibility BEFORE showing the statement at all — Week
+        // in Deposit specifically needs the 90-day rule off the
+        // employee's Last Date Worked, not the 30-day one (that one's for
+        // the last week's pay itself, tracked separately in the HR &
+        // Payroll report, not enforced here).
+        const eligibleDate = weekDepositEligibleDate(stmt.charge.employee_id);
+        if (eligibleDate && todayStr() < eligibleDate) {
+            alert(`This account can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}.`);
+            return;
+        }
+        if (!eligibleDate) {
+            if (!confirm('This employee has no Last Date Worked on file, so the 90-day eligibility rule can\'t be checked. Continue anyway?')) return;
+        }
+
+        currentReleaseMode = 'wd';
         releaseStatementChargeId = chargeId;
-        const emp = employees.find(e => e.id === stmt.charge.employee_id);
-        const empName = emp ? `${emp.first_name} ${emp.last_name}` : stmt.charge.employee_id;
+        currentReleaseStatement = stmt;
+        document.getElementById('release-statement-title').textContent = 'Release Semana de Fondo';
+        document.getElementById('release-statement-subtitle').textContent = "Review before closing this account — this can't be undone from here.";
+        document.getElementById('release-confirm-btn').textContent = 'Close Account';
+        document.getElementById('release-statement-overlay').style.display = 'flex';
+        renderReleaseStatementBody();
+    }
+
+    // Second entry point into the same overlay — for an Inactive
+    // employee's held final paycheck instead of their Week in Deposit
+    // savings. Same 100%-settle-then-absorb rules, same shared pending-
+    // items list, just a different pool of money and its own 30-day gate.
+    // The paycheck amount isn't auto-derived (reconstructing an accurate
+    // historical week's net pay safely wasn't something to guess at for a
+    // real money release) — it's entered here from whatever Statement/
+    // Payroll already shows for that final week.
+    function openLastPaycheckRelease(empId) {
+        if (!canEdit()) return;
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return;
+        const d = getEmpDetail(empId);
+        if (d.last_paycheck_released_at) { alert('This employee\'s last paycheck has already been released.'); return; }
+        const eligibleDate = lastWeekPayEligibleDate(empId);
+        if (eligibleDate && todayStr() < eligibleDate) {
+            alert(`This can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}.`);
+            return;
+        }
+        if (!eligibleDate) {
+            if (!confirm('This employee has no Last Date Worked on file, so the 30-day eligibility rule can\'t be checked. Continue anyway?')) return;
+        }
+
+        currentReleaseMode = 'paycheck';
+        currentReleaseEmployeeId = empId;
+        currentReleaseStatement = { saved: 0, items: pendingItemsForEmployee(empId) };
+        document.getElementById('release-statement-title').textContent = 'Release Last Paycheck';
+        document.getElementById('release-statement-subtitle').textContent = "Enter the amount from this employee's final paycheck (check Statement/Payroll for that week), then review before releasing — this can't be undone from here.";
+        document.getElementById('release-confirm-btn').textContent = 'Release Paycheck';
+        document.getElementById('release-statement-overlay').style.display = 'flex';
+        renderReleaseStatementBody();
+    }
+
+    function setPaycheckAmount(val) {
+        if (!currentReleaseStatement) return;
+        currentReleaseStatement.saved = Math.max(0, parseFloat(val) || 0);
+        renderReleaseStatementBody();
+    }
+
+    function toggleReleaseItem(key) {
+        if (!currentReleaseStatement) return;
+        const [type, id] = key.split(':');
+        const item = currentReleaseStatement.items.find(i => i.type === type && i.id === id);
+        if (item) item.selected = !item.selected;
+        renderReleaseStatementBody();
+    }
+
+    function renderReleaseStatementBody() {
+        const stmt = currentReleaseStatement;
+        if (!stmt) return;
+        const totals = releaseTotals(stmt);
+        const empId = currentReleaseMode === 'wd' ? stmt.charge.employee_id : currentReleaseEmployeeId;
+        const emp = employees.find(e => e.id === empId);
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : empId;
         const body = document.getElementById('release-statement-body');
         body.innerHTML = `
             <div class="rec-detail-grid" style="margin-bottom:10px;">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
-                <div><div class="k">Saved amount</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(stmt.saved)}</div></div>
+                ${currentReleaseMode === 'wd'
+                    ? `<div><div class="k">Saved amount</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(stmt.saved)}</div></div>`
+                    : `<div><div class="k">Paycheck amount</div><input type="number" step="0.01" min="0" value="${stmt.saved || ''}" placeholder="0.00" style="font-weight:700;" oninput="setPaycheckAmount(this.value)"></div>`}
             </div>
-            ${stmt.deductions.length ? `
-                <div class="detail-subhead">Outstanding — deducted first</div>
+            ${stmt.items.length ? `
+                <div class="detail-subhead">Outstanding / pending — tap a name to review, check to settle in full</div>
                 <div style="font-size:12px; margin-bottom:8px;">
-                    ${stmt.deductions.map(d => `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">
-                        <span><span class="type-pill">${d.type === 'claim' ? 'Claim' : 'Charge'}</span> ${d.id} · ${escHtml(d.label)}</span>
-                        <span style="color:#dc2626; font-weight:700;">−${formatMoney(d.applied)}</span>
-                    </div>`).join('')}
-                </div>` : `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">No other outstanding claims or charges for this employee.</div>`}
+                    ${stmt.items.map(it => {
+                        const isPrepayTarget = totals.prepayTarget && totals.prepayTarget.type === it.type && totals.prepayTarget.id === it.id;
+                        return `<div style="display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border);">
+                        <input type="checkbox" ${it.selected ? 'checked' : ''} onchange="toggleReleaseItem('${it.type}:${escJsAttr(it.id)}')">
+                        <span style="flex:1; cursor:pointer; color:var(--secondary); text-decoration:underline;" onclick="jumpToReleaseItem('${it.type}','${escJsAttr(it.id)}')">
+                            <span class="type-pill">${it.type === 'claim' ? 'Claim' : 'Charge'}</span> ${it.id} · ${escHtml(it.label)}
+                            ${isPrepayTarget ? `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} prepayment applied — ${formatMoney(it.amount - totals.prepayAmount)} remains, continues on its normal weekly schedule</span>` : ''}
+                        </span>
+                        <span style="font-weight:700; ${it.selected ? 'color:#dc2626;' : (isPrepayTarget ? 'color:#7c3aed;' : 'color:var(--text-muted);')}">${it.selected ? '−' : (isPrepayTarget ? '−' : '')}${formatMoney(it.selected ? it.amount : (isPrepayTarget ? totals.prepayAmount : it.amount))}</span>
+                    </div>`;
+                    }).join('')}
+                </div>
+                ${totals.insufficient ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Outstanding total (${formatMoney(totals.totalPending)}) is more than what's available.${totals.prepayTarget ? ' Whatever\'s left after settling checked items goes toward a partial prepayment above — none of it is released while debt remains.' : ''} Anything else left unchecked when you release will be marked <strong>Absorbed</strong> (a loss)${currentReleaseMode === 'paycheck' ? ', though it stays collectible from a future Week in Deposit release' : " — it can't stay open once this account closes"}.</div>` : ''}
+                ${totals.overCommitted ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Selected total (${formatMoney(totals.selectedTotal)}) is more than what's available — uncheck something first.</div>` : ''}
+            ` : `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">No other outstanding or pending claims/charges for this employee.</div>`}
             <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px; padding-top:8px; border-top:1px solid var(--border);">
                 <span>Net release to employee</span>
-                <span style="color:#059669;">${formatMoney(stmt.netRelease)}</span>
+                <span style="color:#059669;">${formatMoney(totals.netRelease)}</span>
             </div>`;
-        document.getElementById('release-statement-overlay').style.display = 'flex';
+        const confirmBtn = document.getElementById('release-confirm-btn');
+        if (confirmBtn) confirmBtn.disabled = totals.overCommitted;
+    }
+
+    // Lets someone tap a listed claim/charge straight from the release
+    // statement to go look at it before deciding whether to check it —
+    // closes the overlay first since the record it jumps to lives on a
+    // different tab entirely.
+    function jumpToReleaseItem(type, id) {
+        closeReleaseStatement();
+        if (type === 'claim') {
+            openHomeShortcut('tab-claims');
+            recExpanded.claims.add(id);
+            renderClaims();
+        } else {
+            openHomeShortcut('tab-charges');
+            recExpanded.charges.add(id);
+            renderCharges();
+        }
+        setTimeout(() => document.getElementById(`rec-${type === 'claim' ? 'claims' : 'charges'}-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
     }
 
     function closeReleaseStatement() {
         releaseStatementChargeId = null;
+        currentReleaseEmployeeId = null;
+        currentReleaseStatement = null;
         document.getElementById('release-statement-overlay').style.display = 'none';
     }
 
     async function confirmRelease() {
-        if (!releaseStatementChargeId || !canEdit()) return;
-        const stmt = computeReleaseStatement(releaseStatementChargeId);
-        if (!stmt) return;
+        if (!currentReleaseStatement || !canEdit()) return;
+        if (currentReleaseMode === 'wd' && !releaseStatementChargeId) return;
+        if (currentReleaseMode === 'paycheck' && !currentReleaseEmployeeId) return;
+        const stmt = currentReleaseStatement;
+        const totals = releaseTotals(stmt);
+        if (totals.overCommitted) { alert('Uncheck something first — the selected total is more than what\'s available.'); return; }
+        if (currentReleaseMode === 'paycheck' && stmt.saved <= 0) { alert('Enter the paycheck amount first.'); return; }
+        const settle = stmt.items.filter(i => i.selected).map(i => ({ type: i.type, id: i.id, amount: i.amount }));
+        // The prepay target is excluded from absorb — it isn't a loss,
+        // it's a partial payment that leaves the item open with a smaller
+        // balance, continuing on its normal weekly schedule from there.
+        const absorb = totals.insufficient
+            ? stmt.items.filter(i => !i.selected && !(totals.prepayTarget && totals.prepayTarget.type === i.type && totals.prepayTarget.id === i.id)).map(i => ({ type: i.type, id: i.id, amount: i.amount }))
+            : [];
+        const prepay = totals.prepayTarget ? { type: totals.prepayTarget.type, id: totals.prepayTarget.id, amount: totals.prepayAmount } : null;
+
         const btn = document.getElementById('release-confirm-btn');
-        btn.disabled = true; btn.textContent = 'Closing...';
-        const { error } = await supabaseClient.rpc('release_week_deposit', {
-            p_actor: currentUsername, p_charge_id: releaseStatementChargeId,
-            p_saved_amount: stmt.saved,
-            p_deductions: stmt.deductions.map(d => ({ type: d.type, id: d.id, amount: d.applied })),
-            p_net_release: stmt.netRelease
-        });
-        btn.disabled = false; btn.textContent = 'Close Account';
+        const originalLabel = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Releasing...';
+        const { error } = currentReleaseMode === 'wd'
+            ? await supabaseClient.rpc('release_week_deposit', {
+                p_actor: currentUsername, p_charge_id: releaseStatementChargeId,
+                p_saved_amount: stmt.saved, p_settle: settle, p_absorb: absorb, p_prepay: prepay, p_net_release: totals.netRelease
+            })
+            : await supabaseClient.rpc('release_last_paycheck', {
+                p_actor: currentUsername, p_employee_id: currentReleaseEmployeeId,
+                p_paycheck_amount: stmt.saved, p_settle: settle, p_absorb: absorb, p_prepay: prepay, p_net_release: totals.netRelease
+            });
+        btn.disabled = false; btn.textContent = originalLabel;
         if (error) { alert('Error: ' + error.message); return; }
+        const mode = currentReleaseMode;
         closeReleaseStatement();
         await fetchChargesFromCloud();
+        await fetchClaimsFromCloud();
         await loadChargeHistory();
-        renderWeekDeposit();
-        alert(`Released. ${formatMoney(stmt.netRelease)} net to hand over${stmt.deductions.length ? `, ${formatMoney(stmt.saved - stmt.netRelease)} applied to ${stmt.deductions.length} outstanding record(s).` : '.'}`);
+        if (mode === 'wd') renderWeekDeposit();
+        else { await loadEmployeeDetails(); renderSavingsReleaseReport(); }
+        let msg = `Released. ${formatMoney(totals.netRelease)} net to hand over.`;
+        if (prepay) msg += `\n${formatMoney(prepay.amount)} applied as a prepayment toward ${prepay.type} ${prepay.id}.`;
+        if (settle.length) msg += `\n${settle.length} item(s) settled in full (${formatMoney(totals.selectedTotal)}).`;
+        if (absorb.length) msg += `\n${absorb.length} item(s) couldn't be covered and were marked Absorbed.`;
+        alert(msg);
+    }
+
+    // Cross-employee view of everything the two release flows need: who
+    // has Semana de Fondo savings still open, who's an Inactive employee
+    // with an unreleased final paycheck, what each owes elsewhere, and
+    // the earliest date each becomes eligible — all built from data
+    // that's already loaded, same as Home's dashboard.
+    function renderSavingsReleaseReport() {
+        const rows = [];
+        charges.filter(c => c.charge_type === WEEK_DEPOSIT_TYPE && c.status !== 'Released').forEach(c => {
+            const emp = employees.find(e => e.id === c.employee_id);
+            const goal = Math.max(0, parseFloat(c.amount) || 0);
+            const saved = Math.max(0, +(goal - chargeBalance(c)).toFixed(2));
+            const pending = pendingItemsForEmployee(c.employee_id).reduce((a, i) => a + i.amount, 0);
+            const eligible = weekDepositEligibleDate(c.employee_id);
+            rows.push({
+                empId: c.employee_id, empName: emp ? `${emp.first_name} ${emp.last_name}` : c.employee_id,
+                kind: 'Week in Deposit', amount: saved, pending: +pending.toFixed(2),
+                eligible, issue: eligible ? nextThursdayOnOrAfter(eligible) : null,
+                handover: eligible ? addDaysStr(nextThursdayOnOrAfter(eligible), 2) : null,
+                action: eligible && todayStr() >= eligible ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}')">🔓 Release</button>` : ''
+            });
+        });
+        employees.filter(e => e.status === 'Inactive').forEach(e => {
+            const d = getEmpDetail(e.id);
+            if (d.last_paycheck_released_at) return; // already handled
+            const pending = pendingItemsForEmployee(e.id).reduce((a, i) => a + i.amount, 0);
+            const eligible = lastWeekPayEligibleDate(e.id);
+            rows.push({
+                empId: e.id, empName: `${e.first_name} ${e.last_name}`,
+                kind: 'Last Paycheck', amount: null, pending: +pending.toFixed(2),
+                eligible, issue: eligible ? nextThursdayOnOrAfter(eligible) : null,
+                handover: eligible ? addDaysStr(nextThursdayOnOrAfter(eligible), 2) : null,
+                action: eligible && todayStr() >= eligible ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}')">🔓 Release</button>` : ''
+            });
+        });
+        rows.sort((a, b) => String(a.eligible || '9999').localeCompare(String(b.eligible || '9999')));
+
+        const grid = document.getElementById('savingsreport-stats-grid');
+        if (grid) {
+            const readyNow = rows.filter(r => r.eligible && todayStr() >= r.eligible).length;
+            const totalSavings = rows.filter(r => r.kind === 'Week in Deposit').reduce((a, r) => a + r.amount, 0);
+            grid.innerHTML = `
+                <div class="stat-card"><div class="stat-label">Ready to release now</div><div class="stat-value">${readyNow}</div></div>
+                <div class="stat-card"><div class="stat-label">Total tracked</div><div class="stat-value">${rows.length}</div></div>
+                <div class="stat-card"><div class="stat-label">Week in Deposit savings</div><div class="stat-value">${formatMoney(totalSavings)}</div></div>`;
+        }
+        const body = document.getElementById('savingsreport-tbody');
+        if (!body) return;
+        if (!rows.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing to show — no open Week in Deposit savings and no Inactive employees with an unreleased last paycheck.</div>'; return; }
+        body.innerHTML = rows.map(r => `
+            <div class="rec-card" style="cursor:default;">
+                <div class="rec-card-head" style="cursor:default;">
+                    <span class="rec-title">${escHtml(r.empName)} <span class="type-pill">${r.kind}</span></span>
+                    <span class="rec-right">${r.amount !== null ? formatMoney(r.amount) : ''}</span>
+                </div>
+                <div class="rec-card-body" style="display:block;">
+                    <div class="rec-detail-grid">
+                        <div><div class="k">Pending/outstanding elsewhere</div><div class="v" style="${r.pending > 0.004 ? 'color:#dc2626;font-weight:700;' : ''}">${formatMoney(r.pending)}</div></div>
+                        <div><div class="k">Eligible date</div><div class="v">${r.eligible || 'Unknown — no Last Date Worked on file'}</div></div>
+                        <div><div class="k">Check issued (Thu)</div><div class="v">${r.issue || '-'}</div></div>
+                        <div><div class="k">Handed over (Sat)</div><div class="v">${r.handover || '-'}</div></div>
+                    </div>
+                    ${r.action ? `<div class="rec-actions" style="margin-top:10px;">${r.action}</div>` : (r.eligible ? `<div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Not eligible until ${r.eligible}.</div>` : '')}
+                </div>
+            </div>`).join('');
     }
 
     // ===== ADDITIONAL INCOME (mirror of charges, but ADDS to pay) =====
@@ -6559,6 +6999,29 @@
         return Array.from({ length: 7 }, (_, i) => {
             const d = new Date(sun); d.setUTCDate(d.getUTCDate() + i); return d;
         });
+    }
+    // Reverse of weekKeyFromSunday — given {year, week} finds the Sunday
+    // of that Sun-Sat block. Mirrors the exact same convention Daily Pay
+    // already uses (a block's ISO week is read off its Wednesday), rather
+    // than a generic ISO week formula, so results agree with the rest of
+    // the app for the same (year, week) input. Verified by round-tripping
+    // 160 consecutive real Sundays through weekKeyFromSunday and back
+    // before shipping — matches for all of them except the very last ISO
+    // week of December in some years, where getYear()'s use of the plain
+    // calendar year (not the ISO week-year) already disagrees with
+    // getWeekNumber() elsewhere in the app; not introduced here, and low-
+    // impact for a 90/30-day eligibility gate.
+    function sundayFromWeekKey(year, week) {
+        const y = parseInt(year, 10), w = parseInt(week, 10);
+        const jan4 = new Date(Date.UTC(y, 0, 4));
+        const jan4Day = jan4.getUTCDay() || 7;
+        const week1Monday = new Date(jan4);
+        week1Monday.setUTCDate(jan4.getUTCDate() - (jan4Day - 1));
+        const targetMonday = new Date(week1Monday);
+        targetMonday.setUTCDate(week1Monday.getUTCDate() + (w - 1) * 7);
+        const blockSunday = new Date(targetMonday);
+        blockSunday.setUTCDate(targetMonday.getUTCDate() - 1);
+        return blockSunday;
     }
     function fmtMD(dt) { return (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate(); }
     function fmtWeekLabel(sun) {
@@ -9638,7 +10101,43 @@
     // own records only", and these are company-wide aggregates, so it's
     // hidden from them the same way Fleet/Settings/etc. already are rather
     // than trying to build a scoped-down version of it.
+    // "The 30-day check" — an Inactive employee's last paycheck — needs a
+    // real human decision (release it, or leave it pending) once it's
+    // eligible. This surfaces that as a standing reminder starting
+    // Wednesday of each week and staying up through the rest of the week,
+    // not just a one-time notice — and deliberately has no dismiss button
+    // anywhere, since it's meant to keep showing until someone actually
+    // acts on the Savings & Release Eligibility report (release it, or at
+    // minimum make a decision there), not just be clicked away.
+    function isWednesdayOrLater() {
+        const day = new Date().getDay(); // 0=Sun..6=Sat, local time — this is a reminder for a person checking the app on a given day, so local time is what matters here, not UTC
+        return day >= 3 && day <= 6;
+    }
+    function getOverdueReleaseDecisions() {
+        return employees.filter(e => e.status === 'Inactive').filter(e => {
+            const d = getEmpDetail(e.id);
+            if (d.last_paycheck_released_at) return false;
+            const eligible = lastWeekPayEligibleDate(e.id);
+            return eligible && todayStr() >= eligible;
+        });
+    }
+    function renderReleaseDecisionReminder() {
+        const el = document.getElementById('release-decision-reminder');
+        if (!el) return;
+        if (!canEdit() || !isWednesdayOrLater()) { el.innerHTML = ''; el.style.display = 'none'; return; }
+        const overdue = getOverdueReleaseDecisions();
+        if (!overdue.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.innerHTML = `
+            <div class="note-box" style="border-left:3px solid #7c3aed;">
+                <strong>🔔 ${overdue.length} last-paycheck decision(s) still pending</strong> — eligible for release, waiting on a manual decision:
+                <div style="margin-top:6px;">${overdue.map(e => escHtml(e.first_name + ' ' + e.last_name)).join(', ')}</div>
+                <div style="margin-top:8px;"><button type="button" class="btn-small" style="margin:0;background:#7c3aed;" onclick="openHomeShortcut('tab-savingsreport')">Review now</button></div>
+            </div>`;
+    }
+
     function renderHomeDashboard() {
+        renderReleaseDecisionReminder();
         const grid = document.getElementById('home-stats-grid');
         if (!grid) return;
 
