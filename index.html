@@ -2058,8 +2058,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.01';
+    const APP_VERSION = 'v3.02';
     const CHANGELOG = [
+        { version: 'v3.02', date: '2026-08-14', notes: 'Fixed a real gap in last update\'s prepayment logic, caught before it ever hit a real release: the \'leftover becomes a prepayment, the item stays open on its normal weekly schedule\' behavior only makes sense for an employee who\'s still actively earning a paycheck to deduct from \u2014 it was wrongly applying to Inactive (quit/fired) employees too, where there\'s no more weekly income to ever actually continue collecting from. Now: for an Inactive employee (or the Last Paycheck release, which by definition only ever applies to someone who\'s already gone), anything not fully covered goes straight to a declared loss instead \u2014 no dangling half-open balance waiting on a paycheck that will never come. The prepay-then-continue behavior still applies correctly when releasing Week in Deposit early for a still-Active employee, since there\'s a real next paycheck for that case. Also closed a second, related leak while fixing this: previously, whenever a release couldn\'t cover everything but the leftover fragment didn\'t qualify for a prepayment, that fragment was quietly still counted as \'net release to the employee\' \u2014 now nothing ever reaches the employee while any claim or charge remains outstanding, full stop, regardless of why. Verified all four cases in Node (Active gets a prepayment, Inactive goes straight to loss, Last Paycheck always goes straight to loss, and a genuine surplus with nothing outstanding still releases correctly) before re-confirming the database side against a throwaway company.' },
         { version: 'v3.01', date: '2026-08-14', notes: 'Two more pieces of the release rules. First: when the last-paycheck (30-day) check doesn\'t fully cover what an employee owes, whatever\'s left over after fully settling what it CAN cover no longer gets released to the employee \u2014 it\'s now held back and applied as a partial prepayment toward the next outstanding claim or charge instead. That item stays open (not Paid, not Absorbed) with a smaller balance, and its normal weekly deduction schedule just continues from there automatically \u2014 no new mechanism needed for that part, it\'s exactly how weekly deductions already work. The release statement shows this prepayment as its own line so it\'s visible before confirming, not something that just quietly happens. Money only ever reaches the employee once every single outstanding claim or charge is genuinely covered with nothing left pending. Same logic applies to a Week in Deposit release, not just the 30-day check. Second: a standing reminder now appears on Home starting Wednesday each week (through Saturday) whenever an Inactive employee\'s last paycheck is eligible for release but nobody\'s made a decision on it yet \u2014 deliberately has no dismiss button, since it\'s meant to keep showing until someone actually acts on it via the Savings & Release Eligibility report, not just gets clicked away. (The Release button in Week in Deposit was already correctly hidden from View Only accounts \u2014 checked and confirmed, no change needed there.) Tested the prepayment math end to end against a throwaway company: a $350 charge correctly dropped to $250 and stayed in its normal Deducting status with its weekly rate untouched, ready to keep collecting on its own.' },
         { version: 'v3.00', date: '2026-08-14', notes: 'New no-show flag on Employees: any Active Daily Pay employee whose most recent worked day falls before Thursday of the last fully-completed week (i.e. they had no work logged Thursday, Friday, or Saturday of that week \u2014 3 days in a row) now shows a warning banner at the top of Employees listing them by name, with a one-click \'Mark Inactive\' that ties straight into last week\'s release rules: it locks in today as their departure date and immediately starts the clock on holding their Week in Deposit savings (90 days) and last paycheck (30 days), exactly like manually flipping their status already did. A \'Dismiss\' option is also there for a quick false alarm, though it only lasts the session \u2014 the flag comes back next login if nothing\'s actually changed. Scoped to Daily Pay employees only (Weekly and Provider Pay don\'t log daily attendance the same way, so the check wouldn\'t mean anything for them), and never shown to View Only accounts. Verified the boundary case specifically in Node before shipping \u2014 someone who worked exactly on that cutoff Thursday correctly does NOT get flagged, only someone whose last day was before it.' },
         { version: 'v2.99', date: '2026-08-13', notes: 'Big one: release-eligibility rules and a new report to go with them. Employees now have a Last Date Worked field (pull it straight from Daily Pay with one click, or type it in) alongside the existing Start Date. Flipping an employee to Inactive for the first time locks in today as their departure date and auto-fills Last Date Worked from Daily Pay if it wasn\'t already set \u2014 flipping status back and forth later never resets that clock once it\'s started. Two release rules now run off that date: Week in Deposit savings can\'t be released earlier than 90 days after it, and an Inactive employee\'s held last paycheck can\'t be released earlier than 30 days after it \u2014 both enforced as a hard block on the release buttons themselves, not just a note in a report. New HR & Payroll \u2192 Savings & Release Eligibility report shows everyone with open savings or an unreleased last paycheck, what they still owe elsewhere, and the earliest date for each \u2014 including the actual Thursday it\'d be issued and Saturday it\'d be handed over. The release screen itself got real upgrades: every claim or charge listed is now clickable to go review it first; \'pending\' now means any claim or charge regardless of status with either a real balance or a leftover absorbed amount (broadened from just Tk-from-check); when there isn\'t enough to cover everything, checkboxes default to settling as many items as possible at 100% (smallest first) but you can freely change the selection; anything left uncovered gets marked Absorbed instead of just left dangling \u2014 and critically, that absorbed amount is now remembered accurately so a later release (say, Week in Deposit, after an earlier last-paycheck release couldn\'t cover everything) gets a real chance to collect it, exactly as asked. The last paycheck\'s dollar amount is entered by hand in the release screen rather than auto-calculated \u2014 reconstructing an accurate historical week\'s net pay safely wasn\'t something to guess at for a real money release, so it reads off whatever Statement/Payroll already shows for that week. Found and fixed a real piece of technical debt while extending this: an old, superseded version of the release function was still sitting live as a second overload of the same name \u2014 dropped it explicitly rather than just replacing the new one, since Postgres treats different-signature functions as entirely separate until told otherwise. Every new database function was tested end to end against a disposable company \u2014 settle/absorb combinations, double-release blocking, an already-absorbed item correctly getting picked back up by a later release, wrong-role rejection \u2014 before any of it touched real data.' },
@@ -6086,7 +6087,7 @@
         items.forEach(it => { it.selected = selectedKeys.has(it.type + ':' + it.id); });
         items.sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
 
-        return { charge: wd, goal, saved, items };
+        return { charge: wd, employeeId: wd.employee_id, goal, saved, items };
     }
 
     // Recomputed on load and after every checkbox toggle — never touches
@@ -6096,26 +6097,54 @@
         const selectedTotal = stmt.items.filter(i => i.selected).reduce((a, i) => a + i.amount, 0);
         const insufficient = totalPending > stmt.saved + 0.004;
         const overCommitted = selectedTotal > stmt.saved + 0.004;
-        let netRelease = +Math.max(0, stmt.saved - selectedTotal).toFixed(2);
 
-        // If there's genuinely not enough to cover everyone (insufficient),
-        // any money left over after fully settling the checked items never
-        // goes to the employee — it's applied as a partial prepayment
-        // toward the smallest still-unchecked item instead, continuing to
-        // reduce what's owed rather than releasing cash while debt
-        // remains. That item stays open (not Paid, not Absorbed) so its
-        // normal weekly deduction schedule just continues from the new,
-        // smaller balance. Only ever a genuine surplus — nothing left
-        // pending anywhere — becomes real net release; scoped to the
-        // insufficient case specifically so a deliberately-unchecked item
-        // that would've fit isn't silently overridden into a part-payment.
+        // Nothing ever reaches the employee while anything remains
+        // pending, full stop — whether the leftover ends up as a
+        // prepayment toward one item (see below) or just stays absorbed
+        // into the overall shortfall makes no difference to this: net
+        // release is only ever the genuine surplus once EVERY pending
+        // item is accounted for. Previously this only subtracted the
+        // specific prepay amount, which correctly zeroed it out when a
+        // prepayment applied but silently let the same leftover leak
+        // through as "net release" whenever prepay didn't apply (an
+        // Inactive employee's release, or Last Paycheck, which never
+        // allows prepay) — money must never reach a departed employee
+        // while they still owe on an open claim or charge.
+        let netRelease = insufficient ? 0 : +Math.max(0, stmt.saved - selectedTotal).toFixed(2);
+
+        // Only worth attempting a partial prepayment (leave the item open,
+        // let its normal weekly deduction keep going) if there's actually
+        // a normal weekly paycheck still coming for this employee to
+        // deduct from. That's never true for the Last Paycheck flow —
+        // it's a held FINAL paycheck by definition, there is no "next
+        // week" to fall back on — and for a Week in Deposit release, it's
+        // only true if the employee is still Active. An Inactive
+        // employee's Week in Deposit release is typically their last
+        // remaining chance at any income too, so anything not fully
+        // settled there goes straight to a declared loss (Absorbed)
+        // instead of sitting in Deducting forever with nothing left to
+        // ever actually collect it.
+        const emp = employees.find(e => e.id === stmt.employeeId);
+        const canPrepay = currentReleaseMode === 'wd' && emp && emp.status === 'Active';
+
+        // If there's genuinely not enough to cover everyone (insufficient)
+        // AND the employee has a real ongoing paycheck to fall back on,
+        // whatever's left over after fully settling the checked items is
+        // applied as a partial prepayment toward the smallest still-
+        // unchecked item, continuing to reduce what's owed. That item
+        // stays open (not Paid, not Absorbed) so its normal weekly
+        // deduction schedule just continues from the smaller balance. If
+        // there's no ongoing paycheck (Inactive, or Last Paycheck mode),
+        // no prepay happens — that item simply goes to the absorb list
+        // like everything else unselected, its full pending amount
+        // recorded as a declared loss.
         let prepayTarget = null, prepayAmount = 0;
-        if (insufficient && !overCommitted && netRelease > 0.004) {
+        if (canPrepay && insufficient && !overCommitted) {
+            const pool = +(stmt.saved - selectedTotal).toFixed(2);
             const unselected = stmt.items.filter(i => !i.selected).sort((a, b) => (a.amount - b.amount) || String(a.start_date || '').localeCompare(String(b.start_date || '')));
-            if (unselected.length) {
+            if (pool > 0.004 && unselected.length) {
                 prepayTarget = unselected[0];
-                prepayAmount = +Math.min(netRelease, prepayTarget.amount).toFixed(2);
-                netRelease = +(netRelease - prepayAmount).toFixed(2);
+                prepayAmount = +Math.min(pool, prepayTarget.amount).toFixed(2);
             }
         }
         return { totalPending: +totalPending.toFixed(2), selectedTotal: +selectedTotal.toFixed(2), insufficient, overCommitted, netRelease, prepayTarget, prepayAmount };
@@ -6179,7 +6208,7 @@
 
         currentReleaseMode = 'paycheck';
         currentReleaseEmployeeId = empId;
-        currentReleaseStatement = { saved: 0, items: pendingItemsForEmployee(empId) };
+        currentReleaseStatement = { saved: 0, employeeId: empId, items: pendingItemsForEmployee(empId) };
         document.getElementById('release-statement-title').textContent = 'Release Last Paycheck';
         document.getElementById('release-statement-subtitle').textContent = "Enter the amount from this employee's final paycheck (check Statement/Payroll for that week), then review before releasing — this can't be undone from here.";
         document.getElementById('release-confirm-btn').textContent = 'Release Paycheck';
