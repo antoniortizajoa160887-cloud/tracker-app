@@ -267,8 +267,8 @@
        off-canvas mobile drawer). Was desktop-only before the drawer
        existed; nothing here changed, just no longer gated by viewport. */
     body.logged-in #app-sidebar {
-        display: flex; flex-direction: column; overflow-y: auto;
-        background: #0f1720; padding: 14px 10px 64px;
+        display: flex; flex-direction: column; overflow: hidden;
+        background: #0f1720; padding: 14px 10px 12px;
         border-right: 1px solid rgba(255,255,255,0.06);
     }
     /* Change Password / Sign Out / theme now live as individual buttons
@@ -276,19 +276,32 @@
        below) — the original header dropdown is hidden there entirely
        and left fully intact for mobile, which still uses it unchanged. */
     body.logged-in #user-menu-wrap { display: none; }
-        #sidebar-account-bar { display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
-        #sidebar-account-bar .theme-swatch-row { justify-content: flex-start; padding: 4px 10px 8px; }
-        #sidebar-account-bar button.sidebar-account-btn { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 9px 10px; font-size: 0.8rem; color: #93a4b8; cursor: pointer; }
+        #sidebar-account-bar { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+        #sidebar-account-bar .theme-swatch-row { justify-content: flex-start; padding: 3px 10px 6px; }
+        #sidebar-account-bar button.sidebar-account-btn { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; color: #93a4b8; cursor: pointer; }
         #sidebar-account-bar button.sidebar-account-btn:hover { background: rgba(255,255,255,0.06) !important; color: #fff !important; }
         #sidebar-account-bar button#sidebar-account-btn-signout:hover { color: #f87171 !important; }
-        .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
-        #app-sidebar .tab-groups { flex-direction: column; overflow: visible; background: none; border-radius: 0; padding: 0; gap: 2px; }
-        #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 10px 12px; color: #8b98a5; }
+        .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 4px 8px 12px; flex-shrink: 0; }
+        /* The scrollable groups/tabs area and the pinned bottom cluster
+           (Notifications, Messages, account bar) are genuinely separate
+           flex children now, not just one flowing column — #app-sidebar
+           itself no longer scrolls (overflow:hidden above); only
+           #sidebar-scroll-area does. That's what actually keeps
+           Notifications/Messages from shifting position as different
+           groups expand/collapse above them: they're outside the
+           scrolling region entirely, not just visually "pinned" via
+           margin-top:auto (which only pins the LAST child and still lets
+           everything above it — including Notifications/Messages — drift
+           up and down as content above them grows or shrinks). */
+        #sidebar-scroll-area { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+        #sidebar-pinned-bottom { flex: 0 0 auto; }
+        #app-sidebar .tab-groups { flex-direction: column; overflow: visible; background: none; border-radius: 0; padding: 0; gap: 1px; }
+        #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 8px 12px; color: #8b98a5; }
         #app-sidebar .group-btn.active { background: rgba(255,255,255,0.06); color: #fff; }
-        #app-sidebar .tabs.sub-tabs { flex-direction: column; padding: 2px 4px 10px 18px; margin-bottom: 0; background: none; box-shadow: none; border-radius: 0; }
+        #app-sidebar .tabs.sub-tabs { flex-direction: column; padding: 1px 4px 6px 18px; margin-bottom: 0; background: none; box-shadow: none; border-radius: 0; }
         #app-sidebar #grp-notifications, #app-sidebar #grp-messages { padding-left: 4px; }
         #app-sidebar .tabs.sub-tabs.open { display: flex; }
-        #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; }
+        #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; }
         #app-sidebar .group-btn:hover { color: #fff !important; background: rgba(255,255,255,0.06) !important; }
         #app-sidebar .tab-btn:hover { color: #fff !important; background: rgba(255,255,255,0.06) !important; }
         #app-sidebar .tab-btn.active { background: var(--primary); color: #06251c; }
@@ -829,6 +842,7 @@
                 <div style="font-size:0.58rem; letter-spacing:0.08em; text-transform:uppercase; color:#5eead4; font-weight:700;">Logistics · HR · Claims</div>
             </div>
         </div>
+<div id="sidebar-scroll-area">
 <button class="group-btn active" onclick="openHomeTab(event)" id="btn-tab-home" style="border-top:1px solid rgba(255,255,255,0.08); margin-bottom:4px; padding-bottom:0.85rem;">🏠 Home</button>
 <div class="tab-groups" id="tab-groups">
     <button class="group-btn" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
@@ -870,6 +884,8 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
 </div>
+</div>
+<div id="sidebar-pinned-bottom">
 <div class="tabs sub-tabs open" id="grp-notifications" style="border-top:1px solid rgba(255,255,255,0.08); margin-top:6px; padding-top:6px;">
     <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
 </div>
@@ -889,6 +905,7 @@
         <button type="button" class="sidebar-account-btn" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
         <button type="button" class="sidebar-account-btn" id="sidebar-account-btn-signout" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
     </div>
+</div>
     </nav>
     <div id="mobile-drawer-scrim" onclick="toggleMobileDrawer()"></div>
 
@@ -2080,8 +2097,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.07';
+    const APP_VERSION = 'v3.08';
     const CHANGELOG = [
+        { version: 'v3.08', date: '2026-08-14', notes: 'Two real pieces of work. First, sidebar cleanup: reduced spacing throughout for a more compact feel, and fixed how Notifications and Messages are positioned \u2014 they were only \'pinned\' via a CSS trick that still let them drift up and down as different menu groups expanded above them. Restructured into a genuinely separate scrollable area (the expandable groups) and a fixed area (Notifications, Messages, account actions) that never moves regardless of what\'s expanded above it. Second, and this was the bigger one: revised how a claim or charge moves through the release stages when a single check can\'t cover it. Last Paycheck is never the final chance \u2014 an Inactive employee\'s Week in Deposit release, if they have one, is always still coming \u2014 so it no longer declares anything a final loss; whatever it can\'t cover just stays exactly as it was, ready for that next stage. Only Week in Deposit (the genuinely last possible stage) finalizes anything now. Once something IS finalized (status Absorbed), that\'s permanent \u2014 it never gets reconsidered by a later release again. Found and fixed two real bugs while building this: a database sequencing issue that would have silently erased an earlier partial credit when a claim finally got finalized in a later stage (caught by hand-tracing the exact numbers before it ever touched the database), and a gap where only the specific credited item was being protected from finalizing during a Last Paycheck release \u2014 every OTHER uncovered item was still being wrongly finalized alongside it. Verified the complete two-stage flow end to end against disposable test data: a $750 check against a $2,769.78 claim correctly stays open and carries $2,019.78 forward, and a subsequent $500 Week in Deposit release correctly finalizes it at exactly the full original amount \u2014 not a cent more or less.' },
         { version: 'v3.07', date: '2026-08-14', notes: 'Found the real cause of Release Paycheck going unresponsive: Release Last Paycheck never got the same smart starting checklist that Week in Deposit release already has \u2014 every claim/charge always opened fully unchecked, leaving no sensible default and no obvious way to reach a valid combination by hand. That\'s almost certainly how Francis Fernandez\'s screen ended up with both claims checked at once (over $2,769 selected against a $750 paycheck) \u2014 the button wasn\'t broken, it was correctly disabled because that combination genuinely doesn\'t fit, it just never offered a starting point that did. Fixed by sharing the same starting-checklist logic Week in Deposit already uses: now Release Last Paycheck opens with a sensible default too (whatever fits within the paycheck gets pre-checked, smallest first), recalculated once more the moment the real paycheck amount finishes auto-filling. Verified the exact Francis Fernandez numbers in Node: both claims correctly start unchecked (neither fits alone), the button is enabled, and the statement is immediately ready to review and confirm without any manual checkbox fiddling.' },
         { version: 'v3.06', date: '2026-08-14', notes: 'Two things. First, verified Joel Acosta\'s \'Saved so far\' with the actual saved data and current code: it correctly computes to $100, not $1,020 \u2014 that specific bug was already fixed by an earlier update. Second, and this one was real: on the release screen, when the available money couldn\'t fully cover an outstanding claim or charge, the leftover amount wasn\'t clearly shown as being credited against it before the remainder got declared a loss \u2014 worked out to the same final numbers either way, but looked like the partial amount just vanished instead of being applied. Now it\'s explicit: for example, a $750 last check against a $2,769.78 claim clearly shows \'$750 applied first\' with \'$2,019.78 remaining will be declared a loss\' right on the statement before you confirm anything, exactly matching how the last-paycheck stage and the Week in Deposit stage are each supposed to work in sequence. Also removed the leftover \'(as of DATE)\' labels on a few Statement balance fields \u2014 the week you\'re viewing was already fully driven by the Prev/Next/This-week navigation (fixed properly back in v2.44), the label text just hadn\'t caught up. Verified the exact Francis Fernandez numbers in Node before shipping, confirmed the Active-employee early-release case (where a partial payment correctly stays open on its normal schedule) still works exactly as before.' },
         { version: 'v3.05', date: '2026-08-14', notes: 'Found the real reason Carlos Amador and Joel Acosta kept showing as needing a Last Paycheck release even after being released: a database function (get_employee_details) had a hardcoded list of fields that was never updated when Last Date Worked, Inactive Since, and the two Last Paycheck release fields were added over the last several versions \u2014 the data was always being saved correctly, the app just never actually received it back. This silently affected the whole eligibility system since it first shipped, not just this one report. Fixed. New Release History tab (HR & Payroll) \u2014 a permanent, searchable record of every release, Week in Deposit or Last Paycheck: original amount (broken out into base pay vs. additional income for Last Paycheck releases specifically), what got deducted toward other claims/charges, and the final amount that actually reached the employee, plus who released it and whether it was early. New \'\u23F0 Early Release\' button alongside the normal Release button, in both Week in Deposit and the Savings & Release Eligibility report \u2014 requires an explicit extra confirmation since it bypasses the normal 90/30-day wait on purpose. Medium accounts can now use both the normal and early Release actions, but neither executes immediately for them \u2014 both get sent to a new Pending Release Requests panel in Approvals, where an Administrator reviews the exact same settle/absorb/prepay plan the Medium user built and either approves it (which runs the real release immediately) or rejects it (nothing happens). An Administrator\'s own releases still execute directly as before, no approval needed. Every piece of this \u2014 the request/approve/reject flow, both release types, the income breakdown, direct-vs-approved tracking \u2014 was tested end-to-end against disposable test companies, including the specific numbers matching exactly, before any of it touched real data.' },
@@ -6093,28 +6111,30 @@
     // other.
     function pendingItemsForEmployee(empId) {
         const items = [];
+        // Exception rule: once a claim or charge is actually AT status
+        // 'Absorbed', that's final — a declared loss, not something a
+        // later release stage ever gets another chance at. That's a
+        // deliberate change from this app's earlier behavior (which used
+        // to let an Absorbed item resurface here using its leftover
+        // absorbed_amount, specifically so a later release COULD still
+        // collect it) — now, an item that can't be fully covered stays in
+        // its normal ongoing status (still counts as pending via its real
+        // balance below) right up until the truly last possible release
+        // stage finalizes it to Absorbed; after that point it's excluded
+        // here, permanently. Tk-from-check is a different status and
+        // keeps working the same as before — this exception is specific
+        // to the literal 'Absorbed' status only.
         claims.filter(c => c.employee_id === empId).forEach(c => {
+            if (c.status === 'Absorbed') return;
             const bal = claimBalance(c);
             const absorbedAmt = parseFloat(c.absorbed_amount) || 0;
             const pending = bal > 0.004 ? bal : (absorbedAmt > 0.004 ? absorbedAmt : 0);
             if (pending > 0.004) items.push({ type: 'claim', id: c.claim_id, label: c.damage_type || 'Claim', amount: +pending.toFixed(2), start_date: c.start_date });
         });
-        // A charge has no absorbed_amount field to fall back on the way a
-        // claim does, but the same "still owed even though it shows as
-        // resolved" case exists here too: a charge previously marked
-        // Absorbed by an earlier release (the 30-day last-week-worked
-        // check, for instance) still has its original target sitting in
-        // `amount` — chargeBalance() reports $0 for it via the normal
-        // Absorbed-status shortcut, but that doesn't mean it was actually
-        // collected, only that an earlier attempt couldn't cover it. That
-        // uncollected amount needs to keep surfacing here so a later
-        // release (Week in Deposit) gets a chance to cover it too, same
-        // as an absorbed claim already does.
         charges.filter(c => c.employee_id === empId && c.charge_type !== WEEK_DEPOSIT_TYPE).forEach(c => {
+            if (c.status === 'Absorbed') return;
             const bal = chargeBalance(c);
-            const targetAmt = Math.max(0, parseFloat(c.amount) || 0);
-            const pending = bal > 0.004 ? bal : (c.status === 'Absorbed' && targetAmt > 0.004 ? targetAmt : 0);
-            if (pending > 0.004) items.push({ type: 'charge', id: c.charge_id, label: c.charge_type || 'Charge', amount: +pending.toFixed(2), start_date: c.start_date });
+            if (bal > 0.004) items.push({ type: 'charge', id: c.charge_id, label: c.charge_type || 'Charge', amount: +bal.toFixed(2), start_date: c.start_date });
         });
         return items;
     }
@@ -6187,17 +6207,23 @@
         // discarded because it can't cover the whole thing (Francis
         // Fernandez's case: a $750 last check against a $2,769.78 claim
         // still credits that $750 before the remaining $2,019.78 gets
-        // declared a loss — it doesn't just write off the full amount
-        // and leave the $750 unaccounted for). What differs by employee
-        // status is only what happens to the item AFTER that credit:
-        // if there's a real ongoing paycheck to fall back on (Active,
-        // Week in Deposit only — Last Paycheck is always a held FINAL
-        // paycheck, there's no "next week"), the item stays open and its
-        // normal weekly deduction continues from the smaller balance. If
-        // there's no ongoing paycheck, the remainder is immediately
-        // declared a loss too — same credit, just no waiting.
+        // either carried forward or declared a loss — it doesn't just
+        // write off the full amount and leave the $750 unaccounted for).
+        //
+        // What differs is whether that remainder becomes a FINAL loss
+        // right now, or stays open for the NEXT release stage to try:
+        // Last Paycheck is never the last possible chance — an Inactive
+        // employee's Week in Deposit release, if they have one, is still
+        // coming — so anything Last Paycheck can't cover simply stays in
+        // its current status (still counted as pending, ready for that
+        // next stage) rather than being finalized. Week in Deposit IS the
+        // genuinely last stage for an Inactive employee (nothing comes
+        // after it) or, for a still-Active employee, isn't a "stage" in
+        // a cascade at all — normal payroll just continues regardless —
+        // so those are the only two cases where an uncovered remainder
+        // finalizes into a declared loss (status → Absorbed) right away.
         const emp = employees.find(e => e.id === stmt.employeeId);
-        const canPrepay = currentReleaseMode === 'wd' && emp && emp.status === 'Active';
+        const prepayStaysOpenIfInsufficient = currentReleaseMode === 'paycheck' || (emp && emp.status === 'Active');
 
         let prepayTarget = null, prepayAmount = 0, prepayStaysOpen = false;
         if (insufficient && !overCommitted) {
@@ -6206,7 +6232,7 @@
             if (pool > 0.004 && unselected.length) {
                 prepayTarget = unselected[0];
                 prepayAmount = +Math.min(pool, prepayTarget.amount).toFixed(2);
-                prepayStaysOpen = canPrepay;
+                prepayStaysOpen = prepayStaysOpenIfInsufficient;
             }
         }
         return { totalPending: +totalPending.toFixed(2), selectedTotal: +selectedTotal.toFixed(2), insufficient, overCommitted, netRelease, prepayTarget, prepayAmount, prepayStaysOpen };
@@ -6385,14 +6411,18 @@
                         <span style="flex:1; cursor:pointer; color:var(--secondary); text-decoration:underline;" onclick="jumpToReleaseItem('${it.type}','${escJsAttr(it.id)}')">
                             <span class="type-pill">${it.type === 'claim' ? 'Claim' : 'Charge'}</span> ${it.id} · ${escHtml(it.label)}
                             ${isPrepayTarget ? (totals.prepayStaysOpen
-                                ? `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} applied — ${formatMoney(remainder)} remains, continues on its normal weekly schedule</span>`
+                                ? (currentReleaseMode === 'paycheck'
+                                    ? `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} applied — ${formatMoney(remainder)} carries forward, still collectible from a future Week in Deposit release</span>`
+                                    : `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} applied — ${formatMoney(remainder)} remains, continues on its normal weekly schedule</span>`)
                                 : `<br><span style="color:#7c3aed; font-weight:700;">+ ${formatMoney(totals.prepayAmount)} applied first</span> — <span style="color:#dc2626; font-weight:700;">${formatMoney(remainder)} remaining will be declared a loss (Absorbed)</span>`) : ''}
                         </span>
                         <span style="font-weight:700; ${it.selected ? 'color:#dc2626;' : (isPrepayTarget ? 'color:#7c3aed;' : 'color:var(--text-muted);')}">${it.selected ? '−' : (isPrepayTarget ? '−' : '')}${formatMoney(it.selected ? it.amount : (isPrepayTarget ? totals.prepayAmount : it.amount))}</span>
                     </div>`;
                     }).join('')}
                 </div>
-                ${totals.insufficient ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Outstanding total (${formatMoney(totals.totalPending)}) is more than what's available.${totals.prepayTarget ? ` Whatever's left after settling checked items is credited against the next item first${totals.prepayStaysOpen ? '' : ', then the remainder is declared a loss'} — none of it is released while debt remains.` : ''} Anything else left unchecked when you release will be marked <strong>Absorbed</strong> (a loss)${currentReleaseMode === 'paycheck' ? ', though it stays collectible from a future Week in Deposit release' : " — it can't stay open once this account closes"}.</div>` : ''}
+                ${totals.insufficient ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Outstanding total (${formatMoney(totals.totalPending)}) is more than what's available.${totals.prepayTarget ? ` Whatever's left after settling checked items is credited against the next item first${totals.prepayStaysOpen ? '' : ', then the remainder is declared a loss'} — none of it is released while debt remains.` : ''} ${currentReleaseMode === 'paycheck'
+                    ? 'Everything else left unchecked simply stays pending exactly as it is — Last Paycheck is never the final chance, so nothing here gets declared a loss; a later Week in Deposit release can still cover it.'
+                    : `Anything else left unchecked when you release will be marked <strong>Absorbed</strong> (a loss) — it can't stay open once this account closes.`}</div>` : ''}
                 ${totals.overCommitted ? `<div style="font-size:11px; color:#dc2626; margin-bottom:8px;">Selected total (${formatMoney(totals.selectedTotal)}) is more than what's available — uncheck something first.</div>` : ''}
             ` : `<div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">No other outstanding or pending claims/charges for this employee.</div>`}
             <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px; padding-top:8px; border-top:1px solid var(--border);">
@@ -6438,19 +6468,31 @@
         if (totals.overCommitted) { alert('Uncheck something first — the selected total is more than what\'s available.'); return; }
         if (currentReleaseMode === 'paycheck' && stmt.saved <= 0) { alert('Enter the paycheck amount first.'); return; }
         const settle = stmt.items.filter(i => i.selected).map(i => ({ type: i.type, id: i.id, amount: i.amount }));
+        // Last Paycheck is never the final stage — an Inactive employee's
+        // Week in Deposit release, if they have one, is still coming —
+        // so NOTHING finalizes into a declared loss during a Last
+        // Paycheck release, not just the specific item that got a
+        // partial credit. Every other unselected item is simply left
+        // untouched (not settled, not absorbed, not credited) and stays
+        // exactly as pending as it already was for that next release to
+        // try. Only a Week in Deposit release for an Inactive employee
+        // (the genuinely last possible stage) ever finalizes anything.
+        const neverFinalizesThisRelease = currentReleaseMode === 'paycheck';
+        const prepayStaysOpen = totals.prepayTarget && totals.prepayStaysOpen;
         // When the prepay target stays open (a real ongoing paycheck to
-        // fall back on), it's excluded from absorb — it isn't a loss, it
-        // continues on its normal weekly schedule from the reduced
-        // balance. When it doesn't stay open (Last Paycheck, or an
-        // Inactive employee's Week in Deposit release), the credit and
+        // fall back on, or Last Paycheck with a future stage still
+        // coming), it's excluded from absorb — it isn't a loss, it
+        // either continues on its normal weekly schedule from the
+        // reduced balance (Active/Week in Deposit) or simply carries the
+        // credit forward untouched otherwise (Last Paycheck). When it
+        // doesn't stay open (the genuinely final stage), the credit and
         // the loss happen in the same instant — so instead of a separate
         // partial-prepay call, it goes through absorb with its FULL
         // pending amount, which lands on the identical final balance as
         // "credit the partial amount, then absorb the remainder" would
         // (750 credited + 2,019.78 absorbed = the same 2,769.78 total
         // either way) without needing two RPC calls to land on one number.
-        const prepayStaysOpen = totals.prepayTarget && totals.prepayStaysOpen;
-        const absorb = totals.insufficient
+        const absorb = (totals.insufficient && !neverFinalizesThisRelease)
             ? stmt.items.filter(i => !i.selected && !(prepayStaysOpen && totals.prepayTarget.type === i.type && totals.prepayTarget.id === i.id)).map(i => ({ type: i.type, id: i.id, amount: i.amount }))
             : [];
         const prepay = prepayStaysOpen ? { type: totals.prepayTarget.type, id: totals.prepayTarget.id, amount: totals.prepayAmount } : null;
