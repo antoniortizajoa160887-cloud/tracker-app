@@ -852,6 +852,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">Savings &amp; Release Eligibility</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">Release History</button>
 </div>
 <div class="tabs sub-tabs" id="grp-expiring">
     <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
@@ -1633,6 +1634,21 @@
     </div>
 </div>
 
+<!-- TAB: RELEASE HISTORY -->
+<div id="tab-releasehistory" class="tab-content">
+    <div class="panel">
+        <h2>Release History</h2>
+        <div class="note-box">Permanent record of every Week in Deposit and Last Paycheck release — original amount, what was deducted toward other claims/charges, and what actually reached the employee.</div>
+        <div class="stat-grid" id="releasehistory-stats-grid" style="margin-top:8px;"></div>
+        <div class="form-row" style="margin-top:10px;">
+            <div class="field field-wide"><input type="text" id="releasehistory-search" placeholder="Search employee, released by..." oninput="renderReleaseHistory()"></div>
+        </div>
+    </div>
+    <div class="panel">
+        <div id="releasehistory-tbody" class="record-grid"></div>
+    </div>
+</div>
+
 <!-- TAB: MESSAGES -->
 <div id="tab-messages" class="tab-content">
     <div class="msg-shell">
@@ -1927,6 +1943,11 @@
         </div>
         <div id="approvals-tbody" class="record-grid"></div>
     </div>
+    <div class="panel">
+        <h2>Pending Release Requests</h2>
+        <div class="note-box">A Medium user's Week in Deposit or Last Paycheck release — normal or early — always lands here first. Nothing is released until an Administrator approves it.</div>
+        <div id="release-requests-tbody" class="record-grid"></div>
+    </div>
 </div>
 
 <!-- TAB: LOG -->
@@ -2037,7 +2058,7 @@
     let currentWeekDaily = {};  // employee_id -> number (this week's daily total, for Payroll)
     let currentWeekDailyDetail = {}; // employee_id -> [{date, amount, is_off}] (this week, for Payroll expand)
     let currentWeekLabel = '';  // human label for the current pay week
-    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set(), changelog: new Set(), vehicles: new Set(), invoices: new Set(), bills: new Set() };
+    let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set(), changelog: new Set(), vehicles: new Set(), invoices: new Set(), bills: new Set(), releasehistory: new Set() };
     // Which status GROUPS are collapsed (not individual records — those use
     // recExpanded above). All groups start expanded; a status added here
     // stays collapsed until toggled again, re-render to re-apply.
@@ -2059,8 +2080,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.04';
+    const APP_VERSION = 'v3.05';
     const CHANGELOG = [
+        { version: 'v3.05', date: '2026-08-14', notes: 'Found the real reason Carlos Amador and Joel Acosta kept showing as needing a Last Paycheck release even after being released: a database function (get_employee_details) had a hardcoded list of fields that was never updated when Last Date Worked, Inactive Since, and the two Last Paycheck release fields were added over the last several versions \u2014 the data was always being saved correctly, the app just never actually received it back. This silently affected the whole eligibility system since it first shipped, not just this one report. Fixed. New Release History tab (HR & Payroll) \u2014 a permanent, searchable record of every release, Week in Deposit or Last Paycheck: original amount (broken out into base pay vs. additional income for Last Paycheck releases specifically), what got deducted toward other claims/charges, and the final amount that actually reached the employee, plus who released it and whether it was early. New \'\u23F0 Early Release\' button alongside the normal Release button, in both Week in Deposit and the Savings & Release Eligibility report \u2014 requires an explicit extra confirmation since it bypasses the normal 90/30-day wait on purpose. Medium accounts can now use both the normal and early Release actions, but neither executes immediately for them \u2014 both get sent to a new Pending Release Requests panel in Approvals, where an Administrator reviews the exact same settle/absorb/prepay plan the Medium user built and either approves it (which runs the real release immediately) or rejects it (nothing happens). An Administrator\'s own releases still execute directly as before, no approval needed. Every piece of this \u2014 the request/approve/reject flow, both release types, the income breakdown, direct-vs-approved tracking \u2014 was tested end-to-end against disposable test companies, including the specific numbers matching exactly, before any of it touched real data.' },
         { version: 'v3.04', date: '2026-08-14', notes: 'Fixed a real \'\$0 saved\' bug in the database (Joel Acosta and 5 others): each had genuine deposit history recorded week by week, but was stuck on a \'Queued\' status, which makes the app treat them as if nothing had started yet — corrected all 6 to \'Deducting\' to match their real history, logged in the audit trail. Second, bigger fix: an Inactive employee\'s claims and charges were still projecting deductions forever into the future, as if they were still earning a paycheck to deduct from \u2014 there isn\'t one. Every weekly schedule (Claims, Charges, Semana de Fondo, Statement, Payroll, everywhere) now stops projecting further deductions past an Inactive employee\'s actual last working day \u2014 real past history is completely untouched, this only stops inventing future weeks that were never going to happen. Verified directly against a real, currently-affected charge before shipping. Safe for the 46 already-Inactive employees predating this feature (no last-worked-date on file for most of them yet, so nothing changes for them until that gets filled in) and confirmed working correctly for the few that do have it.' },
         { version: 'v3.03', date: '2026-08-14', notes: 'Two fixes. The checkbox on the release screen was rendering as a huge, misaligned square instead of a normal small checkbox \u2014 root cause was the app\'s shared base styling for text fields (input/select/textarea) never excluded checkboxes, so it inherited full-width and a 44px minimum height meant for things like text and date fields. Added a proper override so any checkbox (this one, and any future ones) renders at a normal size and lines up with its label. Second: Release Last Paycheck now auto-fills the paycheck amount instead of starting blank \u2014 it adds up that employee\'s Daily Pay entries plus any Additional Income for the Sun\u2013Sat week containing their last worked day (not a full payroll recompute \u2014 claim/charge deductions are deliberately left out, since the release screen\'s own settle/prepay/absorb logic already handles those separately). The field stays fully editable so it can still be corrected against Statement/Payroll if something looks off, and if there\'s no Daily Pay history to derive a week from at all, it just asks for the amount by hand like before. Verified the week math and the income-eligibility filtering in Node before shipping.' },
         { version: 'v3.02', date: '2026-08-14', notes: 'Fixed a real gap in last update\'s prepayment logic, caught before it ever hit a real release: the \'leftover becomes a prepayment, the item stays open on its normal weekly schedule\' behavior only makes sense for an employee who\'s still actively earning a paycheck to deduct from \u2014 it was wrongly applying to Inactive (quit/fired) employees too, where there\'s no more weekly income to ever actually continue collecting from. Now: for an Inactive employee (or the Last Paycheck release, which by definition only ever applies to someone who\'s already gone), anything not fully covered goes straight to a declared loss instead \u2014 no dangling half-open balance waiting on a paycheck that will never come. The prepay-then-continue behavior still applies correctly when releasing Week in Deposit early for a still-Active employee, since there\'s a real next paycheck for that case. Also closed a second, related leak while fixing this: previously, whenever a release couldn\'t cover everything but the leftover fragment didn\'t qualify for a prepayment, that fragment was quietly still counted as \'net release to the employee\' \u2014 now nothing ever reaches the employee while any claim or charge remains outstanding, full stop, regardless of why. Verified all four cases in Node (Active gets a prepayment, Inactive goes straight to loss, Last Paycheck always goes straight to loss, and a genuine surplus with nothing outstanding still releases correctly) before re-confirming the database side against a throwaway company.' },
@@ -2828,12 +2850,13 @@
         if(tabName === 'tab-employees' && typeof updateNextEmpId === 'function') updateNextEmpId();
         if(tabName === 'tab-payroll') renderPayroll();
         if(tabName === 'tab-companies') loadCompanies();
-        if(tabName === 'tab-approvals') renderApprovals();
+        if(tabName === 'tab-approvals') { renderApprovals(); renderReleaseRequests(); }
         if(tabName === 'tab-log') renderLog();
         if(tabName === 'tab-settings') renderSettingsLists();
         if(tabName === 'tab-expiring') renderExpiringDocuments();
         if(tabName === 'tab-invoices') renderInvoices();
         if(tabName === 'tab-savingsreport') renderSavingsReleaseReport();
+        if(tabName === 'tab-releasehistory') fetchReleaseHistory();
         if(tabName === 'tab-bills') renderBills();
         if(tabName === 'tab-changelog') renderChangelogTab();
         if(tabName === 'tab-home') renderHomeDashboard();
@@ -2860,7 +2883,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-savingsreport'],
+        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-savingsreport', 'tab-releasehistory'],
         'grp-expiring': ['tab-expiring'],
         'grp-financial': ['tab-invoices', 'tab-bills'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
@@ -3021,7 +3044,7 @@
 
         // View Only (User): restrict to 5 tabs of their own data; no editing.
         if (currentUserRole === 'User') {
-            ['btn-tab-home','btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay','btn-tab-invoices','btn-tab-bills','btn-tab-savingsreport'].forEach(id => {
+            ['btn-tab-home','btn-tab-tracker','btn-tab-report','btn-tab-vehicles','btn-tab-settings','btn-tab-data','btn-tab-dailypay','btn-tab-providerpay','btn-tab-invoices','btn-tab-bills','btn-tab-savingsreport','btn-tab-releasehistory'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -5874,7 +5897,8 @@
                         ${editable ? `<div class="rec-actions" style="margin-bottom:8px;">
                             <button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); editWeekDeposit('${c.charge_id}')">✎ Edit</button>
                             <button class="del-btn" onclick="event.stopPropagation(); deleteWeekDeposit('${c.charge_id}')">✕ Delete</button>
-                            ${c.status !== 'Released' ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}')">🔓 Release</button>` : ''}
+                            ${c.status !== 'Released' ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}')">🔓 Release</button>
+                            <button class="btn-small" style="margin:0;background:#b45309;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}', true)">⏰ Early Release</button>` : ''}
                         </div>` : ''}
                         ${sched.rows.length ? `<div class="table-wrapper" style="max-height:260px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Saved that week</th><th style="text-align:left;">Total saved</th><th style="text-align:left;">Remaining</th></tr></thead><tbody>${scheduleRows}</tbody></table></div>` : ''}
                     </div>
@@ -6189,8 +6213,9 @@
     let currentReleaseStatement = null; // the live, mutable statement object backing the open overlay
     let currentReleaseMode = 'wd'; // 'wd' = Week in Deposit, 'paycheck' = last paycheck
     let currentReleaseEmployeeId = null; // used by paycheck mode (no charge_id to key off)
+    let currentReleaseIsEarly = false; // true when opened via the Early Release button, bypassing the normal 90/30-day gate
 
-    function openReleaseStatement(chargeId) {
+    function openReleaseStatement(chargeId, isEarly) {
         if (!canEdit()) return;
         const stmt = computeReleaseStatement(chargeId);
         if (!stmt) return;
@@ -6199,22 +6224,31 @@
         // in Deposit specifically needs the 90-day rule off the
         // employee's Last Date Worked, not the 30-day one (that one's for
         // the last week's pay itself, tracked separately in the HR &
-        // Payroll report, not enforced here).
+        // Payroll report, not enforced here). The Early Release button
+        // deliberately bypasses this gate — that's the whole point of it
+        // — but still requires an explicit extra confirmation, and a
+        // Medium user's early (or normal) release always goes to an
+        // Administrator for approval rather than executing directly.
         const eligibleDate = weekDepositEligibleDate(stmt.charge.employee_id);
-        if (eligibleDate && todayStr() < eligibleDate) {
-            alert(`This account can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}.`);
-            return;
-        }
-        if (!eligibleDate) {
-            if (!confirm('This employee has no Last Date Worked on file, so the 90-day eligibility rule can\'t be checked. Continue anyway?')) return;
+        if (!isEarly) {
+            if (eligibleDate && todayStr() < eligibleDate) {
+                alert(`This account can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}. Use "Early Release" instead if this needs to happen sooner.`);
+                return;
+            }
+            if (!eligibleDate) {
+                if (!confirm('This employee has no Last Date Worked on file, so the 90-day eligibility rule can\'t be checked. Continue anyway?')) return;
+            }
+        } else {
+            if (!confirm(`This is an EARLY release — the normal eligible date is ${eligibleDate || 'unknown (no Last Date Worked on file)'}. ${currentUserRole === 'Medium' ? 'This will be sent to an Administrator for approval.' : 'Continue?'}`)) return;
         }
 
         currentReleaseMode = 'wd';
+        currentReleaseIsEarly = !!isEarly;
         releaseStatementChargeId = chargeId;
         currentReleaseStatement = stmt;
-        document.getElementById('release-statement-title').textContent = 'Release Semana de Fondo';
+        document.getElementById('release-statement-title').textContent = (isEarly ? '⏰ Early Release — ' : '') + 'Release Semana de Fondo';
         document.getElementById('release-statement-subtitle').textContent = "Review before closing this account — this can't be undone from here.";
-        document.getElementById('release-confirm-btn').textContent = 'Close Account';
+        document.getElementById('release-confirm-btn').textContent = currentUserRole === 'Medium' ? 'Send for Approval' : 'Close Account';
         document.getElementById('release-statement-overlay').style.display = 'flex';
         renderReleaseStatementBody();
     }
@@ -6248,7 +6282,7 @@
             .filter(i => i.employee_id === empId && i.status !== 'Queued' && i.start_date && i.start_date <= saturdayStr && remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, saturdayStr) > 0)
             .reduce((a, i) => a + Math.min(parseFloat(i.weekly_amount) || 0, remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, saturdayStr)), 0);
 
-        return +(dailyTotal + incomeTotal).toFixed(2);
+        return { basePay: +dailyTotal.toFixed(2), additionalIncome: +incomeTotal.toFixed(2), total: +(dailyTotal + incomeTotal).toFixed(2) };
     }
 
     // Second entry point into the same overlay — for an Inactive
@@ -6259,33 +6293,42 @@
     // Additional Income for the week containing their last worked day —
     // still shown as a normal editable field so it can be corrected by
     // hand if Statement/Payroll shows something different for that week.
-    async function openLastPaycheckRelease(empId) {
+    async function openLastPaycheckRelease(empId, isEarly) {
         if (!canEdit()) return;
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
         const d = getEmpDetail(empId);
         if (d.last_paycheck_released_at) { alert('This employee\'s last paycheck has already been released.'); return; }
         const eligibleDate = lastWeekPayEligibleDate(empId);
-        if (eligibleDate && todayStr() < eligibleDate) {
-            alert(`This can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}.`);
-            return;
-        }
-        if (!eligibleDate) {
-            if (!confirm('This employee has no Last Date Worked on file, so the 30-day eligibility rule can\'t be checked. Continue anyway?')) return;
+        if (!isEarly) {
+            if (eligibleDate && todayStr() < eligibleDate) {
+                alert(`This can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}. Use "Early Release" instead if this needs to happen sooner.`);
+                return;
+            }
+            if (!eligibleDate) {
+                if (!confirm('This employee has no Last Date Worked on file, so the 30-day eligibility rule can\'t be checked. Continue anyway?')) return;
+            }
+        } else {
+            if (!confirm(`This is an EARLY release — the normal eligible date is ${eligibleDate || 'unknown (no Last Date Worked on file)'}. ${currentUserRole === 'Medium' ? 'This will be sent to an Administrator for approval.' : 'Continue?'}`)) return;
         }
 
         currentReleaseMode = 'paycheck';
+        currentReleaseIsEarly = !!isEarly;
         currentReleaseEmployeeId = empId;
         currentReleaseStatement = { saved: 0, employeeId: empId, items: pendingItemsForEmployee(empId) };
-        document.getElementById('release-statement-title').textContent = 'Release Last Paycheck';
+        document.getElementById('release-statement-title').textContent = (isEarly ? '⏰ Early Release — ' : '') + 'Release Last Paycheck';
         document.getElementById('release-statement-subtitle').textContent = "Calculating this employee's final paycheck from Daily Pay and Additional Income…";
-        document.getElementById('release-confirm-btn').textContent = 'Release Paycheck';
+        document.getElementById('release-confirm-btn').textContent = currentUserRole === 'Medium' ? 'Send for Approval' : 'Release Paycheck';
         document.getElementById('release-statement-overlay').style.display = 'flex';
         renderReleaseStatementBody();
 
         const auto = await computeLastPaycheckAmount(empId);
         if (currentReleaseMode !== 'paycheck' || currentReleaseEmployeeId !== empId) return; // overlay was closed/changed while this was loading
-        if (auto !== null) currentReleaseStatement.saved = auto;
+        if (auto !== null) {
+            currentReleaseStatement.saved = auto.total;
+            currentReleaseStatement.basePay = auto.basePay;
+            currentReleaseStatement.additionalIncome = auto.additionalIncome;
+        }
         document.getElementById('release-statement-subtitle').textContent = auto !== null
             ? "Auto-filled from this employee's Daily Pay + Additional Income for their last worked week — double-check against Statement/Payroll, then review before releasing. This can't be undone from here."
             : "No Daily Pay history found to auto-fill from — enter the amount from this employee's final paycheck (check Statement/Payroll for that week), then review before releasing. This can't be undone from here.";
@@ -6295,6 +6338,12 @@
     function setPaycheckAmount(val) {
         if (!currentReleaseStatement) return;
         currentReleaseStatement.saved = Math.max(0, parseFloat(val) || 0);
+        // A manual edit means the amount no longer matches what was
+        // auto-computed, so the base-pay/income split can't be trusted
+        // anymore either — cleared rather than left showing a stale
+        // breakdown that no longer adds up to the new total.
+        currentReleaseStatement.basePay = undefined;
+        currentReleaseStatement.additionalIncome = undefined;
         renderReleaseStatementBody();
     }
 
@@ -6369,6 +6418,7 @@
         releaseStatementChargeId = null;
         currentReleaseEmployeeId = null;
         currentReleaseStatement = null;
+        currentReleaseIsEarly = false;
         document.getElementById('release-statement-overlay').style.display = 'none';
     }
 
@@ -6388,18 +6438,42 @@
             ? stmt.items.filter(i => !i.selected && !(totals.prepayTarget && totals.prepayTarget.type === i.type && totals.prepayTarget.id === i.id)).map(i => ({ type: i.type, id: i.id, amount: i.amount }))
             : [];
         const prepay = totals.prepayTarget ? { type: totals.prepayTarget.type, id: totals.prepayTarget.id, amount: totals.prepayAmount } : null;
+        const empId = currentReleaseMode === 'wd' ? stmt.employeeId : currentReleaseEmployeeId;
 
         const btn = document.getElementById('release-confirm-btn');
         const originalLabel = btn.textContent;
-        btn.disabled = true; btn.textContent = 'Releasing...';
+        btn.disabled = true; btn.textContent = currentUserRole === 'Medium' ? 'Sending...' : 'Releasing...';
+
+        // A Medium user never executes a release directly — both the
+        // normal and Early Release paths always go to an Administrator
+        // for approval first. An Administrator (or SuperAdmin) executes
+        // immediately, same as before, now also recording whether this
+        // particular release was early.
+        if (currentUserRole === 'Medium') {
+            const { error } = await supabaseClient.rpc('request_release', {
+                p_actor: currentUsername, p_release_type: currentReleaseMode,
+                p_charge_id: currentReleaseMode === 'wd' ? releaseStatementChargeId : null,
+                p_employee_id: empId, p_saved_amount: stmt.saved, p_settle: settle, p_absorb: absorb,
+                p_prepay: prepay, p_net_release: totals.netRelease, p_is_early: currentReleaseIsEarly
+            });
+            btn.disabled = false; btn.textContent = originalLabel;
+            if (error) { alert('Error: ' + error.message); return; }
+            closeReleaseStatement();
+            alert('Sent for Administrator approval — nothing has been released yet. You\'ll see it move once it\'s been acted on.');
+            return;
+        }
+
         const { error } = currentReleaseMode === 'wd'
             ? await supabaseClient.rpc('release_week_deposit', {
                 p_actor: currentUsername, p_charge_id: releaseStatementChargeId,
-                p_saved_amount: stmt.saved, p_settle: settle, p_absorb: absorb, p_prepay: prepay, p_net_release: totals.netRelease
+                p_saved_amount: stmt.saved, p_settle: settle, p_absorb: absorb, p_prepay: prepay, p_net_release: totals.netRelease,
+                p_is_early: currentReleaseIsEarly, p_via_request: false
             })
             : await supabaseClient.rpc('release_last_paycheck', {
                 p_actor: currentUsername, p_employee_id: currentReleaseEmployeeId,
-                p_paycheck_amount: stmt.saved, p_settle: settle, p_absorb: absorb, p_prepay: prepay, p_net_release: totals.netRelease
+                p_paycheck_amount: stmt.saved, p_settle: settle, p_absorb: absorb, p_prepay: prepay, p_net_release: totals.netRelease,
+                p_is_early: currentReleaseIsEarly, p_via_request: false,
+                p_base_pay_amount: stmt.basePay ?? null, p_additional_income_amount: stmt.additionalIncome ?? null
             });
         btn.disabled = false; btn.textContent = originalLabel;
         if (error) { alert('Error: ' + error.message); return; }
@@ -6435,7 +6509,9 @@
                 kind: 'Week in Deposit', amount: saved, pending: +pending.toFixed(2),
                 eligible, issue: eligible ? nextThursdayOnOrAfter(eligible) : null,
                 handover: eligible ? addDaysStr(nextThursdayOnOrAfter(eligible), 2) : null,
-                action: eligible && todayStr() >= eligible ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}')">🔓 Release</button>` : ''
+                action: eligible && todayStr() >= eligible
+                    ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}')">🔓 Release</button>`
+                    : `<button class="btn-small" style="margin:0;background:#b45309;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}', true)">⏰ Early Release</button>`
             });
         });
         employees.filter(e => e.status === 'Inactive').forEach(e => {
@@ -6448,7 +6524,9 @@
                 kind: 'Last Paycheck', amount: null, pending: +pending.toFixed(2),
                 eligible, issue: eligible ? nextThursdayOnOrAfter(eligible) : null,
                 handover: eligible ? addDaysStr(nextThursdayOnOrAfter(eligible), 2) : null,
-                action: eligible && todayStr() >= eligible ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}')">🔓 Release</button>` : ''
+                action: eligible && todayStr() >= eligible
+                    ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}')">🔓 Release</button>`
+                    : `<button class="btn-small" style="margin:0;background:#b45309;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}', true)">⏰ Early Release</button>`
             });
         });
         rows.sort((a, b) => String(a.eligible || '9999').localeCompare(String(b.eligible || '9999')));
@@ -6481,6 +6559,85 @@
                     ${r.action ? `<div class="rec-actions" style="margin-top:10px;">${r.action}</div>` : (r.eligible ? `<div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Not eligible until ${r.eligible}.</div>` : '')}
                 </div>
             </div>`).join('');
+    }
+
+    // Permanent, auditable log of every completed release — populated
+    // automatically as the last step inside release_week_deposit and
+    // release_last_paycheck, so it's complete regardless of whether a
+    // release happened directly (Administrator) or through the approval
+    // queue (Medium's request, once approved). Fetched fresh every time
+    // the tab opens rather than cached, since it's a historical record
+    // that should always reflect the true database state.
+    let releaseHistoryCache = [];
+    async function fetchReleaseHistory() {
+        const body = document.getElementById('releasehistory-tbody');
+        if (body) body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Loading…</div>';
+        try {
+            const { data, error } = await supabaseClient.rpc('get_release_history', { p_actor: currentUsername, p_company: currentCompany });
+            if (error) { console.error('get_release_history:', error); releaseHistoryCache = []; }
+            else releaseHistoryCache = data || [];
+        } catch (e) { console.error('fetchReleaseHistory:', e); releaseHistoryCache = []; }
+        renderReleaseHistory();
+    }
+
+    function renderReleaseHistory() {
+        const query = (document.getElementById('releasehistory-search')?.value || '').toLowerCase();
+        const rows = releaseHistoryCache.filter(r => {
+            if (!query) return true;
+            const emp = employees.find(e => e.id === r.employee_id);
+            const empName = emp ? `${emp.first_name} ${emp.last_name}` : r.employee_id;
+            return `${empName} ${r.released_by}`.toLowerCase().includes(query);
+        });
+
+        const grid = document.getElementById('releasehistory-stats-grid');
+        if (grid) {
+            const totalReleased = releaseHistoryCache.reduce((a, r) => a + (parseFloat(r.net_release) || 0), 0);
+            const totalDeducted = releaseHistoryCache.reduce((a, r) => a + (parseFloat(r.total_deducted) || 0), 0);
+            const earlyCount = releaseHistoryCache.filter(r => r.was_early).length;
+            grid.innerHTML = `
+                <div class="stat-card"><div class="stat-label">Total Releases</div><div class="stat-value">${releaseHistoryCache.length}</div></div>
+                <div class="stat-card"><div class="stat-label">Net Released to Employees</div><div class="stat-value" style="color:#059669;">${formatMoney(totalReleased)}</div></div>
+                <div class="stat-card"><div class="stat-label">Total Applied to Deductions</div><div class="stat-value">${formatMoney(totalDeducted)}</div></div>
+                <div class="stat-card"><div class="stat-label">Early Releases</div><div class="stat-value">${earlyCount}</div></div>`;
+        }
+
+        const body = document.getElementById('releasehistory-tbody');
+        if (!body) return;
+        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No releases recorded yet.</div>'; return; }
+        body.innerHTML = rows.map(r => {
+            const emp = employees.find(e => e.id === r.employee_id);
+            const empName = emp ? `${emp.first_name} ${emp.last_name}` : r.employee_id;
+            const items = [...(r.settle || []), ...(r.absorb || [])];
+            const hasBreakdown = r.base_pay_amount != null || r.additional_income_amount != null;
+            const open = recExpanded.releasehistory.has(String(r.id));
+            return `
+            <div class="rec-card${open ? ' open' : ''}" id="rec-releasehistory-${r.id}">
+                <div class="rec-card-head" onclick="toggleRecCard('releasehistory','${r.id}')">
+                    <span class="rec-caret" data-caret="releasehistory-${r.id}">${open ? '▾' : '▸'}</span>
+                    <span class="rec-title">${escHtml(empName)} <span class="type-pill">${r.release_type === 'wd' ? 'Week in Deposit' : 'Last Paycheck'}</span>${r.was_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
+                    <span class="rec-sub">${new Date(r.released_at).toISOString().split('T')[0]} · by ${escHtml(r.released_by)}</span>
+                    <span class="rec-right" style="color:#059669;">${formatMoney(r.net_release)}</span>
+                </div>
+                <div class="rec-card-body">
+                    <div class="rec-detail-grid">
+                        ${hasBreakdown ? `
+                        <div><div class="k">Base Pay</div><div class="v">${formatMoney(r.base_pay_amount || 0)}</div></div>
+                        <div><div class="k">Additional Income</div><div class="v">${formatMoney(r.additional_income_amount || 0)}</div></div>` : ''}
+                        <div><div class="k">Original Amount</div><div class="v">${formatMoney(r.gross_amount)}</div></div>
+                        <div><div class="k">Total Deductions</div><div class="v" style="${r.total_deducted > 0.004 ? 'color:#dc2626;' : ''}">${formatMoney(r.total_deducted)}</div></div>
+                        <div><div class="k">Final Amount Released</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(r.net_release)}</div></div>
+                        <div><div class="k">Requested via approval?</div><div class="v">${r.was_via_request ? 'Yes' : 'No — direct release'}</div></div>
+                    </div>
+                    ${items.length ? `
+                    <div class="detail-subhead" style="margin-top:8px;">Applied to</div>
+                    <div style="font-size:12px;">
+                        ${(r.settle || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — settled in full <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
+                        ${(r.absorb || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — declared a loss (Absorbed) <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
+                        ${r.prepay ? `<div style="padding:3px 0;"><span class="type-pill">${r.prepay.type === 'claim' ? 'Claim' : 'Charge'}</span> ${r.prepay.id} — partial prepayment <span style="color:#7c3aed;">−${formatMoney(r.prepay.amount)}</span></div>` : ''}
+                    </div>` : '<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">No other outstanding claims or charges at the time of release.</div>'}
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // ===== ADDITIONAL INCOME (mirror of charges, but ADDS to pay) =====
@@ -8577,6 +8734,76 @@
         const { error } = await supabaseClient.rpc('reject_change', { p_actor: currentUsername, p_id: id });
         if (error) alert('Error: ' + error.message);
         else renderApprovals();
+    }
+
+    // A Medium user's release (normal or early) always lands here first —
+    // the settle/absorb/prepay plan they already reviewed and built is
+    // shown exactly as they built it; an Administrator isn't re-deciding
+    // it, just approving or rejecting the same plan. Approving calls
+    // straight into approve_release_request, which runs the real
+    // release_week_deposit/release_last_paycheck RPC — everything from
+    // there on (audit log, release_history, notifications) works exactly
+    // like a direct Administrator release.
+    async function renderReleaseRequests() {
+        const container = document.getElementById('release-requests-tbody');
+        if (!container) return;
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
+        const { data, error } = await supabaseClient.rpc('get_pending_release_requests', { p_actor: currentUsername, p_company: currentCompany });
+        if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
+        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No pending release requests.</div>'; return; }
+
+        container.className = 'record-grid';
+        container.innerHTML = data.map(r => {
+            const emp = employees.find(e => e.id === r.employee_id);
+            const empName = emp ? `${emp.first_name} ${emp.last_name}` : r.employee_id;
+            const items = [...(r.settle || []), ...(r.absorb || [])];
+            const open = recExpanded.approvals && recExpanded.approvals.has('rel' + r.id);
+            return `
+            <div class="rec-card${open ? ' open' : ''}" id="rec-approvals-rel${r.id}">
+                <div class="rec-card-head" onclick="toggleRecCard('approvals','rel${r.id}')">
+                    <span class="rec-caret" data-caret="approvals-rel${r.id}">${open ? '▾' : '▸'}</span>
+                    <span class="rec-title">${escHtml(empName)} <span class="type-pill">${r.release_type === 'wd' ? 'Week in Deposit' : 'Last Paycheck'}</span>${r.is_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
+                    <span class="rec-sub">requested by ${escHtml(r.requested_by)}</span>
+                    <span class="rec-right">${formatMoney(r.net_release)}</span>
+                </div>
+                <div class="rec-card-body">
+                    <div class="rec-detail-grid">
+                        <div><div class="k">Original Amount</div><div class="v">${formatMoney(r.saved_amount)}</div></div>
+                        <div><div class="k">Net to Release</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(r.net_release)}</div></div>
+                        <div><div class="k">Requested</div><div class="v">${new Date(r.requested_at).toLocaleString()}</div></div>
+                    </div>
+                    ${items.length ? `<div class="detail-subhead" style="margin-top:8px;">Plan</div>
+                    <div style="font-size:12px;">
+                        ${(r.settle || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — settle in full <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
+                        ${(r.absorb || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — declare a loss (Absorbed) <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
+                        ${r.prepay ? `<div style="padding:3px 0;"><span class="type-pill">${r.prepay.type === 'claim' ? 'Claim' : 'Charge'}</span> ${r.prepay.id} — partial prepayment <span style="color:#7c3aed;">−${formatMoney(r.prepay.amount)}</span></div>` : ''}
+                    </div>` : '<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">No other outstanding claims or charges.</div>'}
+                    <div class="rec-actions">
+                        <button class="btn-small" style="background:var(--primary);margin:0;" onclick="approveReleaseRequest(${r.id})">Approve</button>
+                        <button class="del-btn" onclick="rejectReleaseRequest(${r.id})">✕ Reject</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function approveReleaseRequest(id) {
+        if (!confirm('Approve and execute this release now?')) return;
+        const { error } = await supabaseClient.rpc('approve_release_request', { p_actor: currentUsername, p_request_id: id });
+        if (error) { alert('Error: ' + error.message); return; }
+        renderReleaseRequests();
+        await fetchChargesFromCloud();
+        await fetchClaimsFromCloud();
+        await loadChargeHistory();
+        await loadEmployeeDetails();
+        alert('Release approved and completed.');
+    }
+
+    async function rejectReleaseRequest(id) {
+        if (!confirm('Reject this release request?')) return;
+        const { error } = await supabaseClient.rpc('reject_release_request', { p_actor: currentUsername, p_request_id: id, p_reason: null });
+        if (error) { alert('Error: ' + error.message); return; }
+        renderReleaseRequests();
     }
 
     async function renderLog() {
