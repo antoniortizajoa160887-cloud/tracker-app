@@ -385,6 +385,7 @@
     }
     label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; color: var(--text); }
     input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; min-height: 44px; background: #FCFDFD; outline: none; color: var(--text); font-family: inherit; } /* 16px prevents iOS zoom on focus; min-height keeps every field the same size */
+    input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; min-height: 0; padding: 0; flex-shrink: 0; accent-color: var(--primary); } /* the base rule above is sized for text-like fields — without this override a checkbox/radio inherits width:100%/min-height:44px and balloons into a giant, misaligned square */
     textarea { min-height: 80px; resize: vertical; line-height: 1.4; }
     /* iOS renders date/time inputs taller than text fields — force them to match */
     input[type="date"], input[type="time"], input[type="datetime-local"] { -webkit-appearance: none; appearance: none; height: 44px; }
@@ -2058,8 +2059,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.02';
+    const APP_VERSION = 'v3.03';
     const CHANGELOG = [
+        { version: 'v3.03', date: '2026-08-14', notes: 'Two fixes. The checkbox on the release screen was rendering as a huge, misaligned square instead of a normal small checkbox \u2014 root cause was the app\'s shared base styling for text fields (input/select/textarea) never excluded checkboxes, so it inherited full-width and a 44px minimum height meant for things like text and date fields. Added a proper override so any checkbox (this one, and any future ones) renders at a normal size and lines up with its label. Second: Release Last Paycheck now auto-fills the paycheck amount instead of starting blank \u2014 it adds up that employee\'s Daily Pay entries plus any Additional Income for the Sun\u2013Sat week containing their last worked day (not a full payroll recompute \u2014 claim/charge deductions are deliberately left out, since the release screen\'s own settle/prepay/absorb logic already handles those separately). The field stays fully editable so it can still be corrected against Statement/Payroll if something looks off, and if there\'s no Daily Pay history to derive a week from at all, it just asks for the amount by hand like before. Verified the week math and the income-eligibility filtering in Node before shipping.' },
         { version: 'v3.02', date: '2026-08-14', notes: 'Fixed a real gap in last update\'s prepayment logic, caught before it ever hit a real release: the \'leftover becomes a prepayment, the item stays open on its normal weekly schedule\' behavior only makes sense for an employee who\'s still actively earning a paycheck to deduct from \u2014 it was wrongly applying to Inactive (quit/fired) employees too, where there\'s no more weekly income to ever actually continue collecting from. Now: for an Inactive employee (or the Last Paycheck release, which by definition only ever applies to someone who\'s already gone), anything not fully covered goes straight to a declared loss instead \u2014 no dangling half-open balance waiting on a paycheck that will never come. The prepay-then-continue behavior still applies correctly when releasing Week in Deposit early for a still-Active employee, since there\'s a real next paycheck for that case. Also closed a second, related leak while fixing this: previously, whenever a release couldn\'t cover everything but the leftover fragment didn\'t qualify for a prepayment, that fragment was quietly still counted as \'net release to the employee\' \u2014 now nothing ever reaches the employee while any claim or charge remains outstanding, full stop, regardless of why. Verified all four cases in Node (Active gets a prepayment, Inactive goes straight to loss, Last Paycheck always goes straight to loss, and a genuine surplus with nothing outstanding still releases correctly) before re-confirming the database side against a throwaway company.' },
         { version: 'v3.01', date: '2026-08-14', notes: 'Two more pieces of the release rules. First: when the last-paycheck (30-day) check doesn\'t fully cover what an employee owes, whatever\'s left over after fully settling what it CAN cover no longer gets released to the employee \u2014 it\'s now held back and applied as a partial prepayment toward the next outstanding claim or charge instead. That item stays open (not Paid, not Absorbed) with a smaller balance, and its normal weekly deduction schedule just continues from there automatically \u2014 no new mechanism needed for that part, it\'s exactly how weekly deductions already work. The release statement shows this prepayment as its own line so it\'s visible before confirming, not something that just quietly happens. Money only ever reaches the employee once every single outstanding claim or charge is genuinely covered with nothing left pending. Same logic applies to a Week in Deposit release, not just the 30-day check. Second: a standing reminder now appears on Home starting Wednesday each week (through Saturday) whenever an Inactive employee\'s last paycheck is eligible for release but nobody\'s made a decision on it yet \u2014 deliberately has no dismiss button, since it\'s meant to keep showing until someone actually acts on it via the Savings & Release Eligibility report, not just gets clicked away. (The Release button in Week in Deposit was already correctly hidden from View Only accounts \u2014 checked and confirmed, no change needed there.) Tested the prepayment math end to end against a throwaway company: a $350 charge correctly dropped to $250 and stayed in its normal Deducting status with its weekly rate untouched, ready to keep collecting on its own.' },
         { version: 'v3.00', date: '2026-08-14', notes: 'New no-show flag on Employees: any Active Daily Pay employee whose most recent worked day falls before Thursday of the last fully-completed week (i.e. they had no work logged Thursday, Friday, or Saturday of that week \u2014 3 days in a row) now shows a warning banner at the top of Employees listing them by name, with a one-click \'Mark Inactive\' that ties straight into last week\'s release rules: it locks in today as their departure date and immediately starts the clock on holding their Week in Deposit savings (90 days) and last paycheck (30 days), exactly like manually flipping their status already did. A \'Dismiss\' option is also there for a quick false alarm, though it only lasts the session \u2014 the flag comes back next login if nothing\'s actually changed. Scoped to Daily Pay employees only (Weekly and Provider Pay don\'t log daily attendance the same way, so the check wouldn\'t mean anything for them), and never shown to View Only accounts. Verified the boundary case specifically in Node before shipping \u2014 someone who worked exactly on that cutoff Thursday correctly does NOT get flagged, only someone whose last day was before it.' },
@@ -6184,14 +6186,46 @@
     }
 
     // Second entry point into the same overlay — for an Inactive
+    // Sums an employee's Daily Pay entries plus any Additional Income
+    // active for the Sun-Sat week containing their last worked day —
+    // deliberately NOT a full payroll recompute (no claim/charge
+    // deductions folded in here), since the release flow's own
+    // settle/prepay/absorb logic already handles those separately; this
+    // is just "what would have shown up on the paycheck before
+    // deductions". Returns null if there's no Daily Pay history to derive
+    // a week from at all, so the caller can fall back to asking for the
+    // amount by hand.
+    async function computeLastPaycheckAmount(empId) {
+        const lastWorked = lastDailyPayWorked[empId];
+        if (!lastWorked) return null;
+        const sunday = weekStartSunday(new Date(lastWorked + 'T00:00:00Z'));
+        const key = weekKeyFromSunday(sunday);
+        const saturday = new Date(sunday); saturday.setUTCDate(saturday.getUTCDate() + 6);
+        const saturdayStr = saturday.toISOString().split('T')[0];
+
+        let dailyTotal = 0;
+        try {
+            const { data, error } = await supabaseClient.rpc('get_daily_pay', { p_actor: currentUsername, p_company: currentCompany, p_year: key.year, p_week: key.week });
+            if (error) { console.error('computeLastPaycheckAmount get_daily_pay:', error); }
+            else (data || []).filter(r => r.employee_id === empId && !r.is_off).forEach(r => { dailyTotal += parseFloat(r.amount) || 0; });
+        } catch (e) { console.error('computeLastPaycheckAmount:', e); }
+
+        const incomeTotal = additionalIncome
+            .filter(i => i.employee_id === empId && i.status !== 'Queued' && i.start_date && i.start_date <= saturdayStr && remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, saturdayStr) > 0)
+            .reduce((a, i) => a + Math.min(parseFloat(i.weekly_amount) || 0, remainingBalanceBefore(i.amount, i.weekly_amount, i.start_date, i.status, saturdayStr)), 0);
+
+        return +(dailyTotal + incomeTotal).toFixed(2);
+    }
+
+    // Second entry point into the same overlay — for an Inactive
     // employee's held final paycheck instead of their Week in Deposit
     // savings. Same 100%-settle-then-absorb rules, same shared pending-
     // items list, just a different pool of money and its own 30-day gate.
-    // The paycheck amount isn't auto-derived (reconstructing an accurate
-    // historical week's net pay safely wasn't something to guess at for a
-    // real money release) — it's entered here from whatever Statement/
-    // Payroll already shows for that final week.
-    function openLastPaycheckRelease(empId) {
+    // The paycheck amount auto-fills from that employee's Daily Pay +
+    // Additional Income for the week containing their last worked day —
+    // still shown as a normal editable field so it can be corrected by
+    // hand if Statement/Payroll shows something different for that week.
+    async function openLastPaycheckRelease(empId) {
         if (!canEdit()) return;
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
@@ -6210,9 +6244,17 @@
         currentReleaseEmployeeId = empId;
         currentReleaseStatement = { saved: 0, employeeId: empId, items: pendingItemsForEmployee(empId) };
         document.getElementById('release-statement-title').textContent = 'Release Last Paycheck';
-        document.getElementById('release-statement-subtitle').textContent = "Enter the amount from this employee's final paycheck (check Statement/Payroll for that week), then review before releasing — this can't be undone from here.";
+        document.getElementById('release-statement-subtitle').textContent = "Calculating this employee's final paycheck from Daily Pay and Additional Income…";
         document.getElementById('release-confirm-btn').textContent = 'Release Paycheck';
         document.getElementById('release-statement-overlay').style.display = 'flex';
+        renderReleaseStatementBody();
+
+        const auto = await computeLastPaycheckAmount(empId);
+        if (currentReleaseMode !== 'paycheck' || currentReleaseEmployeeId !== empId) return; // overlay was closed/changed while this was loading
+        if (auto !== null) currentReleaseStatement.saved = auto;
+        document.getElementById('release-statement-subtitle').textContent = auto !== null
+            ? "Auto-filled from this employee's Daily Pay + Additional Income for their last worked week — double-check against Statement/Payroll, then review before releasing. This can't be undone from here."
+            : "No Daily Pay history found to auto-fill from — enter the amount from this employee's final paycheck (check Statement/Payroll for that week), then review before releasing. This can't be undone from here.";
         renderReleaseStatementBody();
     }
 
