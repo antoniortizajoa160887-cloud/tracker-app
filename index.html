@@ -27,6 +27,65 @@
             document.head.appendChild(erudaScript);
         })();
     </script>
+    <!-- TEMPORARY scroll diagnostic HUD — separate from Eruda on purpose.
+         Every diagnostic run so far happened WHILE the Eruda panel was
+         open, which is one of the two states where scrolling reportedly
+         works — so nothing looked wrong. This is a plain always-visible
+         readout (no panel to open, nothing to tap) that shows live touch/
+         scroll data exactly while the bug is happening. Gated behind the
+         same tracker_debug flag as Eruda, so it's already on for anyone
+         who's already enabled the debug console. Safe to delete this
+         whole block once the real bug is found. -->
+    <script>
+        (function () {
+            var wantsDebug = new URLSearchParams(location.search).has('debug') || localStorage.getItem('tracker_debug') === '1';
+            if (!wantsDebug) return;
+            window.addEventListener('DOMContentLoaded', function () {
+                var hud = document.createElement('div');
+                hud.id = 'scroll-hud';
+                hud.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:rgba(0,0,0,0.85);color:#0f0;font:10px/1.4 monospace;padding:4px 6px;pointer-events:none;white-space:pre-wrap;max-height:110px;overflow:hidden;';
+                hud.textContent = 'scroll-hud ready';
+                document.documentElement.appendChild(hud);
+
+                function fixedEls() {
+                    return [...document.querySelectorAll('*')]
+                        .filter(function (el) { return el !== hud && getComputedStyle(el).position === 'fixed'; })
+                        .map(function (el) {
+                            var r = el.getBoundingClientRect();
+                            return (el.id || el.tagName) + ' h:' + Math.round(r.height) + ' top:' + Math.round(r.top) + ' z:' + getComputedStyle(el).zIndex + ' pe:' + getComputedStyle(el).pointerEvents;
+                        }).join(' | ');
+                }
+
+                var lastY = null, touchTargetInfo = '';
+                document.addEventListener('touchstart', function (e) {
+                    var t = e.target;
+                    touchTargetInfo = (t.id || t.tagName) + ' scrollable-ancestor:' + (function () {
+                        var el = t;
+                        while (el && el !== document.body) {
+                            var cs = getComputedStyle(el);
+                            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return el.id || el.tagName;
+                            el = el.parentElement;
+                        }
+                        return 'none';
+                    })();
+                    lastY = e.touches[0].clientY;
+                }, { capture: true, passive: true });
+
+                document.addEventListener('touchmove', function (e) {
+                    var dy = lastY == null ? 0 : (e.touches[0].clientY - lastY);
+                    hud.textContent =
+                        'scrollY:' + window.scrollY +
+                        ' bodyScrollTop:' + document.body.scrollTop +
+                        ' docScrollTop:' + document.documentElement.scrollTop +
+                        ' dy:' + Math.round(dy) +
+                        ' defaultPrevented:' + e.defaultPrevented +
+                        ' cancelable:' + e.cancelable +
+                        '\ntouchstart target: ' + touchTargetInfo +
+                        '\nfixed: ' + fixedEls();
+                }, { capture: true, passive: true });
+            });
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Logistics & HR Claims Dashboard</title>
