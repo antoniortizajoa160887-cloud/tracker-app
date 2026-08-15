@@ -240,7 +240,16 @@
        (table wrappers, schedule lists) back to the page, which looks
        exactly like "scrolling stopped working" the moment the cursor is
        over one of those. Keeping it touch-only avoids that entirely. */
-    @media (pointer: coarse) { body { overscroll-behavior-y: contain; } }
+    /* Applied to BOTH html and body deliberately. Chrome's native
+       pull-to-refresh (and its scroll-vs-refresh gesture arbitration)
+       checks the document's actual root scrolling element, which is
+       <html> in standards mode — NOT <body>. Setting this on body alone
+       was a no-op for that purpose, which is why Chrome kept taking over
+       every downward drag as its own full-page reload on Android, and
+       why plain scrolling could stall entirely (Chrome undecided between
+       handing the gesture to page-scroll vs. its own refresh UI). Both
+       are set now so the real root scroller is actually covered. */
+    @media (pointer: coarse) { html, body { overscroll-behavior-y: contain; } }
     h1 { margin-top: 0; font-size: 1.35rem; color: var(--secondary); letter-spacing: -0.01em; }
     h2 { margin-top: 0; font-size: 1.05rem; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; color: var(--secondary); }
     .container { width: 100%; max-width: 1600px; margin: 0 auto; }
