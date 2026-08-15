@@ -2141,8 +2141,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.11';
+    const APP_VERSION = 'v3.12';
     const CHANGELOG = [
+        { version: 'v3.12', date: '2026-08-15', notes: 'Found the real bug, and it explains everything reported: the pull-to-refresh feature listens for touch gestures across the whole page, but never learned that the sidebar (and a couple of other spots) scroll independently of the main page \u2014 so every scroll gesture inside the sidebar looked identical to \'at the top of the page, about to pull down and refresh\' from its point of view, since the page itself genuinely was at the very top the whole time. That\'s exactly the \'scrolling works but also tries to trigger refresh\' behavior described \u2014 and very likely the reason navigation stopped working too, since the refresh indicator (pinned across the top of the screen) could then end up sitting directly on top of whatever menu item was being tapped. Fixed properly: pull-to-refresh now checks whether a touch started inside its own independently-scrollable area (the sidebar, message threads, or anywhere else with its own scroll now or in the future) and steps aside entirely for those, letting them scroll normally on their own. Also made the refresh indicator itself unable to intercept taps no matter what, as a second layer of protection. No console errors ever should have shown up for this one \u2014 it was a gesture-handling gap, not a crash \u2014 which matches exactly what was reported back from the debug console.' },
         { version: 'v3.11', date: '2026-08-15', notes: 'Added a temporary on-phone debug console for tracking down the reported navigation/scrolling issue. Chrome on Android has no built-in way to see JavaScript errors directly on the phone itself \u2014 the normal method needs a computer connected by USB. Visiting the site with ?debug=1 added to the end of the URL (e.g. aortiza.netlify.app/?debug=1) now shows a small floating button that opens a full console right on the phone screen, with all errors and messages visible directly \u2014 no computer needed. Completely inert for everyone else; nothing changes without that exact URL parameter. This is meant to be temporary, just to see the real error text so the actual problem can be fixed precisely instead of guessed at.' },
         { version: 'v3.10', date: '2026-08-15', notes: 'Rebuilt the PWA (installable app) setup from scratch after reports it wasn\'t working at all on Android, browser or shortcut. Found the likely real cause: the install manifest was embedded directly in the page as a data URI instead of being served as an actual file \u2014 that\'s an unusual pattern Android\'s app-install process (WebAPK generation) doesn\'t reliably support, even though it looked fine everywhere else. Moved it to a real manifest.json file with real separate icon image files, both delivered alongside index.html and sw.js \u2014 the standard approach every PWA guide recommends, and the one actually built to be checked by Android\'s installer. Also rewrote sw.js in the same pass: the old version had accumulated three rounds of increasingly complex fixes trying to be clever about cache-busting, and each fix risked reintroducing the last bug \u2014 replaced all of that with the simplest version that still does the job (cache the app shell once at install, network-first with that as a fallback only if the network genuinely fails), since this app depends on a live connection either way and there was never much value in aggressive offline caching to begin with. Also stopped silently swallowing service worker registration errors, so if anything about this ever breaks again it\'ll actually show up somewhere instead of failing invisibly like before. Two new files this time \u2014 manifest.json and three icon PNGs \u2014 all need to go in the same folder as index.html and sw.js.' },
         { version: 'v3.09', date: '2026-08-15', notes: 'Three things. First, a proper thin dark scrollbar for the sidebar on desktop instead of the chunky default browser one (mobile already looked right and is untouched). Second, tightened sidebar spacing a bit more. Third, and the real work this time: fixed Daily Pay import against an actual real nomina file. Two genuine structural mismatches were found by examining the real file directly rather than guessing: the day columns were being read one column too early (missing a flat day-rate column real sheets carry before the seven actual weekdays), and a real week sheet isn\'t one flat list \u2014 it\'s several sections (hourly employees, then trucking companies/owner-operators) each starting with its own repeated mini header, which the importer used to treat as the end of all data. Fixed both, and added a week picker for files that bundle many weeks in one workbook (common for a running yearly file) rather than guessing which tab to use. A $0 week is now correctly treated as a normal entry, not a stop signal, since the same person can easily have hours in one week and none in another. Verified this thoroughly before writing any code: extracted and matched every single name against the real employee list across three different real weeks from the uploaded file (89, 98, and 99 entries) \u2014 100% matched cleanly in all three, confirming the matching logic itself was always fine and only the column/section reading was ever broken. The existing unmatched-name correction report (a downloadable spreadsheet to fix names or add missing employees) is untouched and still triggers exactly the same way for any future week that does have a genuine mismatch.' },
@@ -11142,18 +11143,47 @@
     (function setupPullToRefresh() {
         const indicator = document.createElement('div');
         indicator.id = 'ptr-indicator';
-        indicator.style.cssText = 'position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; background:var(--surface); color:var(--primary); font-size:13px; font-weight:700; z-index:9999; transition:height 0.15s ease; box-shadow:0 2px 6px rgba(0,0,0,0.08);';
+        // pointer-events:none — belt-and-suspenders: this indicator should
+        // never be able to intercept a tap on whatever's underneath it,
+        // even if it's mid-transition or briefly non-zero height for any
+        // reason. It's purely a visual cue, never meant to be interactive.
+        indicator.style.cssText = 'position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; background:var(--surface); color:var(--primary); font-size:13px; font-weight:700; z-index:9999; transition:height 0.15s ease; box-shadow:0 2px 6px rgba(0,0,0,0.08); pointer-events:none;';
         indicator.textContent = '↓ Pull to refresh';
         document.body.prepend(indicator);
 
         let startY = null, pulling = false, refreshing = false;
         const THRESHOLD = 70;
 
+        // The sidebar drawer (and a couple of other spots, like message
+        // threads) scroll independently of the main page — window.scrollY
+        // stays 0 while someone scrolls INSIDE one of those, since it's
+        // its own separate scroll container, not the page itself. Without
+        // this check, every scroll gesture inside the sidebar looked
+        // identical to "at the top of the page, about to pull down to
+        // refresh" from here, so it kept arming/showing the refresh
+        // indicator while someone was just trying to scroll the menu —
+        // and the indicator (position:fixed, sitting over the top of the
+        // screen) could then visually sit on top of whatever's directly
+        // underneath it once triggered, since it never has a reason to
+        // learn it shouldn't be there. Walking up from the actual touch
+        // target to see if it's inside its own independently-scrollable
+        // area — not just specifically the sidebar — covers this
+        // generally, for any current or future nested scroll region.
+        function isInsideOwnScrollArea(el) {
+            while (el && el !== document.body && el !== document.documentElement) {
+                const style = window.getComputedStyle(el);
+                if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return true;
+                el = el.parentElement;
+            }
+            return false;
+        }
+
         document.addEventListener('touchstart', (e) => {
             if (refreshing) return;
             if (window.scrollY > 0) { startY = null; return; }
             const authVisible = document.getElementById('auth-container') && document.getElementById('auth-container').style.display !== 'none';
             if (authVisible) { startY = null; return; } // don't fight the login screen
+            if (isInsideOwnScrollArea(e.target)) { startY = null; return; } // let the sidebar/etc. handle its own scroll, untouched
             startY = e.touches[0].clientY;
             pulling = true;
         }, { passive: true });
