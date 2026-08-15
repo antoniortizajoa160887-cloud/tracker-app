@@ -2400,7 +2400,9 @@
             alert('Debug console enabled — reload the page to see it.');
             return;
         }
-        toggleVersionLog();
+        // Version history popup disabled — single/double/etc. taps under 5
+        // no longer open the overlay. Only the 5-tap debug-console trigger
+        // above still does anything from this badge now.
     }
 
     function toggleVersionLog() {
