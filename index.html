@@ -2,23 +2,30 @@
 <html lang="en">
 <head>
     <!-- On-phone debug console — completely inert for every normal user,
-         only activates when visiting the site with ?debug=1 in the URL
-         (e.g. https://aortiza.netlify.app/?debug=1). Loads Eruda, a small
-         open-source mobile debugging console, so JS errors/console output
-         show up right on the phone screen via a floating button — no
-         computer, USB cable, or "Desktop site" toggle hunting required.
-         Placed as the very first thing in <head> so it's active before
-         anything else on the page has a chance to run or error out.
-         Remove this block (or just stop visiting with ?debug=1) once
-         debugging is done — it changes nothing for anyone not using that
-         exact URL parameter. -->
+         activates via ?debug=1 in the URL (e.g.
+         https://aortiza.netlify.app/?debug=1) OR by tapping the small
+         version number in the bottom-right corner 5 times in a row — the
+         tap method persists (via localStorage) so it survives a reload
+         without needing to type a URL again, which is fiddlier on mobile
+         than it sounds (the query string can get lost to autocomplete,
+         a saved bookmark, etc.). Loads Eruda, a small open-source mobile
+         debugging console, so JS errors/console output show up right on
+         the phone screen via a floating button — no computer, USB cable,
+         or "Desktop site" toggle hunting required. Placed as the very
+         first thing in <head> so it's active before anything else on the
+         page has a chance to run or error out. Remove this block (or
+         clear the localStorage flag) once debugging is done — it changes
+         nothing for anyone who never triggers it either way. -->
     <script>
-        if (new URLSearchParams(location.search).has('debug')) {
+        (function () {
+            var wantsDebug = new URLSearchParams(location.search).has('debug') || localStorage.getItem('tracker_debug') === '1';
+            if (!wantsDebug) return;
+            localStorage.setItem('tracker_debug', '1');
             var erudaScript = document.createElement('script');
             erudaScript.src = 'https://cdn.jsdelivr.net/npm/eruda';
             erudaScript.onload = function () { eruda.init(); };
             document.head.appendChild(erudaScript);
-        }
+        })();
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -212,7 +219,18 @@
     [data-theme="dark-emerald"] .btn:hover { background: linear-gradient(135deg, #16a34a, #0891b2); }
     [data-theme="dark-emerald"] #version-badge { background: linear-gradient(135deg, #22c55e, #06b6d4); color: #05210f; font-weight: 700; }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    /* touch-action: manipulation removes the ~300ms tap delay on mobile —
+       genuinely useful on buttons/links, but this used to be applied to
+       EVERY element via the universal selector above, including scroll
+       containers, tables, and the sidebar itself. That's broad enough to
+       risk exactly the kind of "can tap, but can't scroll or pan" issue
+       reported (present even in desktop-site mode, where the browser
+       relies heavily on pinch-zoom-and-pan to navigate a page wider than
+       the screen — a strong sign this needed to be viewport-independent,
+       not specific to any one media query). Scoped down to only the
+       elements that actually benefit from it. */
+    button, a, .btn, .tab-btn, .group-btn, .rec-card-head, input[type="checkbox"], input[type="radio"] { touch-action: manipulation; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
     body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0.75rem; line-height: 1.4; overflow-x: hidden; width: 100%; }
     /* Only touch-primary devices (phones/tablets) get this — it stops iOS's
@@ -767,7 +785,7 @@
 </div>
 
 <!-- Version badge — always visible, tap to see the changelog -->
-<div id="version-badge" onclick="toggleVersionLog()" style="position:fixed; bottom:8px; right:8px; background:rgba(15,23,42,0.82); color:#fff; font-size:10px; font-family:var(--mono); padding:4px 9px; border-radius:12px; z-index:9998; cursor:pointer; letter-spacing:0.02em; box-shadow:0 2px 6px rgba(0,0,0,0.2);">v0.0</div>
+<div id="version-badge" onclick="handleVersionBadgeTap()" style="position:fixed; bottom:8px; right:8px; background:rgba(15,23,42,0.82); color:#fff; font-size:10px; font-family:var(--mono); padding:4px 9px; border-radius:12px; z-index:9998; cursor:pointer; letter-spacing:0.02em; box-shadow:0 2px 6px rgba(0,0,0,0.2);">v0.0</div>
 
 <div id="version-log-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:flex-end; justify-content:center;" onclick="if(event.target===this) toggleVersionLog()">
     <div style="background:var(--surface); border-radius:14px 14px 0 0; padding:18px 18px 26px; max-width:480px; width:100%; max-height:70vh; overflow-y:auto;">
@@ -2141,8 +2159,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.12';
+    const APP_VERSION = 'v3.13';
     const CHANGELOG = [
+        { version: 'v3.13', date: '2026-08-15', notes: 'The \'even in desktop-site mode\' detail was the key piece \u2014 that mode uses a completely different layout path than the mobile menu, so if scrolling failed there too, the real cause couldn\'t be anything specific to the mobile drawer (already fixed last round, but clearly not the whole story). It had to be something applying everywhere, regardless of screen size. Found it: touch-action: manipulation was applied to literally every single element on the page, all the way down to scroll containers and tables, not just the buttons it was originally meant for. Desktop-site mode leans heavily on pinch-zoom-and-pan to navigate a page wider than the screen, and that\'s exactly the kind of gesture this setting can interfere with when it\'s spread that broadly. Scoped it down to only actual buttons and links, where it genuinely helps, and left every scrollable area alone. Also made the on-phone debug console easier to trigger \u2014 tapping the small version number bottom-right 5 times now turns it on too, no URL typing required, since that can be its own hassle on a phone. If this round doesn\'t fully fix it, that\'s the fastest way to get real error output next.' },
         { version: 'v3.12', date: '2026-08-15', notes: 'Found the real bug, and it explains everything reported: the pull-to-refresh feature listens for touch gestures across the whole page, but never learned that the sidebar (and a couple of other spots) scroll independently of the main page \u2014 so every scroll gesture inside the sidebar looked identical to \'at the top of the page, about to pull down and refresh\' from its point of view, since the page itself genuinely was at the very top the whole time. That\'s exactly the \'scrolling works but also tries to trigger refresh\' behavior described \u2014 and very likely the reason navigation stopped working too, since the refresh indicator (pinned across the top of the screen) could then end up sitting directly on top of whatever menu item was being tapped. Fixed properly: pull-to-refresh now checks whether a touch started inside its own independently-scrollable area (the sidebar, message threads, or anywhere else with its own scroll now or in the future) and steps aside entirely for those, letting them scroll normally on their own. Also made the refresh indicator itself unable to intercept taps no matter what, as a second layer of protection. No console errors ever should have shown up for this one \u2014 it was a gesture-handling gap, not a crash \u2014 which matches exactly what was reported back from the debug console.' },
         { version: 'v3.11', date: '2026-08-15', notes: 'Added a temporary on-phone debug console for tracking down the reported navigation/scrolling issue. Chrome on Android has no built-in way to see JavaScript errors directly on the phone itself \u2014 the normal method needs a computer connected by USB. Visiting the site with ?debug=1 added to the end of the URL (e.g. aortiza.netlify.app/?debug=1) now shows a small floating button that opens a full console right on the phone screen, with all errors and messages visible directly \u2014 no computer needed. Completely inert for everyone else; nothing changes without that exact URL parameter. This is meant to be temporary, just to see the real error text so the actual problem can be fixed precisely instead of guessed at.' },
         { version: 'v3.10', date: '2026-08-15', notes: 'Rebuilt the PWA (installable app) setup from scratch after reports it wasn\'t working at all on Android, browser or shortcut. Found the likely real cause: the install manifest was embedded directly in the page as a data URI instead of being served as an actual file \u2014 that\'s an unusual pattern Android\'s app-install process (WebAPK generation) doesn\'t reliably support, even though it looked fine everywhere else. Moved it to a real manifest.json file with real separate icon image files, both delivered alongside index.html and sw.js \u2014 the standard approach every PWA guide recommends, and the one actually built to be checked by Android\'s installer. Also rewrote sw.js in the same pass: the old version had accumulated three rounds of increasingly complex fixes trying to be clever about cache-busting, and each fix risked reintroducing the last bug \u2014 replaced all of that with the simplest version that still does the job (cache the app shell once at install, network-first with that as a fallback only if the network genuinely fails), since this app depends on a live connection either way and there was never much value in aggressive offline caching to begin with. Also stopped silently swallowing service worker registration errors, so if anything about this ever breaks again it\'ll actually show up somewhere instead of failing invisibly like before. Two new files this time \u2014 manifest.json and three icon PNGs \u2014 all need to go in the same folder as index.html and sw.js.' },
@@ -2362,6 +2381,26 @@
         if (typeof window[cfg.fn] === 'function') window[cfg.fn]();
         const gsi = document.getElementById('global-search-input');
         if (gsi) gsi.value = '';
+    }
+
+    // 5 quick taps on the version badge activates the same on-phone debug
+    // console as ?debug=1 — a backup trigger, since typing a URL with a
+    // query string is fiddlier on mobile than it sounds (autocomplete,
+    // saved bookmarks, etc. can all lose it). Resets if taps are more
+    // than 1.5s apart, so it takes a real deliberate 5-in-a-row, not just
+    // idle tapping near that corner of the screen.
+    let versionBadgeTapCount = 0, versionBadgeTapTimer = null;
+    function handleVersionBadgeTap() {
+        versionBadgeTapCount++;
+        clearTimeout(versionBadgeTapTimer);
+        versionBadgeTapTimer = setTimeout(() => { versionBadgeTapCount = 0; }, 1500);
+        if (versionBadgeTapCount >= 5) {
+            versionBadgeTapCount = 0;
+            localStorage.setItem('tracker_debug', '1');
+            alert('Debug console enabled — reload the page to see it.');
+            return;
+        }
+        toggleVersionLog();
     }
 
     function toggleVersionLog() {
