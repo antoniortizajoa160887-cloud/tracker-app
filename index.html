@@ -1,91 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- On-phone debug console — completely inert for every normal user,
-         activates via ?debug=1 in the URL (e.g.
-         https://aortiza.netlify.app/?debug=1) OR by tapping the small
-         version number in the bottom-right corner 5 times in a row — the
-         tap method persists (via localStorage) so it survives a reload
-         without needing to type a URL again, which is fiddlier on mobile
-         than it sounds (the query string can get lost to autocomplete,
-         a saved bookmark, etc.). Loads Eruda, a small open-source mobile
-         debugging console, so JS errors/console output show up right on
-         the phone screen via a floating button — no computer, USB cable,
-         or "Desktop site" toggle hunting required. Placed as the very
-         first thing in <head> so it's active before anything else on the
-         page has a chance to run or error out. Remove this block (or
-         clear the localStorage flag) once debugging is done — it changes
-         nothing for anyone who never triggers it either way. -->
-    <script>
-        (function () {
-            var wantsDebug = new URLSearchParams(location.search).has('debug') || localStorage.getItem('tracker_debug') === '1';
-            if (!wantsDebug) return;
-            localStorage.setItem('tracker_debug', '1');
-            var erudaScript = document.createElement('script');
-            erudaScript.src = 'https://cdn.jsdelivr.net/npm/eruda';
-            erudaScript.onload = function () { eruda.init(); };
-            document.head.appendChild(erudaScript);
-        })();
-    </script>
-    <!-- TEMPORARY scroll diagnostic HUD — separate from Eruda on purpose.
-         Every diagnostic run so far happened WHILE the Eruda panel was
-         open, which is one of the two states where scrolling reportedly
-         works — so nothing looked wrong. This is a plain always-visible
-         readout (no panel to open, nothing to tap) that shows live touch/
-         scroll data exactly while the bug is happening. Gated behind the
-         same tracker_debug flag as Eruda, so it's already on for anyone
-         who's already enabled the debug console. Safe to delete this
-         whole block once the real bug is found. -->
-    <script>
-        (function () {
-            var wantsDebug = new URLSearchParams(location.search).has('debug') || localStorage.getItem('tracker_debug') === '1';
-            if (!wantsDebug) return;
-            window.addEventListener('DOMContentLoaded', function () {
-                var hud = document.createElement('div');
-                hud.id = 'scroll-hud';
-                hud.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:rgba(0,0,0,0.85);color:#0f0;font:10px/1.4 monospace;padding:4px 6px;pointer-events:none;white-space:pre-wrap;max-height:110px;overflow:hidden;';
-                hud.textContent = 'scroll-hud ready';
-                document.documentElement.appendChild(hud);
-
-                function fixedEls() {
-                    return [...document.querySelectorAll('*')]
-                        .filter(function (el) { return el !== hud && getComputedStyle(el).position === 'fixed'; })
-                        .map(function (el) {
-                            var r = el.getBoundingClientRect();
-                            return (el.id || el.tagName) + ' h:' + Math.round(r.height) + ' top:' + Math.round(r.top) + ' z:' + getComputedStyle(el).zIndex + ' pe:' + getComputedStyle(el).pointerEvents;
-                        }).join(' | ');
-                }
-
-                var lastY = null, touchTargetInfo = '';
-                document.addEventListener('touchstart', function (e) {
-                    var t = e.target;
-                    touchTargetInfo = (t.id || t.tagName) + ' scrollable-ancestor:' + (function () {
-                        var el = t;
-                        while (el && el !== document.body) {
-                            var cs = getComputedStyle(el);
-                            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return el.id || el.tagName;
-                            el = el.parentElement;
-                        }
-                        return 'none';
-                    })();
-                    lastY = e.touches[0].clientY;
-                }, { capture: true, passive: true });
-
-                document.addEventListener('touchmove', function (e) {
-                    var dy = lastY == null ? 0 : (e.touches[0].clientY - lastY);
-                    hud.textContent =
-                        'scrollY:' + window.scrollY +
-                        ' bodyScrollTop:' + document.body.scrollTop +
-                        ' docScrollTop:' + document.documentElement.scrollTop +
-                        ' dy:' + Math.round(dy) +
-                        ' defaultPrevented:' + e.defaultPrevented +
-                        ' cancelable:' + e.cancelable +
-                        '\ntouchstart target: ' + touchTargetInfo +
-                        '\nfixed: ' + fixedEls();
-                }, { capture: true, passive: true });
-            });
-        })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Logistics & HR Claims Dashboard</title>
@@ -292,23 +207,6 @@
     button, a, .btn, .tab-btn, .group-btn, .rec-card-head, input[type="checkbox"], input[type="radio"] { touch-action: manipulation; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
     body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0.75rem; line-height: 1.4; overflow-x: hidden; width: 100%; }
-    /* Only touch-primary devices (phones/tablets) get this — it stops iOS's
-       native bounce from visually clashing with the hand-built pull-to-
-       refresh indicator, but on a mouse/trackpad device it blocks normal
-       scroll-chaining out of the app's many nested scrollable containers
-       (table wrappers, schedule lists) back to the page, which looks
-       exactly like "scrolling stopped working" the moment the cursor is
-       over one of those. Keeping it touch-only avoids that entirely. */
-    /* Applied to BOTH html and body deliberately. Chrome's native
-       pull-to-refresh (and its scroll-vs-refresh gesture arbitration)
-       checks the document's actual root scrolling element, which is
-       <html> in standards mode — NOT <body>. Setting this on body alone
-       was a no-op for that purpose, which is why Chrome kept taking over
-       every downward drag as its own full-page reload on Android, and
-       why plain scrolling could stall entirely (Chrome undecided between
-       handing the gesture to page-scroll vs. its own refresh UI). Both
-       are set now so the real root scroller is actually covered. */
-    @media (pointer: coarse) { html, body { overscroll-behavior-y: contain; } }
     h1 { margin-top: 0; font-size: 1.35rem; color: var(--secondary); letter-spacing: -0.01em; }
     h2 { margin-top: 0; font-size: 1.05rem; border-bottom: 2px solid var(--border); padding-bottom: 0.4rem; color: var(--secondary); }
     .container { width: 100%; max-width: 1600px; margin: 0 auto; }
@@ -2451,27 +2349,10 @@
         if (gsi) gsi.value = '';
     }
 
-    // 5 quick taps on the version badge activates the same on-phone debug
-    // console as ?debug=1 — a backup trigger, since typing a URL with a
-    // query string is fiddlier on mobile than it sounds (autocomplete,
-    // saved bookmarks, etc. can all lose it). Resets if taps are more
-    // than 1.5s apart, so it takes a real deliberate 5-in-a-row, not just
-    // idle tapping near that corner of the screen.
-    let versionBadgeTapCount = 0, versionBadgeTapTimer = null;
-    function handleVersionBadgeTap() {
-        versionBadgeTapCount++;
-        clearTimeout(versionBadgeTapTimer);
-        versionBadgeTapTimer = setTimeout(() => { versionBadgeTapCount = 0; }, 1500);
-        if (versionBadgeTapCount >= 5) {
-            versionBadgeTapCount = 0;
-            localStorage.setItem('tracker_debug', '1');
-            alert('Debug console enabled — reload the page to see it.');
-            return;
-        }
-        // Version history popup disabled — single/double/etc. taps under 5
-        // no longer open the overlay. Only the 5-tap debug-console trigger
-        // above still does anything from this badge now.
-    }
+    // Version badge tap: intentionally does nothing (popup disabled per
+    // request). toggleVersionLog() below is left intact/unused in case
+    // it's wanted back later.
+    function handleVersionBadgeTap() {}
 
     function toggleVersionLog() {
         const ov = document.getElementById('version-log-overlay');
@@ -11234,98 +11115,124 @@
     }
     checkExistingSession();
 
-    // ---- PWA: service worker (optional — silently does nothing if sw.js
-    // isn't deployed alongside this file, so this never breaks the app) ----
+    // ---- Service worker: app-shell caching, rewritten from scratch -------
+    // Registers sw.js, which caches the app shell (this page, manifest,
+    // icons) and serves network-first — see sw.js itself for the full
+    // explanation. This has nothing to do with touch/scroll handling (a
+    // service worker can't see touch events at all); that fix lives
+    // entirely in this file, separately, above.
+    //
+    // Also handles auto-reload when a NEW service worker takes over (e.g.
+    // after this app is updated and redeployed), so a tab that's been open
+    // a while never keeps running against a stale cached shell. Guarded so
+    // it only fires on a real update — not on the very first-ever install,
+    // where the page also transitions from "no controller" to "controlled"
+    // but there's nothing to actually refresh.
     if ('serviceWorker' in navigator) {
+        let hadController = !!navigator.serviceWorker.controller;
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!hadController) { hadController = true; return; } // first-ever install, not an update
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+        });
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch((err) => console.error('Service worker registration failed (fine if sw.js just isn\'t deployed yet — otherwise this is worth investigating):', err));
+            navigator.serviceWorker.register('./sw.js').catch((err) => console.error('Service worker registration failed:', err));
         });
     }
 
-    // ---- Pull-to-refresh ---------------------------------------------
-    // Standalone/installed PWAs have no browser chrome, so there's no
-    // native pull-to-refresh gesture to rely on there — build a simple one
-    // by hand. Only triggers when the page is scrolled all the way to the
-    // top (so it never fights with normal scrolling), and re-fetches data
-    // for whichever tab is currently open instead of a full page reload,
-    // so navigation/filter state isn't lost.
-    (function setupPullToRefresh() {
-        const indicator = document.createElement('div');
-        indicator.id = 'ptr-indicator';
-        // pointer-events:none — belt-and-suspenders: this indicator should
-        // never be able to intercept a tap on whatever's underneath it,
-        // even if it's mid-transition or briefly non-zero height for any
-        // reason. It's purely a visual cue, never meant to be interactive.
-        indicator.style.cssText = 'position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; background:var(--surface); color:var(--primary); font-size:13px; font-weight:700; z-index:9999; transition:height 0.15s ease; box-shadow:0 2px 6px rgba(0,0,0,0.08); pointer-events:none;';
-        indicator.textContent = '↓ Pull to refresh';
-        document.body.prepend(indicator);
+    // ---- Install experience: PC, Android, iOS — each platform differs ----
+    // Chrome/Edge (desktop and Android) fire a real 'beforeinstallprompt'
+    // event this app can hook a button up to. iOS Safari has no such
+    // event at all — Apple only allows installing via Share → "Add to
+    // Home Screen", done manually by the person, so the best this can do
+    // there is show clear instructions. Both are skipped entirely once
+    // the app is already running installed (standalone), and either can
+    // be dismissed, which is remembered so it doesn't nag every visit.
+    (function setupInstallExperience() {
+        function isStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+        if (isStandalone()) return;
+        if (localStorage.getItem('tracker_install_dismissed') === '1') return;
 
-        let startY = null, pulling = false, refreshing = false;
-        const THRESHOLD = 70;
-
-        // The sidebar drawer (and a couple of other spots, like message
-        // threads) scroll independently of the main page — window.scrollY
-        // stays 0 while someone scrolls INSIDE one of those, since it's
-        // its own separate scroll container, not the page itself. Without
-        // this check, every scroll gesture inside the sidebar looked
-        // identical to "at the top of the page, about to pull down to
-        // refresh" from here, so it kept arming/showing the refresh
-        // indicator while someone was just trying to scroll the menu —
-        // and the indicator (position:fixed, sitting over the top of the
-        // screen) could then visually sit on top of whatever's directly
-        // underneath it once triggered, since it never has a reason to
-        // learn it shouldn't be there. Walking up from the actual touch
-        // target to see if it's inside its own independently-scrollable
-        // area — not just specifically the sidebar — covers this
-        // generally, for any current or future nested scroll region.
-        function isInsideOwnScrollArea(el) {
-            while (el && el !== document.body && el !== document.documentElement) {
-                const style = window.getComputedStyle(el);
-                if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return true;
-                el = el.parentElement;
+        let banner = null;
+        function dismiss() {
+            localStorage.setItem('tracker_install_dismissed', '1');
+            if (banner) { banner.remove(); banner = null; }
+        }
+        function buildBanner(message, installLabel) {
+            banner = document.createElement('div');
+            banner.id = 'install-banner';
+            banner.style.cssText = 'position:fixed; left:0; right:0; bottom:0; z-index:10000; background:var(--surface, #fff); color:var(--text, #111); border-top:1px solid var(--border, #ddd); box-shadow:0 -2px 10px rgba(0,0,0,0.12); padding:10px 14px; display:flex; align-items:center; gap:10px; font-size:13px; line-height:1.35;';
+            const text = document.createElement('div');
+            text.style.cssText = 'flex:1;';
+            text.textContent = message;
+            banner.appendChild(text);
+            let installBtn = null;
+            if (installLabel) {
+                installBtn = document.createElement('button');
+                installBtn.textContent = installLabel;
+                installBtn.style.cssText = 'background:var(--primary, #0b6e64); color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer; white-space:nowrap;';
+                banner.appendChild(installBtn);
             }
-            return false;
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '✕';
+            closeBtn.setAttribute('aria-label', 'Dismiss');
+            closeBtn.style.cssText = 'background:none; border:none; font-size:16px; color:var(--text-muted, #666); cursor:pointer; padding:4px 8px;';
+            closeBtn.onclick = dismiss;
+            banner.appendChild(closeBtn);
+            document.body.appendChild(banner);
+            return installBtn;
         }
 
-        document.addEventListener('touchstart', (e) => {
-            if (refreshing) return;
-            if (window.scrollY > 0) { startY = null; return; }
-            const authVisible = document.getElementById('auth-container') && document.getElementById('auth-container').style.display !== 'none';
-            if (authVisible) { startY = null; return; } // don't fight the login screen
-            if (isInsideOwnScrollArea(e.target)) { startY = null; return; } // let the sidebar/etc. handle its own scroll, untouched
-            startY = e.touches[0].clientY;
-            pulling = true;
-        }, { passive: true });
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+            // No install event exists on iOS — this is the only path available.
+            buildBanner('Install this app: tap Share, then "Add to Home Screen".', null);
+            return;
+        }
 
-        document.addEventListener('touchmove', (e) => {
-            if (!pulling || startY === null || refreshing) return;
-            const delta = e.touches[0].clientY - startY;
-            if (delta <= 0) { indicator.style.height = '0'; return; }
-            const capped = Math.min(delta * 0.5, 90); // resistance, so it doesn't feel like it's flying open
-            indicator.style.height = capped + 'px';
-            indicator.textContent = capped >= THRESHOLD ? '↑ Release to refresh' : '↓ Pull to refresh';
-        }, { passive: true });
+        // Android Chrome, desktop Chrome/Edge, and any other browser that
+        // supports the real install prompt. Browsers without support for
+        // this (e.g. Firefox) simply never fire the event, so nothing
+        // shows there — nothing broken, just no install path available
+        // from inside the app on that browser.
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = buildBanner('Install this app for quicker access.', 'Install');
+            installBtn.addEventListener('click', () => {
+                installBtn.disabled = true;
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.finally(() => {
+                    deferredPrompt = null;
+                    if (banner) { banner.remove(); banner = null; }
+                });
+            });
+        });
 
-        document.addEventListener('touchend', () => {
-            if (!pulling) return;
-            pulling = false;
-            const height = parseInt(indicator.style.height, 10) || 0;
-            if (height >= THRESHOLD && !refreshing) {
-                refreshing = true;
-                indicator.textContent = '⟳ Refreshing…';
-                indicator.style.height = '50px';
-                fetchAllDataFromCloud()
-                    .catch((err) => console.error('Pull-to-refresh failed:', err))
-                    .finally(() => {
-                        refreshing = false;
-                        indicator.style.height = '0';
-                    });
-            } else {
-                indicator.style.height = '0';
-            }
-            startY = null;
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('tracker_install_dismissed', '1');
+            if (banner) { banner.remove(); banner = null; }
         });
     })();
+
+    // ---- Pull-to-refresh: REMOVED ---------------------------------------
+    // This custom, hand-built pull-to-refresh listened for touchstart/
+    // touchmove/touchend on the entire document. It never called
+    // preventDefault(), so in theory it couldn't block native scrolling —
+    // but every scroll-vs-refresh problem reported on Android (scrolling
+    // doing nothing, or triggering a refresh instead of moving content)
+    // traces back to this being the only non-standard, global touch
+    // listener on the page. Rather than keep patching it, it's removed
+    // outright so the browser's completely ordinary, native scrolling is
+    // the only thing handling touch on this page. If pull-to-refresh is
+    // wanted back later (mainly useful for the installed/standalone PWA,
+    // which has no browser chrome of its own), it should be rebuilt from
+    // scratch and tested in isolation, not restored from here.
 </script>
 
 

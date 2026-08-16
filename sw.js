@@ -1,59 +1,92 @@
 // Service worker for the Tracker app.
 //
-// Rebuilt from scratch (previous version had accumulated three rounds of
-// bug fixes trying to be clever about cache-busting and per-request
-// caching — that complexity was itself the source of repeated breakage,
-// including a real crash on installed Android home-screen icons). This
-// version deliberately does the least possible: cache the app shell once
-// at install time, serve network-first with that cached copy as a
-// fallback only when the network genuinely fails (offline, or Netlify
-// unreachable). Nothing here rewrites URLs, adds query parameters, or
-// clones/re-caches on every single fetch — those were exactly the
-// mechanisms that broke before.
+// Job of this file, in full — nothing more:
+//   1. Cache the app shell (this page, the manifest, the icons) once at
+//      install time.
+//   2. Serve every same-origin GET request network-first: always try the
+//      live network first and keep the cache updated with whatever comes
+//      back; only fall back to the cached copy if the network request
+//      genuinely fails (offline, DNS failure, server unreachable).
+//   3. Only ever touch same-origin GET requests. Supabase API calls,
+//      CDN-loaded libraries (xlsx, Supabase JS, Google Fonts), and any
+//      other cross-origin request pass straight through, completely
+//      untouched by this file.
 //
-// This app is entirely dependent on a live Supabase connection anyway —
-// there's no real offline functionality to preserve — so the only jobs
-// of this file are: (1) satisfy Chrome's installability requirement (a
-// registered service worker with a fetch handler) so "Add to Home
-// Screen" / "Install app" works properly on Android, and (2) give a
-// same-origin fallback if the network is briefly unavailable.
+// This app depends on a live Supabase connection for its actual data, so
+// there is no real offline functionality to build here — this file exists
+// only so (a) "Add to Home Screen" / "Install app" works on Chrome/Edge,
+// which requires a registered service worker with a fetch handler, and
+// (b) the page has something to show if the network briefly drops,
+// instead of a blank error screen.
 //
-// IMPORTANT: bump CACHE_NAME on any future change to this file. That's
-// what actually triggers the update lifecycle (browsers check sw.js for
-// byte-for-byte changes periodically) — without it, an already-installed
-// user's old, possibly-buggy service worker can keep running indefinitely.
+// Deliberately NOT here: any touch/scroll handling of any kind (a service
+// worker runs in a separate background thread and has no access to the
+// DOM or touch events at all — it is structurally incapable of affecting
+// scrolling), any URL rewriting, any query-string cache-busting, any
+// per-file special-casing. Every one of those has been the source of a
+// real bug in an earlier version of this file. This version does the
+// least it can while still doing its job correctly.
+//
+// IMPORTANT: bump CACHE_NAME on any future edit to this file. Browsers
+// compare sw.js byte-for-byte on each visit and only run install/activate
+// again (below) when the file itself has changed — without a version
+// bump, a device that already has an old copy of this file installed
+// will keep running it indefinitely.
 
-const CACHE_NAME = 'tracker-shell-v4';
-const SHELL_URLS = ['./', './index.html'];
+const CACHE_NAME = 'tracker-shell-v7';
+const SHELL_URLS = [
+    './',
+    './index.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png',
+    './icon-512-maskable.png'
+];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => cache.addAll(SHELL_URLS))
-            .catch(() => {}) // never block install on a caching failure
+            .catch(() => {}) // never let one missing/failed asset block install
     );
-    self.skipWaiting();
+    self.skipWaiting(); // don't wait for old tabs to close before taking over
 });
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
-            .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
-            .then(() => self.clients.claim())
+            .then((names) => Promise.all(
+                names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))
+            ))
+            .then(() => self.clients.claim()) // control already-open tabs immediately
     );
 });
 
 self.addEventListener('fetch', (event) => {
     const req = event.request;
-    if (req.method !== 'GET') return; // never touch writes — those aren't cacheable requests anyway
+    if (req.method !== 'GET') return; // writes are never cacheable — leave untouched
 
     const url = new URL(req.url);
-    // Only ever handle this same site's own shell. Supabase API calls,
-    // CDN-loaded libraries (xlsx, etc.), and everything else cross-origin
-    // goes straight to the network completely untouched by this file.
-    if (url.origin !== self.location.origin) return;
+    if (url.origin !== self.location.origin) return; // cross-origin: leave untouched
 
     event.respondWith(
-        fetch(req).catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
+        fetch(req)
+            .then((res) => {
+                // Only cache genuinely successful, basic (same-origin) responses.
+                if (res && res.ok && res.type === 'basic') {
+                    const resClone = res.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone)).catch(() => {});
+                }
+                return res;
+            })
+            .catch(() =>
+                caches.match(req).then((cached) => {
+                    if (cached) return cached;
+                    // Only fall back to the shell for page navigations — never
+                    // serve HTML in place of a failed CSS/JS/image request.
+                    if (req.mode === 'navigate') return caches.match('./index.html');
+                    return Response.error();
+                })
+            )
     );
 });
