@@ -11220,19 +11220,91 @@
         });
     })();
 
-    // ---- Pull-to-refresh: REMOVED ---------------------------------------
-    // This custom, hand-built pull-to-refresh listened for touchstart/
-    // touchmove/touchend on the entire document. It never called
-    // preventDefault(), so in theory it couldn't block native scrolling —
-    // but every scroll-vs-refresh problem reported on Android (scrolling
-    // doing nothing, or triggering a refresh instead of moving content)
-    // traces back to this being the only non-standard, global touch
-    // listener on the page. Rather than keep patching it, it's removed
-    // outright so the browser's completely ordinary, native scrolling is
-    // the only thing handling touch on this page. If pull-to-refresh is
-    // wanted back later (mainly useful for the installed/standalone PWA,
-    // which has no browser chrome of its own), it should be rebuilt from
-    // scratch and tested in isolation, not restored from here.
+    // ---- Pull-to-refresh: standalone/installed mode ONLY -----------------
+    // A normal browser tab (Chrome, Safari, Edge — desktop or mobile)
+    // already has its own native swipe-down-to-refresh built into the
+    // browser chrome itself when the page is scrolled to the top. No code
+    // is needed for that case, and this deliberately does NOT attach
+    // anything there — that's exactly the situation the earlier custom
+    // pull-to-refresh broke scrolling in.
+    //
+    // Once installed (Add to Home Screen / desktop install), the app runs
+    // standalone with no browser chrome at all — there's no native
+    // gesture available there, which is the ONLY situation this code now
+    // runs in. isStandalone() below gates the entire thing; in a regular
+    // browser tab this whole block is a no-op and nothing here ever
+    // executes.
+    (function setupPullToRefresh() {
+        function isStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+        if (!isStandalone()) return; // regular browser tab — its own native gesture already handles this
+
+        const indicator = document.createElement('div');
+        indicator.id = 'ptr-indicator';
+        // pointer-events:none — this is purely a visual cue and must never
+        // be able to intercept a tap on whatever's underneath it.
+        indicator.style.cssText = 'position:fixed; top:0; left:0; right:0; display:flex; align-items:center; justify-content:center; height:0; overflow:hidden; background:var(--surface); color:var(--primary); font-size:13px; font-weight:700; z-index:9999; transition:height 0.15s ease; box-shadow:0 2px 6px rgba(0,0,0,0.08); pointer-events:none;';
+        indicator.textContent = '↓ Pull to refresh';
+        document.body.prepend(indicator);
+
+        let startY = null, pulling = false, refreshing = false;
+        const THRESHOLD = 70;
+
+        // Nested scroll areas (the sidebar drawer, message threads, etc.)
+        // scroll independently of the page — window.scrollY stays 0 while
+        // someone scrolls inside one of those, which would otherwise look
+        // identical to "at the top of the page, pulling down to refresh."
+        // Walking up from the actual touch target avoids fighting with any
+        // such area, current or future.
+        function isInsideOwnScrollArea(el) {
+            while (el && el !== document.body && el !== document.documentElement) {
+                const style = window.getComputedStyle(el);
+                if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return true;
+                el = el.parentElement;
+            }
+            return false;
+        }
+
+        document.addEventListener('touchstart', (e) => {
+            if (refreshing) return;
+            if (window.scrollY > 0) { startY = null; return; }
+            const authVisible = document.getElementById('auth-container') && document.getElementById('auth-container').style.display !== 'none';
+            if (authVisible) { startY = null; return; } // don't fight the login screen
+            if (isInsideOwnScrollArea(e.target)) { startY = null; return; }
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!pulling || startY === null || refreshing) return;
+            const delta = e.touches[0].clientY - startY;
+            if (delta <= 0) { indicator.style.height = '0'; return; }
+            const capped = Math.min(delta * 0.5, 90); // resistance, so it doesn't feel like it's flying open
+            indicator.style.height = capped + 'px';
+            indicator.textContent = capped >= THRESHOLD ? '↑ Release to refresh' : '↓ Pull to refresh';
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            if (!pulling) return;
+            pulling = false;
+            const height = parseInt(indicator.style.height, 10) || 0;
+            if (height >= THRESHOLD && !refreshing) {
+                refreshing = true;
+                indicator.textContent = '⟳ Refreshing…';
+                indicator.style.height = '50px';
+                fetchAllDataFromCloud()
+                    .catch((err) => console.error('Pull-to-refresh failed:', err))
+                    .finally(() => {
+                        refreshing = false;
+                        indicator.style.height = '0';
+                    });
+            } else {
+                indicator.style.height = '0';
+            }
+            startY = null;
+        });
+    })();
 </script>
 
 
