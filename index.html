@@ -241,7 +241,19 @@
     .sidebar-logo { display: none; }
     #sidebar-account-bar { display: none; }
     @media (min-width: 900px) {
-        body.logged-in #app-container { margin-left: 240px; }
+        /* width AND margin-left together is the bug: width:100% (from
+           .container's base rule) resolves to the FULL available width
+           first, and margin-left:240px then pushes that already-full-width
+           box 240px further right — overflowing the right edge by exactly
+           the sidebar's width. Combined with body's overflow-x:hidden
+           (needed for the mobile scroll fix), that overflow doesn't even
+           show a scrollbar — it's silently clipped and disappears, which
+           is exactly why fields/columns on the right edge were vanishing
+           on any screen wide isn't comfortably >1600px+240px (i.e. most
+           laptops, non-maximized windows, or any real-world browser zoom
+           above 100%). calc() makes the box shrink to actually fit
+           alongside the margin instead of overflowing past it. */
+        body.logged-in #app-container { margin-left: 240px; width: calc(100% - 240px); }
         #app-sidebar {
             position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
             transform: none; /* always open on desktop — no drawer toggle needed */
@@ -3817,8 +3829,22 @@
 
     function computeNextEmpId(type) {
         const letter = type === 'Staff' ? 'S' : type === 'Contractor' ? 'C' : type === 'Provider' ? 'P' : type === 'Owner' ? 'O' : type === 'Manager' ? 'M' : 'E';
-        const count = employees.filter(emp => emp.person_type === type).length + 1;
-        return `${idPrefix()}${String(count).padStart(settings.empDigits, '0')}${letter}`;
+        const prefix = idPrefix();
+        // Based on the HIGHEST existing numeric ID for this type, not a
+        // count of currently-loaded employees. Counting breaks permanently
+        // the moment any employee of this type is ever deleted: the count
+        // drops by one, but the highest ID number already used doesn't —
+        // so count+1 then collides with a record that still exists further
+        // up the sequence. Scanning for the actual max is immune to gaps
+        // left by deletions.
+        const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const idPattern = new RegExp('^' + escaped + '(\\d+)' + letter + '$');
+        let max = 0;
+        employees.forEach(emp => {
+            const m = String(emp.id || '').match(idPattern);
+            if (m) max = Math.max(max, parseInt(m[1], 10));
+        });
+        return `${prefix}${String(max + 1).padStart(settings.empDigits, '0')}${letter}`;
     }
     function updateNextEmpId() {
         const el = document.getElementById('next-emp-id-display');
