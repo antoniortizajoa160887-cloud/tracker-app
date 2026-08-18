@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unified Logistics & HR Claims Dashboard</title>
     <meta name="theme-color" content="#0b6e64">
+    <!-- Content-Security-Policy, delivered via meta so it applies on any static
+         host (GitHub Pages included -- unlike an HTTP response header, this
+         needs no server config). Restricts every fetchable resource to the
+         known-good origins the app actually uses. 'unsafe-inline' is required
+         for script-src/style-src because the app's ~300 onclick="" handlers and
+         inline style="" attributes are load-bearing -- removing them would be a
+         large refactor, out of scope here. Even so, this still blocks the app
+         from loading a script/stylesheet from any OTHER origin, and blocks any
+         fetch/XHR/WebSocket to a domain other than Supabase (e.g. exfiltrating
+         a stolen session token to an attacker's server) -- meaningful
+         defense-in-depth on top of the escHtml() XSS fixes, not a substitute
+         for them. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://ofnveuguvwsvcxyidfdr.supabase.co wss://ofnveuguvwsvcxyidfdr.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self';">
+
     <!-- iOS Safari doesn't reliably read display:standalone or short_name
          from the Web App Manifest the way Android/Chrome does — these are
          the Apple-specific equivalents, needed for "Add to Home Screen" to
@@ -24,8 +38,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    <!-- Subresource Integrity: hashes are of the exact published npm package files
+         (dist/xlsx.full.min.js and dist/umd/supabase.js), which jsdelivr serves
+         verbatim -- if the CDN or the package version is ever compromised, the
+         browser refuses to run the altered script instead of executing it. -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg" crossorigin="anonymous"></script>
     <script>
         function showDiagBanner(msg) {
             var el = document.getElementById('env-warning');
@@ -2134,7 +2152,7 @@
         <form id="create-user-form">
             <div class="grid-form">
                 <div class="field"><label>Username</label><input type="text" id="new-username" required></div>
-                <div class="field"><label>Password</label><input type="password" id="new-user-pass" required></div>
+                <div class="field"><label>Password</label><input type="password" id="new-user-pass" minlength="8" required></div>
                 <div class="field">
                     <label>Role</label>
                     <select id="new-user-role"></select>
@@ -3326,7 +3344,13 @@
         try {
             const { data, error } = await supabaseClient.rpc('verify_login', { p_username: usernameInput, p_password: passwordInput });
 
-            if (error || !data || data.length === 0) {
+            if (error) {
+                // verify_login only raises for the lockout case -- a wrong
+                // password just returns zero rows, handled below -- so any
+                // error here is safe to show verbatim (e.g. "Too many failed
+                // attempts. Try again in a few minutes.").
+                errEl.textContent = error.message || 'Invalid username or password.';
+            } else if (!data || data.length === 0) {
                 errEl.textContent = 'Invalid username or password.';
             } else {
                 currentUser = data[0];
@@ -3561,8 +3585,8 @@
             errEl.textContent = 'Enter your current password.';
             return;
         }
-        if (!newPass || newPass.length < 4) {
-            errEl.textContent = 'New password must be at least 4 characters.';
+        if (!newPass || newPass.length < 8) {
+            errEl.textContent = 'New password must be at least 8 characters.';
             return;
         }
         if (newPass !== confirmPass) {
@@ -5176,7 +5200,7 @@
                 <div class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}">
                     <div class="rec-card-head" onclick="toggleRecCard('claims','${c.claim_id}')">
                         <span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${empName}</span>
+                        <span class="rec-title">${escHtml(empName)}</span>
                         <span class="rec-sub">${c.claim_id}</span>
                         <span class="rec-right">${formatMoney(bal)} <span class="status-badge status-${c.status}">${c.status}</span></span>
                     </div>
@@ -6210,7 +6234,7 @@
                 <div class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}">
                     <div class="rec-card-head" onclick="toggleRecCard('charges','${ch.charge_id}')">
                         <span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${empName}</span>
+                        <span class="rec-title">${escHtml(empName)}</span>
                         <span class="rec-sub">${ch.charge_id}</span>
                         <span class="rec-right" style="color:#dc2626;">${formatMoney(bal)} <span class="status-badge status-${ch.status}">${ch.status}</span></span>
                     </div>
@@ -7311,7 +7335,7 @@
                 <div class="rec-card${open ? ' open' : ''}" id="rec-income-${i.income_id}">
                     <div class="rec-card-head" onclick="toggleRecCard('income','${i.income_id}')">
                         <span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${empName}</span>
+                        <span class="rec-title">${escHtml(empName)}</span>
                         <span class="rec-sub">${i.income_id}</span>
                         <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${i.status}</span></span>
                     </div>
@@ -7508,7 +7532,7 @@
 
         let html = `
             <div class="panel">
-                <h2>${emp.first_name} ${emp.last_name} — ${emp.id}</h2>
+                <h2>${escHtml(emp.first_name)} ${escHtml(emp.last_name)} — ${escHtml(emp.id)}</h2>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + escHtml(emp.department) : ''}</div>
             </div>
             <div class="panel">
@@ -8126,7 +8150,7 @@
                 <div class="dp-card${dOpen ? '' : ' collapsed'}" id="dpcard-${emp.id}">
                     <div class="dp-card-head" onclick="toggleDailyCard('${emp.id}')">
                         <span class="dp-caret">${dOpen ? '▾' : '▸'}</span>
-                        <span class="dp-name">${emp.first_name} ${emp.last_name}</span>
+                        <span class="dp-name">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="dp-id">${emp.id}</span>
                         <span class="dp-total">Week: <span id="dp-total-${emp.id}">${formatMoney(rowTotals[emp.id])}</span></span>
                     </div>
@@ -8651,7 +8675,7 @@
                 const payPill = payType === 'Daily' ? ' <span class="pay-pill pay-daily" style="font-size:9px;">daily</span>' : payType === 'Provider' ? ' <span class="pay-pill pay-provider" style="font-size:9px;">provider</span>' : '';
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('payroll','${emp.id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="payroll-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
-                    <td>${emp.first_name} ${emp.last_name}</td>
+                    <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
                     <td>${emp.person_type}</td>
                     <td>${formatMoney(base)}${payPill}</td>
                     <td>${formatMoney(routePay)}</td>
@@ -8684,7 +8708,7 @@
                 <div class="rec-card${open ? ' open' : ''}" id="rec-payroll-${emp.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('payroll','${emp.id}')">
                         <span class="rec-caret" data-caret="payroll-${emp.id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${emp.first_name} ${emp.last_name}</span>
+                        <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="rec-sub">${emp.id}</span>
                         <span class="rec-right" style="font-weight:700;">${formatMoney(net)}</span>
                     </div>
@@ -9837,8 +9861,8 @@
     async function resetUserPassword(usernameToReset) {
         const newPass = prompt(`Enter a new password for "${usernameToReset}":`);
         if (newPass === null) return; // cancelled
-        if (!newPass || newPass.length < 4) {
-            alert('Password must be at least 4 characters.');
+        if (!newPass || newPass.length < 8) {
+            alert('Password must be at least 8 characters.');
             return;
         }
 
