@@ -653,6 +653,92 @@
         transition: transform 0.15s, border-color 0.15s;
     }
     .theme-swatch.active { border-color: #fff; transform: scale(1.12); }
+
+    /* =====================================================================
+       Visual polish layer (2026-08). CSS-only, appended last so it refines
+       the existing components by cascade order without touching their
+       original rules. Everything below is theme-aware via the app's existing
+       CSS variables, so Light / Ocean / Emerald all benefit equally.
+       ===================================================================== */
+    :root {
+        --radius-sm: 7px;
+        --radius: 10px;
+        --radius-lg: 14px;
+        --shadow-sm: 0 1px 2px rgba(16,35,46,0.06);
+        --shadow: 0 4px 16px -6px rgba(16,35,46,0.14), 0 1px 3px rgba(16,35,46,0.06);
+        --shadow-lg: 0 18px 40px -12px rgba(16,35,46,0.22);
+        --zebra: rgba(15,23,42,0.022);
+        --row-hover: rgba(16,185,129,0.07);
+        --ring: 0 0 0 3px rgba(16,185,129,0.28);
+    }
+    [data-theme="dark"], [data-theme="dark-emerald"] {
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+        --shadow: 0 6px 22px -8px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4);
+        --shadow-lg: 0 20px 46px -12px rgba(0,0,0,0.65);
+        --zebra: rgba(255,255,255,0.028);
+        --row-hover: rgba(45,212,191,0.12);
+        --ring: 0 0 0 3px rgba(45,212,191,0.32);
+    }
+
+    /* Cards & panels: rounder corners and a soft layered shadow that lifts
+       gently on hover, instead of the flat hairline shadow. */
+    .card, .panel {
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .card:hover, .panel:hover { box-shadow: var(--shadow); }
+
+    /* Login card. */
+    #auth-container { border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+
+    /* Buttons: a subtle navy gradient with a real hover lift, a pressed
+       state, and a keyboard focus ring. .btn-small inherits the same feel. */
+    .btn {
+        border-radius: var(--radius-sm);
+        background-image: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0));
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease, filter 0.18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn:active { transform: translateY(0); box-shadow: var(--shadow-sm); filter: brightness(0.96); }
+    .btn:focus-visible { outline: none; box-shadow: var(--ring); }
+    .btn-small {
+        border-radius: var(--radius-sm);
+        transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+    .btn-small:hover { transform: translateY(-1px); }
+    .btn-small:active { transform: translateY(0); filter: brightness(0.96); }
+    .btn-small:focus-visible { outline: none; box-shadow: var(--ring); }
+
+    /* Inputs: match the new radius; keep the existing green focus ring. */
+    input, select, textarea { border-radius: var(--radius-sm); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+
+    /* Tables: theme-aware zebra + hover (previously hardcoded light colors
+       that looked wrong on the dark themes), a slightly softer header, and a
+       rounder wrapper. */
+    .table-wrapper { border-radius: var(--radius); }
+    .tabs { border-radius: var(--radius) var(--radius) 0 0; }
+    /* Make the table surface theme-aware. In Light this is #fff (identical to
+       before); in Ocean/Emerald it becomes the dark surface, fixing the
+       previously white table body that left light text nearly unreadable. */
+    table { background: var(--surface); color: var(--text); }
+    th { background-image: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.06)); letter-spacing: 0.03em; }
+    tr:nth-child(even) { background-color: var(--zebra); }
+    tbody tr { transition: background-color 0.12s ease; }
+    tr:hover { background-color: var(--row-hover); }
+    /* The money and id-cell colors are tuned for the light background; brighten
+       them on the dark themes so they stay legible on the dark table surface. */
+    [data-theme="dark"] .money, [data-theme="dark-emerald"] .money { color: var(--active); }
+    [data-theme="dark"] .id-cell, [data-theme="dark-emerald"] .id-cell { color: var(--primary); }
+
+    /* Pills & badges: a touch more breathing room. */
+    .type-pill, .status-badge { padding: 3px 10px; letter-spacing: 0.01em; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .card, .panel, .btn, .btn-small, input, select, textarea, tbody tr, .theme-swatch { transition: none !important; }
+        .btn:hover, .btn-small:hover { transform: none; }
+    }
     /* Header dropdown version — sits on var(--surface), which is theme-
        dependent (white in Light theme) unlike the login card's always-dark
        backdrop, so a white active-ring would be invisible there. Fully
