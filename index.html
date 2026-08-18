@@ -630,10 +630,24 @@
        picker's choice) plus a restyled glass-dark card. ---- */
     #auth-bg {
         position: fixed; inset: 0; z-index: -1;
-        background: #0a0f1a;
+        background-color: #0a0f1a;
+        /* Generated brand hero on top; the radial glows stay underneath as a
+           fallback if the image file isn't deployed alongside index.html. */
         background-image:
+            url('login-bg.png'),
             radial-gradient(600px circle at 15% 20%, rgba(45,212,191,0.16), transparent 60%),
             radial-gradient(500px circle at 85% 75%, rgba(59,130,246,0.14), transparent 60%);
+        background-size: cover, auto, auto;
+        background-position: center, center, center;
+        background-repeat: no-repeat;
+    }
+    @media (max-width: 640px) {
+        #auth-bg {
+            background-image:
+                url('login-bg-mobile.png'),
+                radial-gradient(500px circle at 50% 12%, rgba(45,212,191,0.16), transparent 60%),
+                radial-gradient(500px circle at 50% 92%, rgba(59,130,246,0.14), transparent 60%);
+        }
     }
     #auth-container {
         background: rgba(17,24,35,0.92);
