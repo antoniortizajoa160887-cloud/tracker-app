@@ -2104,6 +2104,23 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbnZldWd1dndzdmN4eWlkZmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MTM2MjMsImV4cCI6MjEwMTA4OTYyM30.-KAbO5eRUhYtcpX9_6vtgbt-onK5RPvmeQPSq6riI_E';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ===== Session token =====
+    // The database no longer trusts the client-supplied p_actor string on its own:
+    // every actor-scoped RPC now verifies an unforgeable session token issued by
+    // verify_login (see _require_actor in Supabase). This wrapper attaches the current
+    // token to every RPC that carries a p_actor, so individual call sites are unchanged.
+    let authToken = null;
+    const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // keep <= the server session lifetime
+    (function wrapRpcWithToken() {
+        const nativeRpc = supabaseClient.rpc.bind(supabaseClient);
+        supabaseClient.rpc = function(fn, params, options) {
+            if (params && typeof params === 'object' && 'p_actor' in params && authToken && !('p_token' in params)) {
+                params = Object.assign({}, params, { p_token: authToken });
+            }
+            return nativeRpc(fn, params, options);
+        };
+    })();
+
     let currentUser = null;
     let currentUserRole = 'User';
     let currentUsername = '';
@@ -3080,6 +3097,8 @@
                 currentUser = data[0];
                 currentUsername = data[0].username;
                 currentUserRole = data[0].role;
+                authToken = data[0].session_token;
+                currentUser.token_expires_at = Date.now() + TOKEN_TTL_MS;
                 localStorage.setItem('unified_user', JSON.stringify(currentUser));
                 initAppSession();
             }
@@ -3175,8 +3194,18 @@
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
+                // A restored session needs a live token; if it's missing or past its
+                // estimated expiry, drop it and fall back to the login screen rather
+                // than running with a dead token that every RPC would reject.
+                if (!currentUser.session_token ||
+                    (currentUser.token_expires_at && Date.now() > currentUser.token_expires_at)) {
+                    localStorage.removeItem('unified_user');
+                    currentUser = null;
+                    return;
+                }
                 currentUsername = currentUser.username;
                 currentUserRole = currentUser.role;
+                authToken = currentUser.session_token;
                 initAppSession();
             } catch(e) {
                 console.error('Session restore failed:', e);
@@ -3187,6 +3216,9 @@
 
     function logout(reason) {
         stopIdleWatch();
+        // Best-effort: invalidate the server-side session so the token can't be reused.
+        try { if (authToken) supabaseClient.rpc('end_session', { p_token: authToken }); } catch (e) {}
+        authToken = null;
         localStorage.removeItem('unified_user');
         if (reason === 'idle') sessionStorage.setItem('logout_reason', 'idle');
         location.reload();
@@ -4569,7 +4601,7 @@
             if (!claimCo) return;
             const claimId = `${idPrefix()}${String(claims.length + 1).padStart(settings.claimDigits, '0')}`;
             const payload = Object.assign({ claim_id: claimId, company_code: claimCo }, fields);
-            const { error } = await supabaseClient.from('claims').insert([payload]);
+            const { error } = await supabaseClient.rpc('create_claim', { p_actor: currentUsername, p_fields: payload });
             if (error) { alert('Error saving claim: ' + error.message); return; }
             document.getElementById('claim-form').reset();
             document.getElementById('cEmployee').value = '';
@@ -5075,7 +5107,7 @@
             } else {
                 const co = requireWriteCompany(); if (!co) { skipped++; continue; }
                 const newId = `${idPrefix()}${String(claims.length + imported + 1).padStart(settings.claimDigits, '0')}`;
-                const { error } = await supabaseClient.from('claims').insert([{ claim_id: newId, company_code: co, ...fields }]);
+                const { error } = await supabaseClient.rpc('create_claim', { p_actor: currentUsername, p_fields: { claim_id: newId, company_code: co, ...fields } });
                 if (error) { skipped++; errors.push(`New claim: ${error.message}`); continue; }
             }
             imported++;
@@ -5101,7 +5133,7 @@
             } else {
                 const co = requireWriteCompany(); if (!co) { skipped++; continue; }
                 const newId = `${idPrefix()}${String(charges.length + imported + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
-                const { error } = await supabaseClient.from('charges').insert([{ charge_id: newId, company_code: co, ...fields }]);
+                const { error } = await supabaseClient.rpc('create_charge', { p_actor: currentUsername, p_fields: { charge_id: newId, company_code: co, ...fields } });
                 if (error) { skipped++; errors.push(`New charge: ${error.message}`); continue; }
             }
             imported++;
@@ -5125,7 +5157,7 @@
             } else {
                 const co = requireWriteCompany(); if (!co) { skipped++; continue; }
                 const newId = `${idPrefix()}${String(additionalIncome.length + imported + 1).padStart(5, '0')}I`;
-                const { error } = await supabaseClient.from('additional_income').insert([{ income_id: newId, company_code: co, employee_id: empId, income_type, amount, weekly_amount, start_date, status, notes }]);
+                const { error } = await supabaseClient.rpc('create_income', { p_actor: currentUsername, p_fields: { income_id: newId, company_code: co, employee_id: empId, income_type, amount, weekly_amount, start_date, status, notes } });
                 if (error) { skipped++; errors.push(`New income: ${error.message}`); continue; }
             }
             imported++;
@@ -5779,7 +5811,7 @@
             let inserted = 0, failed = 0;
             for (let i = 0; i < newClaims.length; i += 50) {
                 const batch = newClaims.slice(i, i + 50);
-                const { error } = await supabaseClient.from('claims').insert(batch);
+                const { error } = await supabaseClient.rpc('create_claims_batch', { p_actor: currentUsername, p_rows: batch });
                 if (error) { failed += batch.length; console.error('claims import batch failed:', error.message); }
                 else inserted += batch.length;
             }
@@ -5830,7 +5862,7 @@
             if (!chargeCo) return;
             const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
             const payload = Object.assign({ charge_id: chargeId, company_code: chargeCo }, fields);
-            const { error } = await supabaseClient.from('charges').insert([payload]);
+            const { error } = await supabaseClient.rpc('create_charge', { p_actor: currentUsername, p_fields: payload });
             if (error) { alert('Error saving charge: ' + error.message); return; }
             document.getElementById('charge-form').reset();
             fetchChargesFromCloud();
@@ -6933,7 +6965,7 @@
             status: document.getElementById('iStatus').value,
             notes: document.getElementById('iNotes').value.trim()
         };
-        const { error } = await supabaseClient.from('additional_income').insert([payload]);
+        const { error } = await supabaseClient.rpc('create_income', { p_actor: currentUsername, p_fields: payload });
         if (error) { alert('Error saving income: ' + error.message); return; }
         document.getElementById('income-form').reset();
         fetchIncomeFromCloud();
@@ -8667,8 +8699,7 @@
             alert(`There's already a rate change effective ${date} for this claim. Remove the existing one first if you want to replace it.`);
             return;
         }
-        const { error } = await supabaseClient.from('claim_rate_changes')
-            .insert([{ company_code: claimHistCompany(), claim_id: editingClaimId, effective_date: date, weekly_amount: amt }]);
+        const { error } = await supabaseClient.rpc('add_claim_rate_change', { p_actor: currentUsername, p_company: claimHistCompany(), p_claim_id: editingClaimId, p_effective_date: date, p_weekly_amount: amt });
         if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('rc-amount').value = ''; document.getElementById('rc-date').value = '';
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
@@ -8690,8 +8721,7 @@
             return !(newEndsBeforeExisting || existingEndsBeforeNew);
         });
         if (overlaps) { alert('This overlaps with an existing pause window for this claim. Remove or adjust the existing one first.'); return; }
-        const { error } = await supabaseClient.from('claim_pauses')
-            .insert([{ company_code: claimHistCompany(), claim_id: editingClaimId, paused_date: date, resume_date: resume }]);
+        const { error } = await supabaseClient.rpc('add_claim_pause', { p_actor: currentUsername, p_company: claimHistCompany(), p_claim_id: editingClaimId, p_paused_date: date, p_resume_date: resume });
         if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('pause-date').value = ''; document.getElementById('pause-resume').value = '';
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
@@ -8785,8 +8815,7 @@
             alert(`There's already a rate change effective ${date} for this charge. Remove the existing one first if you want to replace it.`);
             return;
         }
-        const { error } = await supabaseClient.from('charge_rate_changes')
-            .insert([{ company_code: chargeHistCompany(), charge_id: editingChargeId, effective_date: date, weekly_amount: amt }]);
+        const { error } = await supabaseClient.rpc('add_charge_rate_change', { p_actor: currentUsername, p_company: chargeHistCompany(), p_charge_id: editingChargeId, p_effective_date: date, p_weekly_amount: amt });
         if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('chrc-amount').value = ''; document.getElementById('chrc-date').value = '';
         await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
@@ -8806,8 +8835,7 @@
             return !(newEndsBeforeExisting || existingEndsBeforeNew);
         });
         if (overlaps) { alert('This overlaps with an existing pause window for this charge. Remove or adjust the existing one first.'); return; }
-        const { error } = await supabaseClient.from('charge_pauses')
-            .insert([{ company_code: chargeHistCompany(), charge_id: editingChargeId, paused_date: date, resume_date: resume }]);
+        const { error } = await supabaseClient.rpc('add_charge_pause', { p_actor: currentUsername, p_company: chargeHistCompany(), p_charge_id: editingChargeId, p_paused_date: date, p_resume_date: resume });
         if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('chpause-date').value = ''; document.getElementById('chpause-resume').value = '';
         await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
@@ -9827,7 +9855,7 @@
 
         const payload = buildRoutePayload(rawData);
         payload.company_code = routeCo;
-        const { error } = await supabaseClient.from('routes').insert([payload]);
+        const { error } = await supabaseClient.rpc('create_route', { p_actor: currentUsername, p_fields: payload });
         if (error) alert('Error: ' + error.message);
         else {
             document.getElementById('route-form').reset();
@@ -9891,7 +9919,7 @@
                     newRoutes.push(rp);
                 });
 
-                const { error } = await supabaseClient.from('routes').insert(newRoutes);
+                const { error } = await supabaseClient.rpc('create_routes_batch', { p_actor: currentUsername, p_rows: newRoutes });
                 if (error) {
                     alert('Error syncing routes to Supabase: ' + error.message);
                 } else {
