@@ -2395,7 +2395,7 @@
             list.innerHTML = CHANGELOG.map(c => `
                 <div style="padding:10px 0; border-bottom:1px solid var(--border);">
                     <div style="font-weight:700; font-size:13px; color:var(--secondary);">${c.version} <span style="font-weight:400; color:var(--text-muted); font-size:11px;">· ${c.date}</span></div>
-                    <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.4;">${c.notes}</div>
+                    <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.4;">${escHtml(c.notes)}</div>
                 </div>`).join('');
         }
         ov.style.display = 'flex';
@@ -3430,8 +3430,8 @@
                     <td class="id-cell">${c.code}</td>
                     <td>${c.name}</td>
                     <td>${c.owner || '-'}</td>
-                    <td>${c.phone || '-'}</td>
-                    <td>${c.email || '-'}</td>
+                    <td>${escHtml(c.phone || '-')}</td>
+                    <td>${escHtml(c.email || '-')}</td>
                     <td>${c.manager || '-'}</td>
                     <td>${c.manager_phone || '-'}</td>
                     <td>${new Date(c.created_at).toLocaleDateString()}</td>
@@ -3463,8 +3463,8 @@
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
                             <div><div class="k">Owner</div><div class="v">${c.owner || '-'}</div></div>
-                            <div><div class="k">Phone</div><div class="v">${c.phone || '-'}</div></div>
-                            <div><div class="k">Email</div><div class="v">${c.email || '-'}</div></div>
+                            <div><div class="k">Phone</div><div class="v">${escHtml(c.phone || '-')}</div></div>
+                            <div><div class="k">Email</div><div class="v">${escHtml(c.email || '-')}</div></div>
                             <div><div class="k">Manager</div><div class="v">${c.manager || '-'}</div></div>
                             <div><div class="k">Manager phone</div><div class="v">${c.manager_phone || '-'}</div></div>
                             <div><div class="k">Created</div><div class="v">${new Date(c.created_at).toLocaleDateString()}</div></div>
@@ -4858,11 +4858,11 @@
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
-                <div><div class="k">Claimant acct</div><div class="v">${c.claimant_account || '-'}</div></div>
-                <div><div class="k">Company</div><div class="v">${c.company_name || '-'}</div></div>
-                <div><div class="k">Carrier claim #</div><div class="v">${c.carrier_claim_number || '-'}</div></div>
-                <div><div class="k">Customer claim #</div><div class="v">${c.customer_claim_number || '-'}</div></div>
-                <div><div class="k">Type of damage</div><div class="v">${c.damage_type}</div></div>
+                <div><div class="k">Claimant acct</div><div class="v">${escHtml(c.claimant_account || '-')}</div></div>
+                <div><div class="k">Company</div><div class="v">${escHtml(c.company_name || '-')}</div></div>
+                <div><div class="k">Carrier claim #</div><div class="v">${escHtml(c.carrier_claim_number || '-')}</div></div>
+                <div><div class="k">Customer claim #</div><div class="v">${escHtml(c.customer_claim_number || '-')}</div></div>
+                <div><div class="k">Type of damage</div><div class="v">${escHtml(c.damage_type)}</div></div>
                 <div><div class="k">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
                 <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
                 <div><div class="k">Balance</div><div class="v">${formatMoney(bal)}</div></div>
@@ -4901,7 +4901,7 @@
                     <td class="id-cell"><span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span> ${c.claim_id}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${c.employee_id}</td>
-                    <td>${c.damage_type}</td>
+                    <td>${escHtml(c.damage_type)}</td>
                     <td>${formatMoney(c.claim_amount)}</td>
                     <td>${formatMoney(rateOn(c, todayStr()))}</td>
                     <td>${weeks}</td>
@@ -5878,7 +5878,7 @@
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
-                <div><div class="k">Charge type</div><div class="v">${ch.charge_type}</div></div>
+                <div><div class="k">Charge type</div><div class="v">${escHtml(ch.charge_type)}</div></div>
                 <div><div class="k">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
                 <div><div class="k">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
                 <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
@@ -5934,7 +5934,7 @@
                     <td class="id-cell"><span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span> ${ch.charge_id}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${ch.employee_id}</td>
-                    <td>${ch.charge_type}</td>
+                    <td>${escHtml(ch.charge_type)}</td>
                     <td>${formatMoney(ch.amount)}</td>
                     <td>${formatMoney(ch.weekly_deduction)}</td>
                     <td>${weeks}</td>
@@ -6979,7 +6979,7 @@
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
-                <div><div class="k">Income type</div><div class="v">${i.income_type}</div></div>
+                <div><div class="k">Income type</div><div class="v">${escHtml(i.income_type)}</div></div>
                 <div><div class="k">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
                 <div><div class="k">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
                 <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
@@ -7036,7 +7036,7 @@
                     <td class="id-cell"><span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span> ${i.income_id}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${i.employee_id}</td>
-                    <td>${i.income_type}</td>
+                    <td>${escHtml(i.income_type)}</td>
                     <td>${formatMoney(i.amount)}</td>
                     <td>${formatMoney(i.weekly_amount)}</td>
                     <td>${weeks}</td>
@@ -7202,7 +7202,7 @@
         return `
             <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
-                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${c.damage_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${c.status}</span></span>
+                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${escHtml(c.damage_type)} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${c.status}</span></span>
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
@@ -7237,7 +7237,7 @@
         return `
             <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
-                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${ch.charge_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${ch.status}</span></span>
+                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${escHtml(ch.charge_type)} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${ch.status}</span></span>
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
@@ -7274,7 +7274,7 @@
         let html = `
             <div class="panel">
                 <h2>${emp.first_name} ${emp.last_name} — ${emp.id}</h2>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + emp.department : ''}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + escHtml(emp.department) : ''}</div>
             </div>
             <div class="panel">
                 <h2>Current deductions — full breakdown</h2>`;
@@ -7315,7 +7315,7 @@
                 html += `
                     <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                         <div class="panel-head" onclick="toggleCollapse(this)">
-                            <span style="font-size:13px;"><span class="type-pill">Income</span> <b>${i.income_id}</b> · ${i.income_type} · <span class="money" style="color:#059669;">${formatMoney(rem)}</span> · <span class="status-badge status-${i.status}">${i.status}</span></span>
+                            <span style="font-size:13px;"><span class="type-pill">Income</span> <b>${i.income_id}</b> · ${escHtml(i.income_type)} · <span class="money" style="color:#059669;">${formatMoney(rem)}</span> · <span class="status-badge status-${i.status}">${i.status}</span></span>
                             <span class="caret">&#9662;</span>
                         </div>
                         <div>
@@ -9941,8 +9941,8 @@
         filtered.forEach(r => {
             tbody.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td>${r.date}</td><td style="text-align:center">${r.contractor}</td><td style="text-align:center">${r.type}</td><td style="text-align:center">${r.driver}</td>
-                    <td style="text-align:center">${r.route_num || '-'}</td><td style="text-align:center">${r.route_id || '-'}</td>
+                    <td>${r.date}</td><td style="text-align:center">${escHtml(r.contractor)}</td><td style="text-align:center">${escHtml(r.type)}</td><td style="text-align:center">${escHtml(r.driver)}</td>
+                    <td style="text-align:center">${escHtml(r.route_num || '-')}</td><td style="text-align:center">${escHtml(r.route_id || '-')}</td>
                     <td>${r.miles}</td><td>${r.manifest}</td><td>${r.pullbacks || '-'}</td><td>${r.loaded_stops}</td>
                     <td>${r.incompletes || '-'}</td><td>${r.completed_stops}</td><td>${formatMoney(r.mileage_pay)}</td><td>${formatMoney(r.fuel_pay)}</td>
                     <td class="money">${formatMoney(r.total_daily)}</td><td class="money">${formatMoney(r.final_pay)}</td>
