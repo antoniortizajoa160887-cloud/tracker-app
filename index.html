@@ -653,6 +653,92 @@
         transition: transform 0.15s, border-color 0.15s;
     }
     .theme-swatch.active { border-color: #fff; transform: scale(1.12); }
+
+    /* =====================================================================
+       Visual polish layer (2026-08). CSS-only, appended last so it refines
+       the existing components by cascade order without touching their
+       original rules. Everything below is theme-aware via the app's existing
+       CSS variables, so Light / Ocean / Emerald all benefit equally.
+       ===================================================================== */
+    :root {
+        --radius-sm: 7px;
+        --radius: 10px;
+        --radius-lg: 14px;
+        --shadow-sm: 0 1px 2px rgba(16,35,46,0.06);
+        --shadow: 0 4px 16px -6px rgba(16,35,46,0.14), 0 1px 3px rgba(16,35,46,0.06);
+        --shadow-lg: 0 18px 40px -12px rgba(16,35,46,0.22);
+        --zebra: rgba(15,23,42,0.022);
+        --row-hover: rgba(16,185,129,0.07);
+        --ring: 0 0 0 3px rgba(16,185,129,0.28);
+    }
+    [data-theme="dark"], [data-theme="dark-emerald"] {
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+        --shadow: 0 6px 22px -8px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4);
+        --shadow-lg: 0 20px 46px -12px rgba(0,0,0,0.65);
+        --zebra: rgba(255,255,255,0.028);
+        --row-hover: rgba(45,212,191,0.12);
+        --ring: 0 0 0 3px rgba(45,212,191,0.32);
+    }
+
+    /* Cards & panels: rounder corners and a soft layered shadow that lifts
+       gently on hover, instead of the flat hairline shadow. */
+    .card, .panel {
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .card:hover, .panel:hover { box-shadow: var(--shadow); }
+
+    /* Login card. */
+    #auth-container { border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+
+    /* Buttons: a subtle navy gradient with a real hover lift, a pressed
+       state, and a keyboard focus ring. .btn-small inherits the same feel. */
+    .btn {
+        border-radius: var(--radius-sm);
+        background-image: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0));
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease, filter 0.18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn:active { transform: translateY(0); box-shadow: var(--shadow-sm); filter: brightness(0.96); }
+    .btn:focus-visible { outline: none; box-shadow: var(--ring); }
+    .btn-small {
+        border-radius: var(--radius-sm);
+        transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+    .btn-small:hover { transform: translateY(-1px); }
+    .btn-small:active { transform: translateY(0); filter: brightness(0.96); }
+    .btn-small:focus-visible { outline: none; box-shadow: var(--ring); }
+
+    /* Inputs: match the new radius; keep the existing green focus ring. */
+    input, select, textarea { border-radius: var(--radius-sm); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+
+    /* Tables: theme-aware zebra + hover (previously hardcoded light colors
+       that looked wrong on the dark themes), a slightly softer header, and a
+       rounder wrapper. */
+    .table-wrapper { border-radius: var(--radius); }
+    .tabs { border-radius: var(--radius) var(--radius) 0 0; }
+    /* Make the table surface theme-aware. In Light this is #fff (identical to
+       before); in Ocean/Emerald it becomes the dark surface, fixing the
+       previously white table body that left light text nearly unreadable. */
+    table { background: var(--surface); color: var(--text); }
+    th { background-image: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.06)); letter-spacing: 0.03em; }
+    tr:nth-child(even) { background-color: var(--zebra); }
+    tbody tr { transition: background-color 0.12s ease; }
+    tr:hover { background-color: var(--row-hover); }
+    /* The money and id-cell colors are tuned for the light background; brighten
+       them on the dark themes so they stay legible on the dark table surface. */
+    [data-theme="dark"] .money, [data-theme="dark-emerald"] .money { color: var(--active); }
+    [data-theme="dark"] .id-cell, [data-theme="dark-emerald"] .id-cell { color: var(--primary); }
+
+    /* Pills & badges: a touch more breathing room. */
+    .type-pill, .status-badge { padding: 3px 10px; letter-spacing: 0.01em; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .card, .panel, .btn, .btn-small, input, select, textarea, tbody tr, .theme-swatch { transition: none !important; }
+        .btn:hover, .btn-small:hover { transform: none; }
+    }
     /* Header dropdown version — sits on var(--surface), which is theme-
        dependent (white in Light theme) unlike the login card's always-dark
        backdrop, so a white active-ring would be invisible there. Fully
@@ -2104,6 +2190,23 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mbnZldWd1dndzdmN4eWlkZmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MTM2MjMsImV4cCI6MjEwMTA4OTYyM30.-KAbO5eRUhYtcpX9_6vtgbt-onK5RPvmeQPSq6riI_E';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ===== Session token =====
+    // The database no longer trusts the client-supplied p_actor string on its own:
+    // every actor-scoped RPC now verifies an unforgeable session token issued by
+    // verify_login (see _require_actor in Supabase). This wrapper attaches the current
+    // token to every RPC that carries a p_actor, so individual call sites are unchanged.
+    let authToken = null;
+    const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // keep <= the server session lifetime
+    (function wrapRpcWithToken() {
+        const nativeRpc = supabaseClient.rpc.bind(supabaseClient);
+        supabaseClient.rpc = function(fn, params, options) {
+            if (params && typeof params === 'object' && 'p_actor' in params && authToken && !('p_token' in params)) {
+                params = Object.assign({}, params, { p_token: authToken });
+            }
+            return nativeRpc(fn, params, options);
+        };
+    })();
+
     let currentUser = null;
     let currentUserRole = 'User';
     let currentUsername = '';
@@ -2137,8 +2240,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.16';
+    const APP_VERSION = 'v3.17';
     const CHANGELOG = [
+        { version: 'v3.17', date: '2026-08-18', notes: 'Security hardening pass — no visible change to how the app is used, but the data behind it is now properly locked down. Two real holes were found and closed. First: the login could be bypassed. The database used to trust whatever username the page claimed, with no proof — so anyone who knew an admin username could reach admin-only data and actions from outside the app entirely, without a password. Now every sign-in issues a private session token that the page must present on every request, and the database rejects anything that does not match, so a username alone is worthless to an outsider. Second: several tables (claims, charges, income, routes, employees, daily pay, and more) could be read around or written to directly, again bypassing the login screen. All create/edit/delete now flow through checked database functions that enforce your role and company, and the wide-open direct access was removed. Also: the encryption key that protects Social Security numbers was reachable from the public side and is now sealed off; a leftover create-any-user function that needed no permission was locked; and free-text fields (names, notes, claim numbers) are now escaped everywhere they are shown, so a value typed into a form can never run as code on someone else\'s screen. A visual refresh rode along too: rounder cards with softer shadows, buttons that respond to hover and keyboard focus, cleaner tables, and a fix that makes the dark (Ocean/Emerald) themes\' tables actually readable. Sign out and back in once after this update so a fresh secure session is issued.' },
         { version: 'v3.16', date: '2026-08-17', notes: 'Found and fixed a real money-tracking bug: any claim, charge, or income item with status \'Tk from check\' was being treated as fully resolved and forced to show a $0 balance \u2014 the same shortcut used for genuinely finished statuses like Absorbed and Paid. That\'s wrong: \'Tk from check\' only means the money is collected directly from a paycheck instead of through the normal weekly deduction schedule, not that it\'s been collected yet. Confirmed against real data \u2014 an employee with five Tk-from-check claims where four had never had a single dollar deducted, correctly showing $0.00 pending in the Release Eligibility report when the real number was $730. Fixed at the source, in the four shared functions everything else calls (claimBalance, chargeBalance, remainingBalance, remainingBalanceAsOf) rather than patching each screen separately, so every place this could show up \u2014 Release Eligibility, the Claims and Charges lists, dashboard totals, sort order \u2014 is now correct at once. A database check afterward found 25 claims across the account sitting in this exact state, so real numbers should visibly change in a few places after this update, not just Release Eligibility.' },
         { version: 'v3.15', date: '2026-08-17', notes: 'Fixed content getting silently cut off on smaller/non-maximized desktop windows and laptop screens \u2014 reported as fields (like Start Date on the New Contact form) and table columns disappearing off the right edge with no way to scroll to them. Root cause: the main content area had both width:100% and a fixed margin-left:240px (for the sidebar) applied at the same time. Those two together don\'t shrink to fit each other \u2014 the box became 100% width, then got pushed an additional 240px to the right on top of that, overflowing the page by exactly the sidebar\'s width. Combined with overflow-x:hidden on the page (needed for the mobile scroll fix), that overflow wasn\'t even a scrollbar \u2014 it was just silently clipped and gone, worse the narrower the window or the higher the browser zoom. Switched to width:calc(100% - 240px) so the content area actually shrinks to fit alongside the sidebar instead of overflowing past it, on any screen size or zoom level. While investigating, also found and fixed the actual cause of a duplicate-key error when adding an employee: the next-ID generator was counting currently-loaded employees instead of finding the highest ID number actually in use, so it silently broke the first time any employee record was ever deleted, generating an ID that already existed further up the sequence. Now scans for the real highest ID instead, which is immune to gaps left by deletions.' },
         { version: 'v3.14', date: '2026-08-17', notes: 'Closed out the Android scrolling investigation from the last several versions. After all the earlier fixes still didn\'t resolve it, removed the custom pull-to-refresh entirely as a decisive step \u2014 it was the only non-standard, global touch-handling code left on the page, and normal native scrolling should never need anything sitting on top of it. That fixed scrolling everywhere it was tested. Rebuilt the PWA install/offline layer from scratch afterward (manifest.json and sw.js), and added a proper cross-platform install experience: a real \'Install\' button and native prompt on Chrome/Edge (desktop and Android), clear manual \'Add to Home Screen\' instructions on iOS Safari (which has no install-prompt API for a site to hook into at all), and an automatic one-time reload when a future update\'s service worker takes over so an open tab never keeps running stale cached code. Pull-to-refresh was then re-added, but scoped so it only ever runs in standalone/installed mode \u2014 a normal browser tab already has its own native swipe-down-to-refresh built into the browser itself, and custom code layered on top of that native gesture is exactly what broke scrolling in the first place. In a regular browser tab (where all the reported scrolling problems happened), none of this custom touch code attaches at all anymore.' },
@@ -2378,7 +2482,7 @@
             list.innerHTML = CHANGELOG.map(c => `
                 <div style="padding:10px 0; border-bottom:1px solid var(--border);">
                     <div style="font-weight:700; font-size:13px; color:var(--secondary);">${c.version} <span style="font-weight:400; color:var(--text-muted); font-size:11px;">· ${c.date}</span></div>
-                    <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.4;">${c.notes}</div>
+                    <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.4;">${escHtml(c.notes)}</div>
                 </div>`).join('');
         }
         ov.style.display = 'flex';
@@ -3080,6 +3184,8 @@
                 currentUser = data[0];
                 currentUsername = data[0].username;
                 currentUserRole = data[0].role;
+                authToken = data[0].session_token;
+                currentUser.token_expires_at = Date.now() + TOKEN_TTL_MS;
                 localStorage.setItem('unified_user', JSON.stringify(currentUser));
                 initAppSession();
             }
@@ -3175,8 +3281,18 @@
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
+                // A restored session needs a live token; if it's missing or past its
+                // estimated expiry, drop it and fall back to the login screen rather
+                // than running with a dead token that every RPC would reject.
+                if (!currentUser.session_token ||
+                    (currentUser.token_expires_at && Date.now() > currentUser.token_expires_at)) {
+                    localStorage.removeItem('unified_user');
+                    currentUser = null;
+                    return;
+                }
                 currentUsername = currentUser.username;
                 currentUserRole = currentUser.role;
+                authToken = currentUser.session_token;
                 initAppSession();
             } catch(e) {
                 console.error('Session restore failed:', e);
@@ -3187,6 +3303,9 @@
 
     function logout(reason) {
         stopIdleWatch();
+        // Best-effort: invalidate the server-side session so the token can't be reused.
+        try { if (authToken) supabaseClient.rpc('end_session', { p_token: authToken }); } catch (e) {}
+        authToken = null;
         localStorage.removeItem('unified_user');
         if (reason === 'idle') sessionStorage.setItem('logout_reason', 'idle');
         location.reload();
@@ -3398,8 +3517,8 @@
                     <td class="id-cell">${c.code}</td>
                     <td>${c.name}</td>
                     <td>${c.owner || '-'}</td>
-                    <td>${c.phone || '-'}</td>
-                    <td>${c.email || '-'}</td>
+                    <td>${escHtml(c.phone || '-')}</td>
+                    <td>${escHtml(c.email || '-')}</td>
                     <td>${c.manager || '-'}</td>
                     <td>${c.manager_phone || '-'}</td>
                     <td>${new Date(c.created_at).toLocaleDateString()}</td>
@@ -3431,8 +3550,8 @@
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
                             <div><div class="k">Owner</div><div class="v">${c.owner || '-'}</div></div>
-                            <div><div class="k">Phone</div><div class="v">${c.phone || '-'}</div></div>
-                            <div><div class="k">Email</div><div class="v">${c.email || '-'}</div></div>
+                            <div><div class="k">Phone</div><div class="v">${escHtml(c.phone || '-')}</div></div>
+                            <div><div class="k">Email</div><div class="v">${escHtml(c.email || '-')}</div></div>
                             <div><div class="k">Manager</div><div class="v">${c.manager || '-'}</div></div>
                             <div><div class="k">Manager phone</div><div class="v">${c.manager_phone || '-'}</div></div>
                             <div><div class="k">Created</div><div class="v">${new Date(c.created_at).toLocaleDateString()}</div></div>
@@ -4569,7 +4688,7 @@
             if (!claimCo) return;
             const claimId = `${idPrefix()}${String(claims.length + 1).padStart(settings.claimDigits, '0')}`;
             const payload = Object.assign({ claim_id: claimId, company_code: claimCo }, fields);
-            const { error } = await supabaseClient.from('claims').insert([payload]);
+            const { error } = await supabaseClient.rpc('create_claim', { p_actor: currentUsername, p_fields: payload });
             if (error) { alert('Error saving claim: ' + error.message); return; }
             document.getElementById('claim-form').reset();
             document.getElementById('cEmployee').value = '';
@@ -4826,11 +4945,11 @@
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
-                <div><div class="k">Claimant acct</div><div class="v">${c.claimant_account || '-'}</div></div>
-                <div><div class="k">Company</div><div class="v">${c.company_name || '-'}</div></div>
-                <div><div class="k">Carrier claim #</div><div class="v">${c.carrier_claim_number || '-'}</div></div>
-                <div><div class="k">Customer claim #</div><div class="v">${c.customer_claim_number || '-'}</div></div>
-                <div><div class="k">Type of damage</div><div class="v">${c.damage_type}</div></div>
+                <div><div class="k">Claimant acct</div><div class="v">${escHtml(c.claimant_account || '-')}</div></div>
+                <div><div class="k">Company</div><div class="v">${escHtml(c.company_name || '-')}</div></div>
+                <div><div class="k">Carrier claim #</div><div class="v">${escHtml(c.carrier_claim_number || '-')}</div></div>
+                <div><div class="k">Customer claim #</div><div class="v">${escHtml(c.customer_claim_number || '-')}</div></div>
+                <div><div class="k">Type of damage</div><div class="v">${escHtml(c.damage_type)}</div></div>
                 <div><div class="k">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
                 <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
                 <div><div class="k">Balance</div><div class="v">${formatMoney(bal)}</div></div>
@@ -4869,7 +4988,7 @@
                     <td class="id-cell"><span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span> ${c.claim_id}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${c.employee_id}</td>
-                    <td>${c.damage_type}</td>
+                    <td>${escHtml(c.damage_type)}</td>
                     <td>${formatMoney(c.claim_amount)}</td>
                     <td>${formatMoney(rateOn(c, todayStr()))}</td>
                     <td>${weeks}</td>
@@ -5075,7 +5194,7 @@
             } else {
                 const co = requireWriteCompany(); if (!co) { skipped++; continue; }
                 const newId = `${idPrefix()}${String(claims.length + imported + 1).padStart(settings.claimDigits, '0')}`;
-                const { error } = await supabaseClient.from('claims').insert([{ claim_id: newId, company_code: co, ...fields }]);
+                const { error } = await supabaseClient.rpc('create_claim', { p_actor: currentUsername, p_fields: { claim_id: newId, company_code: co, ...fields } });
                 if (error) { skipped++; errors.push(`New claim: ${error.message}`); continue; }
             }
             imported++;
@@ -5101,7 +5220,7 @@
             } else {
                 const co = requireWriteCompany(); if (!co) { skipped++; continue; }
                 const newId = `${idPrefix()}${String(charges.length + imported + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
-                const { error } = await supabaseClient.from('charges').insert([{ charge_id: newId, company_code: co, ...fields }]);
+                const { error } = await supabaseClient.rpc('create_charge', { p_actor: currentUsername, p_fields: { charge_id: newId, company_code: co, ...fields } });
                 if (error) { skipped++; errors.push(`New charge: ${error.message}`); continue; }
             }
             imported++;
@@ -5125,7 +5244,7 @@
             } else {
                 const co = requireWriteCompany(); if (!co) { skipped++; continue; }
                 const newId = `${idPrefix()}${String(additionalIncome.length + imported + 1).padStart(5, '0')}I`;
-                const { error } = await supabaseClient.from('additional_income').insert([{ income_id: newId, company_code: co, employee_id: empId, income_type, amount, weekly_amount, start_date, status, notes }]);
+                const { error } = await supabaseClient.rpc('create_income', { p_actor: currentUsername, p_fields: { income_id: newId, company_code: co, employee_id: empId, income_type, amount, weekly_amount, start_date, status, notes } });
                 if (error) { skipped++; errors.push(`New income: ${error.message}`); continue; }
             }
             imported++;
@@ -5779,7 +5898,7 @@
             let inserted = 0, failed = 0;
             for (let i = 0; i < newClaims.length; i += 50) {
                 const batch = newClaims.slice(i, i + 50);
-                const { error } = await supabaseClient.from('claims').insert(batch);
+                const { error } = await supabaseClient.rpc('create_claims_batch', { p_actor: currentUsername, p_rows: batch });
                 if (error) { failed += batch.length; console.error('claims import batch failed:', error.message); }
                 else inserted += batch.length;
             }
@@ -5830,7 +5949,7 @@
             if (!chargeCo) return;
             const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
             const payload = Object.assign({ charge_id: chargeId, company_code: chargeCo }, fields);
-            const { error } = await supabaseClient.from('charges').insert([payload]);
+            const { error } = await supabaseClient.rpc('create_charge', { p_actor: currentUsername, p_fields: payload });
             if (error) { alert('Error saving charge: ' + error.message); return; }
             document.getElementById('charge-form').reset();
             fetchChargesFromCloud();
@@ -5846,7 +5965,7 @@
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
-                <div><div class="k">Charge type</div><div class="v">${ch.charge_type}</div></div>
+                <div><div class="k">Charge type</div><div class="v">${escHtml(ch.charge_type)}</div></div>
                 <div><div class="k">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
                 <div><div class="k">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
                 <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
@@ -5902,7 +6021,7 @@
                     <td class="id-cell"><span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span> ${ch.charge_id}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${ch.employee_id}</td>
-                    <td>${ch.charge_type}</td>
+                    <td>${escHtml(ch.charge_type)}</td>
                     <td>${formatMoney(ch.amount)}</td>
                     <td>${formatMoney(ch.weekly_deduction)}</td>
                     <td>${weeks}</td>
@@ -6933,7 +7052,7 @@
             status: document.getElementById('iStatus').value,
             notes: document.getElementById('iNotes').value.trim()
         };
-        const { error } = await supabaseClient.from('additional_income').insert([payload]);
+        const { error } = await supabaseClient.rpc('create_income', { p_actor: currentUsername, p_fields: payload });
         if (error) { alert('Error saving income: ' + error.message); return; }
         document.getElementById('income-form').reset();
         fetchIncomeFromCloud();
@@ -6947,7 +7066,7 @@
             <div class="rec-detail-grid">
                 <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
                 <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
-                <div><div class="k">Income type</div><div class="v">${i.income_type}</div></div>
+                <div><div class="k">Income type</div><div class="v">${escHtml(i.income_type)}</div></div>
                 <div><div class="k">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
                 <div><div class="k">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
                 <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
@@ -7004,7 +7123,7 @@
                     <td class="id-cell"><span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span> ${i.income_id}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${i.employee_id}</td>
-                    <td>${i.income_type}</td>
+                    <td>${escHtml(i.income_type)}</td>
                     <td>${formatMoney(i.amount)}</td>
                     <td>${formatMoney(i.weekly_amount)}</td>
                     <td>${weeks}</td>
@@ -7170,7 +7289,7 @@
         return `
             <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
-                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${c.damage_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${c.status}</span></span>
+                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${escHtml(c.damage_type)} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${c.status}</span></span>
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
@@ -7205,7 +7324,7 @@
         return `
             <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
-                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${ch.charge_type} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${ch.status}</span></span>
+                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${escHtml(ch.charge_type)} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${ch.status}</span></span>
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
@@ -7242,7 +7361,7 @@
         let html = `
             <div class="panel">
                 <h2>${emp.first_name} ${emp.last_name} — ${emp.id}</h2>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + emp.department : ''}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + escHtml(emp.department) : ''}</div>
             </div>
             <div class="panel">
                 <h2>Current deductions — full breakdown</h2>`;
@@ -7283,7 +7402,7 @@
                 html += `
                     <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                         <div class="panel-head" onclick="toggleCollapse(this)">
-                            <span style="font-size:13px;"><span class="type-pill">Income</span> <b>${i.income_id}</b> · ${i.income_type} · <span class="money" style="color:#059669;">${formatMoney(rem)}</span> · <span class="status-badge status-${i.status}">${i.status}</span></span>
+                            <span style="font-size:13px;"><span class="type-pill">Income</span> <b>${i.income_id}</b> · ${escHtml(i.income_type)} · <span class="money" style="color:#059669;">${formatMoney(rem)}</span> · <span class="status-badge status-${i.status}">${i.status}</span></span>
                             <span class="caret">&#9662;</span>
                         </div>
                         <div>
@@ -8667,8 +8786,7 @@
             alert(`There's already a rate change effective ${date} for this claim. Remove the existing one first if you want to replace it.`);
             return;
         }
-        const { error } = await supabaseClient.from('claim_rate_changes')
-            .insert([{ company_code: claimHistCompany(), claim_id: editingClaimId, effective_date: date, weekly_amount: amt }]);
+        const { error } = await supabaseClient.rpc('add_claim_rate_change', { p_actor: currentUsername, p_company: claimHistCompany(), p_claim_id: editingClaimId, p_effective_date: date, p_weekly_amount: amt });
         if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('rc-amount').value = ''; document.getElementById('rc-date').value = '';
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
@@ -8690,8 +8808,7 @@
             return !(newEndsBeforeExisting || existingEndsBeforeNew);
         });
         if (overlaps) { alert('This overlaps with an existing pause window for this claim. Remove or adjust the existing one first.'); return; }
-        const { error } = await supabaseClient.from('claim_pauses')
-            .insert([{ company_code: claimHistCompany(), claim_id: editingClaimId, paused_date: date, resume_date: resume }]);
+        const { error } = await supabaseClient.rpc('add_claim_pause', { p_actor: currentUsername, p_company: claimHistCompany(), p_claim_id: editingClaimId, p_paused_date: date, p_resume_date: resume });
         if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('pause-date').value = ''; document.getElementById('pause-resume').value = '';
         await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
@@ -8785,8 +8902,7 @@
             alert(`There's already a rate change effective ${date} for this charge. Remove the existing one first if you want to replace it.`);
             return;
         }
-        const { error } = await supabaseClient.from('charge_rate_changes')
-            .insert([{ company_code: chargeHistCompany(), charge_id: editingChargeId, effective_date: date, weekly_amount: amt }]);
+        const { error } = await supabaseClient.rpc('add_charge_rate_change', { p_actor: currentUsername, p_company: chargeHistCompany(), p_charge_id: editingChargeId, p_effective_date: date, p_weekly_amount: amt });
         if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('chrc-amount').value = ''; document.getElementById('chrc-date').value = '';
         await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
@@ -8806,8 +8922,7 @@
             return !(newEndsBeforeExisting || existingEndsBeforeNew);
         });
         if (overlaps) { alert('This overlaps with an existing pause window for this charge. Remove or adjust the existing one first.'); return; }
-        const { error } = await supabaseClient.from('charge_pauses')
-            .insert([{ company_code: chargeHistCompany(), charge_id: editingChargeId, paused_date: date, resume_date: resume }]);
+        const { error } = await supabaseClient.rpc('add_charge_pause', { p_actor: currentUsername, p_company: chargeHistCompany(), p_charge_id: editingChargeId, p_paused_date: date, p_resume_date: resume });
         if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
         document.getElementById('chpause-date').value = ''; document.getElementById('chpause-resume').value = '';
         await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
@@ -9827,7 +9942,7 @@
 
         const payload = buildRoutePayload(rawData);
         payload.company_code = routeCo;
-        const { error } = await supabaseClient.from('routes').insert([payload]);
+        const { error } = await supabaseClient.rpc('create_route', { p_actor: currentUsername, p_fields: payload });
         if (error) alert('Error: ' + error.message);
         else {
             document.getElementById('route-form').reset();
@@ -9891,7 +10006,7 @@
                     newRoutes.push(rp);
                 });
 
-                const { error } = await supabaseClient.from('routes').insert(newRoutes);
+                const { error } = await supabaseClient.rpc('create_routes_batch', { p_actor: currentUsername, p_rows: newRoutes });
                 if (error) {
                     alert('Error syncing routes to Supabase: ' + error.message);
                 } else {
@@ -9913,8 +10028,8 @@
         filtered.forEach(r => {
             tbody.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td>${r.date}</td><td style="text-align:center">${r.contractor}</td><td style="text-align:center">${r.type}</td><td style="text-align:center">${r.driver}</td>
-                    <td style="text-align:center">${r.route_num || '-'}</td><td style="text-align:center">${r.route_id || '-'}</td>
+                    <td>${r.date}</td><td style="text-align:center">${escHtml(r.contractor)}</td><td style="text-align:center">${escHtml(r.type)}</td><td style="text-align:center">${escHtml(r.driver)}</td>
+                    <td style="text-align:center">${escHtml(r.route_num || '-')}</td><td style="text-align:center">${escHtml(r.route_id || '-')}</td>
                     <td>${r.miles}</td><td>${r.manifest}</td><td>${r.pullbacks || '-'}</td><td>${r.loaded_stops}</td>
                     <td>${r.incompletes || '-'}</td><td>${r.completed_stops}</td><td>${formatMoney(r.mileage_pay)}</td><td>${formatMoney(r.fuel_pay)}</td>
                     <td class="money">${formatMoney(r.total_daily)}</td><td class="money">${formatMoney(r.final_pay)}</td>
