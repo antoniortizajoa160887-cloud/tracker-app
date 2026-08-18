@@ -753,6 +753,121 @@
     #user-menu-dropdown button:hover { background: var(--surface-2) !important; }
     #user-menu-dropdown button:first-of-type:hover { color: var(--text) !important; }
     #user-menu-dropdown button:last-of-type:hover { color: #ef4444 !important; }
+
+    /* =====================================================================
+       Redesign layer — v3.18  "Clean SaaS (Light) + Midnight Pro (Dark)".
+       Appended last so it refines the palette and a few key components purely
+       by cascade order, without editing the original token blocks. Every
+       change is token-driven and reversible: delete this block to fall back
+       to the v3.17 look exactly. Light / Ocean / Emerald all shift together.
+       ===================================================================== */
+
+    /* ---- Light → "Clean SaaS": cooler canvas, softer hairlines, muted table
+       headers instead of the strong blue bar, cyan record IDs. Brand emerald
+       stays the accent. ---- */
+    :root {
+        --bg: #f4f7fa;
+        --surface: #ffffff;
+        --surface-2: #f6f9fb;
+        --border: #e6edf3;
+        --text: #0f2231;
+        --text-muted: #64768a;
+        --th-bg: #f1f6fa;
+        --th-text: #5a6b7a;
+        --accent-2: #0e7490;
+        --shadow-sm: 0 1px 2px rgba(16,35,46,0.05);
+        --shadow: 0 6px 20px -8px rgba(16,35,46,0.16), 0 1px 3px rgba(16,35,46,0.05);
+        --shadow-lg: 0 24px 50px -16px rgba(16,35,46,0.22);
+        --glow: none;
+    }
+
+    /* ---- Ocean (dark) → "Midnight Pro": deep navy canvas (matches the PWA's
+       own background color), elevated cards, teal/cyan glow accents. ---- */
+    [data-theme="dark"] {
+        --bg: #0b1220;
+        --surface: #141f33;
+        --surface-2: #1a2842;
+        --border: #243352;
+        --text: #e8eef7;
+        --text-muted: #8b9bb4;
+        --th-bg: #101b2e;
+        --th-text: #8b9bb4;
+        --accent-2: #22d3ee;
+        --glow: 0 0 0 1px rgba(45,212,191,0.16), 0 0 22px -6px rgba(45,212,191,0.30);
+    }
+    /* Replace the dark photo backdrop with a clean deep-navy canvas + soft
+       corner glows (the Midnight look). Overrides the earlier body rule. */
+    [data-theme="dark"] body {
+        background-image:
+            radial-gradient(circle at 12% -8%, rgba(45,212,191,0.10), transparent 42%),
+            radial-gradient(circle at 92% 108%, rgba(34,211,238,0.09), transparent 42%) !important;
+        background-color: #0b1220 !important;
+        background-attachment: fixed !important;
+    }
+
+    /* ---- Emerald → "Midnight Pro" (green): green-tinted near-black, emerald
+       glow. Keeps the signature gradient accents already defined above. ---- */
+    [data-theme="dark-emerald"] {
+        --bg: #0a0f0c;
+        --surface: #111a15;
+        --surface-2: #18231c;
+        --border: #26332b;
+        --text: #eef4ef;
+        --text-muted: #9ab0a2;
+        --th-bg: #12201a;
+        --th-text: #9ab0a2;
+        --accent-2: #5eead4;
+        --glow: 0 0 0 1px rgba(34,197,94,0.16), 0 0 22px -6px rgba(34,197,94,0.28);
+    }
+
+    /* Match the dark shadow tokens to the new elevated card look. */
+    [data-theme="dark"], [data-theme="dark-emerald"] {
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.45);
+        --shadow: 0 10px 30px -12px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.45);
+        --shadow-lg: 0 26px 56px -16px rgba(0,0,0,0.7);
+    }
+
+    /* ---- Tables: clean muted header instead of the strong blue bar (the
+       defining Clean-SaaS move). Sticky/positioning from the base rule is
+       preserved — only the paint changes. ---- */
+    th {
+        background: var(--th-bg) !important;
+        background-image: none !important;
+        color: var(--th-text) !important;
+        border-bottom: 1px solid var(--border);
+        font-size: 10.5px;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+    }
+    /* Record IDs pick up the theme accent (cyan on dark, teal-blue on light). */
+    .id-cell { color: var(--accent-2); }
+    [data-theme="dark"] .id-cell, [data-theme="dark-emerald"] .id-cell { color: var(--accent-2); }
+
+    /* ---- Cards: a touch more air. ---- */
+    .card, .panel { border: 1px solid var(--border); }
+    [data-theme="dark"] .card, [data-theme="dark"] .panel,
+    [data-theme="dark-emerald"] .card, [data-theme="dark-emerald"] .panel {
+        background: linear-gradient(180deg, var(--surface), var(--bg));
+    }
+
+    /* ---- Sidebar active item: soft glow on the dark themes. ---- */
+    [data-theme="dark"] #app-sidebar .tab-btn.active,
+    [data-theme="dark-emerald"] #app-sidebar .tab-btn.active { box-shadow: var(--glow); }
+
+    /* ---- KPI stat tiles (reusable component for dashboard/list headers). ---- */
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 14px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 16px; box-shadow: var(--shadow-sm); }
+    .kpi .kpi-lab { color: var(--text-muted); font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .kpi .kpi-val { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; color: var(--text); font-variant-numeric: tabular-nums; }
+    .kpi .kpi-val.mono { font-family: var(--mono); }
+    .kpi .kpi-sub { font-size: 11.5px; margin-top: 3px; color: var(--text-muted); font-weight: 600; }
+    .kpi .kpi-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+    [data-theme="dark"] .kpi, [data-theme="dark-emerald"] .kpi { background: linear-gradient(180deg, var(--surface), var(--bg)); }
+
+    /* ---- Inline progress bar (claim/charge collection %). ---- */
+    .progress { height: 6px; border-radius: 6px; background: var(--surface-2); overflow: hidden; min-width: 64px; }
+    .progress > i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--primary), var(--active)); }
+    .progress-lab { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
 </style>
 </head>
 <body>
@@ -2240,8 +2355,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.17';
+    const APP_VERSION = 'v3.18';
     const CHANGELOG = [
+        { version: 'v3.18', date: '2026-08-18', notes: 'Visual redesign plus a changelog change. The redesign gives the app two polished looks that ride on the theme switcher you already have: the Light theme is now a clean, airy “Clean SaaS” style (cooler background, softer lines, calmer table headers instead of the heavy blue bar, rounded cards), and the two dark themes (Ocean and Emerald) became a “Midnight Pro” style — a deep, easy-on-the-eyes canvas with gently glowing teal/green accents and elevated cards. It is the same app and the same layout; only the paint changed, and every screen shifted at once because it is driven by shared color tokens. The changelog (this popup) now reads its history from the database instead of a list baked into the page, so it stays complete and identical on every device and can grow without shipping a new file each time; if the connection is unavailable it still falls back to the copy stored in the page. Tap the version number in the bottom-right corner any time to see this history.' },
         { version: 'v3.17', date: '2026-08-18', notes: 'Security hardening pass — no visible change to how the app is used, but the data behind it is now properly locked down. Two real holes were found and closed. First: the login could be bypassed. The database used to trust whatever username the page claimed, with no proof — so anyone who knew an admin username could reach admin-only data and actions from outside the app entirely, without a password. Now every sign-in issues a private session token that the page must present on every request, and the database rejects anything that does not match, so a username alone is worthless to an outsider. Second: several tables (claims, charges, income, routes, employees, daily pay, and more) could be read around or written to directly, again bypassing the login screen. All create/edit/delete now flow through checked database functions that enforce your role and company, and the wide-open direct access was removed. Also: the encryption key that protects Social Security numbers was reachable from the public side and is now sealed off; a leftover create-any-user function that needed no permission was locked; and free-text fields (names, notes, claim numbers) are now escaped everywhere they are shown, so a value typed into a form can never run as code on someone else\'s screen. A visual refresh rode along too: rounder cards with softer shadows, buttons that respond to hover and keyboard focus, cleaner tables, and a fix that makes the dark (Ocean/Emerald) themes\' tables actually readable. Sign out and back in once after this update so a fresh secure session is issued.' },
         { version: 'v3.16', date: '2026-08-17', notes: 'Found and fixed a real money-tracking bug: any claim, charge, or income item with status \'Tk from check\' was being treated as fully resolved and forced to show a $0 balance \u2014 the same shortcut used for genuinely finished statuses like Absorbed and Paid. That\'s wrong: \'Tk from check\' only means the money is collected directly from a paycheck instead of through the normal weekly deduction schedule, not that it\'s been collected yet. Confirmed against real data \u2014 an employee with five Tk-from-check claims where four had never had a single dollar deducted, correctly showing $0.00 pending in the Release Eligibility report when the real number was $730. Fixed at the source, in the four shared functions everything else calls (claimBalance, chargeBalance, remainingBalance, remainingBalanceAsOf) rather than patching each screen separately, so every place this could show up \u2014 Release Eligibility, the Claims and Charges lists, dashboard totals, sort order \u2014 is now correct at once. A database check afterward found 25 claims across the account sitting in this exact state, so real numbers should visibly change in a few places after this update, not just Release Eligibility.' },
         { version: 'v3.15', date: '2026-08-17', notes: 'Fixed content getting silently cut off on smaller/non-maximized desktop windows and laptop screens \u2014 reported as fields (like Start Date on the New Contact form) and table columns disappearing off the right edge with no way to scroll to them. Root cause: the main content area had both width:100% and a fixed margin-left:240px (for the sidebar) applied at the same time. Those two together don\'t shrink to fit each other \u2014 the box became 100% width, then got pushed an additional 240px to the right on top of that, overflowing the page by exactly the sidebar\'s width. Combined with overflow-x:hidden on the page (needed for the mobile scroll fix), that overflow wasn\'t even a scrollbar \u2014 it was just silently clipped and gone, worse the narrower the window or the higher the browser zoom. Switched to width:calc(100% - 240px) so the content area actually shrinks to fit alongside the sidebar instead of overflowing past it, on any screen size or zoom level. While investigating, also found and fixed the actual cause of a duplicate-key error when adding an employee: the next-ID generator was counting currently-loaded employees instead of finding the highest ID number actually in use, so it silently broke the first time any employee record was ever deleted, generating an ID that already existed further up the sequence. Now scans for the real highest ID instead, which is immune to gaps left by deletions.' },
@@ -2468,24 +2584,43 @@
         if (gsi) gsi.value = '';
     }
 
-    // Version badge tap: intentionally does nothing (popup disabled per
-    // request). toggleVersionLog() below is left intact/unused in case
-    // it's wanted back later.
-    function handleVersionBadgeTap() {}
+    // Version badge tap: open the changelog popup. The history is sourced
+    // from the DB (system_changelog — the fuller, shared source of truth),
+    // with the in-file CHANGELOG array as an offline / not-signed-in fallback.
+    function handleVersionBadgeTap() { toggleVersionLog(); }
 
-    function toggleVersionLog() {
+    let changelogCache = null;   // DB changelog rows, fetched once per session
+    async function toggleVersionLog() {
         const ov = document.getElementById('version-log-overlay');
         if (!ov) return;
         if (ov.style.display === 'flex') { ov.style.display = 'none'; return; }
         const list = document.getElementById('version-log-list');
+        if (list) list.innerHTML = '<div style="padding:16px 0; text-align:center; color:var(--text-muted); font-size:12px;">Loading…</div>';
+        ov.style.display = 'flex';
+
+        // Prefer the DB-backed history; fall back to the local array when the
+        // request fails or nobody's signed in yet (login screen / offline).
+        let entries = changelogCache;
+        if (!entries) {
+            try {
+                if (currentUsername && authToken) {
+                    const { data, error } = await supabaseClient.rpc('list_system_changelog', { p_actor: currentUsername });
+                    if (!error && data && data.length) {
+                        entries = data.map(c => ({ version: c.version, date: c.entry_date, notes: c.notes }));
+                        changelogCache = entries;
+                    }
+                }
+            } catch (e) { /* fall through to the local array */ }
+        }
+        if (!entries) entries = CHANGELOG;
+
         if (list) {
-            list.innerHTML = CHANGELOG.map(c => `
+            list.innerHTML = entries.map(c => `
                 <div style="padding:10px 0; border-bottom:1px solid var(--border);">
-                    <div style="font-weight:700; font-size:13px; color:var(--secondary);">${c.version} <span style="font-weight:400; color:var(--text-muted); font-size:11px;">· ${c.date}</span></div>
-                    <div style="font-size:12px; color:#334155; margin-top:3px; line-height:1.4;">${escHtml(c.notes)}</div>
+                    <div style="font-weight:700; font-size:13px; color:var(--secondary);">${escHtml(c.version)} <span style="font-weight:400; color:var(--text-muted); font-size:11px;">· ${escHtml(String(c.date || ''))}</span></div>
+                    <div style="font-size:12px; color:var(--text); margin-top:3px; line-height:1.4;">${escHtml(c.notes)}</div>
                 </div>`).join('');
         }
-        ov.style.display = 'flex';
     }
 
     // Administration > Changelog tab — same data as the version-badge popup,
