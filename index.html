@@ -2056,7 +2056,11 @@
             <div id="dm-thread-header" class="msg-thread-header" style="display:none;"></div>
             <div id="dm-thread-body" class="msg-thread-body"></div>
             <div id="dm-composer" class="msg-composer" style="display:none;">
+                <div id="dm-emoji-panel" style="display:none; flex-wrap:wrap; gap:2px; max-height:120px; overflow-y:auto; padding:6px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); margin-bottom:6px;"></div>
                 <div class="msg-composer-input-row">
+                    <button type="button" class="btn-small" title="Emoji" onclick="toggleDmEmojiPanel()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">😊</button>
+                    <button type="button" class="btn-small" id="dm-attach-btn" title="Attach a photo, video or document" onclick="document.getElementById('dm-file-input').click()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">📎</button>
+                    <input type="file" id="dm-file-input" style="display:none;" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="sendChatFiles(this.files)">
                     <input type="text" id="dm-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){sendDirectMessage();}">
                     <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="sendDirectMessage()">➤</button>
                 </div>
@@ -2512,8 +2516,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.29';
+    const APP_VERSION = 'v3.30';
     const CHANGELOG = [
+        { version: 'v3.30', date: '2026-08-19', notes: 'Messaging gets files, emoji, and a cleaner people list. (1) You can now attach photos, videos and documents inside a chat: from a Claim, Charge or Income conversation tap the 📎 button to send a file — it is automatically attached to that specific record (so it also appears in that record\'s Files) and shows in the chat with a tap-to-open button. Phone photos are shrunk automatically and single files can be up to 100 MB. (General and Missing Day chats have no record to attach to, so files are sent from the record conversations.) (2) An emoji picker (😊) is available in every conversation. (3) The "new conversation" people list is cleaner: role labels are hidden, and the Super Admin account and the automatic company login accounts (like "3ofl") no longer appear — you only see real people you are allowed to message.' },
         { version: 'v3.29', date: '2026-08-19', notes: 'Messages are now organized down to the specific item. When you start a conversation you pick a person, then a topic — and for Claims, Charges or Income you then pick the exact record it is about (only that person\'s records are listed), while Missing Day opens a calendar to pick the date. Each item becomes its own independent thread: your conversation about one claim stays completely separate from another claim, from a Missing Day, and from General chat — each with its own history and unread count. The conversation list shows the item next to each thread (for example the claim number and damage type, or the date), and the topic filter chips still narrow the list.' },
         { version: 'v3.28', date: '2026-08-19', notes: 'Provider Pay is now linked to Bills Payable. Under each provider on the Provider Pay screen, any unpaid bill whose vendor name matches that provider now appears with a checkbox and its amount. Tick one or more bills and press "Pay selected" to mark them Paid in a single step and add their combined total to that provider\'s pay for the week (the bill numbers are noted automatically). This lets you settle several of a provider\'s bills at once and keeps Bills Payable and Provider Pay in sync — a paid bill immediately drops off the provider\'s list.' },
         { version: 'v3.27', date: '2026-08-19', notes: 'Invoices and Bills can now be marked Void. A voided invoice or bill stays on record — it moves into a new Void group at the bottom of the list — but no longer counts toward any outstanding/unpaid total, and (for invoices) it drops out of the “Invoiced This Month” amount: a voided document is treated as zero value while the original record is preserved for history. Void is available in the Status dropdown on the New/Edit form, as a Status filter, and as its own collapsible group (shown after Unpaid and Paid).' },
@@ -8837,7 +8842,7 @@
     async function startNewDmConversation() {
         if (!dmContacts.length) await fetchDmContacts();
         const people = dmContacts.slice().sort((a, b) => dmContactLabel(a).localeCompare(dmContactLabel(b), undefined, { sensitivity: 'base' }));
-        const peopleOpts = people.map(c => `<option value="${escHtml(c.username)}">${escHtml(dmContactLabel(c))} · ${escHtml(dmRoleLabel(c.role))}</option>`).join('');
+        const peopleOpts = people.map(c => `<option value="${escHtml(c.username)}">${escHtml(dmContactLabel(c))}</option>`).join('');
         const topicOpts = DM_TOPICS.map(t => `<option value="${t}">${t}</option>`).join('');
         const list = document.getElementById('dm-thread-list');
         if (!list) return;
@@ -8960,7 +8965,7 @@
             html += `
                 <div class="msg-bubble-row ${m.mine ? 'mine' : 'theirs'}">
                     <div class="msg-bubble-meta">${m.mine ? 'You' : escHtml(label)} · ${time}${readTag}</div>
-                    <div class="msg-bubble">${escHtml(m.body)}</div>
+                    <div class="msg-bubble">${m.body ? escHtml(m.body) : ''}${m.attach_path ? `${m.body ? '<br>' : ''}${dmFileChip(m)}` : ''}</div>
                     ${m.mine ? `<span class="msg-bubble-del" onclick="deleteDirectMessage(${m.id})">✕ Delete</span>` : ''}
                 </div>`;
         });
@@ -8988,6 +8993,83 @@
         if (!confirm('Delete this message?')) return;
         const { error } = await supabaseClient.rpc('dm_delete_message', { p_actor: currentUsername, p_id: id });
         if (error) { alert('Error: ' + error.message); return; }
+        await fetchDmThread();
+        renderDmThread(true);
+        await fetchDmThreads();
+        renderDmThreads();
+    }
+
+    // ---- Emoji picker (works in every chat) ------------------------------
+    const DM_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😉','😎','🙂','😐','😕','😢','😭','😡','🤔','😅','👍','👎','👌','🙏','👏','💪','🔥','✅','❌','⚠️','❓','❗','💯','🎉','📌','📎','📷','🎬','📄','💰','💵','🧾','📅','⏰','🚚','🛠️','❤️','🚨'];
+    function renderDmEmojiPanel() {
+        const p = document.getElementById('dm-emoji-panel');
+        if (!p) return;
+        p.innerHTML = DM_EMOJIS.map(e => `<button type="button" onclick="insertDmEmoji('${e}')" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 4px;line-height:1;">${e}</button>`).join('');
+    }
+    function toggleDmEmojiPanel() {
+        const p = document.getElementById('dm-emoji-panel');
+        if (!p) return;
+        if (p.style.display === 'none' || !p.style.display) { renderDmEmojiPanel(); p.style.display = 'flex'; }
+        else { p.style.display = 'none'; }
+    }
+    function insertDmEmoji(e) {
+        const el = document.getElementById('dm-compose-text');
+        if (!el) return;
+        el.value = (el.value || '') + e;
+        el.focus();
+    }
+
+    // ---- Attaching a file to a chat --------------------------------------
+    // Files live on the record the thread is about, so they can only be sent
+    // from a Claim / Charge / Income conversation — the file is attached to
+    // that record (visible in its Files) AND shown here in the thread.
+    function dmTopicEntityType(topic) {
+        return topic === 'Claims' ? 'claim' : topic === 'Charges' ? 'charge' : topic === 'Income' ? 'income' : null;
+    }
+    function dmFileChip(m) {
+        const icon = m.attach_kind === 'photo' ? '📷' : m.attach_kind === 'video' ? '🎬' : '📄';
+        const size = m.attach_size ? ' · ' + formatBytes(m.attach_size) : '';
+        return `<button type="button" class="btn-small" style="margin:2px 0 0; background:var(--excel-blue);" onclick="viewAttachment('${escJsAttr(m.attach_path)}')">${icon} ${escHtml(m.attach_name || 'file')}${size}</button>`;
+    }
+    async function sendChatFiles(files) {
+        const arr = Array.from(files || []);
+        const input = document.getElementById('dm-file-input');
+        if (input) input.value = '';
+        if (!arr.length) return;
+        if (!dmActiveUser || !dmActiveTopic) { alert('Pick a conversation first (tap +).'); return; }
+        const entityType = dmTopicEntityType(dmActiveTopic);
+        if (!entityType || !dmActiveRef) {
+            alert('To share a file, open a Claim, Charge, or Income conversation — the file attaches to that record. (General and Missing Day chats have no record to attach to.)');
+            return;
+        }
+        if (!canEdit()) { alert('View Only accounts cannot upload files.'); return; }
+        const prog = document.getElementById('dm-composer');
+        let ok = 0, failed = 0;
+        for (const original of arr) {
+            try {
+                if (original.size > 104857600) throw new Error(`${original.name}: over the 100 MB limit`);
+                const file = await compressImageFile(original);
+                const signed = await efAttach({ action: 'sign-upload', entity_type: entityType, entity_id: dmActiveRef, file_name: file.name });
+                const up = await fetch(signed.signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file });
+                if (!up.ok) throw new Error('Upload failed (HTTP ' + up.status + ')');
+                const { error: recErr } = await supabaseClient.rpc('record_attachment', {
+                    p_actor: currentUsername, p_entity_type: entityType, p_entity_id: dmActiveRef,
+                    p_storage_path: signed.path, p_file_name: file.name, p_mime_type: file.type || null, p_size_bytes: file.size, p_kind: null
+                });
+                if (recErr) throw new Error(recErr.message);
+                const kind = (file.type || '').startsWith('image/') ? 'photo' : (file.type || '').startsWith('video/') ? 'video' : 'document';
+                const { error: sendErr } = await supabaseClient.rpc('dm_send', {
+                    p_actor: currentUsername, p_recipient: dmActiveUser, p_body: '', p_topic: dmActiveTopic, p_ref_id: dmActiveRef,
+                    p_attach_path: signed.path, p_attach_name: file.name, p_attach_kind: kind, p_attach_size: file.size
+                });
+                if (sendErr) throw new Error(sendErr.message);
+                ok++;
+            } catch (e) {
+                failed++;
+                console.error('sendChatFiles:', e);
+                alert('Could not send file: ' + (e && e.message ? e.message : e));
+            }
+        }
         await fetchDmThread();
         renderDmThread(true);
         await fetchDmThreads();
