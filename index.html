@@ -395,7 +395,7 @@
     .msg-cat-pills { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--border); }
     .msg-pill { border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
     .msg-pill.active { background: var(--navy); border-color: var(--navy); color: #fff; }
-    #msg-conversation-list { flex: 1; overflow-y: auto; }
+    #dm-contact-list { flex: 1; overflow-y: auto; }
     .msg-convo-item { padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
     .msg-convo-item:hover { background: rgba(0,0,0,0.02); }
     .msg-convo-item.active { background: var(--active-bg); border-left: 3px solid var(--primary); padding-left: 9px; }
@@ -1222,14 +1222,14 @@
 <div class="tabs sub-tabs" id="grp-hr">
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims &amp; Charges</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income" data-i18n="tab_income">Income</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income">💵 <span data-i18n="tab_income">Income</span></button>
     <button class="tab-btn" onclick="openTab(event, 'tab-weekdeposit')" id="btn-tab-weekdeposit">Week in Deposit</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">Savings &amp; Release Eligibility</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">Release History</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">🏦 Savings &amp; Release Eligibility</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">📜 Release History</button>
 </div>
 <div class="tabs sub-tabs" id="grp-expiring">
     <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
@@ -1253,7 +1253,7 @@
     <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
 </div>
 <div class="tabs sub-tabs open" id="grp-messages">
-    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages <span id="msg-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
 </div>
     <!-- Desktop-only: individual account actions anchored to the bottom of
          the sidebar. Mobile keeps the original ⋮ header dropdown, hidden
@@ -2030,39 +2030,20 @@
     <div class="msg-shell">
         <div class="msg-list-pane">
             <div class="msg-list-search" style="display:flex; gap:6px; align-items:center;">
-                <input type="text" id="msg-search" placeholder="Search messages..." oninput="renderConversationList()" style="flex:1; margin:0;">
-                <button type="button" class="btn-small" style="margin:0; min-height:40px; background:var(--navy);" onclick="startNewConversation()" title="New conversation">+</button>
+                <input type="text" id="dm-search" placeholder="Search people..." oninput="renderDmContacts()" style="flex:1; margin:0;">
             </div>
-            <div class="msg-cat-pills" id="msg-cat-pills">
-                <button type="button" class="msg-pill active" data-cat="" onclick="setConvoFilter('')">All</button>
-                <button type="button" class="msg-pill" data-cat="Claim" onclick="setConvoFilter('Claim')">Claims</button>
-                <button type="button" class="msg-pill" data-cat="General" onclick="setConvoFilter('General')">General</button>
-                <button type="button" class="msg-pill" data-cat="Missing Day" onclick="setConvoFilter('Missing Day')">Missing Day</button>
-                <button type="button" class="msg-pill" data-cat="Charge" onclick="setConvoFilter('Charge')">Charges</button>
-                <button type="button" class="msg-pill" data-cat="Income" onclick="setConvoFilter('Income')">Income</button>
-            </div>
-            <div id="msg-conversation-list"></div>
+            <div id="dm-contact-list"></div>
         </div>
         <div class="msg-thread-pane">
-            <div id="msg-thread-header" class="msg-thread-header" style="display:none;"></div>
-            <div id="msg-thread-body" class="msg-thread-body"></div>
-            <div id="msg-composer" class="msg-composer" style="display:none;">
-                <div class="msg-composer-selects">
-                    <select id="msg-compose-category" title="Regarding" onchange="onComposeCategoryChange()" style="width:auto; min-width:110px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;">
-                        <option value="General">General</option>
-                        <option value="Missing Day">Missing day</option>
-                        <option value="Claim">Claim</option>
-                        <option value="Charge">Charge</option>
-                        <option value="Income">Income</option>
-                    </select>
-                    <select id="msg-compose-linked" style="display:none; width:auto; min-width:150px; min-height:40px; font-size:0.78rem; padding:0.4rem 0.5rem;"></select>
-                </div>
+            <div id="dm-thread-header" class="msg-thread-header" style="display:none;"></div>
+            <div id="dm-thread-body" class="msg-thread-body"></div>
+            <div id="dm-composer" class="msg-composer" style="display:none;">
                 <div class="msg-composer-input-row">
-                    <input type="text" id="msg-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){postEmployeeMessage();}">
-                    <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="postEmployeeMessage()">➤</button>
+                    <input type="text" id="dm-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){sendDirectMessage();}">
+                    <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="sendDirectMessage()">➤</button>
                 </div>
             </div>
-            <div id="msg-empty-state" class="msg-empty-state">Select a conversation to view messages, or nothing yet if none exist for people you can see.</div>
+            <div id="dm-empty-state" class="msg-empty-state">Select a person on the left to start a conversation.</div>
         </div>
     </div>
 </div>
@@ -2472,8 +2453,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.22';
+    const APP_VERSION = 'v3.23';
     const CHANGELOG = [
+        { version: 'v3.23', date: '2026-08-19', notes: 'New built-from-scratch messaging system, plus a few tab icons. Messages is now a direct, person-to-person chat between the people who log in (user accounts), not the old per-employee note threads. Open Messages to see everyone you\'re allowed to talk to on the left, with unread counts and a badge on the Messages menu item; click a person to open the conversation and type at the bottom. Who can message whom is enforced on the server, not just hidden in the screen: everyone is limited to people in their own company (Super Admin can reach anyone, in any company, and anyone can reach a Super Admin), and — as requested — a View Only user can message managers and Super Admin but cannot message another View Only user. Read receipts (a “Read” tag once the other person opens it), unread badges, and delete-your-own-message are all included; it stays up to date every few seconds while the tab is open. Also added quick icons to three menu items so they\'re easier to spot: 💵 Income, 🏦 Savings & Release Eligibility, and 📜 Release History. The previous employee-note message threads are retired from the interface (their history is left untouched in the database).' },
         { version: 'v3.22', date: '2026-08-19', notes: 'Claims and Charges are now managed on one screen. The old separate \'Claims\' and \'Charges & Income\' tabs became a single \'Claims & Charges\' tab that lists both together — every row and card carries a CLAIM or CHARGE badge so they\'re never confused, and a Kind dropdown (Claims & Charges / Claims only / Charges only) plus one shared search, employee, type and status filter let you narrow to exactly what you want. Nothing about the records themselves changed: a claim is still a claim and a charge is still a charge, each keeps its own ID series, its own table, and its own statuses, and each is still created and edited on its own form (a New Claim / New Charge switch sits at the top of the tab). Additional Income moved out to its own dedicated \'Income\' tab (with its own employee selector), so it\'s no longer mixed in with charges. The tab\'s summary cards now cover both kinds at once — separate Claims and Charges counts, pooled total amount and outstanding balance, and combined Deducting / Queued / Resolved counts. Under the hood this rides on the shared engine from v3.21, so balances, schedules, rate changes and pauses are unchanged; only where things are displayed moved.' },
         { version: 'v3.21', date: '2026-08-18', notes: 'Internal engineering release: claims and charges now run on one shared deduction engine. They remain separate records with their own IDs, their own tables, and their own statuses — but how they work (base weekly rate, dated rate changes, pause windows, the weekly schedule walk, balances as of any date, and the rate/pause history panels in the edit form) is now a single implementation configured per kind, so any future fix or feature automatically applies to both. Every original function was kept with its exact name and behavior, verified by an automated equivalence test: 6,000 randomized scenarios (every status, past/future dates, rate changes to and from zero, overlapping pauses, inactive employees, missing data) produced identical balances before and after, plus 1,491 cross-checks proving a claim and a charge given identical data now behave identically. One deliberate improvement rode along: a schedule whose rate history dead-ends at $0 no longer projects decades of phantom empty weeks on the claims side — a fix charges already had; balances are unchanged, only the phantom tail disappears from schedule views.' },
         { version: 'v3.20', date: '2026-08-18', notes: 'Brand refresh, chosen from the design options board. New sharper logo (same shield-and-gauge identity, bolder gauge and crisper edges) across the login screen, sidebar, app icons and favicon. New shorter app title: \'Tracker — Logistics · HR · Claims\' (the header shows \'[Company] — Tracker\' when signed into a specific company). Two brand-new interface themes join the existing three: Indigo, a cool violet take on the light theme, and Carbon, a neutral graphite dark theme with amber accents — pick them from the same theme circles on the login screen, the header menu, or the sidebar. The login background hero stays as-is by choice. All existing themes, data, and workflows are untouched.' },
@@ -4020,6 +4002,7 @@
         if (typeof renderCharges === 'function') renderCharges();
         if (typeof renderIncome === 'function') renderIncome();
         await loadNotifications();
+        if (typeof fetchDmContacts === 'function') await fetchDmContacts(); // seeds the Messages unread badge
         await fetchVehiclesFromCloud();
         await fetchInvoicesFromCloud();
         await fetchBillsFromCloud();
@@ -4641,8 +4624,8 @@
                 renderVehicles();
                 break;
             case 'messages':
-                setVal('msg-search', '');
-                setConvoFilter('');
+                setVal('dm-search', '');
+                renderDmContacts();
                 break;
             case 'invoices':
                 setVal('invoice-search', '');
@@ -8590,295 +8573,205 @@
         attemptPrint();
     }
 
-    // ===== MESSAGES ========================================================
-    let employeeMessages = [];
-    let activeConvoEmpId = null;
-    let convoFilter = '';
-    let composeCategory = 'General';
+    // ===== MESSAGES — direct (user-to-user) messaging =====================
+    // A 1:1 chat between app_user accounts. Server-enforced permissions live
+    // entirely in the dm_* RPCs: everyone is scoped to their own company
+    // (Super Admin spans all companies), and a View Only user can message
+    // managers and Super Admin but NOT another View Only user. "Live" via
+    // polling for the same reason as the rest of the app — custom auth means
+    // every tab shares one anon connection, so Postgres Realtime can't tell
+    // them apart; re-running the same permission-checked RPC can't leak.
+    let dmContacts = [];          // people the current user is allowed to message
+    let dmActiveUser = null;      // username of the open conversation
+    let dmThreadMsgs = [];        // messages in the open conversation
+    let dmContactsSnap = '';      // fingerprint so a no-op poll skips the DOM
+    let dmThreadSnap = '';
+    let dmRenderedThreadUser = null;
+    let dmPollTimer = null;
 
-    let lastMessagesSnapshot = '';
-    function messagesSnapshotKey() {
-        // Cheap fingerprint of the current message set — used to detect
-        // whether a poll actually found anything new, so a background
-        // check with nothing new can skip touching the DOM at all instead
-        // of rebuilding it (and disrupting typing/open dropdowns) for no
-        // reason every single cycle.
-        return employeeMessages.map(m => m.id + ':' + m.created_at).join('|');
-    }
-    async function fetchEmployeeMessages() {
-        const { data, error } = await supabaseClient.rpc('get_employee_messages', { p_actor: currentUsername, p_company: currentCompany, p_employee_id: null });
-        if (error) { console.error('get_employee_messages:', error); employeeMessages = []; lastMessagesSnapshot = messagesSnapshotKey(); return false; }
-        employeeMessages = data || [];
-        const newSnap = messagesSnapshotKey();
-        const changed = newSnap !== lastMessagesSnapshot;
-        lastMessagesSnapshot = newSnap;
-        return changed;
-    }
-
-    // Groups the flat message list into one "conversation" per employee —
-    // matches how View Only naturally only ever has one (their own,
-    // already scoped server-side by get_employee_messages), and gives
-    // Medium+ a contact-list feel for everyone they can see.
-    function buildConversations() {
-        const byEmp = {};
-        employeeMessages.forEach(m => {
-            if (!byEmp[m.employee_id]) byEmp[m.employee_id] = [];
-            byEmp[m.employee_id].push(m);
-        });
-        return Object.keys(byEmp).map(empId => {
-            const msgs = byEmp[empId].slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            const last = msgs[msgs.length - 1];
-            const emp = employees.find(e => e.id === empId);
-            return {
-                empId, empName: emp ? `${emp.first_name} ${emp.last_name}` : empId,
-                messages: msgs, last, lastActivity: new Date(last.created_at).getTime(),
-                categories: new Set(msgs.map(m => m.category))
-            };
-        }).sort((a, b) => b.lastActivity - a.lastActivity);
-    }
-
-    function setConvoFilter(cat) {
-        convoFilter = cat;
-        document.querySelectorAll('.msg-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-cat') === cat));
-        renderConversationList();
-    }
-
-    function renderConversationList(isPoll) {
-        const container = document.getElementById('msg-conversation-list');
-        if (!container) return;
-        // A background poll firing while the "+ New" employee picker is
-        // open would otherwise wipe it out mid-use (it's a temporary node
-        // inserted directly into this container, not part of the normal
-        // conversation list this function rebuilds). Skip the rebuild
-        // entirely in that case — the poll will pick the list back up on
-        // its next run once the picker's been dismissed either way.
-        if (isPoll && document.getElementById('msg-new-convo-select')) return;
-
-        const query = (document.getElementById('msg-search')?.value || '').toLowerCase();
-        let convos = buildConversations();
-        if (convoFilter) convos = convos.filter(c => c.categories.has(convoFilter));
-        if (query) convos = convos.filter(c => `${c.empName} ${c.empId}`.toLowerCase().includes(query) || c.messages.some(m => m.message.toLowerCase().includes(query)));
-
-        if (!convos.length) {
-            const isViewOnly = currentUserRole === 'User';
-            const myEmpId = currentUser && currentUser.employee_id;
-            if (isViewOnly && myEmpId && !convoFilter && !query) {
-                // Their only possible conversation is with themselves — open
-                // it directly instead of making them find "+ New" for what
-                // is, for them, not really a "new" conversation at all.
-                container.innerHTML = '';
-                selectConversation(myEmpId);
-                return;
-            }
-            container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No conversations yet.</div>';
-            if (!employeeMessages.length) showComposerFor(null);
-            return;
-        }
-        // Keep the current conversation open if it's still in the filtered
-        // list; otherwise fall back to the most recent one.
-        if (!convos.some(c => c.empId === activeConvoEmpId)) activeConvoEmpId = convos[0].empId;
-
-        container.innerHTML = convos.map(c => {
-            const snippet = escHtml(c.last.message.length > 46 ? c.last.message.slice(0, 46) + '…' : c.last.message);
-            return `
-                <div class="msg-convo-item${c.empId === activeConvoEmpId ? ' active' : ''}" onclick="selectConversation('${c.empId}')">
-                    <div class="msg-convo-meta">
-                        <span class="msg-convo-name">${escHtml(c.empName)}</span>
-                        <span class="msg-convo-time">${fmtMsgTime(c.last.created_at)}</span>
-                    </div>
-                    <span class="type-pill" style="${MSG_CATEGORY_PILL[c.last.category] || ''} font-size:9px; padding:1px 6px;">${escHtml(c.last.category)}</span>
-                    <div class="msg-convo-snippet">${snippet}</div>
-                </div>`;
-        }).join('');
-
-        selectConversation(activeConvoEmpId);
-    }
+    function dmContactLabel(c) { return (c.employee_name && c.employee_name.trim()) ? c.employee_name : c.username; }
+    function dmRoleLabel(role) { return role === 'User' ? 'View Only' : role; }
 
     function fmtMsgTime(iso) {
         const d = new Date(iso), now = new Date();
-        const sameDay = d.toDateString() === now.toDateString();
-        return sameDay ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        return d.toDateString() === now.toDateString()
+            ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 
-    const MSG_CATEGORY_PILL = {
-        'General': 'background:#eef2f1;color:#0b1f1c;', 'Missing Day': 'background:#fef3c7;color:#92400e;',
-        'Claim': 'background:#e0f2fe;color:#075985;', 'Charge': 'background:#fee2e2;color:#991b1b;', 'Income': 'background:#dcfce7;color:#166534;'
-    };
+    // Nav "Messages" unread badge — total unread across every conversation.
+    function refreshDmBadge() {
+        const badge = document.getElementById('msg-badge');
+        if (!badge) return;
+        const total = dmContacts.reduce((n, c) => n + (parseInt(c.unread, 10) || 0), 0);
+        if (total > 0) { badge.textContent = total > 99 ? '99+' : String(total); badge.style.display = 'inline-block'; }
+        else { badge.style.display = 'none'; }
+    }
 
-    function selectConversation(empId) {
-        activeConvoEmpId = empId;
-        document.querySelectorAll('.msg-convo-item').forEach(el => el.classList.remove('active'));
-        const convos = buildConversations();
-        const c = convos.find(x => x.empId === empId);
-        // Re-mark the matching list item active without a full list re-render (avoids losing scroll position).
-        document.querySelectorAll('#msg-conversation-list .msg-convo-item').forEach(el => {
-            if (el.getAttribute('onclick') === `selectConversation('${empId}')`) el.classList.add('active');
-        });
-        if (!c) {
-            const emp = employees.find(e => e.id === empId);
-            showComposerFor(empId, emp ? `${emp.first_name} ${emp.last_name}` : empId);
-            renderConversationThread(empId, []);
+    async function fetchDmContacts() {
+        if (!currentUsername) { dmContacts = []; return false; }
+        const { data, error } = await supabaseClient.rpc('dm_contacts', { p_actor: currentUsername });
+        if (error) { console.error('dm_contacts:', error); return false; }
+        dmContacts = data || [];
+        refreshDmBadge();
+        const snap = dmContacts.map(c => `${c.username}:${c.unread}:${c.last_at || ''}`).join('|');
+        const changed = snap !== dmContactsSnap;
+        dmContactsSnap = snap;
+        return changed;
+    }
+
+    function renderDmContacts() {
+        const container = document.getElementById('dm-contact-list');
+        if (!container) return;
+        const q = (document.getElementById('dm-search')?.value || '').toLowerCase();
+        let list = dmContacts.slice();
+        if (q) list = list.filter(c => `${dmContactLabel(c)} ${c.username} ${dmRoleLabel(c.role)}`.toLowerCase().includes(q));
+        if (!list.length) {
+            container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No one to message.</div>';
             return;
         }
-        renderConversationThread(empId, c.messages);
-        showComposerFor(empId, c.empName);
+        container.innerHTML = list.map(c => {
+            const active = c.username === dmActiveUser;
+            const unread = parseInt(c.unread, 10) || 0;
+            const snippet = c.last_body
+                ? escHtml(c.last_body.length > 42 ? c.last_body.slice(0, 42) + '…' : c.last_body)
+                : '<span style="opacity:.6;">No messages yet</span>';
+            const pre = (c.last_from && c.last_from === currentUsername) ? 'You: ' : '';
+            return `
+                <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmUser('${escJsAttr(c.username)}')">
+                    <div class="msg-convo-meta">
+                        <span class="msg-convo-name">${escHtml(dmContactLabel(c))}${unread ? ` <span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:0 6px;font-weight:700;">${unread}</span>` : ''}</span>
+                        <span class="msg-convo-time">${c.last_at ? fmtMsgTime(c.last_at) : ''}</span>
+                    </div>
+                    <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(dmRoleLabel(c.role))}</span>
+                    <div class="msg-convo-snippet">${pre}${snippet}</div>
+                </div>`;
+        }).join('');
     }
 
-    let composerShownForEmpId = null; // which conversation the composer is currently built for
-    function showComposerFor(empId, empName) {
-        const header = document.getElementById('msg-thread-header');
-        const composer = document.getElementById('msg-composer');
-        const empty = document.getElementById('msg-empty-state');
-        if (!empId) {
-            composerShownForEmpId = null;
+    async function selectDmUser(username) {
+        dmActiveUser = username;
+        await fetchDmThread();      // marks their messages to me as read
+        renderDmThread(true);
+        await fetchDmContacts();    // unread for this person now cleared
+        renderDmContacts();
+    }
+
+    async function fetchDmThread() {
+        if (!dmActiveUser) { dmThreadMsgs = []; return false; }
+        const { data, error } = await supabaseClient.rpc('dm_thread', { p_actor: currentUsername, p_other: dmActiveUser });
+        if (error) { console.error('dm_thread:', error); dmThreadMsgs = []; return false; }
+        dmThreadMsgs = data || [];
+        const snap = dmThreadMsgs.map(m => m.id + ':' + (m.read_at || '')).join('|');
+        const changed = snap !== dmThreadSnap;
+        dmThreadSnap = snap;
+        return changed;
+    }
+
+    function renderDmThread(force) {
+        const header = document.getElementById('dm-thread-header');
+        const body = document.getElementById('dm-thread-body');
+        const composer = document.getElementById('dm-composer');
+        const empty = document.getElementById('dm-empty-state');
+        if (!dmActiveUser) {
             if (header) header.style.display = 'none';
             if (composer) composer.style.display = 'none';
             if (empty) empty.style.display = 'flex';
+            if (body) body.innerHTML = '';
+            dmRenderedThreadUser = null;
             return;
         }
+        const c = dmContacts.find(x => x.username === dmActiveUser);
+        const label = c ? dmContactLabel(c) : dmActiveUser;
         if (empty) empty.style.display = 'none';
-        if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(empName || empId)} · ${empId}</span>`; }
-        if (composer) { composer.style.display = 'flex'; }
-        // Only rebuild the category/linked-record controls when the open
-        // conversation actually changes — not on a background poll refresh
-        // of the SAME conversation, which would otherwise force-close
-        // msg-compose-linked out from under anyone with it open (native
-        // <select> elements close when their options are rebuilt).
-        if (composerShownForEmpId !== empId) {
-            composerShownForEmpId = empId;
-            onComposeCategoryChange();
+        if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(label)}${c ? ' · ' + escHtml(dmRoleLabel(c.role)) : ''}</span>`; }
+        if (composer) composer.style.display = 'flex';
+
+        const isSame = dmRenderedThreadUser === dmActiveUser;
+        const nearBottom = isSame && body && (body.scrollTop + body.clientHeight) >= (body.scrollHeight - 60);
+        dmRenderedThreadUser = dmActiveUser;
+
+        if (!dmThreadMsgs.length) {
+            if (body) body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:20px;">No messages yet — say hello below.</div>';
+            return;
         }
-    }
-
-    let renderedThreadEmpId = null; // which conversation msg-thread-body currently shows
-    function renderConversationThread(empId, messages) {
-        const body = document.getElementById('msg-thread-body');
-        if (!body) return;
-        const isSameConvo = renderedThreadEmpId === empId;
-        const wasNearBottom = isSameConvo && (body.scrollTop + body.clientHeight) >= (body.scrollHeight - 60);
-        renderedThreadEmpId = empId;
-        if (!messages.length) { body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:20px;">No messages yet — say hello below.</div>'; return; }
-
-        let html = '';
-        let lastDay = null;
-        const canDelete = canEdit(); // Medium+ only — View Only can send but never delete, not even their own
-        messages.forEach(m => {
+        let html = '', lastDay = null;
+        dmThreadMsgs.forEach(m => {
             const day = new Date(m.created_at).toDateString();
             if (day !== lastDay) {
                 const isToday = day === new Date().toDateString();
-                const isYesterday = day === new Date(Date.now() - 86400000).toDateString();
-                html += `<div class="msg-day-sep">${isToday ? 'Today' : isYesterday ? 'Yesterday' : new Date(m.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</div>`;
+                const isYest = day === new Date(Date.now() - 86400000).toDateString();
+                html += `<div class="msg-day-sep">${isToday ? 'Today' : isYest ? 'Yesterday' : new Date(m.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</div>`;
                 lastDay = day;
             }
-            const isMine = String(m.posted_by || '').trim().toLowerCase() === String(currentUsername || '').trim().toLowerCase();
-            const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            const linkedTxt = m.linked_table ? ` ${escHtml(m.linked_id || '')}` : '';
+            const time = new Date(m.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const readTag = (m.mine && m.read_at) ? ' · Read' : '';
             html += `
-                <div class="msg-bubble-row ${isMine ? 'mine' : 'theirs'}">
-                    <div class="msg-bubble-meta">${escHtml(m.posted_by)}${m.posted_by_role ? ' · ' + m.posted_by_role : ''} · ${timeStr}</div>
-                    <div class="msg-bubble">
-                        <span class="msg-bubble-cat" style="${MSG_CATEGORY_PILL[m.category] || ''}">${escHtml(m.category)}${linkedTxt}</span><br>
-                        ${escHtml(m.message)}
-                    </div>
-                    ${canDelete ? `<span class="msg-bubble-del" onclick="deleteEmployeeMessage(${m.id})">✕ Delete</span>` : ''}
+                <div class="msg-bubble-row ${m.mine ? 'mine' : 'theirs'}">
+                    <div class="msg-bubble-meta">${m.mine ? 'You' : escHtml(label)} · ${time}${readTag}</div>
+                    <div class="msg-bubble">${escHtml(m.body)}</div>
+                    ${m.mine ? `<span class="msg-bubble-del" onclick="deleteDirectMessage(${m.id})">✕ Delete</span>` : ''}
                 </div>`;
         });
-        body.innerHTML = html;
-        if (!isSameConvo || wasNearBottom) body.scrollTop = body.scrollHeight;
+        if (body) {
+            body.innerHTML = html;
+            if (force || !isSame || nearBottom) body.scrollTop = body.scrollHeight;
+        }
     }
 
-    function onComposeCategoryChange() {
-        composeCategory = document.getElementById('msg-compose-category').value;
-        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
-        const table = map[composeCategory];
-        const sel = document.getElementById('msg-compose-linked');
-        if (!sel) return;
-        if (!table) { sel.style.display = 'none'; return; }
-        const source = table === 'claims' ? claims : table === 'charges' ? charges : additionalIncome;
-        const idField = table === 'claims' ? 'claim_id' : table === 'charges' ? 'charge_id' : 'income_id';
-        const labelField = table === 'claims' ? 'damage_type' : table === 'charges' ? 'charge_type' : 'income_type';
-        const items = activeConvoEmpId ? source.filter(x => x.employee_id === activeConvoEmpId) : [];
-        sel.innerHTML = '<option value="">— Which one? —</option>' + items.map(x => `<option value="${x[idField]}">${x[idField]} · ${x[labelField] || ''}</option>`).join('');
-        sel.style.display = '';
-    }
-
-    async function postEmployeeMessage() {
-        if (!activeConvoEmpId) { alert('Select or start a conversation first.'); return; }
-        const textEl = document.getElementById('msg-compose-text');
-        const text = textEl.value.trim();
+    async function sendDirectMessage() {
+        if (!dmActiveUser) { alert('Pick someone to message first.'); return; }
+        const el = document.getElementById('dm-compose-text');
+        const text = (el.value || '').trim();
         if (!text) return;
-        const map = { Claim: 'claims', Charge: 'charges', Income: 'additional_income' };
-        const linkedTable = map[composeCategory] || null;
-        const linkedSel = document.getElementById('msg-compose-linked');
-        const linkedId = linkedTable ? (linkedSel.value || null) : null;
-        if (linkedTable && !linkedId) { alert(`Select which ${composeCategory.toLowerCase()} this is about, or switch to "General".`); return; }
-
-        const { error } = await supabaseClient.rpc('post_employee_message', {
-            p_actor: currentUsername, p_employee_id: activeConvoEmpId, p_category: composeCategory,
-            p_linked_table: linkedTable, p_linked_id: linkedId, p_message: text, p_reply_to_id: null
-        });
-        if (error) { alert('Error: ' + error.message); return; }
-        textEl.value = '';
-        await fetchEmployeeMessages();
-        renderConversationList();
-        textEl.focus();
+        el.disabled = true;
+        const { error } = await supabaseClient.rpc('dm_send', { p_actor: currentUsername, p_recipient: dmActiveUser, p_body: text });
+        el.disabled = false;
+        if (error) { alert('Error: ' + error.message); el.focus(); return; }
+        el.value = '';
+        await fetchDmThread();
+        renderDmThread(true);
+        await fetchDmContacts();
+        renderDmContacts();
+        el.focus();
     }
 
-    async function deleteEmployeeMessage(id) {
+    async function deleteDirectMessage(id) {
         if (!confirm('Delete this message?')) return;
-        const { error } = await supabaseClient.rpc('delete_employee_message', { p_actor: currentUsername, p_id: id });
+        const { error } = await supabaseClient.rpc('dm_delete_message', { p_actor: currentUsername, p_id: id });
         if (error) { alert('Error: ' + error.message); return; }
-        await fetchEmployeeMessages();
-        renderConversationList();
+        await fetchDmThread();
+        renderDmThread(true);
+        await fetchDmContacts();
+        renderDmContacts();
     }
 
-    // "+ New" — start a conversation with someone not in the list yet
-    // (View Only never needs this; get_employee_messages already scopes
-    // them to their own single conversation).
-    function startNewConversation() {
-        const isViewOnly = currentUserRole === 'User';
-        const myEmpId = currentUser && currentUser.employee_id;
-        const scoped = isViewOnly ? employees.filter(e => e.id === myEmpId) : employees;
-        const sorted = scoped.slice().sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
-        const opts = sorted.map(e => `<option value="${e.id}">${employeeOptionLabel(e)}</option>`).join('');
-        const list = document.getElementById('msg-conversation-list');
-        list.insertAdjacentHTML('afterbegin', `
-            <div style="padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2);">
-                <select id="msg-new-convo-select" onchange="if(this.value){selectConversation(this.value); this.closest('div').remove();}" autofocus>
-                    <option value="">— Pick an employee —</option>${opts}
-                </select>
-            </div>`);
-    }
-
-    // "Live" updates via polling, not Postgres Realtime — deliberately.
-    // This app's login is a custom app_users table, not Supabase Auth, so
-    // every browser tab shares the same anon connection regardless of who's
-    // logged into the app itself. Postgres RLS (and Realtime, which is
-    // built on it) has no way to tell those tabs apart, so any policy
-    // permissive enough for Realtime to broadcast something would broadcast
-    // it to every connected tab — undermining the View Only privacy model
-    // this feature was built around. Polling re-runs the exact same
-    // permission-checked RPC every tab already uses, so it can't leak
-    // anything a normal reload wouldn't.
-    let messagePollTimer = null;
+    // Polling while the Messages tab is open: refresh contacts (for unread
+    // badges / new conversations) and the open thread. Names kept the same as
+    // before so openTab's start/stop calls need no change.
     function startMessagePolling() {
         stopMessagePolling();
-        messagePollTimer = setInterval(async () => {
-            const changed = await fetchEmployeeMessages();
-            if (!changed) return; // nothing new — leave the DOM alone entirely, don't disrupt typing/open dropdowns for no reason
-            renderConversationList(true);
+        dmPollTimer = setInterval(async () => {
+            const contactsChanged = await fetchDmContacts();
+            if (contactsChanged) renderDmContacts();
+            if (dmActiveUser) {
+                const threadChanged = await fetchDmThread();
+                if (threadChanged) renderDmThread(false);
+            }
         }, 5000);
     }
     function stopMessagePolling() {
-        if (messagePollTimer) { clearInterval(messagePollTimer); messagePollTimer = null; }
+        if (dmPollTimer) { clearInterval(dmPollTimer); dmPollTimer = null; }
     }
 
     async function renderMessagesTab() {
-        activeConvoEmpId = null;
-        convoFilter = '';
-        composeCategory = 'General';
-        await fetchEmployeeMessages();
-        renderConversationList();
+        dmActiveUser = null;
+        dmRenderedThreadUser = null;
+        const search = document.getElementById('dm-search');
+        if (search) search.value = '';
+        await fetchDmContacts();
+        renderDmContacts();
+        renderDmThread();   // show the empty state until a person is picked
         startMessagePolling();
     }
 
