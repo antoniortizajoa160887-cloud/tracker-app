@@ -1936,7 +1936,7 @@
             <input type="file" id="providerpay-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importProviderPayExcel(event)">
         </div>
         <div class="note-box" style="margin-top:10px;">
-            Enter each provider's pay for the week — a single amount, since providers aren't on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person's pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does.
+            Enter each provider's pay for the week — a single amount, since providers aren't on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person's pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does. <strong>Linked to Bills Payable:</strong> any unpaid bill whose vendor matches a provider's name shows under that provider — tick one or more and tap “Pay selected” to mark those bills Paid and add their total to this week's amount.
         </div>
     </div>
     <div class="panel">
@@ -2512,8 +2512,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.27';
+    const APP_VERSION = 'v3.28';
     const CHANGELOG = [
+        { version: 'v3.28', date: '2026-08-19', notes: 'Provider Pay is now linked to Bills Payable. Under each provider on the Provider Pay screen, any unpaid bill whose vendor name matches that provider now appears with a checkbox and its amount. Tick one or more bills and press "Pay selected" to mark them Paid in a single step and add their combined total to that provider\'s pay for the week (the bill numbers are noted automatically). This lets you settle several of a provider\'s bills at once and keeps Bills Payable and Provider Pay in sync — a paid bill immediately drops off the provider\'s list.' },
         { version: 'v3.27', date: '2026-08-19', notes: 'Invoices and Bills can now be marked Void. A voided invoice or bill stays on record — it moves into a new Void group at the bottom of the list — but no longer counts toward any outstanding/unpaid total, and (for invoices) it drops out of the “Invoiced This Month” amount: a voided document is treated as zero value while the original record is preserved for history. Void is available in the Status dropdown on the New/Edit form, as a Status filter, and as its own collapsible group (shown after Unpaid and Paid).' },
         { version: 'v3.26', date: '2026-08-19', notes: 'Two fixes. The desktop side menu no longer shows a left-right scrollbar — long menu names like "Savings & Release Eligibility" now wrap onto a second line so everything fits the panel width, on any screen size. And Bills Payable now groups its bills into Unpaid and Paid sections (Unpaid first, each header showing its count and dollar total), matching the Invoices screen, and gained the same controls: search, a Status filter, a Vendor filter, a Clear-filters button, and a Sort-by menu (due date, bill date, vendor, bill #, amount, or status) with an ascending/descending toggle.' },
         { version: 'v3.25', date: '2026-08-19', notes: 'Two organizing changes. First, several list screens now open with their sections collapsed, so you see the headings first and expand only what you need: on Claims & Charges, Income, Week in Deposit and the Statement, every status group (Deducting, Queued, Paid, and so on) starts collapsed — tap a heading to open it — and the Settings screen\'s panels (ID Configuration, Type of Damage, Charge Type, Additional Income Type) start collapsed too. Nothing is hidden permanently; the sections are all one tap away. Second, the Invoices screen now groups every invoice into Unpaid and Paid sections (Unpaid first, each showing its count and dollar total), and gained the same full controls the other lists have: search, a Status filter, a Customer filter, a Clear-filters button, and a Sort-by menu (invoice date, invoice #, customer, due date, amount, or status) with an ascending/descending toggle.' },
@@ -8174,6 +8175,66 @@
         saveProviderCell(empId, existing.amount, rawValue);
     }
 
+    // ===== Provider Pay <-> Bills Payable linkage =========================
+    // A provider is an employee (pay type "Provider"); their bills are the
+    // Bills Payable whose vendor name matches that provider's name. From a
+    // provider's card you can tick several of their unpaid bills and pay them
+    // in one action: each selected bill is marked Paid and its total is added
+    // into this week's provider pay amount.
+    function providerBillsForEmployee(emp) {
+        const full = normalizeNameForMatch(`${emp.first_name || ''} ${emp.last_name || ''}`);
+        const first = normalizeNameForMatch(emp.first_name || '');
+        return (bills || []).filter(b => {
+            if (b.status !== 'Unpaid') return false;
+            const v = normalizeNameForMatch(b.vendor_name || '');
+            return v && (v === full || (first && v === first));
+        });
+    }
+
+    function providerBillsSectionHtml(emp, editable) {
+        const list = providerBillsForEmployee(emp);
+        if (!list.length) return '';
+        const total = list.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+        const rows = list.map(b => `
+            <label style="display:flex; align-items:center; gap:8px; font-size:12px; padding:3px 0;">
+                <input type="checkbox" class="prov-bill-cb" data-emp="${escHtml(emp.id)}" data-bill="${escHtml(b.bill_id)}" ${editable ? '' : 'disabled'} style="width:auto; min-height:0; margin:0;">
+                <span style="flex:1; min-width:0;">${b.bill_number ? '#' + escHtml(b.bill_number) : escHtml(b.bill_id)}${b.due_date ? ' · due ' + b.due_date : ''}</span>
+                <span style="font-family:var(--mono); white-space:nowrap;">${formatMoney(b.amount)}</span>
+            </label>`).join('');
+        return `
+            <div style="flex:1 1 100%; border-top:1px solid var(--border); margin-top:6px; padding-top:8px;">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Unpaid bills for this provider (${list.length}) · ${formatMoney(total)}</div>
+                ${rows}
+                ${editable ? `<button type="button" class="btn-small" style="margin-top:8px; background:var(--primary);" onclick="payProviderSelectedBills('${escJsAttr(emp.id)}')">✓ Pay selected — mark Paid &amp; add to this week</button>` : ''}
+            </div>`;
+    }
+
+    async function payProviderSelectedBills(empId) {
+        if (!canEdit()) return;
+        const checked = [...document.querySelectorAll(`.prov-bill-cb[data-emp="${CSS.escape(empId)}"]:checked`)];
+        if (!checked.length) { alert('Tick at least one bill to pay.'); return; }
+        const ids = checked.map(cb => cb.getAttribute('data-bill'));
+        const selected = (bills || []).filter(b => ids.includes(b.bill_id));
+        const sum = selected.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+        if (!confirm(`Mark ${selected.length} bill(s) as Paid (${formatMoney(sum)}) and add that to this week's provider pay?`)) return;
+        for (const b of selected) {
+            const { error } = await supabaseClient.rpc('update_bill', {
+                p_actor: currentUsername, p_id: b.bill_id, p_vendor_name: b.vendor_name,
+                p_bill_number: b.bill_number, p_bill_date: b.bill_date, p_due_date: b.due_date,
+                p_amount: b.amount, p_status: 'Paid', p_notes: b.notes
+            });
+            if (error) { alert('Error paying bill ' + (b.bill_number || b.bill_id) + ': ' + error.message); return; }
+        }
+        const existing = providerGrid[empId] || { amount: 0, notes: '' };
+        const newAmount = (parseFloat(existing.amount) || 0) + sum;
+        const refs = selected.map(b => b.bill_number || b.bill_id).join(', ');
+        const newNotes = existing.notes ? `${existing.notes}; bills ${refs}` : `Bills: ${refs}`;
+        providerGrid[empId] = { amount: newAmount, notes: newNotes };
+        await saveProviderCell(empId, newAmount, newNotes);
+        await fetchBillsFromCloud();   // paid bills drop out of the provider's list
+        renderProviderPay();
+    }
+
     async function renderProviderPay() {
         if (!providerView) { const s0 = weekStartSunday(new Date()); s0.setUTCDate(s0.getUTCDate() - 7); providerView = { sunday: s0 }; }
         const sun = providerView.sunday;
@@ -8208,6 +8269,7 @@
         const rows = providerEmps.map(emp => {
             const cell = providerGrid[emp.id] || { amount: 0, notes: '' };
             grand += cell.amount;
+            const provBillsHtml = providerBillsSectionHtml(emp, editable);
             return `
                 <div class="rec-card" style="margin-bottom:8px;">
                     <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:12px 14px;">
@@ -8225,6 +8287,7 @@
                             <input type="text" value="${escHtml(cell.notes || '')}" placeholder="e.g. invoice #, what for"
                                 ${editable ? '' : 'disabled'} onchange="onProviderNotesChange('${emp.id}', this.value)">
                         </div>
+                        ${provBillsHtml}
                     </div>
                 </div>`;
         }).join('');
