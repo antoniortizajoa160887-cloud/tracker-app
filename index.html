@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tracker — Logistics · HR · Claims</title>
+    <title>Tracker — Unified Logistics · HR · Claims</title>
     <meta name="theme-color" content="#0b6e64">
     <!-- Content-Security-Policy, delivered via meta so it applies on any static
          host (GitHub Pages included -- unlike an HTTP response header, this
@@ -1144,7 +1144,7 @@
                 <circle cx="12" cy="16.6" r="1.05" fill="#2dd4bf"/>
             </svg>
                 </div>
-                <h1 id="app-title" style="margin:0;">Tracker — Logistics · HR · Claims</h1>
+                <h1 id="app-title" style="margin:0;">Tracker — Unified Logistics · HR · Claims</h1>
             </div>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;"><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong> · <span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></p>
         </div>
@@ -2015,6 +2015,12 @@
         <div class="stat-grid" id="savingsreport-stats-grid" style="margin-top:8px;"></div>
     </div>
     <div class="panel">
+        <div class="form-row" style="margin-bottom: 10px;">
+            <div class="field field-wide"><input type="text" id="savingsreport-search" placeholder="Search employee..." oninput="renderSavingsReleaseReport()"></div>
+            <div class="field"><select id="savingsreport-kind-filter" onchange="renderSavingsReleaseReport()"><option value="">All types</option><option value="Week in Deposit">Week in Deposit</option><option value="Last Paycheck">Last Paycheck</option></select></div>
+            <div class="field"><select id="savingsreport-ready-filter" onchange="renderSavingsReleaseReport()"><option value="">All eligibility</option><option value="ready">Ready to release now</option><option value="notyet">Not yet eligible</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('savingsreport')">✕ Clear filters</button>
+        </div>
         <div id="savingsreport-tbody"></div>
     </div>
 </div>
@@ -2027,6 +2033,9 @@
         <div class="stat-grid" id="releasehistory-stats-grid" style="margin-top:8px;"></div>
         <div class="form-row" style="margin-top:10px;">
             <div class="field field-wide"><input type="text" id="releasehistory-search" placeholder="Search employee, released by..." oninput="renderReleaseHistory()"></div>
+            <div class="field"><select id="releasehistory-type-filter" onchange="renderReleaseHistory()"><option value="">All types</option><option value="wd">Week in Deposit</option><option value="lp">Last Paycheck</option></select></div>
+            <div class="field"><select id="releasehistory-early-filter" onchange="renderReleaseHistory()"><option value="">Early &amp; on-time</option><option value="early">Early only</option><option value="ontime">On-time only</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('releasehistory')">✕ Clear filters</button>
         </div>
     </div>
     <div class="panel">
@@ -2509,6 +2518,16 @@
         else if (tab === 'invoices') renderInvoices();
         else if (tab === 'bills') renderBills();
     }
+    // Employee grouping (Savings & Release Eligibility, Release History): which
+    // employee groups are collapsed. All start expanded.
+    let collapsedEmpGroups = { savingsreport: new Set(), releasehistory: new Set() };
+    function toggleEmpGroup(tab, empId) {
+        const set = collapsedEmpGroups[tab];
+        if (!set) return;
+        if (set.has(empId)) set.delete(empId); else set.add(empId);
+        if (tab === 'savingsreport') renderSavingsReleaseReport();
+        else if (tab === 'releasehistory') renderReleaseHistory();
+    }
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
 
     // ===== Version tracking =====
@@ -2516,8 +2535,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.30';
+    const APP_VERSION = 'v3.31';
     const CHANGELOG = [
+        { version: 'v3.31', date: '2026-08-19', notes: 'A new title bar and two grouped report screens. The app title now reads "Tracker — Unified Logistics · HR · Claims", and once you are signed into a company it shows the company first — for example "3 Of Life LLC / Tracker — Unified Logistics · HR · Claims". This applies to every company (Super Admin sees it update as they switch companies, and it also updates the browser tab). Separately, the Savings & Release Eligibility and Release History screens now group their records by Employee — tap an employee heading to collapse or expand that person — and each gained filters: Savings & Release Eligibility has search plus a Type filter (Week in Deposit / Last Paycheck) and an Eligibility filter (Ready now / Not yet), and Release History has search plus a Type filter and an Early / On-time filter.' },
         { version: 'v3.30', date: '2026-08-19', notes: 'Messaging gets files, emoji, and a cleaner people list. (1) You can now attach photos, videos and documents inside a chat: from a Claim, Charge or Income conversation tap the 📎 button to send a file — it is automatically attached to that specific record (so it also appears in that record\'s Files) and shows in the chat with a tap-to-open button. Phone photos are shrunk automatically and single files can be up to 100 MB. (General and Missing Day chats have no record to attach to, so files are sent from the record conversations.) (2) An emoji picker (😊) is available in every conversation. (3) The "new conversation" people list is cleaner: role labels are hidden, and the Super Admin account and the automatic company login accounts (like "3ofl") no longer appear — you only see real people you are allowed to message.' },
         { version: 'v3.29', date: '2026-08-19', notes: 'Messages are now organized down to the specific item. When you start a conversation you pick a person, then a topic — and for Claims, Charges or Income you then pick the exact record it is about (only that person\'s records are listed), while Missing Day opens a calendar to pick the date. Each item becomes its own independent thread: your conversation about one claim stays completely separate from another claim, from a Missing Day, and from General chat — each with its own history and unread count. The conversation list shows the item next to each thread (for example the claim number and damage type, or the date), and the topic filter chips still narrow the list.' },
         { version: 'v3.28', date: '2026-08-19', notes: 'Provider Pay is now linked to Bills Payable. Under each provider on the Provider Pay screen, any unpaid bill whose vendor name matches that provider now appears with a checkbox and its amount. Tick one or more bills and press "Pay selected" to mark them Paid in a single step and add their combined total to that provider\'s pay for the week (the bill numbers are noted automatically). This lets you settle several of a provider\'s bills at once and keeps Bills Payable and Provider Pay in sync — a paid bill immediately drops off the provider\'s list.' },
@@ -3563,6 +3583,25 @@
         }
     }
 
+    // Title bar: "{Company} / Tracker — Unified Logistics · HR · Claims" when a
+    // company is in context, else the base title. Works for every company: a
+    // regular user shows their own; SuperAdmin shows whichever they've switched
+    // to (and the base title on "All companies").
+    function updateAppTitle() {
+        const base = 'Tracker — Unified Logistics · HR · Claims';
+        let coName = '';
+        if (currentUser && currentUser.company_name) {
+            coName = currentUser.company_name;
+        } else if (currentCompany) {
+            const c = (typeof companies !== 'undefined' ? companies : []).find(x => x.code === currentCompany);
+            coName = c ? c.name : currentCompany;
+        }
+        const full = coName ? `${coName} / ${base}` : base;
+        const titleEl = document.getElementById('app-title');
+        if (titleEl) titleEl.textContent = full;
+        document.title = full;
+    }
+
     function initAppSession() {
         document.getElementById('auth-container').style.display = 'none';
         const authBg = document.getElementById('auth-bg'); if (authBg) authBg.style.display = 'none';
@@ -3575,12 +3614,7 @@
         document.getElementById('user-role-display').textContent = currentUserRole;
         const companyLabel = (currentUser && currentUser.company_name) ? currentUser.company_name : (currentUserRole === 'SuperAdmin' ? 'All companies' : (currentUser && currentUser.company_code) || '—');
         document.getElementById('user-company-display').textContent = companyLabel;
-        const titleEl = document.getElementById('app-title');
-        if (titleEl) {
-            titleEl.textContent = (currentUser && currentUser.company_name)
-                ? `${currentUser.company_name} — Tracker`
-                : 'Tracker — Logistics · HR · Claims';
-        }
+        updateAppTitle();
 
         // Company scope: non-super users are locked to their own company.
         // SuperAdmin starts on "All" (null) and can switch via the dropdown.
@@ -3836,11 +3870,13 @@
         }
         populateCompanySelects();
         renderCompanies();
+        updateAppTitle();  // company names are now loaded — refresh the SuperAdmin title
     }
 
     function onCompanySwitch() {
         const v = document.getElementById('company-switcher').value;
         currentCompany = v || null;
+        updateAppTitle();
         populateCompanySelects();
         updateNextEmpId();
         refreshIdPreviews();
@@ -4707,6 +4743,14 @@
             case 'bills':
                 setVal('bill-search', ''); setVal('bill-status-filter', ''); setVal('bill-vendor-filter', '');
                 renderBills();
+                break;
+            case 'savingsreport':
+                setVal('savingsreport-search', ''); setVal('savingsreport-kind-filter', ''); setVal('savingsreport-ready-filter', '');
+                renderSavingsReleaseReport();
+                break;
+            case 'releasehistory':
+                setVal('releasehistory-search', ''); setVal('releasehistory-type-filter', ''); setVal('releasehistory-early-filter', '');
+                renderReleaseHistory();
                 break;
         }
     }
@@ -7368,13 +7412,31 @@
                 <div class="stat-card"><div class="stat-label">Total tracked</div><div class="stat-value">${rows.length}</div></div>
                 <div class="stat-card"><div class="stat-label">Week in Deposit savings</div><div class="stat-value">${formatMoney(totalSavings)}</div></div>`;
         }
+
+        const q = (document.getElementById('savingsreport-search')?.value || '').toLowerCase();
+        const kindF = document.getElementById('savingsreport-kind-filter')?.value || '';
+        const readyF = document.getElementById('savingsreport-ready-filter')?.value || '';
+        const filtered = rows.filter(r => {
+            if (q && !r.empName.toLowerCase().includes(q)) return false;
+            if (kindF && r.kind !== kindF) return false;
+            const isReady = !!(r.eligible && todayStr() >= r.eligible);
+            if (readyF === 'ready' && !isReady) return false;
+            if (readyF === 'notyet' && isReady) return false;
+            return true;
+        });
+
         const body = document.getElementById('savingsreport-tbody');
         if (!body) return;
-        if (!rows.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing to show — no open Week in Deposit savings and no Inactive employees with an unreleased last paycheck.</div>'; return; }
-        body.innerHTML = rows.map(r => `
+        if (!filtered.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing to show — no open Week in Deposit savings and no Inactive employees with an unreleased last paycheck (matching the current filters).</div>'; return; }
+
+        // Group by employee, employee groups sorted by name.
+        const groups = {};
+        filtered.forEach(r => { (groups[r.empId] = groups[r.empId] || []).push(r); });
+        const empIds = Object.keys(groups).sort((a, b) => groups[a][0].empName.localeCompare(groups[b][0].empName, undefined, { sensitivity: 'base' }));
+        const cardHtml = (r) => `
             <div class="rec-card" style="cursor:default;">
                 <div class="rec-card-head" style="cursor:default;">
-                    <span class="rec-title">${escHtml(r.empName)} <span class="type-pill">${r.kind}</span></span>
+                    <span class="rec-title"><span class="type-pill">${r.kind}</span></span>
                     <span class="rec-right">${r.amount !== null ? formatMoney(r.amount) : ''}</span>
                 </div>
                 <div class="rec-card-body" style="display:block;">
@@ -7386,7 +7448,13 @@
                     </div>
                     ${r.action ? `<div class="rec-actions" style="margin-top:10px;">${r.action}</div>` : (r.eligible ? `<div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Not eligible until ${r.eligible}.</div>` : '')}
                 </div>
-            </div>`).join('');
+            </div>`;
+        body.innerHTML = empIds.map(empId => {
+            const items = groups[empId];
+            const collapsed = collapsedEmpGroups.savingsreport.has(empId);
+            const header = `<div class="rec-group-header" style="cursor:pointer;" onclick="toggleEmpGroup('savingsreport','${escJsAttr(empId)}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${escHtml(items[0].empName)} <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`;
+            return collapsed ? header : header + items.map(cardHtml).join('');
+        }).join('');
     }
 
     // Permanent, auditable log of every completed release — populated
@@ -7410,11 +7478,18 @@
 
     function renderReleaseHistory() {
         const query = (document.getElementById('releasehistory-search')?.value || '').toLowerCase();
+        const typeF = document.getElementById('releasehistory-type-filter')?.value || '';
+        const earlyF = document.getElementById('releasehistory-early-filter')?.value || '';
         const rows = releaseHistoryCache.filter(r => {
-            if (!query) return true;
-            const emp = employees.find(e => e.id === r.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}` : r.employee_id;
-            return `${empName} ${r.released_by}`.toLowerCase().includes(query);
+            if (typeF && r.release_type !== typeF) return false;
+            if (earlyF === 'early' && !r.was_early) return false;
+            if (earlyF === 'ontime' && r.was_early) return false;
+            if (query) {
+                const emp = employees.find(e => e.id === r.employee_id);
+                const empName = emp ? `${emp.first_name} ${emp.last_name}` : r.employee_id;
+                if (!`${empName} ${r.released_by}`.toLowerCase().includes(query)) return false;
+            }
+            return true;
         });
 
         const grid = document.getElementById('releasehistory-stats-grid');
@@ -7431,10 +7506,12 @@
 
         const body = document.getElementById('releasehistory-tbody');
         if (!body) return;
-        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No releases recorded yet.</div>'; return; }
-        body.innerHTML = rows.map(r => {
-            const emp = employees.find(e => e.id === r.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}` : r.employee_id;
+        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No releases recorded yet (matching the current filters).</div>'; return; }
+        const nameOf = (empId) => { const emp = employees.find(e => e.id === empId); return emp ? `${emp.first_name} ${emp.last_name}` : empId; };
+        const groups = {};
+        rows.forEach(r => { (groups[r.employee_id] = groups[r.employee_id] || []).push(r); });
+        const empIds = Object.keys(groups).sort((a, b) => nameOf(a).localeCompare(nameOf(b), undefined, { sensitivity: 'base' }));
+        const cardHtml = (r) => {
             const items = [...(r.settle || []), ...(r.absorb || [])];
             const hasBreakdown = r.base_pay_amount != null || r.additional_income_amount != null;
             const open = recExpanded.releasehistory.has(String(r.id));
@@ -7442,7 +7519,7 @@
             <div class="rec-card${open ? ' open' : ''}" id="rec-releasehistory-${r.id}">
                 <div class="rec-card-head" onclick="toggleRecCard('releasehistory','${r.id}')">
                     <span class="rec-caret" data-caret="releasehistory-${r.id}">${open ? '▾' : '▸'}</span>
-                    <span class="rec-title">${escHtml(empName)} <span class="type-pill">${r.release_type === 'wd' ? 'Week in Deposit' : 'Last Paycheck'}</span>${r.was_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
+                    <span class="rec-title"><span class="type-pill">${r.release_type === 'wd' ? 'Week in Deposit' : 'Last Paycheck'}</span>${r.was_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
                     <span class="rec-sub">${new Date(r.released_at).toISOString().split('T')[0]} · by ${escHtml(r.released_by)}</span>
                     <span class="rec-right" style="color:#059669;">${formatMoney(r.net_release)}</span>
                 </div>
@@ -7465,6 +7542,12 @@
                     </div>` : '<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">No other outstanding claims or charges at the time of release.</div>'}
                 </div>
             </div>`;
+        };
+        body.innerHTML = empIds.map(empId => {
+            const its = groups[empId];
+            const collapsed = collapsedEmpGroups.releasehistory.has(empId);
+            const header = `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleEmpGroup('releasehistory','${escJsAttr(empId)}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${escHtml(nameOf(empId))} <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${its.length})</span></div>`;
+            return collapsed ? header : header + its.map(cardHtml).join('');
         }).join('');
     }
 
