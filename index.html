@@ -506,6 +506,7 @@
     .status-Paused { background: var(--amber-bg); color: var(--amber); }
     .status-Queued { background: #EEF2F5; color: #5A6B7A; }
     .status-Unpaid { background: var(--amber-bg); color: var(--amber); }
+    .status-Void { background: #E7EBEE; color: #64748b; text-decoration: line-through; }
     .status-Released { background: var(--purple-bg); color: var(--purple); }
     .status-Tk-from-check { background: var(--purple-bg); color: var(--purple); }
 
@@ -2177,7 +2178,7 @@
             <div class="field"><label>Customer</label><input type="text" id="inv-customer" placeholder="e.g. Tramo"></div>
             <div class="field"><label>Invoice Date</label><input type="date" id="inv-date"></div>
             <div class="field"><label>Due Date</label><input type="date" id="inv-due-date"></div>
-            <div class="field"><label>Status</label><select id="inv-status"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
+            <div class="field"><label>Status</label><select id="inv-status"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
         </div>
         <div class="form-row">
             <div class="field field-wide"><label>Bill To</label><textarea id="inv-bill-to" rows="3" placeholder="Company, address, contact — as it appears on the invoice"></textarea></div>
@@ -2197,7 +2198,7 @@
         <div class="stat-grid" id="invoice-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="invoice-search" placeholder="Search invoice #, customer, notes..." oninput="renderInvoices()"></div>
-            <div class="field"><select id="invoice-status-filter" onchange="renderInvoices()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
+            <div class="field"><select id="invoice-status-filter" onchange="renderInvoices()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
             <div class="field"><select id="invoice-customer-filter" onchange="renderInvoices()"><option value="">All customers</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('invoices')">✕ Clear filters</button>
         </div>
@@ -2227,7 +2228,7 @@
             <div class="field"><label>Bill Date</label><input type="date" id="bill-date"></div>
             <div class="field"><label>Due Date</label><input type="date" id="bill-due-date"></div>
             <div class="field"><label>Amount</label><input type="number" step="0.01" min="0" id="bill-amount"></div>
-            <div class="field"><label>Status</label><select id="bill-status"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
+            <div class="field"><label>Status</label><select id="bill-status"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
         </div>
         <div class="form-row"><div class="field field-wide"><label>Notes</label><input type="text" id="bill-notes"></div></div>
         <button type="submit" class="btn" id="bill-save-btn" onclick="saveBill()">+ Save Bill</button>
@@ -2238,7 +2239,7 @@
         <div class="stat-grid" id="bill-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="bill-search" placeholder="Search vendor, bill #, notes..." oninput="renderBills()"></div>
-            <div class="field"><select id="bill-status-filter" onchange="renderBills()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
+            <div class="field"><select id="bill-status-filter" onchange="renderBills()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
             <div class="field"><select id="bill-vendor-filter" onchange="renderBills()"><option value="">All vendors</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('bills')">✕ Clear filters</button>
         </div>
@@ -2511,8 +2512,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.26';
+    const APP_VERSION = 'v3.27';
     const CHANGELOG = [
+        { version: 'v3.27', date: '2026-08-19', notes: 'Invoices and Bills can now be marked Void. A voided invoice or bill stays on record — it moves into a new Void group at the bottom of the list — but no longer counts toward any outstanding/unpaid total, and (for invoices) it drops out of the “Invoiced This Month” amount: a voided document is treated as zero value while the original record is preserved for history. Void is available in the Status dropdown on the New/Edit form, as a Status filter, and as its own collapsible group (shown after Unpaid and Paid).' },
         { version: 'v3.26', date: '2026-08-19', notes: 'Two fixes. The desktop side menu no longer shows a left-right scrollbar — long menu names like "Savings & Release Eligibility" now wrap onto a second line so everything fits the panel width, on any screen size. And Bills Payable now groups its bills into Unpaid and Paid sections (Unpaid first, each header showing its count and dollar total), matching the Invoices screen, and gained the same controls: search, a Status filter, a Vendor filter, a Clear-filters button, and a Sort-by menu (due date, bill date, vendor, bill #, amount, or status) with an ascending/descending toggle.' },
         { version: 'v3.25', date: '2026-08-19', notes: 'Two organizing changes. First, several list screens now open with their sections collapsed, so you see the headings first and expand only what you need: on Claims & Charges, Income, Week in Deposit and the Statement, every status group (Deducting, Queued, Paid, and so on) starts collapsed — tap a heading to open it — and the Settings screen\'s panels (ID Configuration, Type of Damage, Charge Type, Additional Income Type) start collapsed too. Nothing is hidden permanently; the sections are all one tap away. Second, the Invoices screen now groups every invoice into Unpaid and Paid sections (Unpaid first, each showing its count and dollar total), and gained the same full controls the other lists have: search, a Status filter, a Customer filter, a Clear-filters button, and a Sort-by menu (invoice date, invoice #, customer, due date, amount, or status) with an ascending/descending toggle.' },
         { version: 'v3.24', date: '2026-08-19', notes: 'Messaging now organizes each conversation by topic, and the menu icons are consistent. When you start a chat with someone you first pick a topic — General, Missing Day, Claims, Charges, or Income — and each topic becomes its own separate, independent thread with that person: your Claims conversation with Sixto stays completely separate from your Missing Day conversation with Sixto, each with its own unread count and history. The Messages list now shows one row per topic conversation, with topic filter chips (All / General / Missing Day / Claims / Charges / Income) across the top and a “+” button to start a new one (pick the person, pick the topic). Everything else about messaging is unchanged — same company scoping, same rule that a View Only user can message managers but not another View Only user, same read receipts and unread badge. Separately, the three menu icons added last time (Income, Savings & Release Eligibility, Release History) plus Home were switched from colored emoji to the same clean single-color line icons the rest of the menu already uses, so the whole sidebar now matches.' },
@@ -10710,7 +10712,8 @@
             const unpaid = invoices.filter(i => i.status === 'Unpaid');
             const unpaidTotal = unpaid.reduce((a, i) => a + (parseFloat(i.total_amount) || 0), 0);
             const monthStart = todayStr().slice(0, 7) + '-01';
-            const thisMonth = invoices.filter(i => i.invoice_date && i.invoice_date >= monthStart);
+            // Voided invoices are cancelled — excluded from the money total.
+            const thisMonth = invoices.filter(i => i.invoice_date && i.invoice_date >= monthStart && i.status !== 'Void');
             const thisMonthTotal = thisMonth.reduce((a, i) => a + (parseFloat(i.total_amount) || 0), 0);
             grid.innerHTML = `
                 <div class="stat-card"><div class="stat-label">Unpaid</div><div class="stat-value">${unpaid.length}</div><div style="font-size:10px; color:var(--text-muted);">${formatMoney(unpaidTotal)}</div></div>
@@ -10754,8 +10757,8 @@
         if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No invoices found.</div>'; return; }
         container.innerHTML = '';
 
-        // Group into Unpaid first, then Paid (then any other status).
-        const order = ['Unpaid', 'Paid'];
+        // Group into Unpaid first, then Paid, then Void (then any other status).
+        const order = ['Unpaid', 'Paid', 'Void'];
         const groups = {};
         list.forEach(i => { const s = i.status || '(no status)'; (groups[s] = groups[s] || []).push(i); });
         const statuses = Object.keys(groups).sort((a, b) => {
@@ -10927,8 +10930,8 @@
         container.innerHTML = '';
         const editable = canEdit();
 
-        // Group into Unpaid first, then Paid (then any other status).
-        const order = ['Unpaid', 'Paid'];
+        // Group into Unpaid first, then Paid, then Void (then any other status).
+        const order = ['Unpaid', 'Paid', 'Void'];
         const groups = {};
         list.forEach(b => { const s = b.status || '(no status)'; (groups[s] = groups[s] || []).push(b); });
         const statuses = Object.keys(groups).sort((a, b) => {
