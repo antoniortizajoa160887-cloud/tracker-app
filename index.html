@@ -982,6 +982,25 @@
     </div>
 </div>
 
+<!-- Attachments modal — files/photos/videos per claim/charge/income/invoice/bill.
+     One shared component for all five entity types; each record keeps its own
+     attachments keyed by its own id. Uploads are optional everywhere. -->
+<div id="attachments-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeAttachments()">
+    <div style="background:var(--surface); border-radius:12px; padding:18px; max-width:540px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div id="attachments-title" style="font-size:15px; font-weight:700; color:var(--secondary);">Files</div>
+            <span style="margin-left:auto; font-size:22px; color:var(--text-muted); cursor:pointer; line-height:1; padding:2px 6px;" onclick="closeAttachments()">&times;</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-muted); margin:2px 0 10px;">Photos, videos and documents for this record. Optional — nothing requires an upload.</div>
+        <div id="attachments-list" style="min-height:36px;"></div>
+        <div id="attachments-actions" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <input type="file" id="attachments-file-input" multiple style="display:none;" onchange="uploadSelectedAttachments(this.files)">
+            <button type="button" class="btn-small" id="attachments-add-btn" style="background:var(--navy); margin:0;" onclick="document.getElementById('attachments-file-input').click()">+ Add files</button>
+            <span id="attachments-progress" style="font-size:12px; color:var(--text-muted);"></span>
+        </div>
+    </div>
+</div>
+
 <div id="dailypay-sheet-picker-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeDailyPaySheetPicker()">
     <div style="background:var(--surface); border-radius:10px; padding:20px; max-width:420px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
         <div style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:4px;">Which week?</div>
@@ -2386,8 +2405,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.18';
+    const APP_VERSION = 'v3.19';
     const CHANGELOG = [
+        { version: 'v3.19', date: '2026-08-18', notes: 'File attachments arrived, plus two fixes. You can now attach photos, videos and documents to any individual claim, charge, income record, invoice, or bill — open a record and tap the new 📎 Files button. Attachments are always optional, belong to that one specific record, and any file type is accepted; each upload is automatically classified as a photo, video, or document. Photos taken on a phone are automatically shrunk (down to about a tenth of their size) before uploading to save storage, with no visible quality loss; single files are capped at 100 MB. Everyone who can see a record can view its files; only editors can add or remove them; Super Admin can do this on any company\'s records, and files are stored privately — every view link is personal, expires after 10 minutes, and is only issued after the server re-checks who you are. The fixes: an update earlier today accidentally broke the Employees screen (SSN handling) and password resets for a few hours — both were repaired server-side, tested end to end (login, reset by admin and superadmin, employee list, and 15 other functions), and no data was affected. Also note: passwords now must be at least 8 characters when set or changed; existing passwords keep working.' },
         { version: 'v3.18', date: '2026-08-18', notes: 'Visual redesign plus a changelog change. The redesign gives the app two polished looks that ride on the theme switcher you already have: the Light theme is now a clean, airy “Clean SaaS” style (cooler background, softer lines, calmer table headers instead of the heavy blue bar, rounded cards), and the two dark themes (Ocean and Emerald) became a “Midnight Pro” style — a deep, easy-on-the-eyes canvas with gently glowing teal/green accents and elevated cards. It is the same app and the same layout; only the paint changed, and every screen shifted at once because it is driven by shared color tokens. The changelog (this popup) now reads its history from the database instead of a list baked into the page, so it stays complete and identical on every device and can grow without shipping a new file each time; if the connection is unavailable it still falls back to the copy stored in the page. Tap the version number in the bottom-right corner any time to see this history.' },
         { version: 'v3.17', date: '2026-08-18', notes: 'Security hardening pass — no visible change to how the app is used, but the data behind it is now properly locked down. Two real holes were found and closed. First: the login could be bypassed. The database used to trust whatever username the page claimed, with no proof — so anyone who knew an admin username could reach admin-only data and actions from outside the app entirely, without a password. Now every sign-in issues a private session token that the page must present on every request, and the database rejects anything that does not match, so a username alone is worthless to an outsider. Second: several tables (claims, charges, income, routes, employees, daily pay, and more) could be read around or written to directly, again bypassing the login screen. All create/edit/delete now flow through checked database functions that enforce your role and company, and the wide-open direct access was removed. Also: the encryption key that protects Social Security numbers was reachable from the public side and is now sealed off; a leftover create-any-user function that needed no permission was locked; and free-text fields (names, notes, claim numbers) are now escaped everywhere they are shown, so a value typed into a form can never run as code on someone else\'s screen. A visual refresh rode along too: rounder cards with softer shadows, buttons that respond to hover and keyboard focus, cleaner tables, and a fix that makes the dark (Ocean/Emerald) themes\' tables actually readable. Sign out and back in once after this update so a fresh secure session is issued.' },
         { version: 'v3.16', date: '2026-08-17', notes: 'Found and fixed a real money-tracking bug: any claim, charge, or income item with status \'Tk from check\' was being treated as fully resolved and forced to show a $0 balance \u2014 the same shortcut used for genuinely finished statuses like Absorbed and Paid. That\'s wrong: \'Tk from check\' only means the money is collected directly from a paycheck instead of through the normal weekly deduction schedule, not that it\'s been collected yet. Confirmed against real data \u2014 an employee with five Tk-from-check claims where four had never had a single dollar deducted, correctly showing $0.00 pending in the Release Eligibility report when the real number was $730. Fixed at the source, in the four shared functions everything else calls (claimBalance, chargeBalance, remainingBalance, remainingBalanceAsOf) rather than patching each screen separately, so every place this could show up \u2014 Release Eligibility, the Claims and Charges lists, dashboard totals, sort order \u2014 is now correct at once. A database check afterward found 25 claims across the account sitting in this exact state, so real numbers should visibly change in a few places after this update, not just Release Eligibility.' },
@@ -5109,6 +5129,144 @@
             <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${pct}% paid</div>`;
     }
 
+    // ===== Attachments =====================================================
+    // One shared system for files/photos/videos on claims, charges, income,
+    // invoices and bills. Metadata lives in the attachments table (reached
+    // only through token-guarded RPCs); the bytes live in a private Supabase
+    // Storage bucket reached only through the 'attachments' Edge Function,
+    // which re-checks the session token and company scope server-side and
+    // hands out short-lived signed URLs. SuperAdmin is unrestricted across
+    // companies; everyone else is limited to records in their own company.
+    let attachCtx = null; // { type, id } for the record the modal is open on
+
+    function attachBtnHtml(type, id) {
+        return `<button type="button" class="btn-small" style="background:var(--excel-blue); margin:0;" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')">📎 Files</button>`;
+    }
+
+    async function efAttach(payload) {
+        const res = await fetch(SUPABASE_URL + '/functions/v1/attachments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
+            body: JSON.stringify(Object.assign({ token: authToken }, payload))
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.error || ('HTTP ' + res.status));
+        return j;
+    }
+
+    function formatBytes(n) {
+        n = parseInt(n, 10) || 0;
+        if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+        if (n >= 1024) return Math.round(n / 1024) + ' KB';
+        return n + ' B';
+    }
+
+    function openAttachments(type, id) {
+        attachCtx = { type, id };
+        const ov = document.getElementById('attachments-overlay');
+        document.getElementById('attachments-title').textContent = `Files — ${id}`;
+        document.getElementById('attachments-add-btn').style.display = canEdit() ? 'inline-block' : 'none';
+        document.getElementById('attachments-progress').textContent = '';
+        ov.style.display = 'flex';
+        loadAttachmentsList();
+    }
+    function closeAttachments() {
+        document.getElementById('attachments-overlay').style.display = 'none';
+        document.getElementById('attachments-file-input').value = '';
+        attachCtx = null;
+    }
+
+    async function loadAttachmentsList() {
+        if (!attachCtx) return;
+        const listEl = document.getElementById('attachments-list');
+        listEl.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 0;">Loading…</div>';
+        const { data, error } = await supabaseClient.rpc('list_attachments', {
+            p_actor: currentUsername, p_entity_type: attachCtx.type, p_entity_id: attachCtx.id
+        });
+        if (error) { listEl.innerHTML = `<div style="color:#ef4444; font-size:12px;">${escHtml(error.message)}</div>`; return; }
+        if (!data || !data.length) { listEl.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 0;">No files attached yet.</div>'; return; }
+        const icon = { photo: '📷', video: '🎬', document: '📄' };
+        listEl.innerHTML = data.map(a => `
+            <div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;">
+                <span style="font-size:16px;">${icon[a.kind] || '📄'}</span>
+                <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(a.file_name)}">${escHtml(a.file_name)}</span>
+                <span style="color:var(--text-muted); white-space:nowrap;">${formatBytes(a.size_bytes)}</span>
+                <button type="button" class="btn-small" style="margin:0; padding:3px 9px;" onclick="viewAttachment('${escJsAttr(a.storage_path)}')">View</button>
+                ${canEdit() ? `<span class="del-btn" style="cursor:pointer;" onclick="deleteAttachmentUi(${a.id}, '${escJsAttr(a.storage_path)}')">✕</span>` : ''}
+            </div>`).join('');
+    }
+
+    // Photos are downscaled/re-encoded in the browser before upload (max
+    // 1920px, JPEG q0.82) — typically shrinks a phone photo 5-10x with no
+    // visible loss, saving storage. Falls back to the original file if the
+    // browser can't decode it (e.g. HEIC on some platforms). Videos and
+    // documents upload as-is.
+    async function compressImageFile(file) {
+        if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+        try {
+            const img = await createImageBitmap(file);
+            const maxDim = 1920;
+            let w = img.width, h = img.height;
+            if (Math.max(w, h) > maxDim) { const s = maxDim / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.82));
+            img.close && img.close();
+            if (blob && blob.size < file.size) {
+                return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+            }
+            return file;
+        } catch (e) { return file; }
+    }
+
+    async function uploadSelectedAttachments(files) {
+        if (!attachCtx || !files || !files.length || !canEdit()) return;
+        const prog = document.getElementById('attachments-progress');
+        const arr = Array.from(files);
+        let done = 0, failed = 0;
+        for (const original of arr) {
+            prog.textContent = `Uploading ${done + failed + 1} of ${arr.length}…`;
+            try {
+                if (original.size > 104857600) throw new Error(`${original.name}: over the 100 MB limit`);
+                const file = await compressImageFile(original);
+                const signed = await efAttach({ action: 'sign-upload', entity_type: attachCtx.type, entity_id: attachCtx.id, file_name: file.name });
+                const up = await fetch(signed.signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file });
+                if (!up.ok) throw new Error('Upload failed (HTTP ' + up.status + ')');
+                const { error } = await supabaseClient.rpc('record_attachment', {
+                    p_actor: currentUsername, p_entity_type: attachCtx.type, p_entity_id: attachCtx.id,
+                    p_storage_path: signed.path, p_file_name: file.name,
+                    p_mime_type: file.type || null, p_size_bytes: file.size, p_kind: null
+                });
+                if (error) throw new Error(error.message);
+                done++;
+            } catch (e) {
+                failed++;
+                console.error('attachment upload:', e);
+                alert('Could not upload: ' + (e && e.message ? e.message : e));
+            }
+        }
+        prog.textContent = failed ? `${done} uploaded, ${failed} failed.` : `${done} file${done === 1 ? '' : 's'} uploaded.`;
+        document.getElementById('attachments-file-input').value = '';
+        loadAttachmentsList();
+    }
+
+    async function viewAttachment(path) {
+        try {
+            const r = await efAttach({ action: 'sign-download', path });
+            window.open(r.signedUrl, '_blank');
+        } catch (e) { alert('Could not open file: ' + (e && e.message ? e.message : e)); }
+    }
+
+    async function deleteAttachmentUi(id, path) {
+        if (!canEdit()) return;
+        if (!confirm('Delete this file? This cannot be undone.')) return;
+        const { data, error } = await supabaseClient.rpc('delete_attachment', { p_actor: currentUsername, p_id: id });
+        if (error) { alert('Error: ' + error.message); return; }
+        try { await efAttach({ action: 'delete-object', path: data || path }); } catch (e) { console.warn('storage object cleanup:', e); }
+        loadAttachmentsList();
+    }
+
     function claimDetailHtml(c, empName, weeks, bal, endDate, editable) {
         const owed = Math.max(0, (parseFloat(c.claim_amount) || 0) - (parseFloat(c.absorbed_amount) || 0));
         const pct = owed > 0 ? Math.round(((owed - bal) / owed) * 100) : 0;
@@ -5130,10 +5288,11 @@
                 <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
             </div>
             ${c.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(c.notes)}</div>` : ''}
-            ${editable ? `<div class="rec-actions">
-                <button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
-                <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>
-            </div>` : ''}`;
+            <div class="rec-actions">
+                ${attachBtnHtml('claim', c.claim_id)}
+                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
+                <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>` : ''}
+            </div>`;
     }
 
     function renderClaimsTable(list) {
@@ -6145,10 +6304,11 @@
                 <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
             </div>
             ${ch.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(ch.notes)}</div>` : ''}
-            ${editable ? `<div class="rec-actions">
-                <button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
-                <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>
-            </div>` : ''}`;
+            <div class="rec-actions">
+                ${attachBtnHtml('charge', ch.charge_id)}
+                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
+                <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>` : ''}
+            </div>`;
     }
 
     function renderCharges() {
@@ -7246,10 +7406,11 @@
                 <div><div class="k">Ends</div><div class="v">${endDate}</div></div>
             </div>
             ${i.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(i.notes)}</div>` : ''}
-            ${editable ? `<div class="rec-actions">
-                <button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
-                <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>
-            </div>` : ''}`;
+            <div class="rec-actions">
+                ${attachBtnHtml('income', i.income_id)}
+                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
+                <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>` : ''}
+            </div>`;
     }
 
     function renderIncome() {
@@ -10544,11 +10705,11 @@
             </div>` : ''}
             <div>${rows}</div>
             <div style="text-align:right; font-weight:700; margin-top:6px; font-family:var(--mono);">Total: ${formatMoney(inv.total_amount)}</div>
-            ${editable ? `
             <div class="rec-actions" style="margin-top:10px;">
-                <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editInvoice('${escJsAttr(inv.invoice_id)}')">Edit</button>
-                <button class="del-btn" onclick="deleteInvoice('${escJsAttr(inv.invoice_id)}')">✕ Delete</button>
-            </div>` : ''}`;
+                ${attachBtnHtml('invoice', inv.invoice_id)}
+                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editInvoice('${escJsAttr(inv.invoice_id)}')">Edit</button>
+                <button class="del-btn" onclick="deleteInvoice('${escJsAttr(inv.invoice_id)}')">✕ Delete</button>` : ''}
+            </div>`;
     }
 
     function renderInvoices() {
@@ -10714,10 +10875,11 @@
                             <div><div class="k">Bill Date</div><div class="v">${b.bill_date || '-'}</div></div>
                             <div><div class="k">Notes</div><div class="v">${b.notes ? escHtml(b.notes) : '-'}</div></div>
                         </div>
-                        ${editable ? `<div class="rec-actions" style="margin-top:10px;">
-                            <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editBill('${escJsAttr(b.bill_id)}')">Edit</button>
-                            <button class="del-btn" onclick="deleteBill('${escJsAttr(b.bill_id)}')">✕ Delete</button>
-                        </div>` : ''}
+                        <div class="rec-actions" style="margin-top:10px;">
+                            ${attachBtnHtml('bill', b.bill_id)}
+                            ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editBill('${escJsAttr(b.bill_id)}')">Edit</button>
+                            <button class="del-btn" onclick="deleteBill('${escJsAttr(b.bill_id)}')">✕ Delete</button>` : ''}
+                        </div>
                     </div>
                 </div>`);
         });
