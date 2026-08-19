@@ -1221,8 +1221,8 @@
 </div>
 <div class="tabs sub-tabs" id="grp-hr">
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-charges')" id="btn-tab-charges" data-i18n="tab_charges">Charges &amp; Income</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims &amp; Charges</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income" data-i18n="tab_income">Income</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-weekdeposit')" id="btn-tab-weekdeposit">Week in Deposit</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
@@ -1540,8 +1540,16 @@
     </div>
 </div>
 
-<!-- TAB 4: CLAIMS -->
+<!-- TAB 4: CLAIMS & CHARGES (two separate record types, shown together) -->
 <div id="tab-claims" class="tab-content">
+    <div class="panel" style="padding:10px 12px;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:12px; color:var(--text-muted); font-weight:700; margin-right:2px;">Add:</span>
+            <button type="button" id="cc-seg-claim" class="btn-small" onclick="showCCForm('claim')">＋ New Claim</button>
+            <button type="button" id="cc-seg-charge" class="btn-small" style="background:#64748b;" onclick="showCCForm('charge')">＋ New Charge</button>
+        </div>
+    </div>
+    <div id="cc-claim-form-wrap">
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="claim-form-titletext" data-i18n="new_claim">New Claim</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
@@ -1598,45 +1606,11 @@
             </div>
         </div>
     </div>
-
-    <div class="panel">
-        <div class="stat-grid" id="claim-stats-grid"></div>
-        <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="claim-search" placeholder="Search Claim ID, Employee, account, company..." oninput="filterClaims()" data-i18n-placeholder="search_claims_ph"></div>
-            <div class="field"><select id="filter-claim-emp" onchange="filterClaims()"><option value="">All employees</option></select></div>
-            <div class="field"><select id="filter-claim-damage" onchange="filterClaims()"><option value="">All damage types</option></select></div>
-            <div class="field"><select id="filter-claim-status" onchange="filterClaims()"><option value="">All statuses</option></select></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('claims')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportClaimsExcel()">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildClaimsSummaryReport(), 'claims_summary.xlsx')">📊 Summary Report (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildClaimsSummaryReport())">📊 Summary Report (PDF)</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()" data-i18n="import_excel_csv">Import Excel/CSV</button>
-            <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
-        </div>
-        <div class="rec-toolbar">
-            <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-claims" onchange="setSortField('claims', this.value)">
-                <option value="employee">Employee</option>
-                <option value="claim_id">Claim ID</option>
-                <option value="claimant">Claimant Acct</option>
-                <option value="company">Company</option>
-                <option value="damage">Type of damage</option>
-                <option value="amount">Claim amount</option>
-                <option value="balance">Balance</option>
-                <option value="status">Status</option>
-                <option value="start">Start ded.</option>
-            </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-claims" onclick="flipSortDir('claims')">▲</button>
-        </div>
-        <div id="claims-tbody" class="record-grid"></div>
     </div>
-</div>
-
-<!-- TAB 5: CHARGES -->
-<div id="tab-charges" class="tab-content">
+    <div id="cc-charge-form-wrap" style="display:none;">
     <div class="panel" style="padding-top:14px; padding-bottom:14px;">
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
-            <div class="field field-wide"><label data-i18n="employee_applies_both">Employee <span style="color:var(--text-muted); font-weight:400;">— applies to both the charge and income forms below</span></label><select id="ci-employee"><option value="">— Select employee —</option></select></div>
+            <div class="field field-wide"><label data-i18n="employee_applies_both">Employee <span style="color:var(--text-muted); font-weight:400;">— for the new charge below</span></label><select id="ci-employee"><option value="">— Select employee —</option></select></div>
         </div>
     </div>
     <div class="panel">
@@ -1688,37 +1662,57 @@
             </div>
         </div>
     </div>
+    </div>
 
     <div class="panel">
+        <div class="stat-grid" id="claim-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="charge-search" placeholder="Search charge ID, employee, type, status..." oninput="renderCharges()" data-i18n-placeholder="search_charges_ph"></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('charges')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportChargesExcel()">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildChargesSummaryReport(), 'charges_summary.xlsx')">📊 Summary Report (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildChargesSummaryReport())">📊 Summary Report (PDF)</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import</button>
+            <div class="field field-wide"><input type="text" id="cc-search" placeholder="Search ID, employee, account, company, type, status..." oninput="renderClaimsCharges()"></div>
+            <div class="field"><select id="cc-kind" onchange="renderClaimsCharges()"><option value="">Claims &amp; Charges</option><option value="claim">Claims only</option><option value="charge">Charges only</option></select></div>
+            <div class="field"><select id="cc-emp" onchange="renderClaimsCharges()"><option value="">All employees</option></select></div>
+            <div class="field"><select id="cc-type" onchange="renderClaimsCharges()"><option value="">All types</option></select></div>
+            <div class="field"><select id="cc-status" onchange="renderClaimsCharges()"><option value="">All statuses</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('cc')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+        </div>
+        <div class="form-row" style="margin-bottom:10px; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportClaimsExcel()">⬇️ Export Claims</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportChargesExcel()">⬇️ Export Charges</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildClaimsSummaryReport(), 'claims_summary.xlsx')">📊 Claims (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildClaimsSummaryReport())">📊 Claims (PDF)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildChargesSummaryReport(), 'charges_summary.xlsx')">📊 Charges (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildChargesSummaryReport())">📊 Charges (PDF)</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()">⬆️ Import Claims</button>
+            <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import Charges</button>
             <input type="file" id="charges-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importChargesExcel(event)">
             <button type="button" class="btn-small" style="background:#0f766e;" onclick="document.getElementById('week-deposit-import-input').click()">⬆️ Import Semana de Fondo</button>
             <input type="file" id="week-deposit-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importWeekInDepositExcel(event)">
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-charges" onchange="setSortField('charges', this.value)">
+            <select id="sort-select-cc" onchange="setSortField('cc', this.value)">
                 <option value="employee">Employee</option>
-                <option value="charge_id">Charge ID</option>
-                <option value="type">Charge type</option>
+                <option value="kind">Kind</option>
+                <option value="id">ID</option>
+                <option value="type">Type</option>
                 <option value="amount">Amount</option>
                 <option value="balance">Balance</option>
                 <option value="status">Status</option>
                 <option value="start">Start ded.</option>
             </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-charges" onclick="flipSortDir('charges')">▲</button>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-cc" onclick="flipSortDir('cc')">▲</button>
         </div>
-        <div id="charges-tbody" class="record-grid"></div>
+        <div id="cc-tbody" class="record-grid"></div>
     </div>
+</div>
 
-    <div style="height:1px;background:var(--border);margin:18px 2px 4px;"></div>
-
+<!-- TAB: ADDITIONAL INCOME (its own tab) -->
+<div id="tab-income" class="tab-content">
+    <div class="panel" style="padding-top:14px; padding-bottom:14px;">
+        <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
+            <div class="field field-wide"><label>Employee <span style="color:var(--text-muted); font-weight:400;">— for the additional-income form below</span></label><select id="i-employee"><option value="">— Select employee —</option></select></div>
+        </div>
+    </div>
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="income-form-titletext" data-i18n="new_additional_income">New Additional Income</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
@@ -2461,13 +2455,12 @@
     // Which status GROUPS are collapsed (not individual records — those use
     // recExpanded above). All groups start expanded; a status added here
     // stays collapsed until toggled again, re-render to re-apply.
-    let collapsedStatusGroups = { claims: new Set(), charges: new Set(), income: new Set(), weekdeposit: new Set(), statement: new Set() };
+    let collapsedStatusGroups = { claims: new Set(), cc: new Set(), charges: new Set(), income: new Set(), weekdeposit: new Set(), statement: new Set() };
     function toggleStatusGroup(tab, status) {
         const set = collapsedStatusGroups[tab];
         if (!set) return;
         if (set.has(status)) set.delete(status); else set.add(status);
-        if (tab === 'claims') filterClaims();
-        else if (tab === 'charges') renderCharges();
+        if (tab === 'claims' || tab === 'cc' || tab === 'charges') renderClaimsCharges();
         else if (tab === 'income') renderIncome();
         else if (tab === 'weekdeposit') renderWeekDeposit();
         else if (tab === 'statement') renderStatement();
@@ -2479,8 +2472,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.21';
+    const APP_VERSION = 'v3.22';
     const CHANGELOG = [
+        { version: 'v3.22', date: '2026-08-19', notes: 'Claims and Charges are now managed on one screen. The old separate \'Claims\' and \'Charges & Income\' tabs became a single \'Claims & Charges\' tab that lists both together — every row and card carries a CLAIM or CHARGE badge so they\'re never confused, and a Kind dropdown (Claims & Charges / Claims only / Charges only) plus one shared search, employee, type and status filter let you narrow to exactly what you want. Nothing about the records themselves changed: a claim is still a claim and a charge is still a charge, each keeps its own ID series, its own table, and its own statuses, and each is still created and edited on its own form (a New Claim / New Charge switch sits at the top of the tab). Additional Income moved out to its own dedicated \'Income\' tab (with its own employee selector), so it\'s no longer mixed in with charges. The tab\'s summary cards now cover both kinds at once — separate Claims and Charges counts, pooled total amount and outstanding balance, and combined Deducting / Queued / Resolved counts. Under the hood this rides on the shared engine from v3.21, so balances, schedules, rate changes and pauses are unchanged; only where things are displayed moved.' },
         { version: 'v3.21', date: '2026-08-18', notes: 'Internal engineering release: claims and charges now run on one shared deduction engine. They remain separate records with their own IDs, their own tables, and their own statuses — but how they work (base weekly rate, dated rate changes, pause windows, the weekly schedule walk, balances as of any date, and the rate/pause history panels in the edit form) is now a single implementation configured per kind, so any future fix or feature automatically applies to both. Every original function was kept with its exact name and behavior, verified by an automated equivalence test: 6,000 randomized scenarios (every status, past/future dates, rate changes to and from zero, overlapping pauses, inactive employees, missing data) produced identical balances before and after, plus 1,491 cross-checks proving a claim and a charge given identical data now behave identically. One deliberate improvement rode along: a schedule whose rate history dead-ends at $0 no longer projects decades of phantom empty weeks on the claims side — a fix charges already had; balances are unchanged, only the phantom tail disappears from schedule views.' },
         { version: 'v3.20', date: '2026-08-18', notes: 'Brand refresh, chosen from the design options board. New sharper logo (same shield-and-gauge identity, bolder gauge and crisper edges) across the login screen, sidebar, app icons and favicon. New shorter app title: \'Tracker — Logistics · HR · Claims\' (the header shows \'[Company] — Tracker\' when signed into a specific company). Two brand-new interface themes join the existing three: Indigo, a cool violet take on the light theme, and Carbon, a neutral graphite dark theme with amber accents — pick them from the same theme circles on the login screen, the header menu, or the sidebar. The login background hero stays as-is by choice. All existing themes, data, and workflows are untouched.' },
         { version: 'v3.19', date: '2026-08-18', notes: 'File attachments arrived, plus two fixes. You can now attach photos, videos and documents to any individual claim, charge, income record, invoice, or bill — open a record and tap the new 📎 Files button. Attachments are always optional, belong to that one specific record, and any file type is accepted; each upload is automatically classified as a photo, video, or document. Photos taken on a phone are automatically shrunk (down to about a tenth of their size) before uploading to save storage, with no visible quality loss; single files are capped at 100 MB. Everyone who can see a record can view its files; only editors can add or remove them; Super Admin can do this on any company\'s records, and files are stored privately — every view link is personal, expires after 10 minutes, and is only issued after the server re-checks who you are. The fixes: an update earlier today accidentally broke the Employees screen (SSN handling) and password resets for a few hours — both were repaired server-side, tested end to end (login, reset by admin and superadmin, employee list, and 15 other functions), and no data was affected. Also note: passwords now must be at least 8 characters when set or changed; existing passwords keep working.' },
@@ -2696,14 +2690,17 @@
     function goToSearchResult(kind, id) {
         const map = {
             employees: { tab: 'tab-employees', input: 'employee-search', fn: 'renderEmployees' },
-            claims: { tab: 'tab-claims', input: 'claim-search', fn: 'filterClaims' },
-            charges: { tab: 'tab-charges', input: 'charge-search', fn: 'renderCharges' },
-            income: { tab: 'tab-charges', input: 'income-search', fn: 'renderIncome' },
+            claims: { tab: 'tab-claims', input: 'cc-search', fn: 'renderClaimsCharges' },
+            charges: { tab: 'tab-claims', input: 'cc-search', fn: 'renderClaimsCharges' },
+            income: { tab: 'tab-income', input: 'income-search', fn: 'renderIncome' },
             vehicles: { tab: 'tab-vehicles', input: 'vehicle-search', fn: 'renderVehicles' }
         };
         const cfg = map[kind];
         if (!cfg) return;
         openTab(null, cfg.tab);
+        // Combined Claims & Charges tab: clear the kind filter so a jumped-to
+        // record of either kind is visible regardless of the last filter set.
+        if (cfg.tab === 'tab-claims') { const ks = document.getElementById('cc-kind'); if (ks) ks.value = ''; }
         const input = document.getElementById(cfg.input);
         if (input) { input.value = id; }
         if (typeof window[cfg.fn] === 'function') window[cfg.fn]();
@@ -2794,6 +2791,7 @@
     let expandedState = {};
     let sortState = {
         employees: { key: 'name', dir: 1 }, claims: { key: 'employee', dir: 1 },
+        cc: { key: 'employee', dir: 1 },
         charges: { key: 'employee', dir: 1 }, income: { key: 'employee', dir: 1 },
         payroll: { key: 'employee', dir: 1 }, companies: { key: 'name', dir: 1 },
         users: { key: 'username', dir: 1 }, approvals: { key: 'requested', dir: 1 },
@@ -2828,9 +2826,9 @@
     function reRenderActiveCardTable() {
         const active = document.querySelector('.tab-content.active');
         if (!active) return;
-        if (active.id === 'tab-charges') { renderCharges(); renderIncome(); return; }
+        if (active.id === 'tab-income') { renderIncome(); return; }
         const map = {
-            'tab-employees': renderEmployees, 'tab-claims': renderClaims,
+            'tab-employees': renderEmployees, 'tab-claims': renderClaimsCharges,
             'tab-payroll': renderPayroll, 'tab-users': fetchUsersList,
             'tab-companies': renderCompanies, 'tab-approvals': renderApprovals, 'tab-log': renderLog,
             'tab-vehicles': renderVehicles
@@ -2884,8 +2882,7 @@
 
     function reRenderRecTable(table) {
         if (table === 'employees') renderEmployees();
-        else if (table === 'claims') renderClaims();
-        else if (table === 'charges') renderCharges();
+        else if (table === 'claims' || table === 'cc' || table === 'charges') renderClaimsCharges();
         else if (table === 'income') renderIncome();
         else if (table === 'payroll') renderPayroll();
         else if (table === 'companies') renderCompanies();
@@ -3337,7 +3334,7 @@
         toggleMobileDrawer(true); // picking a tab always closes the drawer, whether it was open or not — a no-op on desktop since drawer-open is never set there
         // View Only users may only open their 6 permitted tabs.
         if (currentUserRole === 'User') {
-            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-charges','tab-weekdeposit','tab-statement','tab-payroll','tab-messages','tab-expiring'];
+            const allowed = ['tab-notifications','tab-employees','tab-claims','tab-income','tab-weekdeposit','tab-statement','tab-payroll','tab-messages','tab-expiring'];
             if (!allowed.includes(tabName)) return;
         }
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -3348,8 +3345,8 @@
         if(tabName === 'tab-notifications') renderNotifications();
         if(tabName === 'tab-vehicles') renderVehicles();
         if(tabName === 'tab-messages') renderMessagesTab();
-        if(tabName === 'tab-claims') renderClaims();
-        if(tabName === 'tab-charges') { renderCharges(); renderIncome(); }
+        if(tabName === 'tab-claims') renderClaimsCharges();
+        if(tabName === 'tab-income') renderIncome();
         if(tabName === 'tab-weekdeposit') renderWeekDeposit();
         if(tabName === 'tab-report') renderDailyReport();
         if(tabName === 'tab-users') fetchUsersList();
@@ -3392,7 +3389,7 @@
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-employees', 'tab-claims', 'tab-charges', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-savingsreport', 'tab-releasehistory'],
+        'grp-hr': ['tab-employees', 'tab-claims', 'tab-income', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-savingsreport', 'tab-releasehistory'],
         'grp-expiring': ['tab-expiring'],
         'grp-financial': ['tab-invoices', 'tab-bills'],
         'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
@@ -4093,7 +4090,8 @@
         const { data, error } = await supabaseClient.rpc('get_charges', { p_actor: currentUsername, p_company: currentCompany });
         if (error) { console.error('get_charges:', error); showDiagBanner('Charges: ' + error.message); }
         charges = data || [];
-        renderCharges();
+        renderClaimsCharges();
+        populateClaimFilters();
     }
 
     async function fetchSettingsFromCloud() {
@@ -4152,23 +4150,35 @@
         populateCompanySelects();
     }
 
+    // Filters for the combined Claims & Charges tab: employees, the union of
+    // damage-types + charge-types, and the union of both kinds' statuses.
+    // (Kept the old name so existing call sites need no change.)
     function populateClaimFilters() {
-        const empSel = document.getElementById('filter-claim-emp');
-        const damSel = document.getElementById('filter-claim-damage');
-        const statSel = document.getElementById('filter-claim-status');
-        if(!empSel) return;
-
-        empSel.innerHTML = '<option value="">All employees</option>';
-        employees.forEach(e => empSel.insertAdjacentHTML('beforeend', `<option value="${e.id}">${employeeOptionLabel(e)}</option>`));
-        sortSelectAZ(empSel);
-
-        damSel.innerHTML = '<option value="">All damage types</option>';
-        damageTypes.forEach(d => damSel.insertAdjacentHTML('beforeend', `<option value="${d}">${d}</option>`));
-        sortSelectAZ(damSel);
-
-        statSel.innerHTML = '<option value="">All statuses</option>';
-        ['Queued', 'Deducting', 'Paid', 'Absorbed', 'Tk from check', 'Paused'].forEach(s => statSel.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
-        sortSelectAZ(statSel);
+        const empSel = document.getElementById('cc-emp');
+        const typeSel = document.getElementById('cc-type');
+        const statSel = document.getElementById('cc-status');
+        if (empSel) {
+            const prev = empSel.value;
+            empSel.innerHTML = '<option value="">All employees</option>' +
+                employees.map(e => `<option value="${e.id}">${employeeOptionLabel(e)}</option>`).join('');
+            sortSelectAZ(empSel);
+            empSel.value = prev || '';
+        }
+        if (typeSel) {
+            const prev = typeSel.value;
+            const types = Array.from(new Set([].concat(damageTypes || [], chargeTypes || []))).filter(Boolean);
+            typeSel.innerHTML = '<option value="">All types</option>' +
+                types.map(t => `<option value="${t}">${t}</option>`).join('');
+            sortSelectAZ(typeSel);
+            typeSel.value = prev || '';
+        }
+        if (statSel) {
+            const prev = statSel.value;
+            statSel.innerHTML = '<option value="">All statuses</option>' +
+                ['Queued', 'Deducting', 'Paid', 'Absorbed', 'Tk from check', 'Released']
+                    .map(s => `<option value="${s}">${s}</option>`).join('');
+            statSel.value = prev || '';
+        }
     }
 
     // --- EMPLOYEES ---
@@ -4591,13 +4601,11 @@
                 setVal('employee-search', ''); setVal('employee-status-filter', 'Active');
                 renderEmployees();
                 break;
+            case 'cc':
             case 'claims':
-                setVal('claim-search', ''); setVal('filter-claim-emp', ''); setVal('filter-claim-damage', ''); setVal('filter-claim-status', '');
-                filterClaims();
-                break;
             case 'charges':
-                setVal('charge-search', '');
-                renderCharges();
+                setVal('cc-search', ''); setVal('cc-kind', ''); setVal('cc-emp', ''); setVal('cc-type', ''); setVal('cc-status', '');
+                renderClaimsCharges();
                 break;
             case 'weekdeposit':
                 setVal('weekdeposit-status-filter', '');
@@ -4956,7 +4964,7 @@
         );
         const opts = '<option value="">— Select employee —</option>' +
             sorted.map(emp => `<option value="${emp.id}">${employeeOptionLabel(emp)}</option>`).join('');
-        ['cEmployee', 'ci-employee'].forEach(id => {
+        ['cEmployee', 'ci-employee', 'i-employee'].forEach(id => {
             const sel = document.getElementById(id);
             if (!sel) return;
             const prev = sel.value;
@@ -5013,27 +5021,29 @@
         }
     });
 
+    // Combined stats for the Claims & Charges tab — claims and charges are
+    // separate record types, so counts are shown per kind while money totals
+    // (amount, outstanding) and lifecycle counts are pooled across both.
     function updateClaimStats() {
-        const total = claims.length;
-        const totalAmt = claims.reduce((acc, c) => acc + (parseFloat(c.claim_amount) || 0), 0);
-        const totalBal = claims.reduce((acc, c) => acc + claimBalance(c), 0);
-        const deducting = claims.filter(c => c.status === 'Deducting').length;
-        const queued = claims.filter(c => c.status === 'Queued').length;
-        const paused = claims.filter(c => c.status === 'Paused').length;
-        const resolved = claims.filter(c => c.status === 'Absorbed' || c.status === 'Tk from check' || c.status === 'Paid').length;
-
         const grid = document.getElementById('claim-stats-grid');
-        if(grid) {
-            grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Total Claims</div><div class="stat-value">${total}</div></div>
-                <div class="stat-card"><div class="stat-label">Total Amount</div><div class="stat-value">${formatMoney(totalAmt)}</div></div>
-                <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value">${formatMoney(totalBal)}</div></div>
-                <div class="stat-card"><div class="stat-label">Deducting</div><div class="stat-value">${deducting}</div></div>
-                <div class="stat-card"><div class="stat-label">Queued</div><div class="stat-value">${queued}</div></div>
-                <div class="stat-card"><div class="stat-label">Paused</div><div class="stat-value">${paused}</div></div>
-                <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value">${resolved}</div></div>
-            `;
-        }
+        if (!grid) return;
+        const claimAmt = claims.reduce((a, c) => a + (parseFloat(c.claim_amount) || 0), 0);
+        const chargeAmt = charges.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+        const claimBal = claims.reduce((a, c) => a + claimBalance(c), 0);
+        const chargeBal = charges.reduce((a, c) => a + chargeBalance(c), 0);
+        const both = claims.concat(charges);
+        const deducting = both.filter(x => x.status === 'Deducting').length;
+        const queued = both.filter(x => x.status === 'Queued').length;
+        const resolved = both.filter(x => ['Absorbed', 'Tk from check', 'Paid', 'Released'].includes(x.status)).length;
+        grid.innerHTML = `
+            <div class="stat-card"><div class="stat-label">Claims</div><div class="stat-value">${claims.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Charges</div><div class="stat-value">${charges.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Total Amount</div><div class="stat-value">${formatMoney(claimAmt + chargeAmt)}</div></div>
+            <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value">${formatMoney(claimBal + chargeBal)}</div></div>
+            <div class="stat-card"><div class="stat-label">Deducting</div><div class="stat-value">${deducting}</div></div>
+            <div class="stat-card"><div class="stat-label">Queued</div><div class="stat-value">${queued}</div></div>
+            <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value">${resolved}</div></div>
+        `;
     }
 
     // --- NOTIFICATIONS ----------------------------------------------------
@@ -5109,19 +5119,19 @@
         if (n) n.read_at = n.read_at || new Date().toISOString();
         updateNotifBadge();
 
-        if (kind === 'claim') {
+        if (kind === 'claim' || kind === 'charge') {
             openTab(null, 'tab-claims');
             document.getElementById('btn-tab-claims')?.classList.add('active');
-            const search = document.getElementById('claim-search');
-            if (search) { search.value = recordId; filterClaims(); }
-            recExpanded.claims.add(recordId);
+            const ks = document.getElementById('cc-kind'); if (ks) ks.value = kind;
+            const search = document.getElementById('cc-search'); if (search) search.value = recordId;
+            recExpanded[kind === 'claim' ? 'claims' : 'charges'].add(recordId);
+            renderClaimsCharges();
         } else {
-            openTab(null, 'tab-charges');
-            document.getElementById('btn-tab-charges')?.classList.add('active');
-            const searchId = kind === 'charge' ? 'charge-search' : 'income-search';
-            const search = document.getElementById(searchId);
-            if (search) { search.value = recordId; (kind === 'charge' ? renderCharges : renderIncome)(); }
-            recExpanded[kind === 'charge' ? 'charges' : 'income'].add(recordId);
+            openTab(null, 'tab-income');
+            document.getElementById('btn-tab-income')?.classList.add('active');
+            const search = document.getElementById('income-search'); if (search) search.value = recordId;
+            recExpanded.income.add(recordId);
+            renderIncome();
         }
         renderNotifications();
     }
@@ -5135,38 +5145,173 @@
         } catch (e) { console.error('markAllNotificationsRead:', e); }
     }
 
-    function filterClaims() {
-        const query = (document.getElementById('claim-search').value || '').toLowerCase();
-        const empFilter = document.getElementById('filter-claim-emp').value;
-        const damFilter = document.getElementById('filter-claim-damage').value;
-        const statFilter = document.getElementById('filter-claim-status').value;
+    // ===== Combined Claims & Charges list ================================
+    // Claims and charges are separate record types (own IDs, own tables, own
+    // statuses) but are shown together in ONE badged, filterable list. Each
+    // row/card carries a CLAIM/CHARGE badge and delegates to that kind's own
+    // schedule/balance/detail/edit/delete code — nothing about either record
+    // type changed; only where they're displayed did.
+    function ccKindOf(r) { return Object.prototype.hasOwnProperty.call(r, 'claim_id') ? 'claim' : 'charge'; }
+    function ccRecId(r)  { return ccKindOf(r) === 'claim' ? r.claim_id : r.charge_id; }
+    function ccType(r)   { return ccKindOf(r) === 'claim' ? (r.damage_type || '') : (r.charge_type || ''); }
+    function ccAmount(r) { return parseFloat(ccKindOf(r) === 'claim' ? r.claim_amount : r.amount) || 0; }
+    function ccWeekly(r) { return ccKindOf(r) === 'claim' ? rateOn(r, todayStr()) : chargeRateOn(r, todayStr()); }
+    function ccBalance(r){ return ccKindOf(r) === 'claim' ? claimBalance(r) : chargeBalance(r); }
+    function ccSchedule(r){ return ccKindOf(r) === 'claim' ? buildClaimSchedule(r, null) : buildChargeSchedule(r, null); }
+    function ccDetailHtml(r, empName, weeks, bal, endDate, editable) {
+        return ccKindOf(r) === 'claim'
+            ? claimDetailHtml(r, empName, weeks, bal, endDate, editable)
+            : chargeDetailHtml(r, empName, weeks, bal, endDate, editable);
+    }
+    const CC_KIND_BADGE = {
+        claim:  '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:.04em;background:rgba(37,99,235,.16);color:#2563eb;">CLAIM</span>',
+        charge: '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:.04em;background:rgba(220,38,38,.16);color:#dc2626;">CHARGE</span>'
+    };
 
-        const filtered = claims.filter(c => {
-            const emp = employees.find(e => e.id === c.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
-            const matchQuery = !query || c.claim_id.toLowerCase().includes(query) || (c.company_name||'').toLowerCase().includes(query) || (c.claimant_account||'').toLowerCase().includes(query) || empName.includes(query);
-            const matchEmp = !empFilter || c.employee_id === empFilter;
-            const matchDam = !damFilter || c.damage_type === damFilter;
-            const matchStat = !statFilter || c.status === statFilter;
-            return matchQuery && matchEmp && matchDam && matchStat;
-        });
-        const sorted = applySort(filtered, 'claims', {
-            claimant: c => c.claimant_account || '',
-            claim_id: c => c.claim_id,
-            company: c => c.company_name || '',
-            employee_id: c => c.employee_id,
-            employee: c => { const e = employees.find(x => x.id === c.employee_id); return e ? `${e.first_name} ${e.last_name}` : ''; },
-            damage: c => c.damage_type || '',
-            amount: c => c.claim_amount || 0,
-            balance: c => claimBalance(c),
-            status: c => c.status || '',
-            start: c => c.start_date || ''
-        });
-        renderClaimsTable(sorted);
-        updateRecSortUI('claims');
+    // Show the New Claim form or the New Charge form (they add separate records).
+    function showCCForm(kind) {
+        const on = kind === 'charge' ? 'charge' : 'claim';
+        const cw = document.getElementById('cc-claim-form-wrap');
+        const gw = document.getElementById('cc-charge-form-wrap');
+        const cb = document.getElementById('cc-seg-claim');
+        const gb = document.getElementById('cc-seg-charge');
+        if (cw) cw.style.display = on === 'claim' ? '' : 'none';
+        if (gw) gw.style.display = on === 'charge' ? '' : 'none';
+        if (cb) cb.style.background = on === 'claim' ? '' : '#64748b';
+        if (gb) gb.style.background = on === 'charge' ? '' : '#64748b';
     }
 
-    function renderClaims() { filterClaims(); }
+    function renderClaimsCharges() {
+        const container = document.getElementById('cc-tbody');
+        if (!container) return;
+        const q = (document.getElementById('cc-search')?.value || '').toLowerCase();
+        const kindF = document.getElementById('cc-kind')?.value || '';
+        const empF = document.getElementById('cc-emp')?.value || '';
+        const typeF = document.getElementById('cc-type')?.value || '';
+        const statF = document.getElementById('cc-status')?.value || '';
+        const editable = canEdit();
+
+        let list = [];
+        if (kindF !== 'charge') list = list.concat(claims);
+        if (kindF !== 'claim')  list = list.concat(charges);
+
+        list = list.filter(r => {
+            const k = ccKindOf(r);
+            const emp = employees.find(e => e.id === r.employee_id);
+            const empName = emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
+            const matchQ = !q
+                || ccRecId(r).toLowerCase().includes(q)
+                || empName.includes(q)
+                || (r.employee_id || '').toLowerCase().includes(q)
+                || ccType(r).toLowerCase().includes(q)
+                || (r.status || '').toLowerCase().includes(q)
+                || (k === 'claim' && ((r.company_name || '').toLowerCase().includes(q) || (r.claimant_account || '').toLowerCase().includes(q)));
+            const matchEmp = !empF || r.employee_id === empF;
+            const matchType = !typeF || ccType(r) === typeF;
+            const matchStat = !statF || r.status === statF;
+            return matchQ && matchEmp && matchType && matchStat;
+        });
+
+        list = applySort(list, 'cc', {
+            employee: r => { const e = employees.find(x => x.id === r.employee_id); return e ? `${e.first_name} ${e.last_name}` : ''; },
+            kind: r => ccKindOf(r),
+            id: r => ccRecId(r),
+            type: r => ccType(r),
+            amount: r => ccAmount(r),
+            balance: r => ccBalance(r),
+            status: r => r.status || '',
+            start: r => r.start_date || ''
+        });
+
+        updateRecSortUI('cc');
+        updateClaimStats();
+
+        if (isDesktopView()) {
+            container.className = '';
+            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No claims or charges found.</div>'; return; }
+            let rows = '';
+            groupByStatus(list).forEach(({ status, items }) => {
+                const collapsed = collapsedStatusGroups.cc.has(status);
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><td colspan="13"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                if (collapsed) return;
+                items.forEach(r => {
+                    const k = ccKindOf(r);
+                    const tbl = k === 'claim' ? 'claims' : 'charges';
+                    const id = ccRecId(r);
+                    const emp = employees.find(e => e.id === r.employee_id);
+                    const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+                    const sched = ccSchedule(r);
+                    const weeks = sched.rows.filter(x => !x.paused).length;
+                    const bal = ccBalance(r);
+                    const endDate = sched.endDate || (r.end_date || '—');
+                    const open = recExpanded[tbl].has(id);
+                    const editFn = k === 'claim' ? 'editClaim' : 'editCharge';
+                    const delFn = k === 'claim' ? 'deleteClaim' : 'deleteCharge';
+                    rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('${tbl}','${id}')">
+                        <td class="id-cell"><span class="rec-caret" data-caret="${tbl}-${id}">${open ? '▾' : '▸'}</span> ${id}</td>
+                        <td>${CC_KIND_BADGE[k]}</td>
+                        <td>${escHtml(empName)}</td>
+                        <td class="id-cell">${r.employee_id}</td>
+                        <td>${escHtml(ccType(r))}</td>
+                        <td>${formatMoney(ccAmount(r))}</td>
+                        <td>${formatMoney(ccWeekly(r))}</td>
+                        <td>${weeks}</td>
+                        <td>${formatMoney(bal)}</td>
+                        <td>${r.start_date || '-'}</td>
+                        <td>${endDate}</td>
+                        <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+                        <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="${editFn}('${id}')">✎</button><button class="del-btn" onclick="${delFn}('${id}')">✕</button>` : ''}</td>
+                    </tr>
+                    <tr class="rec-card${open ? ' open' : ''}" id="rec-${tbl}-${id}" style="display:${open ? 'table-row' : 'none'};">
+                        <td colspan="13" style="padding:12px; background:var(--surface-2);">${ccDetailHtml(r, empName, weeks, bal, endDate, editable)}</td>
+                    </tr>`;
+                });
+            });
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+                <th>ID</th><th>Kind</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
+            applyTranslations();
+            return;
+        }
+
+        container.className = 'record-grid';
+        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims or charges found.</div>';
+        groupByStatus(list).forEach(({ status, items }) => {
+            const collapsed = collapsedStatusGroups.cc.has(status);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            if (collapsed) return;
+            items.forEach(r => {
+                const k = ccKindOf(r);
+                const tbl = k === 'claim' ? 'claims' : 'charges';
+                const id = ccRecId(r);
+                const emp = employees.find(e => e.id === r.employee_id);
+                const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
+                const sched = ccSchedule(r);
+                const weeks = sched.rows.filter(x => !x.paused).length;
+                const bal = ccBalance(r);
+                const endDate = sched.endDate || (r.end_date || '—');
+                const open = recExpanded[tbl].has(id);
+                const balColor = k === 'charge' ? ' style="color:#dc2626;"' : '';
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="rec-card${open ? ' open' : ''}" id="rec-${tbl}-${id}">
+                        <div class="rec-card-head" onclick="toggleRecCard('${tbl}','${id}')">
+                            <span class="rec-caret" data-caret="${tbl}-${id}">${open ? '▾' : '▸'}</span>
+                            <span class="rec-title">${escHtml(empName)}</span>
+                            <span class="rec-sub">${CC_KIND_BADGE[k]} ${id}</span>
+                            <span class="rec-right"${balColor}>${formatMoney(bal)} <span class="status-badge status-${r.status}">${r.status}</span></span>
+                        </div>
+                        <div class="rec-card-body">${ccDetailHtml(r, empName, weeks, bal, endDate, editable)}</div>
+                    </div>`);
+            });
+        });
+        applyTranslations();
+    }
+
+    // Back-compat aliases: every existing call site (openTab, fetch handlers,
+    // notifications, global search, DED_KIND rerender, etc.) still works and
+    // now drives the one combined list.
+    function filterClaims() { renderClaimsCharges(); }
+    function renderClaims() { renderClaimsCharges(); }
 
     // Shared detail content for one claim — used by BOTH the desktop
     // collapsible row and the mobile card body, so they can never drift
@@ -5420,78 +5565,10 @@
     }
 
     function renderClaimsTable(list) {
-        const container = document.getElementById('claims-tbody');
-        const editable = canEdit();
-
-        if (isDesktopView()) {
-            container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>'; return; }
-            let rows = '';
-            groupByStatus(list).forEach(({ status, items }) => {
-                const collapsed = collapsedStatusGroups.claims.has(status);
-                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('claims','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
-                if (collapsed) return;
-                items.forEach(c => {
-                const emp = employees.find(e => e.id === c.employee_id);
-                const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
-                const sched = buildClaimSchedule(c, null);
-                const weeks = sched.rows.filter(r => !r.paused).length;
-                const bal = claimBalance(c);
-                const endDate = sched.endDate || (c.end_date || '—');
-                const open = recExpanded.claims.has(c.claim_id);
-                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('claims','${c.claim_id}')">
-                    <td class="id-cell"><span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span> ${c.claim_id}</td>
-                    <td>${escHtml(empName)}</td>
-                    <td class="id-cell">${c.employee_id}</td>
-                    <td>${escHtml(c.damage_type)}</td>
-                    <td>${formatMoney(c.claim_amount)}</td>
-                    <td>${formatMoney(rateOn(c, todayStr()))}</td>
-                    <td>${weeks}</td>
-                    <td>${formatMoney(bal)}</td>
-                    <td>${c.start_date || '-'}</td>
-                    <td>${endDate}</td>
-                    <td><span class="status-badge status-${c.status}">${c.status}</span></td>
-                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editClaim('${c.claim_id}')">✎</button><button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕</button>` : ''}</td>
-                </tr>
-                <tr class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}" style="display:${open ? 'table-row' : 'none'};">
-                    <td colspan="12" style="padding:12px; background:var(--surface-2);">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</td>
-                </tr>`;
-                });
-            });
-            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th data-i18n="th_claim_id">Claim ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
-            </tr></thead><tbody>${rows}</tbody></table></div>`;
-            applyTranslations();
-            return;
-        }
-
-        container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims found.</div>';
-        groupByStatus(list).forEach(({ status, items }) => {
-            const collapsed = collapsedStatusGroups.claims.has(status);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('claims','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
-            if (collapsed) return;
-            items.forEach(c => {
-            const emp = employees.find(e => e.id === c.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
-            const sched = buildClaimSchedule(c, null);
-            const weeks = sched.rows.filter(r => !r.paused).length;
-            const bal = claimBalance(c);
-            const endDate = sched.endDate || (c.end_date || '—');
-            const open = recExpanded.claims.has(c.claim_id);
-            container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card${open ? ' open' : ''}" id="rec-claims-${c.claim_id}">
-                    <div class="rec-card-head" onclick="toggleRecCard('claims','${c.claim_id}')">
-                        <span class="rec-caret" data-caret="claims-${c.claim_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${escHtml(empName)}</span>
-                        <span class="rec-sub">${c.claim_id}</span>
-                        <span class="rec-right">${formatMoney(bal)} <span class="status-badge status-${c.status}">${c.status}</span></span>
-                    </div>
-                    <div class="rec-card-body">${claimDetailHtml(c, empName, weeks, bal, endDate, editable)}</div>
-                </div>`);
-            });
-        });
-        applyTranslations();
+        // Legacy shim: the standalone claims table was merged into the combined
+        // Claims & Charges list (renderClaimsCharges). Kept as a delegating
+        // no-op so any stray caller still renders the right thing.
+        return renderClaimsCharges();
     }
 
     async function deleteClaim(id) {
@@ -6435,100 +6512,9 @@
             </div>`;
     }
 
-    function renderCharges() {
-        const query = (document.getElementById('charge-search')?.value || '').toLowerCase();
-        let list = charges.filter(ch => {
-            if (!query) return true;
-            const emp = employees.find(e => e.id === ch.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
-            return (ch.charge_id || '').toLowerCase().includes(query) || (ch.employee_id || '').toLowerCase().includes(query) ||
-                empName.includes(query) || (ch.charge_type || '').toLowerCase().includes(query) || (ch.status || '').toLowerCase().includes(query);
-        });
-        list = applySort(list, 'charges', {
-            charge_id: c => c.charge_id,
-            employee_id: c => c.employee_id,
-            employee: c => { const e = employees.find(x => x.id === c.employee_id); return e ? `${e.first_name} ${e.last_name}` : ''; },
-            type: c => c.charge_type || '',
-            amount: c => c.amount || 0,
-            balance: c => remainingBalance(c.amount, 0, c.weekly_deduction, c.start_date, c.status),
-            status: c => c.status || '',
-            start: c => c.start_date || ''
-        });
-        const container = document.getElementById('charges-tbody');
-        const editable = canEdit();
-
-        if (isDesktopView()) {
-            container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>'; return; }
-            let rows = '';
-            groupByStatus(list).forEach(({ status, items }) => {
-                const collapsed = collapsedStatusGroups.charges.has(status);
-                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('charges','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
-                if (collapsed) return;
-                items.forEach(ch => {
-                const emp = employees.find(e => e.id === ch.employee_id);
-                const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
-                const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
-                const sched = buildChargeSchedule(ch, null);
-                const bal = chargeBalance(ch);
-                const endDate = sched.endDate || (ch.end_date || '-');
-                const open = recExpanded.charges.has(ch.charge_id);
-                rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('charges','${ch.charge_id}')">
-                    <td class="id-cell"><span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span> ${ch.charge_id}</td>
-                    <td>${escHtml(empName)}</td>
-                    <td class="id-cell">${ch.employee_id}</td>
-                    <td>${escHtml(ch.charge_type)}</td>
-                    <td>${formatMoney(ch.amount)}</td>
-                    <td>${formatMoney(ch.weekly_deduction)}</td>
-                    <td>${weeks}</td>
-                    <td>${formatMoney(bal)}</td>
-                    <td>${ch.start_date || '-'}</td>
-                    <td>${endDate}</td>
-                    <td><span class="status-badge status-${ch.status}">${ch.status}</span></td>
-                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editCharge('${ch.charge_id}')">✎</button><button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕</button>` : ''}</td>
-                </tr>
-                <tr class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}" style="display:${open ? 'table-row' : 'none'};">
-                    <td colspan="12" style="padding:12px; background:var(--surface-2);">${chargeDetailHtml(ch, empName, weeks, bal, endDate, editable)}</td>
-                </tr>`;
-                });
-            });
-            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th data-i18n="th_charge_id">Charge ID</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
-            </tr></thead><tbody>${rows}</tbody></table></div>`;
-            updateRecSortUI('charges');
-            applyTranslations();
-            return;
-        }
-
-        container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No charges found.</div>';
-        groupByStatus(list).forEach(({ status, items }) => {
-            const collapsed = collapsedStatusGroups.charges.has(status);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('charges','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
-            if (collapsed) return;
-            items.forEach(ch => {
-            const emp = employees.find(e => e.id === ch.employee_id);
-            const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unlinked';
-            const weeks = weeksNeeded(ch.amount, ch.weekly_deduction);
-            const sched = buildChargeSchedule(ch, null);
-            const bal = chargeBalance(ch);
-            const endDate = sched.endDate || (ch.end_date || '-');
-            const open = recExpanded.charges.has(ch.charge_id);
-            container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card${open ? ' open' : ''}" id="rec-charges-${ch.charge_id}">
-                    <div class="rec-card-head" onclick="toggleRecCard('charges','${ch.charge_id}')">
-                        <span class="rec-caret" data-caret="charges-${ch.charge_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${escHtml(empName)}</span>
-                        <span class="rec-sub">${ch.charge_id}</span>
-                        <span class="rec-right" style="color:#dc2626;">${formatMoney(bal)} <span class="status-badge status-${ch.status}">${ch.status}</span></span>
-                    </div>
-                    <div class="rec-card-body">${chargeDetailHtml(ch, empName, weeks, bal, endDate, editable)}</div>
-                </div>`);
-            });
-        });
-        updateRecSortUI('charges');
-        applyTranslations();
-    }
+    // Back-compat alias — charges are now shown in the combined Claims &
+    // Charges list. Every existing renderCharges() caller drives it.
+    function renderCharges() { return renderClaimsCharges(); }
 
     async function deleteCharge(id) {
         if (!canEdit()) return;
@@ -7173,15 +7159,9 @@
     // different tab entirely.
     function jumpToReleaseItem(type, id) {
         closeReleaseStatement();
-        if (type === 'claim') {
-            openHomeShortcut('tab-claims');
-            recExpanded.claims.add(id);
-            renderClaims();
-        } else {
-            openHomeShortcut('tab-charges');
-            recExpanded.charges.add(id);
-            renderCharges();
-        }
+        openHomeShortcut('tab-claims');
+        recExpanded[type === 'claim' ? 'claims' : 'charges'].add(id);
+        renderClaimsCharges();
         setTimeout(() => document.getElementById(`rec-${type === 'claim' ? 'claims' : 'charges'}-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
     }
 
@@ -7478,7 +7458,7 @@
         if (incomeTableMissing) { alert('The additional_income table is not set up yet. Run the income setup SQL first.'); return; }
         const incomeCo = requireWriteCompany();
         if (!incomeCo) return;
-        const empId = document.getElementById('ci-employee').value;
+        const empId = document.getElementById('i-employee').value;
         if (!empId) { alert('Select an employee at the top of the tab first.'); return; }
 
         if (editingIncomeId) {
@@ -7639,7 +7619,7 @@
         const inc = additionalIncome.find(x => x.income_id === id);
         if (!inc) return;
         editingIncomeId = id;
-        const empSel = document.getElementById('ci-employee');
+        const empSel = document.getElementById('i-employee');
         if (empSel) empSel.value = inc.employee_id || '';
         document.getElementById('iType').value = inc.income_type || '';
         document.getElementById('iAmount').value = (inc.amount ?? '');
@@ -9189,6 +9169,7 @@
         document.getElementById('claim-save-btn').textContent = 'Save changes';
         document.getElementById('claim-cancel-btn').style.display = '';
         document.getElementById('claim-edit-extra').style.display = '';
+        showCCForm('claim');
         const panel = document.getElementById('claim-form').closest('.panel');
         if (panel) panel.classList.remove('collapsed');
         renderClaimHistoryPanels();
@@ -9232,6 +9213,7 @@
         document.getElementById('charge-save-btn').textContent = 'Save changes';
         document.getElementById('charge-cancel-btn').style.display = '';
         document.getElementById('charge-edit-extra').style.display = '';
+        showCCForm('charge');
         const panel = document.getElementById('charge-form').closest('.panel');
         if (panel) panel.classList.remove('collapsed');
         renderChargeHistoryPanels();
@@ -9553,8 +9535,8 @@
             save_password: 'Save Password', cancel: 'Cancel',
             group_logistics: 'Logistics', group_hr: 'HR & Payroll', group_admin: 'Administration',
             tab_tracker: 'Route Tracker', tab_report: 'Daily Report', tab_vehicles: 'Fleet',
-            tab_notifications: 'Notifications', tab_employees: 'Employees', tab_claims: 'Claims',
-            tab_charges: 'Charges & Income', tab_dailypay: 'Daily Pay', tab_statement: 'Statement',
+            tab_notifications: 'Notifications', tab_employees: 'Employees', tab_claims: 'Claims & Charges',
+            tab_charges: 'Charges & Income', tab_income: 'Income', tab_dailypay: 'Daily Pay', tab_statement: 'Statement',
             tab_payroll: 'Payroll', tab_settings: 'Settings', tab_users: 'Users', tab_companies: 'Companies',
             tab_approvals: 'Approvals', tab_log: 'Log', tab_data: 'Data Sync', tab_changelog: 'Changelog',
             login_title: 'Secure Login', username_label: 'Username', username_ph: 'Enter username',
@@ -9593,7 +9575,7 @@
             th_claim_id: 'Claim ID', th_employee: 'Employee', th_emp_id: 'Emp. ID', th_claimant_acct: 'Claimant Acct',
             th_company: 'Company', th_carrier: 'Carrier #', th_customer: 'Customer #', th_damage_type: 'Damage Type',
             th_amount: 'Amount', th_weeks: 'Weeks', th_balance: 'Balance', th_absorbed: 'Absorbed', th_ends: 'Ends',
-            employee_applies_both: 'Employee <span style="color:var(--text-muted); font-weight:400;">— applies to both the charge and income forms below</span>',
+            employee_applies_both: 'Employee <span style="color:var(--text-muted); font-weight:400;">— for the new charge below</span>',
             new_charge: 'New Charge', next_charge_id: 'Next Charge ID', charge_type: 'Charge type', charge_amount: 'Charge amount',
             save_charge: '+ Save Charge', search_charges_ph: 'Search charge ID, employee, type, status...',
             new_additional_income: 'New Additional Income', next_income_id: 'Next Income ID', income_type: 'Income type',
@@ -9610,8 +9592,8 @@
             save_password: 'Guardar Contraseña', cancel: 'Cancelar',
             group_logistics: 'Logística', group_hr: 'RR. HH. y Nómina', group_admin: 'Administración',
             tab_tracker: 'Rastreador de Rutas', tab_report: 'Informe Diario', tab_vehicles: 'Flota',
-            tab_notifications: 'Notificaciones', tab_employees: 'Empleados', tab_claims: 'Reclamos',
-            tab_charges: 'Cargos e Ingresos', tab_dailypay: 'Pago Diario', tab_statement: 'Estado de Cuenta',
+            tab_notifications: 'Notificaciones', tab_employees: 'Empleados', tab_claims: 'Reclamos y Cargos',
+            tab_charges: 'Cargos e Ingresos', tab_income: 'Ingresos', tab_dailypay: 'Pago Diario', tab_statement: 'Estado de Cuenta',
             tab_payroll: 'Nómina', tab_settings: 'Configuración', tab_users: 'Usuarios', tab_companies: 'Compañías',
             tab_approvals: 'Aprobaciones', tab_log: 'Registro', tab_data: 'Sincronización de Datos', tab_changelog: 'Historial de Cambios',
             login_title: 'Iniciar Sesión', username_label: 'Usuario', username_ph: 'Ingrese su usuario',
@@ -9650,7 +9632,7 @@
             th_claim_id: 'ID de Reclamo', th_employee: 'Empleado', th_emp_id: 'ID Empleado', th_claimant_acct: 'Cuenta Reclamante',
             th_company: 'Compañía', th_carrier: 'N.º Transportista', th_customer: 'N.º Cliente', th_damage_type: 'Tipo de Daño',
             th_amount: 'Monto', th_weeks: 'Semanas', th_balance: 'Saldo', th_absorbed: 'Absorbido', th_ends: 'Finaliza',
-            employee_applies_both: 'Empleado <span style="color:var(--text-muted); font-weight:400;">— aplica tanto al formulario de cargo como al de ingreso abajo</span>',
+            employee_applies_both: 'Empleado <span style="color:var(--text-muted); font-weight:400;">— para el nuevo cargo abajo</span>',
             new_charge: 'Nuevo Cargo', next_charge_id: 'Próximo ID de Cargo', charge_type: 'Tipo de cargo', charge_amount: 'Monto del cargo',
             save_charge: '+ Guardar Cargo', search_charges_ph: 'Buscar ID de cargo, empleado, tipo, estado...',
             new_additional_income: 'Nuevo Ingreso Adicional', next_income_id: 'Próximo ID de Ingreso', income_type: 'Tipo de ingreso',
@@ -11162,9 +11144,9 @@
         grid.innerHTML =
             card('Active Employees', activeEmployees, '', "openHomeShortcut('tab-employees')") +
             card('Open Claims', openClaims.length, formatMoney(openClaimsTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
-            card('Active Charges', openCharges.length, formatMoney(openChargesTotal) + ' outstanding', "openHomeShortcut('tab-charges')") +
+            card('Active Charges', openCharges.length, formatMoney(openChargesTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
             card('Semana de Fondo', savingsInProgress + ' in progress', formatMoney(savingsSavedTotal) + ' saved so far', "openHomeShortcut('tab-weekdeposit')") +
-            card('Income This Week', formatMoney(incomeThisWeekTotal), incomeThisWeek.length + ' record(s)', "openHomeShortcut('tab-charges')") +
+            card('Income This Week', formatMoney(incomeThisWeekTotal), incomeThisWeek.length + ' record(s)', "openHomeShortcut('tab-income')") +
             card('Fleet', vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')") +
             card('Expiring Soon', expiringSoon, 'within 30 days', "openHomeShortcut('tab-expiring')") +
             card('Unread Notifications', unreadNotifs, '', "openHomeShortcut('tab-notifications')");
