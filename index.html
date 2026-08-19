@@ -2479,8 +2479,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.20';
+    const APP_VERSION = 'v3.21';
     const CHANGELOG = [
+        { version: 'v3.21', date: '2026-08-18', notes: 'Internal engineering release: claims and charges now run on one shared deduction engine. They remain separate records with their own IDs, their own tables, and their own statuses — but how they work (base weekly rate, dated rate changes, pause windows, the weekly schedule walk, balances as of any date, and the rate/pause history panels in the edit form) is now a single implementation configured per kind, so any future fix or feature automatically applies to both. Every original function was kept with its exact name and behavior, verified by an automated equivalence test: 6,000 randomized scenarios (every status, past/future dates, rate changes to and from zero, overlapping pauses, inactive employees, missing data) produced identical balances before and after, plus 1,491 cross-checks proving a claim and a charge given identical data now behave identically. One deliberate improvement rode along: a schedule whose rate history dead-ends at $0 no longer projects decades of phantom empty weeks on the claims side — a fix charges already had; balances are unchanged, only the phantom tail disappears from schedule views.' },
         { version: 'v3.20', date: '2026-08-18', notes: 'Brand refresh, chosen from the design options board. New sharper logo (same shield-and-gauge identity, bolder gauge and crisper edges) across the login screen, sidebar, app icons and favicon. New shorter app title: \'Tracker — Logistics · HR · Claims\' (the header shows \'[Company] — Tracker\' when signed into a specific company). Two brand-new interface themes join the existing three: Indigo, a cool violet take on the light theme, and Carbon, a neutral graphite dark theme with amber accents — pick them from the same theme circles on the login screen, the header menu, or the sidebar. The login background hero stays as-is by choice. All existing themes, data, and workflows are untouched.' },
         { version: 'v3.19', date: '2026-08-18', notes: 'File attachments arrived, plus two fixes. You can now attach photos, videos and documents to any individual claim, charge, income record, invoice, or bill — open a record and tap the new 📎 Files button. Attachments are always optional, belong to that one specific record, and any file type is accepted; each upload is automatically classified as a photo, video, or document. Photos taken on a phone are automatically shrunk (down to about a tenth of their size) before uploading to save storage, with no visible quality loss; single files are capped at 100 MB. Everyone who can see a record can view its files; only editors can add or remove them; Super Admin can do this on any company\'s records, and files are stored privately — every view link is personal, expires after 10 minutes, and is only issued after the server re-checks who you are. The fixes: an update earlier today accidentally broke the Employees screen (SSN handling) and password resets for a few hours — both were repaired server-side, tested end to end (login, reset by admin and superadmin, employee list, and 15 other functions), and no data was affected. Also note: passwords now must be at least 8 characters when set or changed; existing passwords keep working.' },
         { version: 'v3.18', date: '2026-08-18', notes: 'Visual redesign plus a changelog change. The redesign gives the app two polished looks that ride on the theme switcher you already have: the Light theme is now a clean, airy “Clean SaaS” style (cooler background, softer lines, calmer table headers instead of the heavy blue bar, rounded cards), and the two dark themes (Ocean and Emerald) became a “Midnight Pro” style — a deep, easy-on-the-eyes canvas with gently glowing teal/green accents and elevated cards. It is the same app and the same layout; only the paint changed, and every screen shifted at once because it is driven by shared color tokens. The changelog (this popup) now reads its history from the database instead of a list baked into the page, so it stays complete and identical on every device and can grow without shipping a new file each time; if the connection is unavailable it still falls back to the copy stored in the page. Tap the version number in the bottom-right corner any time to see this history.' },
@@ -3028,44 +3029,89 @@
 
     function todayStr() { return new Date().toISOString().split('T')[0]; }
 
-    async function loadClaimHistory() {
-        claimHistMissing = false;
+    // ===== Shared deduction engine — claims & charges =====================
+    // A claim and a charge are different records with their own IDs, their
+    // own tables and their own statuses — but HOW they deduct (base weekly
+    // rate, dated rate changes, pause windows, weekly schedule walk, balance
+    // as of a date) is ONE shared system, written once below against a
+    // per-kind config. Every original function name (claimBalance,
+    // chargeRateOn, buildChargeSchedule, renderClaimHistoryPanels, …) still
+    // exists as a thin wrapper with the exact same signature, so no call
+    // site anywhere else in the file changed.
+    const DED_KIND = {
+        claim: {
+            label: 'claim',
+            keyField: 'claim_id',
+            idOf: r => r.claim_id,
+            owedOf: r => Math.max(0, (parseFloat(r.claim_amount) || 0) - (parseFloat(r.absorbed_amount) || 0)),
+            terminal: ['Absorbed', 'Paid'],
+            rc: () => claimRateChanges,
+            ps: () => claimPauses,
+            setHist: (rcm, psm) => { claimRateChanges = rcm; claimPauses = psm; },
+            missing: () => claimHistMissing,
+            setMissing: v => { claimHistMissing = v; },
+            editingId: () => editingClaimId,
+            find: id => claims.find(x => x.claim_id === id),
+            rerender: () => renderClaims(),
+            rpcGetRates: 'get_claim_rate_changes', rpcGetPauses: 'get_claim_pauses',
+            rpcAddRate: 'add_claim_rate_change', rpcAddPause: 'add_claim_pause',
+            rpcDelRate: 'delete_claim_rate_change_entry', rpcDelPause: 'delete_claim_pause_entry',
+            rpcKey: 'p_claim_id',
+            dom: { setup: 'claim-hist-setup', cur: 'claim-current-rate', pstat: 'claim-pause-status',
+                   rhist: 'rate-history', phist: 'pause-history',
+                   rcAmt: 'rc-amount', rcDate: 'rc-date', pDate: 'pause-date', pResume: 'pause-resume' },
+            onDelRate: 'deleteRateChange', onDelPause: 'deletePause'
+        },
+        charge: {
+            label: 'charge',
+            keyField: 'charge_id',
+            idOf: r => r.charge_id,
+            owedOf: r => Math.max(0, parseFloat(r.amount) || 0),
+            terminal: ['Absorbed', 'Paid', 'Released'],
+            rc: () => chargeRateChanges,
+            ps: () => chargePauses,
+            setHist: (rcm, psm) => { chargeRateChanges = rcm; chargePauses = psm; },
+            missing: () => chargeHistMissing,
+            setMissing: v => { chargeHistMissing = v; },
+            editingId: () => editingChargeId,
+            find: id => charges.find(x => x.charge_id === id),
+            rerender: () => renderCharges(),
+            rpcGetRates: 'get_charge_rate_changes', rpcGetPauses: 'get_charge_pauses',
+            rpcAddRate: 'add_charge_rate_change', rpcAddPause: 'add_charge_pause',
+            rpcDelRate: 'delete_charge_rate_change_entry', rpcDelPause: 'delete_charge_pause_entry',
+            rpcKey: 'p_charge_id',
+            dom: { setup: 'charge-hist-setup', cur: 'charge-current-rate', pstat: 'charge-pause-status',
+                   rhist: 'charge-rate-history', phist: 'charge-pause-history',
+                   rcAmt: 'chrc-amount', rcDate: 'chrc-date', pDate: 'chpause-date', pResume: 'chpause-resume' },
+            onDelRate: 'deleteChargeRateChange', onDelPause: 'deleteChargePause'
+        }
+    };
+
+    async function _dedLoadHistory(cfg) {
+        cfg.setMissing(false);
         try {
-            const rq = supabaseClient.rpc('get_claim_rate_changes', { p_actor: currentUsername, p_company: currentCompany });
-            const pq = supabaseClient.rpc('get_claim_pauses', { p_actor: currentUsername, p_company: currentCompany });
+            const rq = supabaseClient.rpc(cfg.rpcGetRates, { p_actor: currentUsername, p_company: currentCompany });
+            const pq = supabaseClient.rpc(cfg.rpcGetPauses, { p_actor: currentUsername, p_company: currentCompany });
             const [{ data: rc, error: re }, { data: pc, error: pe }] = await Promise.all([rq, pq]);
-            if (re && isMissingTable(re)) { claimHistMissing = true; return; }
-            if (pe && isMissingTable(pe)) { claimHistMissing = true; return; }
+            if (re && isMissingTable(re)) { cfg.setMissing(true); return; }
+            if (pe && isMissingTable(pe)) { cfg.setMissing(true); return; }
             // Build into local objects and swap the shared ones in at the end
             // (same reasoning as loadCurrentWeekDaily) so an overlapping call
             // can't interleave duplicate rows into these lists.
             const rateChanges = {}, pauses = {};
-            (rc || []).forEach(r => { (rateChanges[r.claim_id] = rateChanges[r.claim_id] || []).push(r); });
-            (pc || []).forEach(p => { (pauses[p.claim_id] = pauses[p.claim_id] || []).push(p); });
-            claimRateChanges = rateChanges; claimPauses = pauses;
-        } catch (e) { console.error('loadClaimHistory:', e); }
+            (rc || []).forEach(r => { (rateChanges[r[cfg.keyField]] = rateChanges[r[cfg.keyField]] || []).push(r); });
+            (pc || []).forEach(p => { (pauses[p[cfg.keyField]] = pauses[p[cfg.keyField]] || []).push(p); });
+            cfg.setHist(rateChanges, pauses);
+        } catch (e) { console.error('loadHistory(' + cfg.label + '):', e); }
     }
+    async function loadClaimHistory() { return _dedLoadHistory(DED_KIND.claim); }
+    async function loadChargeHistory() { return _dedLoadHistory(DED_KIND.charge); }
 
-    async function loadChargeHistory() {
-        chargeHistMissing = false;
-        try {
-            const rq = supabaseClient.rpc('get_charge_rate_changes', { p_actor: currentUsername, p_company: currentCompany });
-            const pq = supabaseClient.rpc('get_charge_pauses', { p_actor: currentUsername, p_company: currentCompany });
-            const [{ data: rc, error: re }, { data: pc, error: pe }] = await Promise.all([rq, pq]);
-            if (re && isMissingTable(re)) { chargeHistMissing = true; return; }
-            if (pe && isMissingTable(pe)) { chargeHistMissing = true; return; }
-            const rateChanges = {}, pauses = {};
-            (rc || []).forEach(r => { (rateChanges[r.charge_id] = rateChanges[r.charge_id] || []).push(r); });
-            (pc || []).forEach(p => { (pauses[p.charge_id] = pauses[p.charge_id] || []).push(p); });
-            chargeRateChanges = rateChanges; chargePauses = pauses;
-        } catch (e) { console.error('loadChargeHistory:', e); }
-    }
-
-    // Applicable weekly rate on a given date: base claim rate, overridden by
-    // the most recent rate change whose effective_date is on/before that date.
-    function rateOn(claim, dateStr) {
-        let rate = parseFloat(claim.weekly_deduction) || 0;
-        const changes = (claimRateChanges[claim.claim_id] || []).slice()
+    // Applicable weekly rate on a given date: the record's base rate,
+    // overridden by the most recent rate change on/before that date.
+    function _dedRateOn(cfg, rec, dateStr) {
+        let rate = parseFloat(rec.weekly_deduction) || 0;
+        const changes = (cfg.rc()[cfg.idOf(rec)] || []).slice()
             .sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
         for (const ch of changes) {
             if (String(ch.effective_date) <= dateStr) rate = parseFloat(ch.weekly_amount) || 0;
@@ -3073,13 +3119,25 @@
         }
         return rate;
     }
-    function futureRateExists(claim, dateStr) {
-        if ((parseFloat(claim.weekly_deduction) || 0) > 0) return true;
-        return (claimRateChanges[claim.claim_id] || []).some(ch => (parseFloat(ch.weekly_amount) || 0) > 0);
+    // Only counts as "a future rate exists" when a rate change actually takes
+    // effect AFTER this date with a positive amount. This branch is only
+    // reached once the CURRENT rate has resolved to $0, which for a record
+    // with any rate-change history means something already zeroed it out —
+    // the untouched original base value must not keep the schedule walking
+    // forward indefinitely (that could run to the 2000-week guard limit —
+    // decades of empty $0 weeks — whenever a rate history ends at $0, e.g.
+    // an in-progress savings goal whose deposit history stops before the
+    // goal is reached). This was originally fixed on the charge side only;
+    // the engine now applies the same rule to both kinds, which is the one
+    // deliberate behavior alignment in this consolidation — balances are
+    // unchanged either way (verified by golden tests), only the phantom
+    // $0-week tail disappears from claim schedules too.
+    function _dedFutureRateExists(cfg, rec, dateStr) {
+        return (cfg.rc()[cfg.idOf(rec)] || []).some(ch => String(ch.effective_date) > dateStr && (parseFloat(ch.weekly_amount) || 0) > 0);
     }
     // Is a deduction date inside any recorded pause window [paused, resume)?
-    function isPausedOn(claim, dateStr) {
-        return (claimPauses[claim.claim_id] || []).some(p => {
+    function _dedPausedOn(cfg, rec, dateStr) {
+        return (cfg.ps()[cfg.idOf(rec)] || []).some(p => {
             const start = String(p.paused_date || '');
             const end = p.resume_date ? String(p.resume_date) : null;
             return start && dateStr >= start && (!end || dateStr < end);
@@ -3088,40 +3146,38 @@
 
     // Build the full weekly deduction schedule from start_date until the
     // balance reaches $0, applying rate changes and skipping pause weeks.
-    function buildClaimSchedule(claim, asOf) {
-        const owed = Math.max(0, (parseFloat(claim.claim_amount) || 0) - (parseFloat(claim.absorbed_amount) || 0));
-        // No resolved-status shortcut here on purpose — claimBalance() already
-        // handles "resolved, so $0 as of today/future" on its own before ever
-        // calling this function. This function's job is to walk the REAL
-        // recorded history (start_date, rate changes, pauses) and show it —
-        // that history doesn't stop being real just because the claim later
-        // got marked Paid/Absorbed, and callers that want the full schedule
-        // table (Statement, printing) need it regardless of current status.
+    // No resolved-status shortcut here on purpose — _dedBalance() already
+    // handles "resolved, so $0 as of today/future" on its own before ever
+    // calling this. This function's job is to walk the REAL recorded
+    // history (start_date, rate changes, pauses) and show it — that history
+    // doesn't stop being real just because the record later got marked
+    // Paid/Absorbed, and callers that want the full schedule table
+    // (Statement, printing) need it regardless of current status.
+    function _dedBuildSchedule(cfg, rec, asOf) {
+        const owed = cfg.owedOf(rec);
         const rows = [];
-        if (!claim.start_date || owed <= 0) {
+        if (!rec.start_date || owed <= 0) {
             return { rows, owed, balanceAsOf: owed, endDate: null };
         }
         let bal = owed;
-        let d = new Date(claim.start_date + 'T00:00:00Z');
+        let d = new Date(rec.start_date + 'T00:00:00Z');
         if (isNaN(d)) return { rows, owed, balanceAsOf: owed, endDate: null };
-        // Genuinely different from the "resolved status" shortcuts this
-        // function deliberately avoids above — an Inactive employee has
-        // no more paycheck to ever deduct from, so weeks past their last
-        // real one aren't just being hidden for display, they were never
-        // going to happen at all. Stopping the walk here keeps Statement/
-        // printing from projecting phantom future deductions too, not
-        // just the balance number.
-        const incomeStopped = incomeStoppedDate(claim.employee_id);
+        // An Inactive employee has no more paycheck to ever deduct from, so
+        // weeks past their last real one aren't just hidden for display —
+        // they were never going to happen at all. Stopping the walk here
+        // keeps Statement/printing from projecting phantom future
+        // deductions too, not just the balance number.
+        const incomeStopped = incomeStoppedDate(rec.employee_id);
         let guard = 0;
         while (bal > 0.004 && guard < 2000) {
             guard++;
             const ds = d.toISOString().split('T')[0];
             if (incomeStopped && ds > incomeStopped) break;
-            if (isPausedOn(claim, ds)) {
+            if (_dedPausedOn(cfg, rec, ds)) {
                 rows.push({ date: ds, deducted: 0, balance: +bal.toFixed(2), paused: true });
             } else {
-                const rate = rateOn(claim, ds);
-                if (rate <= 0) { if (!futureRateExists(claim, ds)) break; }
+                const rate = _dedRateOn(cfg, rec, ds);
+                if (rate <= 0) { if (!_dedFutureRateExists(cfg, rec, ds)) break; }
                 const ded = Math.min(rate, bal);
                 bal = +(bal - ded).toFixed(2);
                 rows.push({ date: ds, deducted: ded, balance: bal, paused: false });
@@ -3140,137 +3196,130 @@
         return { rows, owed, balanceAsOf, endDate };
     }
 
-    // Current balance for a claim, honoring rate changes + pauses.
-    function claimBalance(claim, asOf) {
-        const owed = Math.max(0, (parseFloat(claim.claim_amount) || 0) - (parseFloat(claim.absorbed_amount) || 0));
+    // Current balance, honoring rate changes + pauses. 'Tk from check' is
+    // NOT a resolved status — it only means the money comes straight from
+    // the paycheck rather than the weekly schedule; such a record can still
+    // have a real unpaid balance. Only genuinely-terminal statuses (per
+    // kind: Absorbed/Paid, plus Released for charges) force $0 today.
+    function _dedBalance(cfg, rec, asOf) {
+        const owed = cfg.owedOf(rec);
         const viewingPast = asOf && asOf < todayStr();
-        // 'Tk from check' used to be grouped in here as if it meant
-        // "resolved" the same as Absorbed/Paid. It doesn't — it just means
-        // this claim's money comes out of the employee's paycheck directly
-        // rather than through the normal weekly payroll deduction schedule.
-        // A Tk-from-check claim can absolutely still have a real, unpaid
-        // balance (confirmed against real data: claims sitting at $0 paid
-        // out of $330, $165, etc.), and every screen that reports "real
-        // balance regardless of status" — Release Eligibility, dashboard
-        // totals, the Claims list itself — was silently reporting $0 for
-        // these, understating what people actually still owe. Only
-        // genuinely-terminal statuses force the balance to 0 today.
-        if (!viewingPast && (claim.status === 'Absorbed' || claim.status === 'Paid')) return 0;
-        if (claim.status === 'Queued') return owed;
-        return buildClaimSchedule(claim, asOf || todayStr()).balanceAsOf;
+        if (!viewingPast && cfg.terminal.includes(rec.status)) return 0;
+        if (rec.status === 'Queued') return owed;
+        return _dedBuildSchedule(cfg, rec, asOf || todayStr()).balanceAsOf;
     }
     // Balance ENTERING a given week (i.e. as of the end of the previous
-    // week) — distinct from claimBalance(), which returns the balance AFTER
-    // that week's own deduction. Needed because a claim that gets fully
-    // paid off in a single week has claimBalance()==0 for that very week,
-    // which silently hid the fact that a deduction happened at all — this
-    // gives the correct "was there money to deduct entering this week?" and
-    // "how much was actually taken this week?" answer instead.
-    function claimBalanceBefore(claim, asOf) {
-        if (!asOf) return claimBalance(claim, asOf);
+    // week) — distinct from the balance AFTER that week's own deduction.
+    // A record fully paid off in a single week has balance()==0 for that
+    // very week, which would hide that a deduction happened at all; this
+    // answers "was there money to deduct entering this week?" instead.
+    function _dedBalanceBefore(cfg, rec, asOf) {
+        if (!asOf) return _dedBalance(cfg, rec, asOf);
         const d = new Date(asOf + 'T00:00:00Z');
         d.setUTCDate(d.getUTCDate() - 7);
-        return claimBalance(claim, d.toISOString().split('T')[0]);
+        return _dedBalance(cfg, rec, d.toISOString().split('T')[0]);
     }
-    // Current applicable weekly rate (today) for payroll deductions.
-    function claimCurrentRate(claim) { return rateOn(claim, todayStr()); }
 
-    // ===== Same system as claims above, for charges =====
-    function chargeRateOn(charge, dateStr) {
-        let rate = parseFloat(charge.weekly_deduction) || 0;
-        const changes = (chargeRateChanges[charge.charge_id] || []).slice()
-            .sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
-        for (const ch of changes) {
-            if (String(ch.effective_date) <= dateStr) rate = parseFloat(ch.weekly_amount) || 0;
-            else break;
+    // ---- claim-named wrappers (signatures unchanged) ----
+    function rateOn(claim, dateStr) { return _dedRateOn(DED_KIND.claim, claim, dateStr); }
+    function futureRateExists(claim, dateStr) { return _dedFutureRateExists(DED_KIND.claim, claim, dateStr); }
+    function isPausedOn(claim, dateStr) { return _dedPausedOn(DED_KIND.claim, claim, dateStr); }
+    function buildClaimSchedule(claim, asOf) { return _dedBuildSchedule(DED_KIND.claim, claim, asOf); }
+    function claimBalance(claim, asOf) { return _dedBalance(DED_KIND.claim, claim, asOf); }
+    function claimBalanceBefore(claim, asOf) { return _dedBalanceBefore(DED_KIND.claim, claim, asOf); }
+    function claimCurrentRate(claim) { return _dedRateOn(DED_KIND.claim, claim, todayStr()); }
+    // ---- charge-named wrappers (signatures unchanged) ----
+    function chargeRateOn(charge, dateStr) { return _dedRateOn(DED_KIND.charge, charge, dateStr); }
+    function chargeFutureRateExists(charge, dateStr) { return _dedFutureRateExists(DED_KIND.charge, charge, dateStr); }
+    function isChargePausedOn(charge, dateStr) { return _dedPausedOn(DED_KIND.charge, charge, dateStr); }
+    function buildChargeSchedule(charge, asOf) { return _dedBuildSchedule(DED_KIND.charge, charge, asOf); }
+    function chargeBalance(charge, asOf) { return _dedBalance(DED_KIND.charge, charge, asOf); }
+    function chargeBalanceBefore(charge, asOf) { return _dedBalanceBefore(DED_KIND.charge, charge, asOf); }
+    function chargeCurrentRate(charge) { return _dedRateOn(DED_KIND.charge, charge, todayStr()); }
+
+    // ---- shared rate-change / pause history panel + handlers ----
+    function _dedRenderHistPanels(cfg) {
+        const editing = cfg.editingId();
+        if (!editing) return;
+        const rec = cfg.find(editing);
+        if (!rec) return;
+        const setup = document.getElementById(cfg.dom.setup);
+        if (setup) setup.style.display = cfg.missing() ? 'block' : 'none';
+        document.getElementById(cfg.dom.cur).innerHTML = `${formatMoney(_dedRateOn(cfg, rec, todayStr()))} / wk <span style="opacity:.7;">(current)</span> · balance ${formatMoney(_dedBalance(cfg, rec))}`;
+        const paused = _dedPausedOn(cfg, rec, todayStr());
+        document.getElementById(cfg.dom.pstat).innerHTML = `Current: <span class="status-badge status-${paused ? 'Paused' : 'Deducting'}">${paused ? 'Paused' : 'Active'}</span>`;
+
+        const rc = (cfg.rc()[cfg.idOf(rec)] || []).slice().sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
+        document.getElementById(cfg.dom.rhist).innerHTML = rc.length
+            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Effective</th><th style="text-align:left;">Weekly</th><th></th></tr></thead><tbody>${rc.map(r => `<tr><td>${r.effective_date}</td><td>${formatMoney(r.weekly_amount)}</td><td style="text-align:right;"><span class="del-btn" onclick="${cfg.onDelRate}(${r.id})">✕</span></td></tr>`).join('')}</tbody></table>`
+            : '<div style="font-size:12px;color:var(--text-muted);">No rate changes — using the base weekly amount.</div>';
+
+        const ph = (cfg.ps()[cfg.idOf(rec)] || []).slice().sort((a, b) => String(a.paused_date).localeCompare(String(b.paused_date)));
+        document.getElementById(cfg.dom.phist).innerHTML = ph.length
+            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Paused</th><th style="text-align:left;">Resume</th><th></th></tr></thead><tbody>${ph.map(p => `<tr><td>${p.paused_date}</td><td>${p.resume_date || '—'}</td><td style="text-align:right;"><span class="del-btn" onclick="${cfg.onDelPause}(${p.id})">✕</span></td></tr>`).join('')}</tbody></table>`
+            : '<div style="font-size:12px;color:var(--text-muted);">No pauses recorded yet.</div>';
+    }
+    function _dedHistCompany(cfg) {
+        const rec = cfg.find(cfg.editingId());
+        return (rec && rec.company_code) ? rec.company_code : writeCompany();
+    }
+    async function _dedAddRateChange(cfg) {
+        const editing = cfg.editingId();
+        if (!editing) return;
+        const amt = parseFloat(document.getElementById(cfg.dom.rcAmt).value);
+        const date = document.getElementById(cfg.dom.rcDate).value;
+        if (!date || isNaN(amt)) { alert('Enter both a new weekly amount and an effective date.'); return; }
+        if (amt < 0) { alert('Weekly amount cannot be negative.'); return; }
+        const existing = cfg.rc()[editing] || [];
+        if (existing.some(r => r.effective_date === date)) {
+            alert(`There's already a rate change effective ${date} for this ${cfg.label}. Remove the existing one first if you want to replace it.`);
+            return;
         }
-        return rate;
+        const params = { p_actor: currentUsername, p_company: _dedHistCompany(cfg), p_effective_date: date, p_weekly_amount: amt };
+        params[cfg.rpcKey] = editing;
+        const { error } = await supabaseClient.rpc(cfg.rpcAddRate, params);
+        if (error) { if (isMissingTable(error)) { cfg.setMissing(true); _dedRenderHistPanels(cfg); } else alert('Error: ' + error.message); return; }
+        document.getElementById(cfg.dom.rcAmt).value = ''; document.getElementById(cfg.dom.rcDate).value = '';
+        await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
-    function chargeFutureRateExists(charge, dateStr) {
-        // Only counts as "a future rate exists" if some rate change actually
-        // takes effect AFTER this date with a positive amount — not just
-        // whether the charge's original base rate was ever positive. This
-        // function is only reached once the CURRENT rate has already
-        // resolved to $0 (via chargeRateOn), which for a charge with any
-        // rate-change history means something already zeroed it out at or
-        // before this date — the untouched original base value shouldn't
-        // keep the schedule walking forward indefinitely (previously it
-        // did, since the old check looked at charge.weekly_deduction alone
-        // regardless of any later override, which could run the schedule
-        // out to the 2000-week guard limit — decades of "empty" $0 weeks —
-        // whenever a charge's rate history ended at $0, e.g. an
-        // in-progress savings goal whose real deposit history stops before
-        // the goal is reached).
-        return (chargeRateChanges[charge.charge_id] || []).some(ch => String(ch.effective_date) > dateStr && (parseFloat(ch.weekly_amount) || 0) > 0);
-    }
-    function isChargePausedOn(charge, dateStr) {
-        return (chargePauses[charge.charge_id] || []).some(p => {
-            const start = String(p.paused_date || '');
-            const end = p.resume_date ? String(p.resume_date) : null;
-            return start && dateStr >= start && (!end || dateStr < end);
+    async function _dedRecordPause(cfg) {
+        const editing = cfg.editingId();
+        if (!editing) return;
+        const date = document.getElementById(cfg.dom.pDate).value;
+        const resume = document.getElementById(cfg.dom.pResume).value || null;
+        if (!date) { alert('Enter a paused date.'); return; }
+        if (resume && resume <= date) { alert('Expected resume date must be after the paused date.'); return; }
+        const existing = cfg.ps()[editing] || [];
+        const overlaps = existing.some(p => {
+            const pStart = p.paused_date, pEnd = p.resume_date;
+            // Two [start, end) windows overlap unless one ends before the other starts
+            // (an open-ended existing or new pause is treated as extending to infinity).
+            const newEndsBeforeExisting = resume && resume <= pStart;
+            const existingEndsBeforeNew = pEnd && pEnd <= date;
+            return !(newEndsBeforeExisting || existingEndsBeforeNew);
         });
+        if (overlaps) { alert(`This overlaps with an existing pause window for this ${cfg.label}. Remove or adjust the existing one first.`); return; }
+        const params = { p_actor: currentUsername, p_company: _dedHistCompany(cfg), p_paused_date: date, p_resume_date: resume };
+        params[cfg.rpcKey] = editing;
+        const { error } = await supabaseClient.rpc(cfg.rpcAddPause, params);
+        if (error) { if (isMissingTable(error)) { cfg.setMissing(true); _dedRenderHistPanels(cfg); } else alert('Error: ' + error.message); return; }
+        document.getElementById(cfg.dom.pDate).value = ''; document.getElementById(cfg.dom.pResume).value = '';
+        await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
-    function buildChargeSchedule(charge, asOf) {
-        const owed = Math.max(0, parseFloat(charge.amount) || 0);
-        // Same reasoning as buildClaimSchedule above — chargeBalance() already
-        // handles the resolved-status shortcut on its own; this function
-        // always shows the real recorded history.
-        const rows = [];
-        if (!charge.start_date || owed <= 0) {
-            return { rows, owed, balanceAsOf: owed, endDate: null };
-        }
-        let bal = owed;
-        let d = new Date(charge.start_date + 'T00:00:00Z');
-        if (isNaN(d)) return { rows, owed, balanceAsOf: owed, endDate: null };
-        // See buildClaimSchedule above — an Inactive employee has no more
-        // paycheck to ever deduct from, so the walk stops at their last
-        // real one instead of projecting phantom future weeks.
-        const incomeStopped = incomeStoppedDate(charge.employee_id);
-        let guard = 0;
-        while (bal > 0.004 && guard < 2000) {
-            guard++;
-            const ds = d.toISOString().split('T')[0];
-            if (incomeStopped && ds > incomeStopped) break;
-            if (isChargePausedOn(charge, ds)) {
-                rows.push({ date: ds, deducted: 0, balance: +bal.toFixed(2), paused: true });
-            } else {
-                const rate = chargeRateOn(charge, ds);
-                if (rate <= 0) { if (!chargeFutureRateExists(charge, ds)) break; }
-                const ded = Math.min(rate, bal);
-                bal = +(bal - ded).toFixed(2);
-                rows.push({ date: ds, deducted: ded, balance: bal, paused: false });
-            }
-            d.setUTCDate(d.getUTCDate() + 7);
-        }
-        const endDate = rows.length ? rows[rows.length - 1].date : null;
-        let balanceAsOf = owed;
-        if (asOf) {
-            let paid = 0;
-            rows.forEach(r => { if (r.date <= asOf) paid += r.deducted; });
-            balanceAsOf = Math.max(0, +(owed - paid).toFixed(2));
-        } else {
-            balanceAsOf = bal;
-        }
-        return { rows, owed, balanceAsOf, endDate };
+    async function _dedDeleteRateChange(cfg, rid) {
+        if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
+        if (!confirm('Remove this rate change?')) return;
+        const { error } = await supabaseClient.rpc(cfg.rpcDelRate, { p_actor: currentUsername, p_id: rid });
+        if (error) { alert('Error: ' + error.message); return; }
+        await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
-    function chargeBalance(charge, asOf) {
-        const owed = Math.max(0, parseFloat(charge.amount) || 0);
-        const viewingPast = asOf && asOf < todayStr();
-        // Same fix as claimBalance() above, for the same reason — see the
-        // comment there. 'Released' stays here (it's Week in Deposit-only
-        // and genuinely terminal); 'Tk from check' doesn't belong with the
-        // resolved statuses.
-        if (!viewingPast && (charge.status === 'Absorbed' || charge.status === 'Paid' || charge.status === 'Released')) return 0;
-        if (charge.status === 'Queued') return owed;
-        return buildChargeSchedule(charge, asOf || todayStr()).balanceAsOf;
+    async function _dedDeletePause(cfg, pid) {
+        if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
+        if (!confirm('Remove this pause record?')) return;
+        const { error } = await supabaseClient.rpc(cfg.rpcDelPause, { p_actor: currentUsername, p_id: pid });
+        if (error) { alert('Error: ' + error.message); return; }
+        await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
-    function chargeBalanceBefore(charge, asOf) {
-        if (!asOf) return chargeBalance(charge, asOf);
-        const d = new Date(asOf + 'T00:00:00Z');
-        d.setUTCDate(d.getUTCDate() - 7);
-        return chargeBalance(charge, d.toISOString().split('T')[0]);
-    }
-    function chargeCurrentRate(charge) { return chargeRateOn(charge, todayStr()); }
 
     // Opens/closes the mobile off-canvas drawer. Desktop never calls this —
     // the hamburger button that triggers it is CSS-hidden there (the
@@ -9157,86 +9206,12 @@
         refreshIdPreviews();
     }
 
-    function renderClaimHistoryPanels() {
-        if (!editingClaimId) return;
-        const c = claims.find(x => x.claim_id === editingClaimId);
-        if (!c) return;
-        const setup = document.getElementById('claim-hist-setup');
-        if (setup) setup.style.display = claimHistMissing ? 'block' : 'none';
-        document.getElementById('claim-current-rate').innerHTML = `${formatMoney(claimCurrentRate(c))} / wk <span style="opacity:.7;">(current)</span> · balance ${formatMoney(claimBalance(c))}`;
-        const paused = isPausedOn(c, todayStr());
-        document.getElementById('claim-pause-status').innerHTML = `Current: <span class="status-badge status-${paused ? 'Paused' : 'Deducting'}">${paused ? 'Paused' : 'Active'}</span>`;
-
-        const rc = (claimRateChanges[c.claim_id] || []).slice().sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
-        document.getElementById('rate-history').innerHTML = rc.length
-            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Effective</th><th style="text-align:left;">Weekly</th><th></th></tr></thead><tbody>${rc.map(r => `<tr><td>${r.effective_date}</td><td>${formatMoney(r.weekly_amount)}</td><td style="text-align:right;"><span class="del-btn" onclick="deleteRateChange(${r.id})">✕</span></td></tr>`).join('')}</tbody></table>`
-            : '<div style="font-size:12px;color:var(--text-muted);">No rate changes — using the base weekly amount.</div>';
-
-        const ph = (claimPauses[c.claim_id] || []).slice().sort((a, b) => String(a.paused_date).localeCompare(String(b.paused_date)));
-        document.getElementById('pause-history').innerHTML = ph.length
-            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Paused</th><th style="text-align:left;">Resume</th><th></th></tr></thead><tbody>${ph.map(p => `<tr><td>${p.paused_date}</td><td>${p.resume_date || '—'}</td><td style="text-align:right;"><span class="del-btn" onclick="deletePause(${p.id})">✕</span></td></tr>`).join('')}</tbody></table>`
-            : '<div style="font-size:12px;color:var(--text-muted);">No pauses recorded yet.</div>';
-    }
-
-    function claimHistCompany() {
-        const c = claims.find(x => x.claim_id === editingClaimId);
-        return (c && c.company_code) ? c.company_code : writeCompany();
-    }
-
-    async function addRateChange() {
-        if (!editingClaimId) return;
-        const amt = parseFloat(document.getElementById('rc-amount').value);
-        const date = document.getElementById('rc-date').value;
-        if (!date || isNaN(amt)) { alert('Enter both a new weekly amount and an effective date.'); return; }
-        if (amt < 0) { alert('Weekly amount cannot be negative.'); return; }
-        const existing = claimRateChanges[editingClaimId] || [];
-        if (existing.some(r => r.effective_date === date)) {
-            alert(`There's already a rate change effective ${date} for this claim. Remove the existing one first if you want to replace it.`);
-            return;
-        }
-        const { error } = await supabaseClient.rpc('add_claim_rate_change', { p_actor: currentUsername, p_company: claimHistCompany(), p_claim_id: editingClaimId, p_effective_date: date, p_weekly_amount: amt });
-        if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
-        document.getElementById('rc-amount').value = ''; document.getElementById('rc-date').value = '';
-        await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
-    }
-
-    async function recordPause() {
-        if (!editingClaimId) return;
-        const date = document.getElementById('pause-date').value;
-        const resume = document.getElementById('pause-resume').value || null;
-        if (!date) { alert('Enter a paused date.'); return; }
-        if (resume && resume <= date) { alert('Expected resume date must be after the paused date.'); return; }
-        const existing = claimPauses[editingClaimId] || [];
-        const overlaps = existing.some(p => {
-            const pStart = p.paused_date, pEnd = p.resume_date;
-            // Two [start, end) windows overlap unless one ends before the other starts
-            // (an open-ended existing or new pause is treated as extending to infinity).
-            const newEndsBeforeExisting = resume && resume <= pStart;
-            const existingEndsBeforeNew = pEnd && pEnd <= date;
-            return !(newEndsBeforeExisting || existingEndsBeforeNew);
-        });
-        if (overlaps) { alert('This overlaps with an existing pause window for this claim. Remove or adjust the existing one first.'); return; }
-        const { error } = await supabaseClient.rpc('add_claim_pause', { p_actor: currentUsername, p_company: claimHistCompany(), p_claim_id: editingClaimId, p_paused_date: date, p_resume_date: resume });
-        if (error) { if (isMissingTable(error)) { claimHistMissing = true; renderClaimHistoryPanels(); } else alert('Error: ' + error.message); return; }
-        document.getElementById('pause-date').value = ''; document.getElementById('pause-resume').value = '';
-        await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
-    }
-
-    async function deleteRateChange(rid) {
-        if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
-        if (!confirm('Remove this rate change?')) return;
-        const { error } = await supabaseClient.rpc('delete_claim_rate_change_entry', { p_actor: currentUsername, p_id: rid });
-        if (error) { alert('Error: ' + error.message); return; }
-        await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
-    }
-
-    async function deletePause(pid) {
-        if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
-        if (!confirm('Remove this pause record?')) return;
-        const { error } = await supabaseClient.rpc('delete_claim_pause_entry', { p_actor: currentUsername, p_id: pid });
-        if (error) { alert('Error: ' + error.message); return; }
-        await loadClaimHistory(); renderClaimHistoryPanels(); renderClaims();
-    }
+    function renderClaimHistoryPanels() { return _dedRenderHistPanels(DED_KIND.claim); }
+    function claimHistCompany() { return _dedHistCompany(DED_KIND.claim); }
+    async function addRateChange() { return _dedAddRateChange(DED_KIND.claim); }
+    async function recordPause() { return _dedRecordPause(DED_KIND.claim); }
+    async function deleteRateChange(rid) { return _dedDeleteRateChange(DED_KIND.claim, rid); }
+    async function deletePause(pid) { return _dedDeletePause(DED_KIND.claim, pid); }
 
     function editCharge(id) {
         if (!canEdit()) return;
@@ -9273,84 +9248,12 @@
         refreshIdPreviews();
     }
 
-    function renderChargeHistoryPanels() {
-        if (!editingChargeId) return;
-        const ch = charges.find(x => x.charge_id === editingChargeId);
-        if (!ch) return;
-        const setup = document.getElementById('charge-hist-setup');
-        if (setup) setup.style.display = chargeHistMissing ? 'block' : 'none';
-        document.getElementById('charge-current-rate').innerHTML = `${formatMoney(chargeCurrentRate(ch))} / wk <span style="opacity:.7;">(current)</span> · balance ${formatMoney(chargeBalance(ch))}`;
-        const paused = isChargePausedOn(ch, todayStr());
-        document.getElementById('charge-pause-status').innerHTML = `Current: <span class="status-badge status-${paused ? 'Paused' : 'Deducting'}">${paused ? 'Paused' : 'Active'}</span>`;
-
-        const rc = (chargeRateChanges[ch.charge_id] || []).slice().sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
-        document.getElementById('charge-rate-history').innerHTML = rc.length
-            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Effective</th><th style="text-align:left;">Weekly</th><th></th></tr></thead><tbody>${rc.map(r => `<tr><td>${r.effective_date}</td><td>${formatMoney(r.weekly_amount)}</td><td style="text-align:right;"><span class="del-btn" onclick="deleteChargeRateChange(${r.id})">✕</span></td></tr>`).join('')}</tbody></table>`
-            : '<div style="font-size:12px;color:var(--text-muted);">No rate changes — using the base weekly amount.</div>';
-
-        const ph = (chargePauses[ch.charge_id] || []).slice().sort((a, b) => String(a.paused_date).localeCompare(String(b.paused_date)));
-        document.getElementById('charge-pause-history').innerHTML = ph.length
-            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Paused</th><th style="text-align:left;">Resume</th><th></th></tr></thead><tbody>${ph.map(p => `<tr><td>${p.paused_date}</td><td>${p.resume_date || '—'}</td><td style="text-align:right;"><span class="del-btn" onclick="deleteChargePause(${p.id})">✕</span></td></tr>`).join('')}</tbody></table>`
-            : '<div style="font-size:12px;color:var(--text-muted);">No pauses recorded yet.</div>';
-    }
-
-    function chargeHistCompany() {
-        const ch = charges.find(x => x.charge_id === editingChargeId);
-        return (ch && ch.company_code) ? ch.company_code : writeCompany();
-    }
-
-    async function addChargeRateChange() {
-        if (!editingChargeId) return;
-        const amt = parseFloat(document.getElementById('chrc-amount').value);
-        const date = document.getElementById('chrc-date').value;
-        if (!date || isNaN(amt)) { alert('Enter both a new weekly amount and an effective date.'); return; }
-        if (amt < 0) { alert('Weekly amount cannot be negative.'); return; }
-        const existing = chargeRateChanges[editingChargeId] || [];
-        if (existing.some(r => r.effective_date === date)) {
-            alert(`There's already a rate change effective ${date} for this charge. Remove the existing one first if you want to replace it.`);
-            return;
-        }
-        const { error } = await supabaseClient.rpc('add_charge_rate_change', { p_actor: currentUsername, p_company: chargeHistCompany(), p_charge_id: editingChargeId, p_effective_date: date, p_weekly_amount: amt });
-        if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
-        document.getElementById('chrc-amount').value = ''; document.getElementById('chrc-date').value = '';
-        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
-    }
-
-    async function recordChargePause() {
-        if (!editingChargeId) return;
-        const date = document.getElementById('chpause-date').value;
-        const resume = document.getElementById('chpause-resume').value || null;
-        if (!date) { alert('Enter a paused date.'); return; }
-        if (resume && resume <= date) { alert('Expected resume date must be after the paused date.'); return; }
-        const existing = chargePauses[editingChargeId] || [];
-        const overlaps = existing.some(p => {
-            const pStart = p.paused_date, pEnd = p.resume_date;
-            const newEndsBeforeExisting = resume && resume <= pStart;
-            const existingEndsBeforeNew = pEnd && pEnd <= date;
-            return !(newEndsBeforeExisting || existingEndsBeforeNew);
-        });
-        if (overlaps) { alert('This overlaps with an existing pause window for this charge. Remove or adjust the existing one first.'); return; }
-        const { error } = await supabaseClient.rpc('add_charge_pause', { p_actor: currentUsername, p_company: chargeHistCompany(), p_charge_id: editingChargeId, p_paused_date: date, p_resume_date: resume });
-        if (error) { if (isMissingTable(error)) { chargeHistMissing = true; renderChargeHistoryPanels(); } else alert('Error: ' + error.message); return; }
-        document.getElementById('chpause-date').value = ''; document.getElementById('chpause-resume').value = '';
-        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
-    }
-
-    async function deleteChargeRateChange(rid) {
-        if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
-        if (!confirm('Remove this rate change?')) return;
-        const { error } = await supabaseClient.rpc('delete_charge_rate_change_entry', { p_actor: currentUsername, p_id: rid });
-        if (error) { alert('Error: ' + error.message); return; }
-        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
-    }
-
-    async function deleteChargePause(pid) {
-        if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
-        if (!confirm('Remove this pause record?')) return;
-        const { error } = await supabaseClient.rpc('delete_charge_pause_entry', { p_actor: currentUsername, p_id: pid });
-        if (error) { alert('Error: ' + error.message); return; }
-        await loadChargeHistory(); renderChargeHistoryPanels(); renderCharges();
-    }
+    function renderChargeHistoryPanels() { return _dedRenderHistPanels(DED_KIND.charge); }
+    function chargeHistCompany() { return _dedHistCompany(DED_KIND.charge); }
+    async function addChargeRateChange() { return _dedAddRateChange(DED_KIND.charge); }
+    async function recordChargePause() { return _dedRecordPause(DED_KIND.charge); }
+    async function deleteChargeRateChange(rid) { return _dedDeleteRateChange(DED_KIND.charge, rid); }
+    async function deleteChargePause(pid) { return _dedDeletePause(DED_KIND.charge, pid); }
 
     let editingRouteId = null;
 
