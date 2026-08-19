@@ -326,7 +326,7 @@
            margin-top:auto (which only pins the LAST child and still lets
            everything above it — including Notifications/Messages — drift
            up and down as content above them grows or shrinks). */
-        #sidebar-scroll-area { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+        #sidebar-scroll-area { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; min-height: 0; }
         /* Default browser scrollbar looks fine on mobile (thin, overlay,
            auto-hiding) but shows up as a chunky, mismatched light-grey bar
            on desktop Chrome/Edge/Firefox against this dark sidebar — a
@@ -344,10 +344,14 @@
         #app-sidebar .tab-groups { flex-direction: column; overflow: visible; background: none; border-radius: 0; padding: 0; gap: 1px; }
         #app-sidebar .group-btn { width: 100%; text-align: left; border-radius: 8px; border-bottom: none; padding: 6px 12px; color: #8b98a5; }
         #app-sidebar .group-btn.active { background: rgba(255,255,255,0.06); color: #fff; }
-        #app-sidebar .tabs.sub-tabs { flex-direction: column; padding: 1px 4px 4px 18px; margin-bottom: 0; background: none; box-shadow: none; border-radius: 0; }
+        #app-sidebar .tabs.sub-tabs { flex-direction: column; overflow-x: hidden; padding: 1px 4px 4px 18px; margin-bottom: 0; background: none; box-shadow: none; border-radius: 0; }
         #app-sidebar #grp-notifications, #app-sidebar #grp-messages { padding-left: 4px; }
         #app-sidebar .tabs.sub-tabs.open { display: flex; }
-        #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; }
+        #app-sidebar .tab-btn { width: 100%; text-align: left; border-bottom: none; border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; color: #7d8b9a; margin-bottom: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+        /* Long sidebar labels (e.g. "Savings & Release Eligibility") wrap to a
+           second line instead of overflowing and forcing a horizontal scrollbar;
+           the ::before icon stays on the first line. */
+        #app-sidebar .group-btn { white-space: normal; overflow-wrap: anywhere; }
         #app-sidebar .group-btn:hover { color: #fff !important; background: rgba(255,255,255,0.06) !important; }
         #app-sidebar .tab-btn:hover { color: #fff !important; background: rgba(255,255,255,0.06) !important; }
         #app-sidebar .tab-btn.active { background: var(--primary); color: #06251c; }
@@ -2233,8 +2237,22 @@
     <div class="panel">
         <div class="stat-grid" id="bill-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="bill-search" placeholder="Search vendor, bill #..." oninput="renderBills()"></div>
+            <div class="field field-wide"><input type="text" id="bill-search" placeholder="Search vendor, bill #, notes..." oninput="renderBills()"></div>
+            <div class="field"><select id="bill-status-filter" onchange="renderBills()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
+            <div class="field"><select id="bill-vendor-filter" onchange="renderBills()"><option value="">All vendors</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('bills')">✕ Clear filters</button>
+        </div>
+        <div class="rec-toolbar">
+            <label data-i18n="sort_by">Sort by</label>
+            <select id="sort-select-bills" onchange="setSortField('bills', this.value)">
+                <option value="due">Due date</option>
+                <option value="date">Bill date</option>
+                <option value="vendor">Vendor</option>
+                <option value="number">Bill #</option>
+                <option value="amount">Amount</option>
+                <option value="status">Status</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-bills" onclick="flipSortDir('bills')">▲</button>
         </div>
         <div id="bills-tbody" class="record-grid"></div>
     </div>
@@ -2473,7 +2491,7 @@
         income: new Set(_COLLAPSE_DEFAULT_STATUSES),
         weekdeposit: new Set(_COLLAPSE_DEFAULT_STATUSES),
         statement: new Set(_COLLAPSE_DEFAULT_STATUSES),
-        invoices: new Set()
+        invoices: new Set(), bills: new Set()
     };
     function toggleStatusGroup(tab, status) {
         const set = collapsedStatusGroups[tab];
@@ -2484,6 +2502,7 @@
         else if (tab === 'weekdeposit') renderWeekDeposit();
         else if (tab === 'statement') renderStatement();
         else if (tab === 'invoices') renderInvoices();
+        else if (tab === 'bills') renderBills();
     }
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
 
@@ -2492,8 +2511,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.25';
+    const APP_VERSION = 'v3.26';
     const CHANGELOG = [
+        { version: 'v3.26', date: '2026-08-19', notes: 'Two fixes. The desktop side menu no longer shows a left-right scrollbar — long menu names like "Savings & Release Eligibility" now wrap onto a second line so everything fits the panel width, on any screen size. And Bills Payable now groups its bills into Unpaid and Paid sections (Unpaid first, each header showing its count and dollar total), matching the Invoices screen, and gained the same controls: search, a Status filter, a Vendor filter, a Clear-filters button, and a Sort-by menu (due date, bill date, vendor, bill #, amount, or status) with an ascending/descending toggle.' },
         { version: 'v3.25', date: '2026-08-19', notes: 'Two organizing changes. First, several list screens now open with their sections collapsed, so you see the headings first and expand only what you need: on Claims & Charges, Income, Week in Deposit and the Statement, every status group (Deducting, Queued, Paid, and so on) starts collapsed — tap a heading to open it — and the Settings screen\'s panels (ID Configuration, Type of Damage, Charge Type, Additional Income Type) start collapsed too. Nothing is hidden permanently; the sections are all one tap away. Second, the Invoices screen now groups every invoice into Unpaid and Paid sections (Unpaid first, each showing its count and dollar total), and gained the same full controls the other lists have: search, a Status filter, a Customer filter, a Clear-filters button, and a Sort-by menu (invoice date, invoice #, customer, due date, amount, or status) with an ascending/descending toggle.' },
         { version: 'v3.24', date: '2026-08-19', notes: 'Messaging now organizes each conversation by topic, and the menu icons are consistent. When you start a chat with someone you first pick a topic — General, Missing Day, Claims, Charges, or Income — and each topic becomes its own separate, independent thread with that person: your Claims conversation with Sixto stays completely separate from your Missing Day conversation with Sixto, each with its own unread count and history. The Messages list now shows one row per topic conversation, with topic filter chips (All / General / Missing Day / Claims / Charges / Income) across the top and a “+” button to start a new one (pick the person, pick the topic). Everything else about messaging is unchanged — same company scoping, same rule that a View Only user can message managers but not another View Only user, same read receipts and unread badge. Separately, the three menu icons added last time (Income, Savings & Release Eligibility, Release History) plus Home were switched from colored emoji to the same clean single-color line icons the rest of the menu already uses, so the whole sidebar now matches.' },
         { version: 'v3.23', date: '2026-08-19', notes: 'New built-from-scratch messaging system, plus a few tab icons. Messages is now a direct, person-to-person chat between the people who log in (user accounts), not the old per-employee note threads. Open Messages to see everyone you\'re allowed to talk to on the left, with unread counts and a badge on the Messages menu item; click a person to open the conversation and type at the bottom. Who can message whom is enforced on the server, not just hidden in the screen: everyone is limited to people in their own company (Super Admin can reach anyone, in any company, and anyone can reach a Super Admin), and — as requested — a View Only user can message managers and Super Admin but cannot message another View Only user. Read receipts (a “Read” tag once the other person opens it), unread badges, and delete-your-own-message are all included; it stays up to date every few seconds while the tab is open. Also added quick icons to three menu items so they\'re easier to spot: 💵 Income, 🏦 Savings & Release Eligibility, and 📜 Release History. The previous employee-note message threads are retired from the interface (their history is left untouched in the database).' },
@@ -2819,7 +2839,7 @@
         payroll: { key: 'employee', dir: 1 }, companies: { key: 'name', dir: 1 },
         users: { key: 'username', dir: 1 }, approvals: { key: 'requested', dir: 1 },
         log: { key: 'changed', dir: -1 }, vehicles: { key: 'truck', dir: 1 },
-        invoices: { key: 'date', dir: -1 }
+        invoices: { key: 'date', dir: -1 }, bills: { key: 'due', dir: 1 }
     };
 
     function applySort(list, table, getters) {
@@ -2914,6 +2934,7 @@
         else if (table === 'approvals') renderApprovals();
         else if (table === 'log') renderLog();
         else if (table === 'invoices') renderInvoices();
+        else if (table === 'bills') renderBills();
     }
     function setSortField(table, key) {
         sortState[table].key = key; sortState[table].dir = 1;
@@ -4675,7 +4696,7 @@
                 renderInvoices();
                 break;
             case 'bills':
-                setVal('bill-search', '');
+                setVal('bill-search', ''); setVal('bill-status-filter', ''); setVal('bill-vendor-filter', '');
                 renderBills();
                 break;
         }
@@ -10868,36 +10889,81 @@
                 <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value">${overdue.length}</div></div>
                 <div class="stat-card"><div class="stat-label">Total Bills</div><div class="stat-value">${bills.length}</div></div>`;
         }
+        // Vendor filter options (distinct vendors), preserving selection.
+        const venSel = document.getElementById('bill-vendor-filter');
+        if (venSel) {
+            const prev = venSel.value;
+            const vendors = Array.from(new Set(bills.map(b => b.vendor_name).filter(Boolean)))
+                .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            venSel.innerHTML = '<option value="">All vendors</option>' + vendors.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+            venSel.value = prev || '';
+        }
+
         const query = (document.getElementById('bill-search')?.value || '').toLowerCase();
-        let list = bills.filter(b => !query || `${b.bill_number || ''} ${b.vendor_name}`.toLowerCase().includes(query));
+        const statusF = document.getElementById('bill-status-filter')?.value || '';
+        const vendorF = document.getElementById('bill-vendor-filter')?.value || '';
+
+        let list = bills.filter(b => {
+            const matchQ = !query || `${b.bill_number || ''} ${b.vendor_name || ''} ${b.notes || ''}`.toLowerCase().includes(query);
+            const matchS = !statusF || b.status === statusF;
+            const matchV = !vendorF || b.vendor_name === vendorF;
+            return matchQ && matchS && matchV;
+        });
+
+        list = applySort(list, 'bills', {
+            number: b => b.bill_number || '',
+            vendor: b => b.vendor_name || '',
+            date: b => b.bill_date || '',
+            due: b => b.due_date || '',
+            amount: b => parseFloat(b.amount) || 0,
+            status: b => b.status || ''
+        });
+        updateRecSortUI('bills');
+
         const container = document.getElementById('bills-tbody');
         if (!container) return;
-        if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No bills yet.</div>'; return; }
         container.className = 'record-grid';
+        if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No bills found.</div>'; return; }
         container.innerHTML = '';
-        list.forEach(b => {
-            const open = recExpanded.bills.has(b.bill_id);
-            const editable = canEdit();
-            container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card${open ? ' open' : ''}" id="rec-bills-${b.bill_id}">
-                    <div class="rec-card-head" onclick="toggleRecCard('bills','${b.bill_id}')">
-                        <span class="rec-caret" data-caret="bills-${b.bill_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${escHtml(b.vendor_name)}</span>
-                        <span class="rec-sub">${b.bill_number ? '#' + escHtml(b.bill_number) : ''} ${b.due_date ? '· due ' + b.due_date : ''}</span>
-                        <span class="rec-right"><span class="status-badge status-${b.status}">${b.status}</span> ${formatMoney(b.amount)}</span>
-                    </div>
-                    <div class="rec-card-body">
-                        <div class="rec-detail-grid">
-                            <div><div class="k">Bill Date</div><div class="v">${b.bill_date || '-'}</div></div>
-                            <div><div class="k">Notes</div><div class="v">${b.notes ? escHtml(b.notes) : '-'}</div></div>
+        const editable = canEdit();
+
+        // Group into Unpaid first, then Paid (then any other status).
+        const order = ['Unpaid', 'Paid'];
+        const groups = {};
+        list.forEach(b => { const s = b.status || '(no status)'; (groups[s] = groups[s] || []).push(b); });
+        const statuses = Object.keys(groups).sort((a, b) => {
+            const ia = order.indexOf(a), ib = order.indexOf(b);
+            return ((ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)) || a.localeCompare(b);
+        });
+        statuses.forEach(status => {
+            const items = groups[status];
+            const collapsed = collapsedStatusGroups.bills.has(status);
+            const groupTotal = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('bills','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
+            if (collapsed) return;
+            items.forEach(b => {
+                const open = recExpanded.bills.has(b.bill_id);
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="rec-card${open ? ' open' : ''}" id="rec-bills-${b.bill_id}">
+                        <div class="rec-card-head" onclick="toggleRecCard('bills','${b.bill_id}')">
+                            <span class="rec-caret" data-caret="bills-${b.bill_id}">${open ? '▾' : '▸'}</span>
+                            <span class="rec-title">${escHtml(b.vendor_name)}</span>
+                            <span class="rec-sub">${b.bill_number ? '#' + escHtml(b.bill_number) : ''} ${b.due_date ? '· due ' + b.due_date : ''}</span>
+                            <span class="rec-right"><span class="status-badge status-${b.status}">${b.status}</span> ${formatMoney(b.amount)}</span>
                         </div>
-                        <div class="rec-actions" style="margin-top:10px;">
-                            ${attachBtnHtml('bill', b.bill_id)}
-                            ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editBill('${escJsAttr(b.bill_id)}')">Edit</button>
-                            <button class="del-btn" onclick="deleteBill('${escJsAttr(b.bill_id)}')">✕ Delete</button>` : ''}
+                        <div class="rec-card-body">
+                            <div class="rec-detail-grid">
+                                <div><div class="k">Bill Date</div><div class="v">${b.bill_date || '-'}</div></div>
+                                <div><div class="k">Notes</div><div class="v">${b.notes ? escHtml(b.notes) : '-'}</div></div>
+                            </div>
+                            <div class="rec-actions" style="margin-top:10px;">
+                                ${attachBtnHtml('bill', b.bill_id)}
+                                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editBill('${escJsAttr(b.bill_id)}')">Edit</button>
+                                <button class="del-btn" onclick="deleteBill('${escJsAttr(b.bill_id)}')">✕ Delete</button>` : ''}
+                            </div>
                         </div>
-                    </div>
-                </div>`);
+                    </div>`);
+            });
         });
     }
 
