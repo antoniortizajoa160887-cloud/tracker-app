@@ -2512,8 +2512,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.28';
+    const APP_VERSION = 'v3.29';
     const CHANGELOG = [
+        { version: 'v3.29', date: '2026-08-19', notes: 'Messages are now organized down to the specific item. When you start a conversation you pick a person, then a topic — and for Claims, Charges or Income you then pick the exact record it is about (only that person\'s records are listed), while Missing Day opens a calendar to pick the date. Each item becomes its own independent thread: your conversation about one claim stays completely separate from another claim, from a Missing Day, and from General chat — each with its own history and unread count. The conversation list shows the item next to each thread (for example the claim number and damage type, or the date), and the topic filter chips still narrow the list.' },
         { version: 'v3.28', date: '2026-08-19', notes: 'Provider Pay is now linked to Bills Payable. Under each provider on the Provider Pay screen, any unpaid bill whose vendor name matches that provider now appears with a checkbox and its amount. Tick one or more bills and press "Pay selected" to mark them Paid in a single step and add their combined total to that provider\'s pay for the week (the bill numbers are noted automatically). This lets you settle several of a provider\'s bills at once and keeps Bills Payable and Provider Pay in sync — a paid bill immediately drops off the provider\'s list.' },
         { version: 'v3.27', date: '2026-08-19', notes: 'Invoices and Bills can now be marked Void. A voided invoice or bill stays on record — it moves into a new Void group at the bottom of the list — but no longer counts toward any outstanding/unpaid total, and (for invoices) it drops out of the “Invoiced This Month” amount: a voided document is treated as zero value while the original record is preserved for history. Void is available in the Status dropdown on the New/Edit form, as a Status filter, and as its own collapsible group (shown after Unpaid and Paid).' },
         { version: 'v3.26', date: '2026-08-19', notes: 'Two fixes. The desktop side menu no longer shows a left-right scrollbar — long menu names like "Savings & Release Eligibility" now wrap onto a second line so everything fits the panel width, on any screen size. And Bills Payable now groups its bills into Unpaid and Paid sections (Unpaid first, each header showing its count and dollar total), matching the Invoices screen, and gained the same controls: search, a Status filter, a Vendor filter, a Clear-filters button, and a Sort-by menu (due date, bill date, vendor, bill #, amount, or status) with an ascending/descending toggle.' },
@@ -8702,14 +8703,14 @@
         attemptPrint();
     }
 
-    // ===== MESSAGES — direct (user-to-user) messaging, by topic ===========
-    // A 1:1 chat between app_user accounts, split into independent threads by
-    // topic (General / Missing Day / Claims / Charges / Income): the same two
-    // people can have a separate conversation per topic. Permissions are
-    // enforced entirely in the dm_* RPCs — everyone is scoped to their own
-    // company (Super Admin spans all), and a View Only user can message
-    // managers/Super Admin but NOT another View Only user. "Live" via polling
-    // for the same reason as the rest of the app (shared anon connection).
+    // ===== MESSAGES — direct messaging, per-item threads ==================
+    // A 1:1 chat between app_user accounts. Conversations are split by topic
+    // AND by the specific item they're about: General (no item), a specific
+    // Claim / Charge / Income record, or a Missing-Day date. Each (person +
+    // topic + item) is its own independent thread. Server enforces who may
+    // message whom (dm_* RPCs): company-scoped, Super Admin spans all, and a
+    // View Only user can message managers/Super Admin but not another View
+    // Only user. "Live" via polling.
     const DM_TOPICS = ['General', 'Missing Day', 'Claims', 'Charges', 'Income'];
     const DM_TOPIC_PILL = {
         'General': 'background:#eef2f1;color:#0b1f1c;',
@@ -8718,12 +8719,11 @@
         'Charges': 'background:#fee2e2;color:#991b1b;',
         'Income': 'background:#dcfce7;color:#166534;'
     };
-    let dmThreads = [];           // existing (person, topic) conversation threads
+    let dmThreads = [];           // existing (person, topic, ref) threads
     let dmContacts = [];          // people the user may message (for the "+ New" picker)
-    let dmActiveUser = null;      // open conversation: other username...
-    let dmActiveTopic = null;     // ...and topic
-    let dmThreadMsgs = [];        // messages in the open thread
-    let dmTopicFilter = '';       // left-pane topic pill filter ('' = all)
+    let dmActiveUser = null, dmActiveTopic = null, dmActiveRef = null;  // open thread
+    let dmThreadMsgs = [];
+    let dmTopicFilter = '';
     let dmThreadsSnap = '';
     let dmMsgsSnap = '';
     let dmRenderedKey = null;
@@ -8733,6 +8733,33 @@
     function dmContactLabel(c) { return (c.employee_name && c.employee_name.trim()) ? c.employee_name : c.username; }
     function dmRoleLabel(role) { return role === 'User' ? 'View Only' : role; }
     function dmTopicBadge(topic) { return `<span class="type-pill" style="${DM_TOPIC_PILL[topic] || ''} font-size:9px; padding:1px 6px;">${escHtml(topic)}</span>`; }
+    function dmThreadKey(user, topic, ref) { return `${user}|${topic}|${ref || ''}`; }
+
+    // The employee whose records a conversation is about: the other party if
+    // they're an employee, otherwise me (so a View Only user discussing their
+    // own records with a manager still sees the right records).
+    function dmConversationEmpId(otherUsername) {
+        const c = dmContacts.find(x => x.username === otherUsername);
+        if (c && c.employee_id) return c.employee_id;
+        return (currentUser && currentUser.employee_id) || null;
+    }
+    // Records of a given topic for one employee, as {id, label}.
+    function dmRecordsFor(topic, empId) {
+        if (!empId) return [];
+        if (topic === 'Claims') return (claims || []).filter(c => c.employee_id === empId).map(c => ({ id: c.claim_id, label: `${c.claim_id}${c.damage_type ? ' · ' + c.damage_type : ''}` }));
+        if (topic === 'Charges') return (charges || []).filter(c => c.employee_id === empId).map(c => ({ id: c.charge_id, label: `${c.charge_id}${c.charge_type ? ' · ' + c.charge_type : ''}` }));
+        if (topic === 'Income') return (additionalIncome || []).filter(i => i.employee_id === empId).map(i => ({ id: i.income_id, label: `${i.income_id}${i.income_type ? ' · ' + i.income_type : ''}` }));
+        return [];
+    }
+    // Short label for the item a thread is about (topic badge shows the topic).
+    function dmRefLabel(topic, ref) {
+        if (!ref) return '';
+        if (topic === 'Missing Day') return ref;
+        if (topic === 'Claims') { const c = (claims || []).find(x => x.claim_id === ref); return c && c.damage_type ? `${ref} · ${c.damage_type}` : ref; }
+        if (topic === 'Charges') { const c = (charges || []).find(x => x.charge_id === ref); return c && c.charge_type ? `${ref} · ${c.charge_type}` : ref; }
+        if (topic === 'Income') { const i = (additionalIncome || []).find(x => x.income_id === ref); return i && i.income_type ? `${ref} · ${i.income_type}` : ref; }
+        return ref;
+    }
 
     function fmtMsgTime(iso) {
         const d = new Date(iso), now = new Date();
@@ -8741,7 +8768,6 @@
             : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 
-    // Nav "Messages" unread badge — total unread across every topic thread.
     function refreshDmBadge() {
         const badge = document.getElementById('msg-badge');
         if (!badge) return;
@@ -8756,7 +8782,7 @@
         if (error) { console.error('dm_threads:', error); return false; }
         dmThreads = data || [];
         refreshDmBadge();
-        const snap = dmThreads.map(t => `${t.other_username}|${t.topic}:${t.unread}:${t.last_at || ''}`).join('~');
+        const snap = dmThreads.map(t => `${t.other_username}|${t.topic}|${t.ref_id || ''}:${t.unread}:${t.last_at || ''}`).join('~');
         const changed = snap !== dmThreadsSnap;
         dmThreadsSnap = snap;
         return changed;
@@ -8778,37 +8804,36 @@
     function renderDmThreads() {
         const container = document.getElementById('dm-thread-list');
         if (!container) return;
-        // Don't wipe the "+ New" picker out from under someone mid-use.
-        if (document.getElementById('dm-new-picker')) return;
+        if (document.getElementById('dm-new-picker')) return; // don't wipe the picker mid-use
         const q = (document.getElementById('dm-search')?.value || '').toLowerCase();
         let list = dmThreads.slice();
         if (dmTopicFilter) list = list.filter(t => t.topic === dmTopicFilter);
-        if (q) list = list.filter(t => `${dmThreadLabel(t)} ${t.other_username} ${t.topic}`.toLowerCase().includes(q));
+        if (q) list = list.filter(t => `${dmThreadLabel(t)} ${t.other_username} ${t.topic} ${dmRefLabel(t.topic, t.ref_id)}`.toLowerCase().includes(q));
         if (!list.length) {
             container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No conversations yet. Tap + to start one.</div>';
             return;
         }
         container.innerHTML = list.map(t => {
-            const active = t.other_username === dmActiveUser && t.topic === dmActiveTopic;
+            const active = t.other_username === dmActiveUser && t.topic === dmActiveTopic && (t.ref_id || null) === (dmActiveRef || null);
             const unread = parseInt(t.unread, 10) || 0;
-            const snippet = t.last_body
-                ? escHtml(t.last_body.length > 40 ? t.last_body.slice(0, 40) + '…' : t.last_body)
-                : '';
+            const refLabel = dmRefLabel(t.topic, t.ref_id);
+            const snippet = t.last_body ? escHtml(t.last_body.length > 38 ? t.last_body.slice(0, 38) + '…' : t.last_body) : '';
             const pre = (t.last_from && t.last_from === currentUsername) ? 'You: ' : '';
+            const refArg = t.ref_id ? `'${escJsAttr(t.ref_id)}'` : 'null';
             return `
-                <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmThread('${escJsAttr(t.other_username)}','${escJsAttr(t.topic)}')">
+                <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmThread('${escJsAttr(t.other_username)}','${escJsAttr(t.topic)}',${refArg})">
                     <div class="msg-convo-meta">
                         <span class="msg-convo-name">${escHtml(dmThreadLabel(t))}${unread ? ` <span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:0 6px;font-weight:700;">${unread}</span>` : ''}</span>
                         <span class="msg-convo-time">${t.last_at ? fmtMsgTime(t.last_at) : ''}</span>
                     </div>
-                    ${dmTopicBadge(t.topic)}
+                    <div style="display:flex; align-items:center; gap:6px; margin:2px 0;">${dmTopicBadge(t.topic)}${refLabel ? `<span style="font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(refLabel)}</span>` : ''}</div>
                     <div class="msg-convo-snippet">${pre}${snippet}</div>
                 </div>`;
         }).join('');
     }
 
-    // "+ New" — pick a person you're allowed to message and a topic, which
-    // opens (or starts) that specific person+topic thread.
+    // "+ New" — pick a person, a topic, and (for record topics) the specific
+    // record, or (for Missing Day) a date. Each opens its own thread.
     async function startNewDmConversation() {
         if (!dmContacts.length) await fetchDmContacts();
         const people = dmContacts.slice().sort((a, b) => dmContactLabel(a).localeCompare(dmContactLabel(b), undefined, { sensitivity: 'base' }));
@@ -8819,36 +8844,65 @@
         list.insertAdjacentHTML('afterbegin', `
             <div id="dm-new-picker" style="padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); display:flex; flex-direction:column; gap:6px;">
                 <div style="font-size:11px; font-weight:700; color:var(--text-muted);">New conversation</div>
-                <select id="dm-new-person"><option value="">— Pick a person —</option>${peopleOpts}</select>
-                <select id="dm-new-topic"><option value="">— Pick a topic —</option>${topicOpts}</select>
+                <select id="dm-new-person" onchange="dmNewPickerUpdate()"><option value="">— Pick a person —</option>${peopleOpts}</select>
+                <select id="dm-new-topic" onchange="dmNewPickerUpdate()">${topicOpts}</select>
+                <div id="dm-new-ref-wrap"></div>
                 <div style="display:flex; gap:6px;">
                     <button type="button" class="btn-small" style="margin:0; background:var(--primary);" onclick="openNewDmConversation()">Open chat</button>
                     <button type="button" class="btn-small" style="margin:0; background:#64748b;" onclick="(function(){var e=document.getElementById('dm-new-picker'); if(e) e.remove(); renderDmThreads();})()">Cancel</button>
                 </div>
             </div>`);
+        dmNewPickerUpdate();
     }
+
+    // Rebuild the third control based on the chosen topic: a record dropdown
+    // for Claims/Charges/Income, a date for Missing Day, nothing for General.
+    function dmNewPickerUpdate() {
+        const person = document.getElementById('dm-new-person')?.value || '';
+        const topic = document.getElementById('dm-new-topic')?.value || 'General';
+        const wrap = document.getElementById('dm-new-ref-wrap');
+        if (!wrap) return;
+        if (topic === 'Missing Day') {
+            wrap.innerHTML = `<label style="font-size:11px; color:var(--text-muted);">Pick a date</label><input type="date" id="dm-new-ref" value="${todayStr()}">`;
+        } else if (topic === 'Claims' || topic === 'Charges' || topic === 'Income') {
+            if (!person) { wrap.innerHTML = `<div style="font-size:11px; color:var(--text-muted);">Pick a person to list their ${topic.toLowerCase()}.</div>`; return; }
+            const recs = dmRecordsFor(topic, dmConversationEmpId(person));
+            if (!recs.length) { wrap.innerHTML = `<div style="font-size:11px; color:var(--text-muted);">No ${topic.toLowerCase()} on file for this person.</div>`; return; }
+            const noun = topic === 'Income' ? 'record' : topic.slice(0, -1).toLowerCase();
+            wrap.innerHTML = `<select id="dm-new-ref"><option value="">— Pick a ${noun} —</option>${recs.map(r => `<option value="${escHtml(r.id)}">${escHtml(r.label)}</option>`).join('')}</select>`;
+        } else {
+            wrap.innerHTML = ''; // General
+        }
+    }
+
     function openNewDmConversation() {
         const person = document.getElementById('dm-new-person')?.value;
         const topic = document.getElementById('dm-new-topic')?.value;
         if (!person) { alert('Pick a person first.'); return; }
         if (!topic) { alert('Pick a topic first.'); return; }
-        const picker = document.getElementById('dm-new-picker');
-        if (picker) picker.remove();
-        selectDmThread(person, topic);
+        let ref = null;
+        if (topic === 'Missing Day') {
+            ref = document.getElementById('dm-new-ref')?.value || '';
+            if (!ref) { alert('Pick a date for the Missing Day thread.'); return; }
+        } else if (topic === 'Claims' || topic === 'Charges' || topic === 'Income') {
+            ref = document.getElementById('dm-new-ref')?.value || '';
+            if (!ref) { alert(`Pick which ${topic.toLowerCase().replace(/s$/, '')} this conversation is about.`); return; }
+        }
+        const picker = document.getElementById('dm-new-picker'); if (picker) picker.remove();
+        selectDmThread(person, topic, ref || null);
     }
 
-    async function selectDmThread(username, topic) {
-        dmActiveUser = username;
-        dmActiveTopic = topic;
-        await fetchDmThread();      // marks this topic's incoming messages read
+    async function selectDmThread(username, topic, ref) {
+        dmActiveUser = username; dmActiveTopic = topic; dmActiveRef = ref || null;
+        await fetchDmThread();
         renderDmThread(true);
-        await fetchDmThreads();     // unread for this thread now cleared
+        await fetchDmThreads();
         renderDmThreads();
     }
 
     async function fetchDmThread() {
         if (!dmActiveUser || !dmActiveTopic) { dmThreadMsgs = []; return false; }
-        const { data, error } = await supabaseClient.rpc('dm_thread', { p_actor: currentUsername, p_other: dmActiveUser, p_topic: dmActiveTopic });
+        const { data, error } = await supabaseClient.rpc('dm_thread', { p_actor: currentUsername, p_other: dmActiveUser, p_topic: dmActiveTopic, p_ref_id: dmActiveRef });
         if (error) { console.error('dm_thread:', error); dmThreadMsgs = []; return false; }
         dmThreadMsgs = data || [];
         const snap = dmThreadMsgs.map(m => m.id + ':' + (m.read_at || '')).join('|');
@@ -8878,11 +8932,12 @@
             return;
         }
         const label = dmActivePersonLabel();
+        const refLabel = dmRefLabel(dmActiveTopic, dmActiveRef);
         if (empty) empty.style.display = 'none';
-        if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(label)}</span> ${dmTopicBadge(dmActiveTopic)}`; }
+        if (header) { header.style.display = 'flex'; header.style.flexWrap = 'wrap'; header.innerHTML = `<span class="type-pill">${escHtml(label)}</span> ${dmTopicBadge(dmActiveTopic)}${refLabel ? ` <span style="font-size:11px; color:var(--text-muted);">${escHtml(refLabel)}</span>` : ''}`; }
         if (composer) composer.style.display = 'flex';
 
-        const key = dmActiveUser + '|' + dmActiveTopic;
+        const key = dmThreadKey(dmActiveUser, dmActiveTopic, dmActiveRef);
         const isSame = dmRenderedKey === key;
         const nearBottom = isSame && body && (body.scrollTop + body.clientHeight) >= (body.scrollHeight - 60);
         dmRenderedKey = key;
@@ -8909,10 +8964,7 @@
                     ${m.mine ? `<span class="msg-bubble-del" onclick="deleteDirectMessage(${m.id})">✕ Delete</span>` : ''}
                 </div>`;
         });
-        if (body) {
-            body.innerHTML = html;
-            if (force || !isSame || nearBottom) body.scrollTop = body.scrollHeight;
-        }
+        if (body) { body.innerHTML = html; if (force || !isSame || nearBottom) body.scrollTop = body.scrollHeight; }
     }
 
     async function sendDirectMessage() {
@@ -8921,7 +8973,7 @@
         const text = (el.value || '').trim();
         if (!text) return;
         el.disabled = true;
-        const { error } = await supabaseClient.rpc('dm_send', { p_actor: currentUsername, p_recipient: dmActiveUser, p_body: text, p_topic: dmActiveTopic });
+        const { error } = await supabaseClient.rpc('dm_send', { p_actor: currentUsername, p_recipient: dmActiveUser, p_body: text, p_topic: dmActiveTopic, p_ref_id: dmActiveRef });
         el.disabled = false;
         if (error) { alert('Error: ' + error.message); el.focus(); return; }
         el.value = '';
@@ -8942,8 +8994,6 @@
         renderDmThreads();
     }
 
-    // Polling while the Messages tab is open. Names kept the same as before so
-    // openTab's start/stop calls need no change.
     function startMessagePolling() {
         stopMessagePolling();
         dmPollTimer = setInterval(async () => {
@@ -8960,15 +9010,13 @@
     }
 
     async function renderMessagesTab() {
-        dmActiveUser = null;
-        dmActiveTopic = null;
-        dmRenderedKey = null;
+        dmActiveUser = null; dmActiveTopic = null; dmActiveRef = null; dmRenderedKey = null;
         const search = document.getElementById('dm-search');
         if (search) search.value = '';
         await fetchDmThreads();
         await fetchDmContacts();
         renderDmThreads();
-        renderDmThread();   // empty state until a conversation is picked
+        renderDmThread();
         startMessagePolling();
     }
 
