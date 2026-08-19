@@ -2073,7 +2073,7 @@
             <button type="button" class="btn-small" id="lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
         </div>
     </div>
-    <div class="panel">
+    <div class="panel collapsed">
         <h2 class="panel-head" onclick="toggleCollapse(this)">ID Configuration <span class="caret">&#9662;</span></h2>
         <div class="note-box">Changes here only affect <strong>new</strong> IDs going forward — Employee, Claim, and Charge IDs already assigned won't change. The ID <strong>prefix is the company code</strong> (set when a company is added), so switch companies up top to control it.</div>
         <form id="id-config-form">
@@ -2087,7 +2087,7 @@
         </form>
     </div>
 
-    <div class="panel">
+    <div class="panel collapsed">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Type of Damage (Claims) <span class="caret">&#9662;</span></h2>
         <form id="add-damage-form" class="form-row" style="margin-bottom:10px;">
             <div class="field"><label>Add a new damage type</label><input type="text" id="new-damage-input" placeholder="e.g. Water damage"></div>
@@ -2102,7 +2102,7 @@
 
     </div>
 
-    <div class="panel">
+    <div class="panel collapsed">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Charge Type (Charges) <span class="caret">&#9662;</span></h2>
         <form id="add-charge-type-form" class="form-row" style="margin-bottom:10px;">
             <div class="field"><label>Add a new charge type</label><input type="text" id="new-charge-type-input" placeholder="e.g. Advance"></div>
@@ -2116,7 +2116,7 @@
         </div>
     </div>
 
-    <div class="panel">
+    <div class="panel collapsed">
         <h2 class="panel-head" onclick="toggleCollapse(this)">Additional Income Type <span class="caret">&#9662;</span></h2>
         <form id="add-income-type-form" class="form-row" style="margin-bottom:10px;">
             <div class="field"><label>Add a new income type</label><input type="text" id="new-income-type-input" placeholder="e.g. Bonus"></div>
@@ -2192,8 +2192,22 @@
     <div class="panel">
         <div class="stat-grid" id="invoice-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="invoice-search" placeholder="Search invoice #, customer..." oninput="renderInvoices()"></div>
+            <div class="field field-wide"><input type="text" id="invoice-search" placeholder="Search invoice #, customer, notes..." oninput="renderInvoices()"></div>
+            <div class="field"><select id="invoice-status-filter" onchange="renderInvoices()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
+            <div class="field"><select id="invoice-customer-filter" onchange="renderInvoices()"><option value="">All customers</option></select></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('invoices')">✕ Clear filters</button>
+        </div>
+        <div class="rec-toolbar">
+            <label data-i18n="sort_by">Sort by</label>
+            <select id="sort-select-invoices" onchange="setSortField('invoices', this.value)">
+                <option value="date">Invoice date</option>
+                <option value="number">Invoice #</option>
+                <option value="customer">Customer</option>
+                <option value="due">Due date</option>
+                <option value="amount">Amount</option>
+                <option value="status">Status</option>
+            </select>
+            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-invoices" onclick="flipSortDir('invoices')">▲</button>
         </div>
         <div id="invoices-tbody" class="record-grid"></div>
     </div>
@@ -2447,9 +2461,20 @@
     let currentWeekLabel = '';  // human label for the current pay week
     let recExpanded = { employees: new Set(), claims: new Set(), charges: new Set(), income: new Set(), companies: new Set(), payroll: new Set(), users: new Set(), approvals: new Set(), log: new Set(), changelog: new Set(), vehicles: new Set(), invoices: new Set(), bills: new Set(), releasehistory: new Set() };
     // Which status GROUPS are collapsed (not individual records — those use
-    // recExpanded above). All groups start expanded; a status added here
-    // stays collapsed until toggled again, re-render to re-apply.
-    let collapsedStatusGroups = { claims: new Set(), cc: new Set(), charges: new Set(), income: new Set(), weekdeposit: new Set(), statement: new Set() };
+    // recExpanded above). A status listed in a tab's set starts collapsed;
+    // toggling removes/re-adds it and the choice persists for the session.
+    // Claims & Charges, Income, Week in Deposit and Statement start with every
+    // status group COLLAPSED by default (seeded below); the user expands what
+    // they want. Invoices start expanded.
+    const _COLLAPSE_DEFAULT_STATUSES = ['Queued', 'Deducting', 'Paying', 'Paid', 'Absorbed', 'Tk from check', 'Released', 'Stopped'];
+    let collapsedStatusGroups = {
+        claims: new Set(), charges: new Set(),
+        cc: new Set(_COLLAPSE_DEFAULT_STATUSES),
+        income: new Set(_COLLAPSE_DEFAULT_STATUSES),
+        weekdeposit: new Set(_COLLAPSE_DEFAULT_STATUSES),
+        statement: new Set(_COLLAPSE_DEFAULT_STATUSES),
+        invoices: new Set()
+    };
     function toggleStatusGroup(tab, status) {
         const set = collapsedStatusGroups[tab];
         if (!set) return;
@@ -2458,6 +2483,7 @@
         else if (tab === 'income') renderIncome();
         else if (tab === 'weekdeposit') renderWeekDeposit();
         else if (tab === 'statement') renderStatement();
+        else if (tab === 'invoices') renderInvoices();
     }
     let dailyExpanded = new Set();    // employee_ids whose Daily Pay card is expanded (mobile)
 
@@ -2466,8 +2492,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.24';
+    const APP_VERSION = 'v3.25';
     const CHANGELOG = [
+        { version: 'v3.25', date: '2026-08-19', notes: 'Two organizing changes. First, several list screens now open with their sections collapsed, so you see the headings first and expand only what you need: on Claims & Charges, Income, Week in Deposit and the Statement, every status group (Deducting, Queued, Paid, and so on) starts collapsed — tap a heading to open it — and the Settings screen\'s panels (ID Configuration, Type of Damage, Charge Type, Additional Income Type) start collapsed too. Nothing is hidden permanently; the sections are all one tap away. Second, the Invoices screen now groups every invoice into Unpaid and Paid sections (Unpaid first, each showing its count and dollar total), and gained the same full controls the other lists have: search, a Status filter, a Customer filter, a Clear-filters button, and a Sort-by menu (invoice date, invoice #, customer, due date, amount, or status) with an ascending/descending toggle.' },
         { version: 'v3.24', date: '2026-08-19', notes: 'Messaging now organizes each conversation by topic, and the menu icons are consistent. When you start a chat with someone you first pick a topic — General, Missing Day, Claims, Charges, or Income — and each topic becomes its own separate, independent thread with that person: your Claims conversation with Sixto stays completely separate from your Missing Day conversation with Sixto, each with its own unread count and history. The Messages list now shows one row per topic conversation, with topic filter chips (All / General / Missing Day / Claims / Charges / Income) across the top and a “+” button to start a new one (pick the person, pick the topic). Everything else about messaging is unchanged — same company scoping, same rule that a View Only user can message managers but not another View Only user, same read receipts and unread badge. Separately, the three menu icons added last time (Income, Savings & Release Eligibility, Release History) plus Home were switched from colored emoji to the same clean single-color line icons the rest of the menu already uses, so the whole sidebar now matches.' },
         { version: 'v3.23', date: '2026-08-19', notes: 'New built-from-scratch messaging system, plus a few tab icons. Messages is now a direct, person-to-person chat between the people who log in (user accounts), not the old per-employee note threads. Open Messages to see everyone you\'re allowed to talk to on the left, with unread counts and a badge on the Messages menu item; click a person to open the conversation and type at the bottom. Who can message whom is enforced on the server, not just hidden in the screen: everyone is limited to people in their own company (Super Admin can reach anyone, in any company, and anyone can reach a Super Admin), and — as requested — a View Only user can message managers and Super Admin but cannot message another View Only user. Read receipts (a “Read” tag once the other person opens it), unread badges, and delete-your-own-message are all included; it stays up to date every few seconds while the tab is open. Also added quick icons to three menu items so they\'re easier to spot: 💵 Income, 🏦 Savings & Release Eligibility, and 📜 Release History. The previous employee-note message threads are retired from the interface (their history is left untouched in the database).' },
         { version: 'v3.22', date: '2026-08-19', notes: 'Claims and Charges are now managed on one screen. The old separate \'Claims\' and \'Charges & Income\' tabs became a single \'Claims & Charges\' tab that lists both together — every row and card carries a CLAIM or CHARGE badge so they\'re never confused, and a Kind dropdown (Claims & Charges / Claims only / Charges only) plus one shared search, employee, type and status filter let you narrow to exactly what you want. Nothing about the records themselves changed: a claim is still a claim and a charge is still a charge, each keeps its own ID series, its own table, and its own statuses, and each is still created and edited on its own form (a New Claim / New Charge switch sits at the top of the tab). Additional Income moved out to its own dedicated \'Income\' tab (with its own employee selector), so it\'s no longer mixed in with charges. The tab\'s summary cards now cover both kinds at once — separate Claims and Charges counts, pooled total amount and outstanding balance, and combined Deducting / Queued / Resolved counts. Under the hood this rides on the shared engine from v3.21, so balances, schedules, rate changes and pauses are unchanged; only where things are displayed moved.' },
@@ -2791,7 +2818,8 @@
         charges: { key: 'employee', dir: 1 }, income: { key: 'employee', dir: 1 },
         payroll: { key: 'employee', dir: 1 }, companies: { key: 'name', dir: 1 },
         users: { key: 'username', dir: 1 }, approvals: { key: 'requested', dir: 1 },
-        log: { key: 'changed', dir: -1 }, vehicles: { key: 'truck', dir: 1 }
+        log: { key: 'changed', dir: -1 }, vehicles: { key: 'truck', dir: 1 },
+        invoices: { key: 'date', dir: -1 }
     };
 
     function applySort(list, table, getters) {
@@ -2885,6 +2913,7 @@
         else if (table === 'users') fetchUsersList();
         else if (table === 'approvals') renderApprovals();
         else if (table === 'log') renderLog();
+        else if (table === 'invoices') renderInvoices();
     }
     function setSortField(table, key) {
         sortState[table].key = key; sortState[table].dir = 1;
@@ -4642,7 +4671,7 @@
                 renderDmContacts();
                 break;
             case 'invoices':
-                setVal('invoice-search', '');
+                setVal('invoice-search', ''); setVal('invoice-status-filter', ''); setVal('invoice-customer-filter', '');
                 renderInvoices();
                 break;
             case 'bills':
@@ -10667,25 +10696,70 @@
                 <div class="stat-card"><div class="stat-label">Invoiced This Month</div><div class="stat-value">${formatMoney(thisMonthTotal)}</div><div style="font-size:10px; color:var(--text-muted);">${thisMonth.length} invoice(s)</div></div>
                 <div class="stat-card"><div class="stat-label">Total Invoices</div><div class="stat-value">${invoices.length}</div></div>`;
         }
+        // Customer filter options (distinct customers), preserving selection.
+        const custSel = document.getElementById('invoice-customer-filter');
+        if (custSel) {
+            const prev = custSel.value;
+            const customers = Array.from(new Set(invoices.map(i => i.customer_name).filter(Boolean)))
+                .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            custSel.innerHTML = '<option value="">All customers</option>' + customers.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+            custSel.value = prev || '';
+        }
+
         const query = (document.getElementById('invoice-search')?.value || '').toLowerCase();
-        let list = invoices.filter(i => !query || `${i.invoice_number || ''} ${i.customer_name}`.toLowerCase().includes(query));
+        const statusF = document.getElementById('invoice-status-filter')?.value || '';
+        const custF = document.getElementById('invoice-customer-filter')?.value || '';
+
+        let list = invoices.filter(i => {
+            const matchQ = !query || `${i.invoice_number || ''} ${i.customer_name || ''} ${i.notes || ''}`.toLowerCase().includes(query);
+            const matchS = !statusF || i.status === statusF;
+            const matchC = !custF || i.customer_name === custF;
+            return matchQ && matchS && matchC;
+        });
+
+        list = applySort(list, 'invoices', {
+            number: i => i.invoice_number || '',
+            customer: i => i.customer_name || '',
+            date: i => i.invoice_date || '',
+            due: i => i.due_date || '',
+            amount: i => parseFloat(i.total_amount) || 0,
+            status: i => i.status || ''
+        });
+        updateRecSortUI('invoices');
+
         const container = document.getElementById('invoices-tbody');
         if (!container) return;
-        if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No invoices yet.</div>'; return; }
         container.className = 'record-grid';
+        if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No invoices found.</div>'; return; }
         container.innerHTML = '';
-        list.forEach(inv => {
-            const open = recExpanded.invoices.has(inv.invoice_id);
-            container.insertAdjacentHTML('beforeend', `
-                <div class="rec-card${open ? ' open' : ''}" id="rec-invoices-${inv.invoice_id}">
-                    <div class="rec-card-head" onclick="toggleRecCard('invoices','${inv.invoice_id}')">
-                        <span class="rec-caret" data-caret="invoices-${inv.invoice_id}">${open ? '▾' : '▸'}</span>
-                        <span class="rec-title">${inv.invoice_number ? `#${escHtml(inv.invoice_number)} — ` : ''}${escHtml(inv.customer_name)}</span>
-                        <span class="rec-sub">${inv.invoice_date || '-'}</span>
-                        <span class="rec-right"><span class="status-badge status-${inv.status}">${inv.status}</span> ${formatMoney(inv.total_amount)}</span>
-                    </div>
-                    <div class="rec-card-body">${invoiceDetailHtml(inv)}</div>
-                </div>`);
+
+        // Group into Unpaid first, then Paid (then any other status).
+        const order = ['Unpaid', 'Paid'];
+        const groups = {};
+        list.forEach(i => { const s = i.status || '(no status)'; (groups[s] = groups[s] || []).push(i); });
+        const statuses = Object.keys(groups).sort((a, b) => {
+            const ia = order.indexOf(a), ib = order.indexOf(b);
+            return ((ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)) || a.localeCompare(b);
+        });
+        statuses.forEach(status => {
+            const items = groups[status];
+            const collapsed = collapsedStatusGroups.invoices.has(status);
+            const groupTotal = items.reduce((a, i) => a + (parseFloat(i.total_amount) || 0), 0);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('invoices','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
+            if (collapsed) return;
+            items.forEach(inv => {
+                const open = recExpanded.invoices.has(inv.invoice_id);
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="rec-card${open ? ' open' : ''}" id="rec-invoices-${inv.invoice_id}">
+                        <div class="rec-card-head" onclick="toggleRecCard('invoices','${inv.invoice_id}')">
+                            <span class="rec-caret" data-caret="invoices-${inv.invoice_id}">${open ? '▾' : '▸'}</span>
+                            <span class="rec-title">${inv.invoice_number ? `#${escHtml(inv.invoice_number)} — ` : ''}${escHtml(inv.customer_name)}</span>
+                            <span class="rec-sub">${inv.invoice_date || '-'}</span>
+                            <span class="rec-right"><span class="status-badge status-${inv.status}">${inv.status}</span> ${formatMoney(inv.total_amount)}</span>
+                        </div>
+                        <div class="rec-card-body">${invoiceDetailHtml(inv)}</div>
+                    </div>`);
+            });
         });
     }
 
