@@ -386,6 +386,10 @@
         #app-sidebar #btn-tab-data::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 0113.7-5.7M20 12a8 8 0 01-13.7 5.7'/%3E%3Cpath d='M17.5 3v3.8h-3.8M6.5 21v-3.8h3.8'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-changelog::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3.3 2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
         #app-sidebar #btn-tab-expiring::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v5l-2.5 2M8 3.5l2 2M16 3.5l-2 2'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-home::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11.5L12 4l8 7.5'/%3E%3Cpath d='M6 10v9h12v-9'/%3E%3Cpath d='M10 19v-5h4v5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-income::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='6.5' width='19' height='11' rx='2'/%3E%3Cpath d='M12 14.8V9.2M9.5 11.7L12 9.2l2.5 2.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-savingsreport::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 6c0 1.4-3.1 2.5-7 2.5S5 7.4 5 6s3.1-2.5 7-2.5S19 4.6 19 6z'/%3E%3Cpath d='M5 6v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6'/%3E%3Cpath d='M5 12v5c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
+        #app-sidebar #btn-tab-releasehistory::before { content: ''; display:inline-block; width:17px; height:17px; margin-right:9px; vertical-align:-3px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa7b5' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 12a8.5 8.5 0 1 0 2.6-6.1'/%3E%3Cpath d='M3 4v4h4'/%3E%3Cpath d='M12 8.5V12l2.5 1.5'/%3E%3C/svg%3E"); background-size:contain; background-repeat:no-repeat; }
     
     /* ---- Messages: two-pane chat layout ---- */
     .msg-shell { display: flex; height: 70vh; min-height: 420px; max-height: 720px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
@@ -395,7 +399,7 @@
     .msg-cat-pills { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--border); }
     .msg-pill { border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
     .msg-pill.active { background: var(--navy); border-color: var(--navy); color: #fff; }
-    #dm-contact-list { flex: 1; overflow-y: auto; }
+    #dm-thread-list { flex: 1; overflow-y: auto; }
     .msg-convo-item { padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
     .msg-convo-item:hover { background: rgba(0,0,0,0.02); }
     .msg-convo-item.active { background: var(--active-bg); border-left: 3px solid var(--primary); padding-left: 9px; }
@@ -1206,7 +1210,7 @@
             </div>
         </div>
 <div id="sidebar-scroll-area">
-<button class="group-btn active" onclick="openHomeTab(event)" id="btn-tab-home" style="border-top:1px solid rgba(255,255,255,0.08); margin-bottom:4px; padding-bottom:0.85rem;">🏠 Home</button>
+<button class="group-btn active" onclick="openHomeTab(event)" id="btn-tab-home" style="border-top:1px solid rgba(255,255,255,0.08); margin-bottom:4px; padding-bottom:0.85rem;">Home</button>
 <div class="tab-groups" id="tab-groups">
     <button class="group-btn" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
     <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr" data-i18n="group_hr">HR &amp; Payroll</button>
@@ -1222,14 +1226,14 @@
 <div class="tabs sub-tabs" id="grp-hr">
     <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims &amp; Charges</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income">💵 <span data-i18n="tab_income">Income</span></button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income" data-i18n="tab_income">Income</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-weekdeposit')" id="btn-tab-weekdeposit">Week in Deposit</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
     <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">🏦 Savings &amp; Release Eligibility</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">📜 Release History</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">Savings &amp; Release Eligibility</button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">Release History</button>
 </div>
 <div class="tabs sub-tabs" id="grp-expiring">
     <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
@@ -2030,9 +2034,18 @@
     <div class="msg-shell">
         <div class="msg-list-pane">
             <div class="msg-list-search" style="display:flex; gap:6px; align-items:center;">
-                <input type="text" id="dm-search" placeholder="Search people..." oninput="renderDmContacts()" style="flex:1; margin:0;">
+                <input type="text" id="dm-search" placeholder="Search conversations..." oninput="renderDmThreads()" style="flex:1; margin:0;">
+                <button type="button" class="btn-small" style="margin:0; min-height:40px; background:var(--navy);" onclick="startNewDmConversation()" title="New conversation">+</button>
             </div>
-            <div id="dm-contact-list"></div>
+            <div class="msg-cat-pills" id="dm-topic-pills">
+                <button type="button" class="msg-pill active" data-topic="" onclick="setDmTopicFilter('')">All</button>
+                <button type="button" class="msg-pill" data-topic="General" onclick="setDmTopicFilter('General')">General</button>
+                <button type="button" class="msg-pill" data-topic="Missing Day" onclick="setDmTopicFilter('Missing Day')">Missing Day</button>
+                <button type="button" class="msg-pill" data-topic="Claims" onclick="setDmTopicFilter('Claims')">Claims</button>
+                <button type="button" class="msg-pill" data-topic="Charges" onclick="setDmTopicFilter('Charges')">Charges</button>
+                <button type="button" class="msg-pill" data-topic="Income" onclick="setDmTopicFilter('Income')">Income</button>
+            </div>
+            <div id="dm-thread-list"></div>
         </div>
         <div class="msg-thread-pane">
             <div id="dm-thread-header" class="msg-thread-header" style="display:none;"></div>
@@ -2453,8 +2466,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.23';
+    const APP_VERSION = 'v3.24';
     const CHANGELOG = [
+        { version: 'v3.24', date: '2026-08-19', notes: 'Messaging now organizes each conversation by topic, and the menu icons are consistent. When you start a chat with someone you first pick a topic — General, Missing Day, Claims, Charges, or Income — and each topic becomes its own separate, independent thread with that person: your Claims conversation with Sixto stays completely separate from your Missing Day conversation with Sixto, each with its own unread count and history. The Messages list now shows one row per topic conversation, with topic filter chips (All / General / Missing Day / Claims / Charges / Income) across the top and a “+” button to start a new one (pick the person, pick the topic). Everything else about messaging is unchanged — same company scoping, same rule that a View Only user can message managers but not another View Only user, same read receipts and unread badge. Separately, the three menu icons added last time (Income, Savings & Release Eligibility, Release History) plus Home were switched from colored emoji to the same clean single-color line icons the rest of the menu already uses, so the whole sidebar now matches.' },
         { version: 'v3.23', date: '2026-08-19', notes: 'New built-from-scratch messaging system, plus a few tab icons. Messages is now a direct, person-to-person chat between the people who log in (user accounts), not the old per-employee note threads. Open Messages to see everyone you\'re allowed to talk to on the left, with unread counts and a badge on the Messages menu item; click a person to open the conversation and type at the bottom. Who can message whom is enforced on the server, not just hidden in the screen: everyone is limited to people in their own company (Super Admin can reach anyone, in any company, and anyone can reach a Super Admin), and — as requested — a View Only user can message managers and Super Admin but cannot message another View Only user. Read receipts (a “Read” tag once the other person opens it), unread badges, and delete-your-own-message are all included; it stays up to date every few seconds while the tab is open. Also added quick icons to three menu items so they\'re easier to spot: 💵 Income, 🏦 Savings & Release Eligibility, and 📜 Release History. The previous employee-note message threads are retired from the interface (their history is left untouched in the database).' },
         { version: 'v3.22', date: '2026-08-19', notes: 'Claims and Charges are now managed on one screen. The old separate \'Claims\' and \'Charges & Income\' tabs became a single \'Claims & Charges\' tab that lists both together — every row and card carries a CLAIM or CHARGE badge so they\'re never confused, and a Kind dropdown (Claims & Charges / Claims only / Charges only) plus one shared search, employee, type and status filter let you narrow to exactly what you want. Nothing about the records themselves changed: a claim is still a claim and a charge is still a charge, each keeps its own ID series, its own table, and its own statuses, and each is still created and edited on its own form (a New Claim / New Charge switch sits at the top of the tab). Additional Income moved out to its own dedicated \'Income\' tab (with its own employee selector), so it\'s no longer mixed in with charges. The tab\'s summary cards now cover both kinds at once — separate Claims and Charges counts, pooled total amount and outstanding balance, and combined Deducting / Queued / Resolved counts. Under the hood this rides on the shared engine from v3.21, so balances, schedules, rate changes and pauses are unchanged; only where things are displayed moved.' },
         { version: 'v3.21', date: '2026-08-18', notes: 'Internal engineering release: claims and charges now run on one shared deduction engine. They remain separate records with their own IDs, their own tables, and their own statuses — but how they work (base weekly rate, dated rate changes, pause windows, the weekly schedule walk, balances as of any date, and the rate/pause history panels in the edit form) is now a single implementation configured per kind, so any future fix or feature automatically applies to both. Every original function was kept with its exact name and behavior, verified by an automated equivalence test: 6,000 randomized scenarios (every status, past/future dates, rate changes to and from zero, overlapping pauses, inactive employees, missing data) produced identical balances before and after, plus 1,491 cross-checks proving a claim and a charge given identical data now behave identically. One deliberate improvement rode along: a schedule whose rate history dead-ends at $0 no longer projects decades of phantom empty weeks on the claims side — a fix charges already had; balances are unchanged, only the phantom tail disappears from schedule views.' },
@@ -4002,7 +4016,7 @@
         if (typeof renderCharges === 'function') renderCharges();
         if (typeof renderIncome === 'function') renderIncome();
         await loadNotifications();
-        if (typeof fetchDmContacts === 'function') await fetchDmContacts(); // seeds the Messages unread badge
+        if (typeof fetchDmThreads === 'function') await fetchDmThreads(); // seeds the Messages unread badge
         await fetchVehiclesFromCloud();
         await fetchInvoicesFromCloud();
         await fetchBillsFromCloud();
@@ -8573,24 +8587,37 @@
         attemptPrint();
     }
 
-    // ===== MESSAGES — direct (user-to-user) messaging =====================
-    // A 1:1 chat between app_user accounts. Server-enforced permissions live
-    // entirely in the dm_* RPCs: everyone is scoped to their own company
-    // (Super Admin spans all companies), and a View Only user can message
-    // managers and Super Admin but NOT another View Only user. "Live" via
-    // polling for the same reason as the rest of the app — custom auth means
-    // every tab shares one anon connection, so Postgres Realtime can't tell
-    // them apart; re-running the same permission-checked RPC can't leak.
-    let dmContacts = [];          // people the current user is allowed to message
-    let dmActiveUser = null;      // username of the open conversation
-    let dmThreadMsgs = [];        // messages in the open conversation
-    let dmContactsSnap = '';      // fingerprint so a no-op poll skips the DOM
-    let dmThreadSnap = '';
-    let dmRenderedThreadUser = null;
+    // ===== MESSAGES — direct (user-to-user) messaging, by topic ===========
+    // A 1:1 chat between app_user accounts, split into independent threads by
+    // topic (General / Missing Day / Claims / Charges / Income): the same two
+    // people can have a separate conversation per topic. Permissions are
+    // enforced entirely in the dm_* RPCs — everyone is scoped to their own
+    // company (Super Admin spans all), and a View Only user can message
+    // managers/Super Admin but NOT another View Only user. "Live" via polling
+    // for the same reason as the rest of the app (shared anon connection).
+    const DM_TOPICS = ['General', 'Missing Day', 'Claims', 'Charges', 'Income'];
+    const DM_TOPIC_PILL = {
+        'General': 'background:#eef2f1;color:#0b1f1c;',
+        'Missing Day': 'background:#fef3c7;color:#92400e;',
+        'Claims': 'background:#e0f2fe;color:#075985;',
+        'Charges': 'background:#fee2e2;color:#991b1b;',
+        'Income': 'background:#dcfce7;color:#166534;'
+    };
+    let dmThreads = [];           // existing (person, topic) conversation threads
+    let dmContacts = [];          // people the user may message (for the "+ New" picker)
+    let dmActiveUser = null;      // open conversation: other username...
+    let dmActiveTopic = null;     // ...and topic
+    let dmThreadMsgs = [];        // messages in the open thread
+    let dmTopicFilter = '';       // left-pane topic pill filter ('' = all)
+    let dmThreadsSnap = '';
+    let dmMsgsSnap = '';
+    let dmRenderedKey = null;
     let dmPollTimer = null;
 
+    function dmThreadLabel(t) { return (t.other_employee_name && t.other_employee_name.trim()) ? t.other_employee_name : t.other_username; }
     function dmContactLabel(c) { return (c.employee_name && c.employee_name.trim()) ? c.employee_name : c.username; }
     function dmRoleLabel(role) { return role === 'User' ? 'View Only' : role; }
+    function dmTopicBadge(topic) { return `<span class="type-pill" style="${DM_TOPIC_PILL[topic] || ''} font-size:9px; padding:1px 6px;">${escHtml(topic)}</span>`; }
 
     function fmtMsgTime(iso) {
         const d = new Date(iso), now = new Date();
@@ -8599,73 +8626,127 @@
             : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 
-    // Nav "Messages" unread badge — total unread across every conversation.
+    // Nav "Messages" unread badge — total unread across every topic thread.
     function refreshDmBadge() {
         const badge = document.getElementById('msg-badge');
         if (!badge) return;
-        const total = dmContacts.reduce((n, c) => n + (parseInt(c.unread, 10) || 0), 0);
+        const total = dmThreads.reduce((n, t) => n + (parseInt(t.unread, 10) || 0), 0);
         if (total > 0) { badge.textContent = total > 99 ? '99+' : String(total); badge.style.display = 'inline-block'; }
         else { badge.style.display = 'none'; }
     }
 
-    async function fetchDmContacts() {
-        if (!currentUsername) { dmContacts = []; return false; }
-        const { data, error } = await supabaseClient.rpc('dm_contacts', { p_actor: currentUsername });
-        if (error) { console.error('dm_contacts:', error); return false; }
-        dmContacts = data || [];
+    async function fetchDmThreads() {
+        if (!currentUsername) { dmThreads = []; return false; }
+        const { data, error } = await supabaseClient.rpc('dm_threads', { p_actor: currentUsername });
+        if (error) { console.error('dm_threads:', error); return false; }
+        dmThreads = data || [];
         refreshDmBadge();
-        const snap = dmContacts.map(c => `${c.username}:${c.unread}:${c.last_at || ''}`).join('|');
-        const changed = snap !== dmContactsSnap;
-        dmContactsSnap = snap;
+        const snap = dmThreads.map(t => `${t.other_username}|${t.topic}:${t.unread}:${t.last_at || ''}`).join('~');
+        const changed = snap !== dmThreadsSnap;
+        dmThreadsSnap = snap;
         return changed;
     }
 
-    function renderDmContacts() {
-        const container = document.getElementById('dm-contact-list');
+    async function fetchDmContacts() {
+        if (!currentUsername) { dmContacts = []; return; }
+        const { data, error } = await supabaseClient.rpc('dm_contacts', { p_actor: currentUsername });
+        if (error) { console.error('dm_contacts:', error); return; }
+        dmContacts = data || [];
+    }
+
+    function setDmTopicFilter(topic) {
+        dmTopicFilter = topic;
+        document.querySelectorAll('#dm-topic-pills .msg-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-topic') === topic));
+        renderDmThreads();
+    }
+
+    function renderDmThreads() {
+        const container = document.getElementById('dm-thread-list');
         if (!container) return;
+        // Don't wipe the "+ New" picker out from under someone mid-use.
+        if (document.getElementById('dm-new-picker')) return;
         const q = (document.getElementById('dm-search')?.value || '').toLowerCase();
-        let list = dmContacts.slice();
-        if (q) list = list.filter(c => `${dmContactLabel(c)} ${c.username} ${dmRoleLabel(c.role)}`.toLowerCase().includes(q));
+        let list = dmThreads.slice();
+        if (dmTopicFilter) list = list.filter(t => t.topic === dmTopicFilter);
+        if (q) list = list.filter(t => `${dmThreadLabel(t)} ${t.other_username} ${t.topic}`.toLowerCase().includes(q));
         if (!list.length) {
-            container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No one to message.</div>';
+            container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No conversations yet. Tap + to start one.</div>';
             return;
         }
-        container.innerHTML = list.map(c => {
-            const active = c.username === dmActiveUser;
-            const unread = parseInt(c.unread, 10) || 0;
-            const snippet = c.last_body
-                ? escHtml(c.last_body.length > 42 ? c.last_body.slice(0, 42) + '…' : c.last_body)
-                : '<span style="opacity:.6;">No messages yet</span>';
-            const pre = (c.last_from && c.last_from === currentUsername) ? 'You: ' : '';
+        container.innerHTML = list.map(t => {
+            const active = t.other_username === dmActiveUser && t.topic === dmActiveTopic;
+            const unread = parseInt(t.unread, 10) || 0;
+            const snippet = t.last_body
+                ? escHtml(t.last_body.length > 40 ? t.last_body.slice(0, 40) + '…' : t.last_body)
+                : '';
+            const pre = (t.last_from && t.last_from === currentUsername) ? 'You: ' : '';
             return `
-                <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmUser('${escJsAttr(c.username)}')">
+                <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmThread('${escJsAttr(t.other_username)}','${escJsAttr(t.topic)}')">
                     <div class="msg-convo-meta">
-                        <span class="msg-convo-name">${escHtml(dmContactLabel(c))}${unread ? ` <span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:0 6px;font-weight:700;">${unread}</span>` : ''}</span>
-                        <span class="msg-convo-time">${c.last_at ? fmtMsgTime(c.last_at) : ''}</span>
+                        <span class="msg-convo-name">${escHtml(dmThreadLabel(t))}${unread ? ` <span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:0 6px;font-weight:700;">${unread}</span>` : ''}</span>
+                        <span class="msg-convo-time">${t.last_at ? fmtMsgTime(t.last_at) : ''}</span>
                     </div>
-                    <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(dmRoleLabel(c.role))}</span>
+                    ${dmTopicBadge(t.topic)}
                     <div class="msg-convo-snippet">${pre}${snippet}</div>
                 </div>`;
         }).join('');
     }
 
-    async function selectDmUser(username) {
+    // "+ New" — pick a person you're allowed to message and a topic, which
+    // opens (or starts) that specific person+topic thread.
+    async function startNewDmConversation() {
+        if (!dmContacts.length) await fetchDmContacts();
+        const people = dmContacts.slice().sort((a, b) => dmContactLabel(a).localeCompare(dmContactLabel(b), undefined, { sensitivity: 'base' }));
+        const peopleOpts = people.map(c => `<option value="${escHtml(c.username)}">${escHtml(dmContactLabel(c))} · ${escHtml(dmRoleLabel(c.role))}</option>`).join('');
+        const topicOpts = DM_TOPICS.map(t => `<option value="${t}">${t}</option>`).join('');
+        const list = document.getElementById('dm-thread-list');
+        if (!list) return;
+        list.insertAdjacentHTML('afterbegin', `
+            <div id="dm-new-picker" style="padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); display:flex; flex-direction:column; gap:6px;">
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">New conversation</div>
+                <select id="dm-new-person"><option value="">— Pick a person —</option>${peopleOpts}</select>
+                <select id="dm-new-topic"><option value="">— Pick a topic —</option>${topicOpts}</select>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="btn-small" style="margin:0; background:var(--primary);" onclick="openNewDmConversation()">Open chat</button>
+                    <button type="button" class="btn-small" style="margin:0; background:#64748b;" onclick="(function(){var e=document.getElementById('dm-new-picker'); if(e) e.remove(); renderDmThreads();})()">Cancel</button>
+                </div>
+            </div>`);
+    }
+    function openNewDmConversation() {
+        const person = document.getElementById('dm-new-person')?.value;
+        const topic = document.getElementById('dm-new-topic')?.value;
+        if (!person) { alert('Pick a person first.'); return; }
+        if (!topic) { alert('Pick a topic first.'); return; }
+        const picker = document.getElementById('dm-new-picker');
+        if (picker) picker.remove();
+        selectDmThread(person, topic);
+    }
+
+    async function selectDmThread(username, topic) {
         dmActiveUser = username;
-        await fetchDmThread();      // marks their messages to me as read
+        dmActiveTopic = topic;
+        await fetchDmThread();      // marks this topic's incoming messages read
         renderDmThread(true);
-        await fetchDmContacts();    // unread for this person now cleared
-        renderDmContacts();
+        await fetchDmThreads();     // unread for this thread now cleared
+        renderDmThreads();
     }
 
     async function fetchDmThread() {
-        if (!dmActiveUser) { dmThreadMsgs = []; return false; }
-        const { data, error } = await supabaseClient.rpc('dm_thread', { p_actor: currentUsername, p_other: dmActiveUser });
+        if (!dmActiveUser || !dmActiveTopic) { dmThreadMsgs = []; return false; }
+        const { data, error } = await supabaseClient.rpc('dm_thread', { p_actor: currentUsername, p_other: dmActiveUser, p_topic: dmActiveTopic });
         if (error) { console.error('dm_thread:', error); dmThreadMsgs = []; return false; }
         dmThreadMsgs = data || [];
         const snap = dmThreadMsgs.map(m => m.id + ':' + (m.read_at || '')).join('|');
-        const changed = snap !== dmThreadSnap;
-        dmThreadSnap = snap;
+        const changed = snap !== dmMsgsSnap;
+        dmMsgsSnap = snap;
         return changed;
+    }
+
+    function dmActivePersonLabel() {
+        const t = dmThreads.find(x => x.other_username === dmActiveUser);
+        if (t) return dmThreadLabel(t);
+        const c = dmContacts.find(x => x.username === dmActiveUser);
+        return c ? dmContactLabel(c) : dmActiveUser;
     }
 
     function renderDmThread(force) {
@@ -8673,23 +8754,23 @@
         const body = document.getElementById('dm-thread-body');
         const composer = document.getElementById('dm-composer');
         const empty = document.getElementById('dm-empty-state');
-        if (!dmActiveUser) {
+        if (!dmActiveUser || !dmActiveTopic) {
             if (header) header.style.display = 'none';
             if (composer) composer.style.display = 'none';
             if (empty) empty.style.display = 'flex';
             if (body) body.innerHTML = '';
-            dmRenderedThreadUser = null;
+            dmRenderedKey = null;
             return;
         }
-        const c = dmContacts.find(x => x.username === dmActiveUser);
-        const label = c ? dmContactLabel(c) : dmActiveUser;
+        const label = dmActivePersonLabel();
         if (empty) empty.style.display = 'none';
-        if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(label)}${c ? ' · ' + escHtml(dmRoleLabel(c.role)) : ''}</span>`; }
+        if (header) { header.style.display = 'flex'; header.innerHTML = `<span class="type-pill">${escHtml(label)}</span> ${dmTopicBadge(dmActiveTopic)}`; }
         if (composer) composer.style.display = 'flex';
 
-        const isSame = dmRenderedThreadUser === dmActiveUser;
+        const key = dmActiveUser + '|' + dmActiveTopic;
+        const isSame = dmRenderedKey === key;
         const nearBottom = isSame && body && (body.scrollTop + body.clientHeight) >= (body.scrollHeight - 60);
-        dmRenderedThreadUser = dmActiveUser;
+        dmRenderedKey = key;
 
         if (!dmThreadMsgs.length) {
             if (body) body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:20px;">No messages yet — say hello below.</div>';
@@ -8720,19 +8801,19 @@
     }
 
     async function sendDirectMessage() {
-        if (!dmActiveUser) { alert('Pick someone to message first.'); return; }
+        if (!dmActiveUser || !dmActiveTopic) { alert('Pick a conversation first (tap +).'); return; }
         const el = document.getElementById('dm-compose-text');
         const text = (el.value || '').trim();
         if (!text) return;
         el.disabled = true;
-        const { error } = await supabaseClient.rpc('dm_send', { p_actor: currentUsername, p_recipient: dmActiveUser, p_body: text });
+        const { error } = await supabaseClient.rpc('dm_send', { p_actor: currentUsername, p_recipient: dmActiveUser, p_body: text, p_topic: dmActiveTopic });
         el.disabled = false;
         if (error) { alert('Error: ' + error.message); el.focus(); return; }
         el.value = '';
         await fetchDmThread();
         renderDmThread(true);
-        await fetchDmContacts();
-        renderDmContacts();
+        await fetchDmThreads();
+        renderDmThreads();
         el.focus();
     }
 
@@ -8742,21 +8823,20 @@
         if (error) { alert('Error: ' + error.message); return; }
         await fetchDmThread();
         renderDmThread(true);
-        await fetchDmContacts();
-        renderDmContacts();
+        await fetchDmThreads();
+        renderDmThreads();
     }
 
-    // Polling while the Messages tab is open: refresh contacts (for unread
-    // badges / new conversations) and the open thread. Names kept the same as
-    // before so openTab's start/stop calls need no change.
+    // Polling while the Messages tab is open. Names kept the same as before so
+    // openTab's start/stop calls need no change.
     function startMessagePolling() {
         stopMessagePolling();
         dmPollTimer = setInterval(async () => {
-            const contactsChanged = await fetchDmContacts();
-            if (contactsChanged) renderDmContacts();
-            if (dmActiveUser) {
-                const threadChanged = await fetchDmThread();
-                if (threadChanged) renderDmThread(false);
+            const threadsChanged = await fetchDmThreads();
+            if (threadsChanged) renderDmThreads();
+            if (dmActiveUser && dmActiveTopic) {
+                const msgsChanged = await fetchDmThread();
+                if (msgsChanged) renderDmThread(false);
             }
         }, 5000);
     }
@@ -8766,12 +8846,14 @@
 
     async function renderMessagesTab() {
         dmActiveUser = null;
-        dmRenderedThreadUser = null;
+        dmActiveTopic = null;
+        dmRenderedKey = null;
         const search = document.getElementById('dm-search');
         if (search) search.value = '';
+        await fetchDmThreads();
         await fetchDmContacts();
-        renderDmContacts();
-        renderDmThread();   // show the empty state until a person is picked
+        renderDmThreads();
+        renderDmThread();   // empty state until a conversation is picked
         startMessagePolling();
     }
 
