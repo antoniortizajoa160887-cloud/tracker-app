@@ -2584,8 +2584,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.38';
+    const APP_VERSION = 'v3.39';
     const CHANGELOG = [
+        { version: 'v3.39', date: '2026-08-20', notes: 'Messaging now always talks about the right person\u2019s records, and View Only users can share files in a conversation. (1) When a conversation involves a View Only user, picking Claims, Charges or Income now always lists THAT person\u2019s records \u2014 whoever opened the conversation. Previously, if a View Only user started a chat with a manager, the list showed the manager\u2019s records instead of their own. So Sixto messaging Antonio about a claim now sees Sixto\u2019s claims, and Anahi messaging Sixto sees Sixto\u2019s claims too. Manager-to-manager conversations are unchanged. (2) View Only users can now attach photos, videos and documents inside a conversation about one of their own claims, charges or income, and the file is filed against that record automatically \u2014 so it also appears in that record\u2019s Files. They can open anything attached to their own records, including files a manager added, but still cannot delete or rename them. They cannot attach to anyone else\u2019s record, or to a truck, invoice or bill. (3) Who may start a conversation is unchanged: a View Only user can message managers, and managers can message anyone.' },
         { version: 'v3.38', date: '2026-08-20', notes: 'View Only accounts can now look after their own record, with managers kept in the loop. (1) A View Only user can open their own Status history — read only; they still cannot change their own status or edit any other field. (2) They can upload their own Driver License, Work Permit and Medical Card from their employee card. They can add and view those documents but cannot rename or delete them, so a document cannot be withdrawn once it has been submitted. They cannot upload to anyone else, to a truck, or to a claim, charge, invoice or bill. (3) As soon as a View Only user uploads one of their documents, everyone at Medium level and above gets a notification naming the person and the document, so it can be reviewed — tap the notification to jump straight to that employee. Managers uploading documents themselves create no notification, since they already know. Security note: the rule limiting a View Only user to their own record is now enforced on the server, not just hidden in the screen.' },
         { version: 'v3.37', date: '2026-08-20', notes: 'Shorter, consistent file names for uploaded documents. Names are now built as a short document code, the record ID and the date — for example "DL-3OFL0002S-20260820.jpg" for a Driver License, or "REG-3OFL0001V-20260820.jpg" for a truck registration (DL = Driver License, WP = Work Permit, MC = Medical Card, REG = Registration, INS = Insurance Card). A general file on a record is just the record ID and date. A second file the same day gets -2, -3 and so on. This replaces the previous long names like "Driver License — Antonio Ortiz Arevalo.jpg", which were unwieldy and turned into runs of underscores in storage. Names are still fully editable before you upload, and files already uploaded have been renamed to the new format — only the name shown changes, the files themselves are untouched. Also fixed earlier today: uploading to an employee or truck failed because the list of record types allowed to hold files was duplicated in three places and only some had been updated; all three now agree.' },
         { version: 'v3.36', date: '2026-08-20', notes: 'Employees and trucks can now hold their documents, and files can be named properly. (1) Each employee has upload slots for Driver License, Work Permit and Medical Card, and each truck has slots for Registration and Insurance Card — tap a slot to upload or view. Uploading is completely optional; nothing is required. (2) The Expiring Documents screen now shows the same slots, so when something is about to expire you can open the actual document right there instead of going to look for it. (3) A paperclip count appears on employee and truck rows that have files, the same way it already does on claims and charges. (4) When you upload, files are now listed first with an editable name — pre-filled with something tidy like "Medical Card — Luis Melara" — so a camera file name like "IMG_20260819_223344_1.jpg" does not end up in the record. You can also rename a file that is already uploaded with the ✎ button. Renaming only changes the name shown; the file itself is untouched.' },
@@ -9186,11 +9187,16 @@
     function dmTopicBadge(topic) { return `<span class="type-pill" style="${DM_TOPIC_PILL[topic] || ''} font-size:9px; padding:1px 6px;">${escHtml(topic)}</span>`; }
     function dmThreadKey(user, topic, ref) { return `${user}|${topic}|${ref || ''}`; }
 
-    // The employee whose records a conversation is about: the other party if
-    // they're an employee, otherwise me (so a View Only user discussing their
-    // own records with a manager still sees the right records).
+    // The employee whose records a conversation is about. A conversation that
+    // involves a View Only user is ALWAYS about that person's records, whoever
+    // opened it: a View Only user only ever discusses their own, and a manager
+    // messaging them is discussing that person's records, not their own.
+    // Manager-to-manager keeps the older behaviour (the other party's records
+    // if they are an employee, otherwise mine).
     function dmConversationEmpId(otherUsername) {
+        if (isViewOnly()) return myEmployeeId();
         const c = dmContacts.find(x => x.username === otherUsername);
+        if (c && c.role === 'User' && c.employee_id) return c.employee_id;
         if (c && c.employee_id) return c.employee_id;
         return (currentUser && currentUser.employee_id) || null;
     }
@@ -9488,7 +9494,10 @@
             alert('To share a file, open a Claim, Charge, or Income conversation — the file attaches to that record. (General and Missing Day chats have no record to attach to.)');
             return;
         }
-        if (!canEdit()) { alert('View Only accounts cannot upload files.'); return; }
+        if (!canUploadTo(entityType, dmActiveRef)) {
+            alert('You can only share files on your own claims, charges and income.');
+            return;
+        }
         const prog = document.getElementById('dm-composer');
         let ok = 0, failed = 0;
         for (const original of arr) {
@@ -9786,7 +9795,18 @@
     // has been notified to review it.
     function canUploadTo(type, id) {
         if (canEdit()) return true;
-        return isViewOnly() && type === 'employee' && !!id && id === myEmployeeId();
+        if (!isViewOnly() || !id) return false;
+        const me = myEmployeeId();
+        if (!me) return false;
+        // Mirrors _attach_scope_ok on the server: a View Only user owns their
+        // employee row plus any claim, charge or income raised against them.
+        // Ownership is checked explicitly rather than trusting that the loaded
+        // arrays are already scoped.
+        if (type === 'employee') return id === me;
+        if (type === 'claim')  return (claims || []).some(c => c.claim_id === id && c.employee_id === me);
+        if (type === 'charge') return (charges || []).some(c => c.charge_id === id && c.employee_id === me);
+        if (type === 'income') return (additionalIncome || []).some(i => i.income_id === id && i.employee_id === me);
+        return false;
     }
 
     // Prompt through a list of [label, key, currentValue] and collect only
