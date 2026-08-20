@@ -2584,8 +2584,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.36';
+    const APP_VERSION = 'v3.37';
     const CHANGELOG = [
+        { version: 'v3.37', date: '2026-08-20', notes: 'Shorter, consistent file names for uploaded documents. Names are now built as a short document code, the record ID and the date — for example "DL-3OFL0002S-20260820.jpg" for a Driver License, or "REG-3OFL0001V-20260820.jpg" for a truck registration (DL = Driver License, WP = Work Permit, MC = Medical Card, REG = Registration, INS = Insurance Card). A general file on a record is just the record ID and date. A second file the same day gets -2, -3 and so on. This replaces the previous long names like "Driver License — Antonio Ortiz Arevalo.jpg", which were unwieldy and turned into runs of underscores in storage. Names are still fully editable before you upload, and files already uploaded have been renamed to the new format — only the name shown changes, the files themselves are untouched. Also fixed earlier today: uploading to an employee or truck failed because the list of record types allowed to hold files was duplicated in three places and only some had been updated; all three now agree.' },
         { version: 'v3.36', date: '2026-08-20', notes: 'Employees and trucks can now hold their documents, and files can be named properly. (1) Each employee has upload slots for Driver License, Work Permit and Medical Card, and each truck has slots for Registration and Insurance Card — tap a slot to upload or view. Uploading is completely optional; nothing is required. (2) The Expiring Documents screen now shows the same slots, so when something is about to expire you can open the actual document right there instead of going to look for it. (3) A paperclip count appears on employee and truck rows that have files, the same way it already does on claims and charges. (4) When you upload, files are now listed first with an editable name — pre-filled with something tidy like "Medical Card — Luis Melara" — so a camera file name like "IMG_20260819_223344_1.jpg" does not end up in the record. You can also rename a file that is already uploaded with the ✎ button. Renaming only changes the name shown; the file itself is untouched.' },
         { version: 'v3.35', date: '2026-08-20', notes: 'Finished fixing the doubled window title bar of the installed app. The operating system builds that title bar as "{installed app name} + page title", and it remembers the app name from when the app was first installed — so the old, long name ("Tracker — Logistics · HR · Claims") kept showing before the page title, doubling the wording. Now, when the app is running as an installed window, the page title holds only the company name (nothing else), so the bar reads cleanly — e.g. "Tracker — Logistics · HR · Claims - 3 Of Life LLC" on an existing install, or "Tracker - 3 Of Life LLC" once reinstalled — with no repeated words either way. Opened in a normal browser tab it still shows the full "… · Unified Logistics · HR · Claims". You do NOT need to reinstall to clear the duplication — just reload; reinstalling only shortens the app-name prefix to "Tracker".' },
         { version: 'v3.34', date: '2026-08-20', notes: 'Fixed the doubled window title bar. When the app is installed and opened in its own window, the operating system builds the title bar as "{app name} + page title" — and because both already said "Tracker — … Logistics · HR · Claims", the whole thing showed twice. The installed app name is now simply "Tracker" and the page title no longer repeats it, so the window title bar reads cleanly as "Tracker · Unified Logistics · HR · Claims" (and "Tracker · {Company} · Unified Logistics · HR · Claims" once signed in). The in-app header is unchanged — it still shows "{Company} / Tracker — Unified Logistics · HR · Claims". Note: a window/tab that was already open may need a refresh, and an already-installed app may keep its old name until reinstalled.' },
@@ -5629,6 +5630,19 @@
         insurance: 'Insurance Card'
     };
 
+    // Short codes for file names. Full labels are for reading on screen; these
+    // keep the stored name compact — "DL-3OFL0002S-20260820.jpg" rather than
+    // "Driver License — Antonio Ortiz Arevalo.jpg". Hyphens and digits only, so
+    // the name also survives the storage layer's character filter untouched
+    // (spaces and dashes would otherwise become runs of underscores).
+    const DOC_CODES = {
+        driver_license: 'DL',
+        work_permit: 'WP',
+        medical_card: 'MC',
+        registration: 'REG',
+        insurance: 'INS'
+    };
+
     function attachBtnHtml(type, id) {
         return `<button type="button" class="btn-small" style="background:var(--excel-blue); margin:0;" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')">📎 Files</button>`;
     }
@@ -5846,20 +5860,23 @@
         return out ? out.slice(0, 120) : 'File';
     }
 
-    // Suggested name: "Medical Card — Luis Melara" in a document slot, or the
-    // record's own label otherwise, with (2), (3)… when that's already taken.
+    // Suggested name: "{CODE}-{record id}-{YYYYMMDD}" in a document slot
+    // (DL-3OFL0002S-20260820), or "{record id}-{YYYYMMDD}" for a general file,
+    // with -2, -3… when that's already taken. Short, sorts by date, and stays
+    // correct if the person or truck is later renamed.
     function suggestAttachName() {
-        const who = attachCtxName();
-        const base = (attachCtx && attachCtx.docLabel)
-            ? `${DOC_LABELS[attachCtx.docLabel] || 'Document'} — ${who}`
-            : String(who || 'File');
+        if (!attachCtx) return 'File';
+        const code = attachCtx.docLabel ? (DOC_CODES[attachCtx.docLabel] || '') : '';
+        const d = new Date();
+        const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+        const base = `${code ? code + '-' : ''}${attachCtx.id}-${stamp}`;
         const taken = new Set();
         (attachListCache || []).forEach(a => taken.add(splitExt(a.file_name).base.toLowerCase()));
         attachStage.forEach(st => taken.add(String(st.name).toLowerCase()));
         if (!taken.has(base.toLowerCase())) return base;
         let n = 2;
-        while (taken.has(`${base} (${n})`.toLowerCase())) n++;
-        return `${base} (${n})`;
+        while (taken.has(`${base}-${n}`.toLowerCase())) n++;
+        return `${base}-${n}`;
     }
 
     function stageSelectedAttachments(fileList) {
