@@ -640,6 +640,17 @@
     .attach-ind:hover { background: rgba(59,130,246,0.24); }
     .rec-card.open .rec-card-head .attach-ind { color: #fff; background: rgba(255,255,255,0.22); }
     td .attach-ind { line-height: 1.5; }
+    /* Labeled document slots (Driver License, Medical Card, Registration,
+       Insurance) shown on an employee/vehicle. Dashed = nothing uploaded yet. */
+    .doc-slot-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+    .doc-slot { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 14px; border: 1px dashed var(--border); color: var(--text-muted); background: var(--surface-2); cursor: pointer; white-space: nowrap; }
+    .doc-slot:hover { border-color: var(--excel-blue); color: var(--text); }
+    .doc-slot.has-file { border-style: solid; border-color: rgba(59,130,246,0.45); color: var(--excel-blue); background: rgba(59,130,246,0.10); }
+    .doc-slot.muted, .doc-slot.muted:hover { cursor: default; border-color: var(--border); color: var(--text-muted); }
+    .doc-slot-val { font-family: var(--mono); font-weight: 700; }
+    .stage-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; }
+    .stage-row input[type=text] { flex: 1; min-width: 0; font-size: 12.5px; padding: 5px 7px; }
+    .stage-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; font-family: var(--mono); }
     .rec-card-body { display: none; padding: 10px 11px 12px; border-top: 1px solid var(--border); }
     .rec-card.open .rec-card-body { display: block; }
     .rec-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px 16px; font-size: 11px; margin-bottom: 10px; }
@@ -1092,19 +1103,23 @@
     </div>
 </div>
 
-<!-- Attachments modal — files/photos/videos per claim/charge/income/invoice/bill.
-     One shared component for all five entity types; each record keeps its own
-     attachments keyed by its own id. Uploads are optional everywhere. -->
+<!-- Attachments modal — files/photos/videos per record. One shared component
+     for every supported entity type (claim, charge, income, invoice, bill,
+     employee, vehicle); each record keeps its own attachments keyed by its own
+     id. Opened with a doc label (Driver License, Medical Card, Registration,
+     Insurance) it filters to just that document and tags uploads with it.
+     Uploads are optional everywhere — nothing requires one. -->
 <div id="attachments-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeAttachments()">
     <div style="background:var(--surface); border-radius:12px; padding:18px; max-width:540px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
         <div style="display:flex; align-items:center; gap:8px;">
             <div id="attachments-title" style="font-size:15px; font-weight:700; color:var(--secondary);">Files</div>
             <span style="margin-left:auto; font-size:22px; color:var(--text-muted); cursor:pointer; line-height:1; padding:2px 6px;" onclick="closeAttachments()">&times;</span>
         </div>
-        <div style="font-size:12px; color:var(--text-muted); margin:2px 0 10px;">Photos, videos and documents for this record. Optional — nothing requires an upload.</div>
+        <div id="attachments-subtitle" style="font-size:12px; color:var(--text-muted); margin:2px 0 10px;">Photos, videos and documents for this record. Optional — nothing requires an upload.</div>
         <div id="attachments-list" style="min-height:36px;"></div>
+        <div id="attachments-stage"></div>
         <div id="attachments-actions" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <input type="file" id="attachments-file-input" multiple style="display:none;" onchange="uploadSelectedAttachments(this.files)">
+            <input type="file" id="attachments-file-input" multiple style="display:none;" onchange="stageSelectedAttachments(this.files)">
             <button type="button" class="btn-small" id="attachments-add-btn" style="background:var(--navy); margin:0;" onclick="document.getElementById('attachments-file-input').click()">+ Add files</button>
             <span id="attachments-progress" style="font-size:12px; color:var(--text-muted);"></span>
         </div>
@@ -2569,8 +2584,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.35';
+    const APP_VERSION = 'v3.36';
     const CHANGELOG = [
+        { version: 'v3.36', date: '2026-08-20', notes: 'Employees and trucks can now hold their documents, and files can be named properly. (1) Each employee has upload slots for Driver License, Work Permit and Medical Card, and each truck has slots for Registration and Insurance Card — tap a slot to upload or view. Uploading is completely optional; nothing is required. (2) The Expiring Documents screen now shows the same slots, so when something is about to expire you can open the actual document right there instead of going to look for it. (3) A paperclip count appears on employee and truck rows that have files, the same way it already does on claims and charges. (4) When you upload, files are now listed first with an editable name — pre-filled with something tidy like "Medical Card — Luis Melara" — so a camera file name like "IMG_20260819_223344_1.jpg" does not end up in the record. You can also rename a file that is already uploaded with the ✎ button. Renaming only changes the name shown; the file itself is untouched.' },
         { version: 'v3.35', date: '2026-08-20', notes: 'Finished fixing the doubled window title bar of the installed app. The operating system builds that title bar as "{installed app name} + page title", and it remembers the app name from when the app was first installed — so the old, long name ("Tracker — Logistics · HR · Claims") kept showing before the page title, doubling the wording. Now, when the app is running as an installed window, the page title holds only the company name (nothing else), so the bar reads cleanly — e.g. "Tracker — Logistics · HR · Claims - 3 Of Life LLC" on an existing install, or "Tracker - 3 Of Life LLC" once reinstalled — with no repeated words either way. Opened in a normal browser tab it still shows the full "… · Unified Logistics · HR · Claims". You do NOT need to reinstall to clear the duplication — just reload; reinstalling only shortens the app-name prefix to "Tracker".' },
         { version: 'v3.34', date: '2026-08-20', notes: 'Fixed the doubled window title bar. When the app is installed and opened in its own window, the operating system builds the title bar as "{app name} + page title" — and because both already said "Tracker — … Logistics · HR · Claims", the whole thing showed twice. The installed app name is now simply "Tracker" and the page title no longer repeats it, so the window title bar reads cleanly as "Tracker · Unified Logistics · HR · Claims" (and "Tracker · {Company} · Unified Logistics · HR · Claims" once signed in). The in-app header is unchanged — it still shows "{Company} / Tracker — Unified Logistics · HR · Claims". Note: a window/tab that was already open may need a refresh, and an already-installed app may keep its old name until reinstalled.' },
         { version: 'v3.33', date: '2026-08-20', notes: 'Login and branding polish. (1) The app title/branding no longer appears twice — the sidebar corner simply reads "Tracker", while the main title bar carries the full "{Company} / Tracker — Unified Logistics · HR · Claims". (2) The login screen has a show/hide password eye — tap it to reveal what you typed and check it. (3) Pressing Enter now signs you in (Enter on the username field jumps to the password field; Enter on the password field submits) — no need to click Sign In. (4) The app icons (browser tab, taskbar, home screen) now use the rounded-corner logo instead of a hard square, matching the official logo everywhere.' },
@@ -4690,6 +4706,14 @@
             ? `<span class="exp-pill exp-over">expired ${Math.abs(days)}d ago</span>`
             : days <= 14 ? `<span class="exp-pill exp-soon">${days}d left</span>` : `<span class="type-pill">${days}d left</span>`;
 
+        // buildExpiringDocumentsList() labels each document in plain English;
+        // these are the matching attachment slots, so an about-to-expire
+        // document can be opened right here instead of hunting for the record.
+        const EXP_DOC_SLOT = {
+            'Driver License': 'driver_license', 'Work Permit': 'work_permit',
+            'Medical Card': 'medical_card', 'Registration': 'registration', 'Insurance': 'insurance'
+        };
+
         const rows = groups.map(g => `
             <div class="panel collapsed" style="margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
@@ -4703,7 +4727,11 @@
                 </div>
                 <div>
                     <div class="rec-detail-grid" style="margin:8px 0;">
-                        ${g.docs.map(d => `<div><div class="k">${escHtml(d.doc)}</div><div class="v">${d.date} ${pillFor(d.days)}</div></div>`).join('')}
+                        ${g.docs.map(d => {
+                            const slot = EXP_DOC_SLOT[d.doc];
+                            const et = g.kind === 'vehicles' ? 'vehicle' : 'employee';
+                            return `<div><div class="k">${escHtml(d.doc)}</div><div class="v">${d.date} ${pillFor(d.days)}</div>${slot ? `<div style="margin-top:4px;">${attachSlotHtml(et, g.id, slot)}</div>` : ''}</div>`;
+                        }).join('')}
                     </div>
                     <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); goToSearchResult('${g.kind}','${g.id}')">✎ Edit ${g.kind === 'vehicles' ? 'vehicle' : 'employee'} record</button>
                 </div>
@@ -4734,11 +4762,13 @@
                 ${emp.role_title ? `<div><div class="k">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
                 ${d.notes ? `<div><div class="k">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
             </div>
-            <div style="margin-top:10px;">
+            ${docSlotsHtml('employee', emp.id, ['driver_license', 'work_permit', 'medical_card'])}
+            <div class="rec-actions" style="margin-top:10px;">
+                ${attachBtnHtml('employee', emp.id)}
                 <button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); loadEmployeeStatusHistory('${emp.id}')">Status history</button>
-                ${(canEdit() && !employeeUserIds.has(emp.id)) ? `<button class="btn-small" style="background:var(--navy);margin:0 0 0 6px;" onclick="event.stopPropagation(); generateEmployeeUser('${emp.id}')">Generate User</button>` : ''}
-                <div id="stathist-${emp.id}" style="margin-top:6px;font-size:12px;"></div>
-            </div>`;
+                ${(canEdit() && !employeeUserIds.has(emp.id)) ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); generateEmployeeUser('${emp.id}')">Generate User</button>` : ''}
+            </div>
+            <div id="stathist-${emp.id}" style="margin-top:6px;font-size:12px;"></div>`;
     }
 
     async function loadEmployeeStatusHistory(empId) {
@@ -4869,7 +4899,7 @@
                     : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
                 const open = recExpanded.employees.has(emp.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('employees','${emp.id}')">
-                    <td class="id-cell"><span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
+                    <td class="id-cell"><span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id} ${attachInd('employee', emp.id)}</td>
                     <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
                     <td>${emp.person_type}</td>
                     <td>${escHtml(emp.department) || '-'}</td>
@@ -4909,6 +4939,7 @@
                         <span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="rec-sub">${emp.id}</span>
+                        ${attachInd('employee', emp.id)}
                         <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : pt === 'Provider' ? 'pay-provider' : 'pay-weekly'}">${pt}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span></span>
                     </div>
                     <div class="rec-card-body">
@@ -5573,33 +5604,78 @@
 
     // ===== Attachments =====================================================
     // One shared system for files/photos/videos on claims, charges, income,
-    // invoices and bills. Metadata lives in the attachments table (reached
-    // only through token-guarded RPCs); the bytes live in a private Supabase
-    // Storage bucket reached only through the 'attachments' Edge Function,
-    // which re-checks the session token and company scope server-side and
-    // hands out short-lived signed URLs. SuperAdmin is unrestricted across
-    // companies; everyone else is limited to records in their own company.
-    let attachCtx = null; // { type, id } for the record the modal is open on
+    // invoices, bills, employees and vehicles. Metadata lives in the
+    // attachments table (reached only through token-guarded RPCs); the bytes
+    // live in a private Supabase Storage bucket reached only through the
+    // 'attachments' Edge Function, which re-checks the session token and
+    // company scope server-side and hands out short-lived signed URLs.
+    // SuperAdmin is unrestricted across companies; everyone else is limited to
+    // records in their own company.
+    //
+    // Employees and vehicles additionally use *labeled document slots*: a file
+    // can be tagged as the Driver License / Work Permit / Medical Card /
+    // Registration / Insurance for that record, so the Expiring Documents
+    // screen can jump straight to the document that's about to expire. The
+    // label is optional — an untagged file is just a general attachment.
+    let attachCtx = null; // { type, id, docLabel } for the record the modal is on
+
+    // Server-side, record_attachment only accepts these labels; anything else
+    // is stored untagged. Keep the two lists in step.
+    const DOC_LABELS = {
+        driver_license: 'Driver License',
+        work_permit: 'Work Permit',
+        medical_card: 'Medical Card',
+        registration: 'Registration',
+        insurance: 'Insurance Card'
+    };
 
     function attachBtnHtml(type, id) {
         return `<button type="button" class="btn-small" style="background:var(--excel-blue); margin:0;" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')">📎 Files</button>`;
+    }
+
+    // One labeled document slot. Solid+blue once something is uploaded,
+    // dashed "+ Upload" while empty, and inert for a View Only user with
+    // nothing on file (nothing to open, nothing they may add).
+    function attachSlotHtml(type, id, docLabel) {
+        const label = DOC_LABELS[docLabel] || 'Document';
+        const n = attachmentLabelCounts[`${type}:${id}:${docLabel}`] || 0;
+        if (!n && !canEdit()) {
+            return `<span class="doc-slot muted" title="No ${escHtml(label)} on file">${escHtml(label)} <span class="doc-slot-val">—</span></span>`;
+        }
+        const title = n ? `${n} file${n === 1 ? '' : 's'} for ${label} — click to view` : `Upload ${label}`;
+        return `<span class="doc-slot${n ? ' has-file' : ''}" title="${escHtml(title)}" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}','${docLabel}')">${escHtml(label)} <span class="doc-slot-val">${n ? '📎 ' + n : '+ Upload'}</span></span>`;
+    }
+
+    // The "Documents" block shown inside an expanded employee/vehicle.
+    function docSlotsHtml(type, id, labels) {
+        return `<div class="detail-subhead" style="margin-top:10px;">Documents</div>
+            <div class="doc-slot-row">${labels.map(l => attachSlotHtml(type, id, l)).join('')}</div>`;
     }
 
     // Per-record attachment counts, keyed "type:id" → number of files. Loaded
     // once per data refresh via a single scope-checked RPC so every list can
     // show a "has files" indicator without opening each record. Any change is
     // set true so the indicators can be refreshed when the Files modal closes.
-    let attachmentCounts = {};
+    let attachmentCounts = {};        // "type:id"        -> total files
+    let attachmentLabelCounts = {};   // "type:id:label"  -> files in that slot
     let attachDirty = false;
 
     async function loadAttachmentCounts() {
-        if (!currentUsername) { attachmentCounts = {}; return; }
+        if (!currentUsername) { attachmentCounts = {}; attachmentLabelCounts = {}; return; }
         try {
             const { data, error } = await supabaseClient.rpc('attachment_counts', { p_actor: currentUsername });
             if (error) { console.warn('attachment_counts:', error.message); return; }
-            const map = {};
-            (data || []).forEach(r => { map[`${r.entity_type}:${r.entity_id}`] = parseInt(r.cnt, 10) || 0; });
-            attachmentCounts = map;
+            // The RPC returns one row per (entity, doc_label); the per-record
+            // total is the sum across its labels (including the untagged null).
+            const totals = {}, byLabel = {};
+            (data || []).forEach(r => {
+                const n = parseInt(r.cnt, 10) || 0;
+                const key = `${r.entity_type}:${r.entity_id}`;
+                totals[key] = (totals[key] || 0) + n;
+                if (r.doc_label) byLabel[`${key}:${r.doc_label}`] = n;
+            });
+            attachmentCounts = totals;
+            attachmentLabelCounts = byLabel;
         } catch (e) { console.warn('attachment_counts:', e); }
     }
 
@@ -5615,7 +5691,8 @@
     // Re-render every list that carries attachment indicators (open cards keep
     // their state — expansion is tracked separately in recExpanded).
     function rerenderAttachmentLists() {
-        ['renderClaimsCharges', 'renderIncome', 'renderInvoices', 'renderBills'].forEach(fn => {
+        ['renderClaimsCharges', 'renderIncome', 'renderInvoices', 'renderBills',
+         'renderEmployees', 'renderVehicles', 'renderExpiringDocuments'].forEach(fn => {
             if (typeof window[fn] === 'function') { try { window[fn](); } catch (e) { /* tab not built yet */ } }
         });
     }
@@ -5638,10 +5715,41 @@
         return n + ' B';
     }
 
-    function openAttachments(type, id) {
-        attachCtx = { type, id };
+    // A human label for whatever record the modal is open on — used both in
+    // the modal title and to pre-fill a tidy suggested file name.
+    function attachCtxName() {
+        if (!attachCtx) return '';
+        const { type, id } = attachCtx;
+        try {
+            if (type === 'employee') {
+                const e = employees.find(x => x.id === id);
+                return e ? `${e.first_name} ${e.last_name}`.trim() : id;
+            }
+            if (type === 'vehicle') {
+                const v = vehicles.find(x => x.id === id);
+                if (!v) return id;
+                return v.truck_number ? `Truck ${v.truck_number}` : `${v.year} ${v.make} ${v.model}`.trim();
+            }
+        } catch (e) { /* array not loaded yet */ }
+        return id;
+    }
+
+    // docLabel is optional: with it the modal shows only that document and
+    // tags anything uploaded, without it it's the record's general file list.
+    function openAttachments(type, id, docLabel) {
+        attachCtx = { type, id, docLabel: docLabel || null };
+        attachStage = [];
+        attachListCache = [];
+        renderAttachStage();
         const ov = document.getElementById('attachments-overlay');
-        document.getElementById('attachments-title').textContent = `Files — ${id}`;
+        const who = attachCtxName();
+        document.getElementById('attachments-title').textContent = docLabel
+            ? `${DOC_LABELS[docLabel] || 'Document'} — ${who}`
+            : `Files — ${id}`;
+        const sub = document.getElementById('attachments-subtitle');
+        if (sub) sub.textContent = docLabel
+            ? `${DOC_LABELS[docLabel] || 'Document'} on file for ${who}. Optional — nothing requires an upload.`
+            : 'Photos, videos and documents for this record. Optional — nothing requires an upload.';
         document.getElementById('attachments-add-btn').style.display = canEdit() ? 'inline-block' : 'none';
         document.getElementById('attachments-progress').textContent = '';
         ov.style.display = 'flex';
@@ -5651,10 +5759,15 @@
         document.getElementById('attachments-overlay').style.display = 'none';
         document.getElementById('attachments-file-input').value = '';
         attachCtx = null;
+        attachStage = [];
+        attachListCache = [];
+        renderAttachStage();
         // If files were added/removed while open, refresh the counts (and the
         // row/card indicators) from the authoritative server side.
         if (attachDirty) { attachDirty = false; await loadAttachmentCounts(); rerenderAttachmentLists(); }
     }
+
+    let attachListCache = [];   // what's currently listed, for name suggestions
 
     async function loadAttachmentsList() {
         if (!attachCtx) return;
@@ -5664,14 +5777,22 @@
             p_actor: currentUsername, p_entity_type: attachCtx.type, p_entity_id: attachCtx.id
         });
         if (error) { listEl.innerHTML = `<div style="color:#ef4444; font-size:12px;">${escHtml(error.message)}</div>`; return; }
-        if (!data || !data.length) { listEl.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 0;">No files attached yet.</div>'; return; }
+        // Opened on a document slot: show only that document.
+        let rows = data || [];
+        if (attachCtx.docLabel) rows = rows.filter(a => a.doc_label === attachCtx.docLabel);
+        attachListCache = rows;
+        if (!rows.length) {
+            listEl.innerHTML = `<div style="color:var(--text-muted); font-size:12px; padding:8px 0;">${attachCtx.docLabel ? 'Nothing uploaded for this document yet.' : 'No files attached yet.'}</div>`;
+            return;
+        }
         const icon = { photo: '📷', video: '🎬', document: '📄' };
-        listEl.innerHTML = data.map(a => `
+        listEl.innerHTML = rows.map(a => `
             <div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;">
                 <span style="font-size:16px;">${icon[a.kind] || '📄'}</span>
-                <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(a.file_name)}">${escHtml(a.file_name)}</span>
+                <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(a.file_name)}">${escHtml(a.file_name)}${(!attachCtx.docLabel && a.doc_label) ? ` <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(DOC_LABELS[a.doc_label] || a.doc_label)}</span>` : ''}</span>
                 <span style="color:var(--text-muted); white-space:nowrap;">${formatBytes(a.size_bytes)}</span>
                 <button type="button" class="btn-small" style="margin:0; padding:3px 9px;" onclick="viewAttachment('${escJsAttr(a.storage_path)}')">View</button>
+                ${canEdit() ? `<button type="button" class="btn-small" style="margin:0; padding:3px 8px; background:var(--navy);" title="Rename this file" onclick="renameAttachmentUi(${a.id}, '${escJsAttr(a.file_name)}')">✎</button>` : ''}
                 ${canEdit() ? `<span class="del-btn" style="cursor:pointer;" onclick="deleteAttachmentUi(${a.id}, '${escJsAttr(a.storage_path)}')">✕</span>` : ''}
             </div>`).join('');
     }
@@ -5700,23 +5821,106 @@
         } catch (e) { return file; }
     }
 
-    async function uploadSelectedAttachments(files) {
-        if (!attachCtx || !files || !files.length || !canEdit()) return;
+    // Picking files no longer uploads straight away: the files are staged with
+    // an editable, pre-filled name so a camera's "IMG_20260819_223344_1.jpg"
+    // can become something readable before it lands. Nothing is sent until
+    // "Upload" is pressed.
+    let attachStage = [];   // [{ file, name (no extension), ext }]
+
+    function splitExt(name) {
+        const m = String(name || '').match(/\.([A-Za-z0-9]{1,8})$/);
+        return m ? { base: String(name).slice(0, -(m[1].length + 1)), ext: m[1].toLowerCase() } : { base: String(name || ''), ext: '' };
+    }
+
+    // Keep a file name to something a file system and the storage layer are
+    // both happy with: no path separators or control characters, single
+    // spaces, no trailing dots, bounded length. Mirrors rename_attachment's
+    // server-side cleaning so the two can't disagree.
+    function sanitizeAttachName(s) {
+        let out = String(s == null ? '' : s)
+            .replace(/[\\/\r\n\t\u0000-\u001f]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/\.+$/, '')
+            .trim();
+        return out ? out.slice(0, 120) : 'File';
+    }
+
+    // Suggested name: "Medical Card — Luis Melara" in a document slot, or the
+    // record's own label otherwise, with (2), (3)… when that's already taken.
+    function suggestAttachName() {
+        const who = attachCtxName();
+        const base = (attachCtx && attachCtx.docLabel)
+            ? `${DOC_LABELS[attachCtx.docLabel] || 'Document'} — ${who}`
+            : String(who || 'File');
+        const taken = new Set();
+        (attachListCache || []).forEach(a => taken.add(splitExt(a.file_name).base.toLowerCase()));
+        attachStage.forEach(st => taken.add(String(st.name).toLowerCase()));
+        if (!taken.has(base.toLowerCase())) return base;
+        let n = 2;
+        while (taken.has(`${base} (${n})`.toLowerCase())) n++;
+        return `${base} (${n})`;
+    }
+
+    function stageSelectedAttachments(fileList) {
+        if (!attachCtx || !canEdit()) return;
+        Array.from(fileList || []).forEach(f => {
+            const { ext } = splitExt(f.name);
+            attachStage.push({ file: f, name: suggestAttachName(), ext });
+        });
+        document.getElementById('attachments-file-input').value = '';
+        renderAttachStage();
+    }
+
+    function setStagedName(i, val) { if (attachStage[i]) attachStage[i].name = val; }
+    function removeStagedAttachment(i) { attachStage.splice(i, 1); renderAttachStage(); }
+    function clearAttachStage() { attachStage = []; renderAttachStage(); }
+
+    function renderAttachStage() {
+        const el = document.getElementById('attachments-stage');
+        if (!el) return;
+        if (!attachStage.length) { el.innerHTML = ''; return; }
+        el.innerHTML = `
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
+                <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); font-weight:700; margin-bottom:4px;">Ready to upload — rename if you like</div>
+                ${attachStage.map((st, i) => `
+                    <div class="stage-row">
+                        <input type="text" value="${escHtml(st.name)}" oninput="setStagedName(${i}, this.value)" placeholder="File name">
+                        <span class="stage-meta">${st.ext ? '.' + escHtml(st.ext) : ''} · ${formatBytes(st.file.size)}</span>
+                        <span class="del-btn" style="cursor:pointer;" title="Remove" onclick="removeStagedAttachment(${i})">✕</span>
+                    </div>`).join('')}
+                <div style="margin-top:8px;">
+                    <button type="button" class="btn-small" id="attach-upload-btn" style="margin:0;" onclick="uploadStagedAttachments()">Upload ${attachStage.length} file${attachStage.length === 1 ? '' : 's'}</button>
+                    <button type="button" class="btn-small" style="margin:0 0 0 6px; background:#64748b;" onclick="clearAttachStage()">Cancel</button>
+                </div>
+            </div>`;
+    }
+
+    async function uploadStagedAttachments() {
+        if (!attachCtx || !attachStage.length || !canEdit()) return;
         const prog = document.getElementById('attachments-progress');
-        const arr = Array.from(files);
+        const btn = document.getElementById('attach-upload-btn');
+        if (btn) btn.disabled = true;
+        const items = attachStage.slice();
         let done = 0, failed = 0;
-        for (const original of arr) {
-            prog.textContent = `Uploading ${done + failed + 1} of ${arr.length}…`;
+        for (let i = 0; i < items.length; i++) {
+            const st = items[i];
+            prog.textContent = `Uploading ${i + 1} of ${items.length}…`;
             try {
-                if (original.size > 104857600) throw new Error(`${original.name}: over the 100 MB limit`);
-                const file = await compressImageFile(original);
-                const signed = await efAttach({ action: 'sign-upload', entity_type: attachCtx.type, entity_id: attachCtx.id, file_name: file.name });
+                if (st.file.size > 104857600) throw new Error(`${st.file.name}: over the 100 MB limit`);
+                const file = await compressImageFile(st.file);
+                // compressImageFile may re-encode to JPEG, so take the
+                // extension from what's actually being uploaded.
+                const ext = splitExt(file.name).ext || st.ext;
+                const finalName = sanitizeAttachName(st.name) + (ext ? '.' + ext : '');
+                const signed = await efAttach({ action: 'sign-upload', entity_type: attachCtx.type, entity_id: attachCtx.id, file_name: finalName });
                 const up = await fetch(signed.signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file });
                 if (!up.ok) throw new Error('Upload failed (HTTP ' + up.status + ')');
                 const { error } = await supabaseClient.rpc('record_attachment', {
                     p_actor: currentUsername, p_entity_type: attachCtx.type, p_entity_id: attachCtx.id,
-                    p_storage_path: signed.path, p_file_name: file.name,
-                    p_mime_type: file.type || null, p_size_bytes: file.size, p_kind: null
+                    p_storage_path: signed.path, p_file_name: finalName,
+                    p_mime_type: file.type || null, p_size_bytes: file.size, p_kind: null,
+                    p_doc_label: attachCtx.docLabel || null
                 });
                 if (error) throw new Error(error.message);
                 done++;
@@ -5727,8 +5931,27 @@
             }
         }
         prog.textContent = failed ? `${done} uploaded, ${failed} failed.` : `${done} file${done === 1 ? '' : 's'} uploaded.`;
+        attachStage = [];
+        renderAttachStage();
         document.getElementById('attachments-file-input').value = '';
         if (done) attachDirty = true;
+        loadAttachmentsList();
+    }
+
+    // Rename a file that's already uploaded — display name only, the stored
+    // object is never moved. The extension is held back from the prompt so it
+    // can't be lost or mangled.
+    async function renameAttachmentUi(id, current) {
+        if (!canEdit()) return;
+        const { base, ext } = splitExt(current);
+        const next = prompt('Rename file', base);
+        if (next === null) return;
+        const finalName = sanitizeAttachName(next) + (ext ? '.' + ext : '');
+        if (finalName === current) return;
+        const { error } = await supabaseClient.rpc('rename_attachment', {
+            p_actor: currentUsername, p_id: id, p_file_name: finalName
+        });
+        if (error) { alert('Error: ' + error.message); return; }
         loadAttachmentsList();
     }
 
@@ -11551,6 +11774,7 @@
                 <div><div class="k">VIN</div><div class="v">${v.vin ? escHtml(v.vin) : '-'}</div></div>
                 <div><div class="k">Notes</div><div class="v">${v.notes ? escHtml(v.notes) : '-'}</div></div>
             </div>
+            ${docSlotsHtml('vehicle', v.id, ['registration', 'insurance'])}
             <div class="detail-subhead" style="margin-top:10px;">Service Log</div>
             ${editable ? `
             <div class="form-row" style="margin:6px 0;">
@@ -11562,11 +11786,11 @@
                 <button type="button" class="btn-small" style="background:var(--navy);" onclick="addVehicleService('${escJsAttr(v.id)}')">+ Add</button>
             </div>` : ''}
             <div>${rows}</div>
-            ${editable ? `
             <div class="rec-actions" style="margin-top:10px;">
-                <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editVehicle('${escJsAttr(v.id)}')">Edit</button>
-                <button class="del-btn" onclick="deleteVehicle('${escJsAttr(v.id)}')">✕ Delete</button>
-            </div>` : ''}`;
+                ${attachBtnHtml('vehicle', v.id)}
+                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editVehicle('${escJsAttr(v.id)}')">Edit</button>
+                <button class="del-btn" onclick="deleteVehicle('${escJsAttr(v.id)}')">✕ Delete</button>` : ''}
+            </div>`;
     }
 
     // Home dashboard — a company-wide snapshot built entirely from data
@@ -11711,7 +11935,7 @@
             list.forEach(v => {
                 const open = recExpanded.vehicles.has(v.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('vehicles','${v.id}')">
-                    <td class="id-cell"><span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span> ${v.id}</td>
+                    <td class="id-cell"><span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span> ${v.id} ${attachInd('vehicle', v.id)}</td>
                     <td>${v.truck_number ? escHtml(v.truck_number) : '-'}</td>
                     <td>${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</td>
                     <td>${v.plate ? escHtml(v.plate) : '-'}</td>
@@ -11740,6 +11964,7 @@
                         <span class="rec-caret" data-caret="vehicles-${v.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${v.truck_number ? `#${escHtml(v.truck_number)} — ` : ''}${escHtml(v.year)} ${escHtml(v.make)} ${escHtml(v.model)}</span>
                         <span class="rec-sub">${v.plate ? escHtml(v.plate) : v.id}</span>
+                        ${attachInd('vehicle', v.id)}
                         <span class="rec-right">${expBadge(v.reg_expiry, 30) || expBadge(v.insurance_expiry, 30)}</span>
                     </div>
                     <div class="rec-card-body">
