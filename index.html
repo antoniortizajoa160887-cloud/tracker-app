@@ -610,6 +610,11 @@
     .rec-card-head .rec-title { font-weight: 700; font-size: 13px; }
     .rec-card-head .rec-sub { font-size: 10px; opacity: 0.85; font-family: var(--mono); }
     .rec-card-head .rec-right { margin-left: auto; display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; font-family: var(--mono); }
+    /* "Has files" indicator shown on a collapsed record row/card. */
+    .attach-ind { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; font-family: var(--mono); color: var(--excel-blue); background: rgba(59,130,246,0.13); border-radius: 10px; padding: 0 7px; line-height: 1.7; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .attach-ind:hover { background: rgba(59,130,246,0.24); }
+    .rec-card.open .rec-card-head .attach-ind { color: #fff; background: rgba(255,255,255,0.22); }
+    td .attach-ind { line-height: 1.5; }
     .rec-card-body { display: none; padding: 10px 11px 12px; border-top: 1px solid var(--border); }
     .rec-card.open .rec-card-body { display: block; }
     .rec-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px 16px; font-size: 11px; margin-bottom: 10px; }
@@ -2535,8 +2540,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.31';
+    const APP_VERSION = 'v3.32';
     const CHANGELOG = [
+        { version: 'v3.32', date: '2026-08-20', notes: 'Records with uploaded files now show a paperclip badge so you can tell at a glance which ones have documents, photos or videos — no more opening each one to check. Wherever files can be attached — Claims & Charges, Additional Income, Invoices and Bills — any record with one or more files shows a small 📎 chip with the count right on its collapsed row/card. Tap the chip to open that record\'s Files directly. The count updates as soon as you add or remove files.' },
         { version: 'v3.31', date: '2026-08-19', notes: 'A new title bar and two grouped report screens. The app title now reads "Tracker — Unified Logistics · HR · Claims", and once you are signed into a company it shows the company first — for example "3 Of Life LLC / Tracker — Unified Logistics · HR · Claims". This applies to every company (Super Admin sees it update as they switch companies, and it also updates the browser tab). Separately, the Savings & Release Eligibility and Release History screens now group their records by Employee — tap an employee heading to collapse or expand that person — and each gained filters: Savings & Release Eligibility has search plus a Type filter (Week in Deposit / Last Paycheck) and an Eligibility filter (Ready now / Not yet), and Release History has search plus a Type filter and an Early / On-time filter.' },
         { version: 'v3.30', date: '2026-08-19', notes: 'Messaging gets files, emoji, and a cleaner people list. (1) You can now attach photos, videos and documents inside a chat: from a Claim, Charge or Income conversation tap the 📎 button to send a file — it is automatically attached to that specific record (so it also appears in that record\'s Files) and shows in the chat with a tap-to-open button. Phone photos are shrunk automatically and single files can be up to 100 MB. (General and Missing Day chats have no record to attach to, so files are sent from the record conversations.) (2) An emoji picker (😊) is available in every conversation. (3) The "new conversation" people list is cleaner: role labels are hidden, and the Super Admin account and the automatic company login accounts (like "3ofl") no longer appear — you only see real people you are allowed to message.' },
         { version: 'v3.29', date: '2026-08-19', notes: 'Messages are now organized down to the specific item. When you start a conversation you pick a person, then a topic — and for Claims, Charges or Income you then pick the exact record it is about (only that person\'s records are listed), while Missing Day opens a calendar to pick the date. Each item becomes its own independent thread: your conversation about one claim stays completely separate from another claim, from a Missing Day, and from General chat — each with its own history and unread count. The conversation list shows the item next to each thread (for example the claim number and damage type, or the date), and the topic filter chips still narrow the list.' },
@@ -4092,7 +4098,8 @@
             fetchEmployeesFromCloud(),
             fetchClaimsFromCloud(),
             fetchChargesFromCloud(),
-            fetchSettingsFromCloud()
+            fetchSettingsFromCloud(),
+            loadAttachmentCounts()       // "has files" indicators across every list
         ]);
         await loadCurrentWeekDaily();    // for Payroll base pay of Daily people
         await loadCurrentWeekProvider(); // for Payroll base pay of Provider people
@@ -5348,7 +5355,7 @@
                     const editFn = k === 'claim' ? 'editClaim' : 'editCharge';
                     const delFn = k === 'claim' ? 'deleteClaim' : 'deleteCharge';
                     rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('${tbl}','${id}')">
-                        <td class="id-cell"><span class="rec-caret" data-caret="${tbl}-${id}">${open ? '▾' : '▸'}</span> ${id}</td>
+                        <td class="id-cell"><span class="rec-caret" data-caret="${tbl}-${id}">${open ? '▾' : '▸'}</span> ${id} ${attachInd(k, id)}</td>
                         <td>${CC_KIND_BADGE[k]}</td>
                         <td>${escHtml(empName)}</td>
                         <td class="id-cell">${r.employee_id}</td>
@@ -5398,6 +5405,7 @@
                             <span class="rec-caret" data-caret="${tbl}-${id}">${open ? '▾' : '▸'}</span>
                             <span class="rec-title">${escHtml(empName)}</span>
                             <span class="rec-sub">${CC_KIND_BADGE[k]} ${id}</span>
+                            ${attachInd(k, id)}
                             <span class="rec-right"${balColor}>${formatMoney(bal)} <span class="status-badge status-${r.status}">${r.status}</span></span>
                         </div>
                         <div class="rec-card-body">${ccDetailHtml(r, empName, weeks, bal, endDate, editable)}</div>
@@ -5512,6 +5520,41 @@
         return `<button type="button" class="btn-small" style="background:var(--excel-blue); margin:0;" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')">📎 Files</button>`;
     }
 
+    // Per-record attachment counts, keyed "type:id" → number of files. Loaded
+    // once per data refresh via a single scope-checked RPC so every list can
+    // show a "has files" indicator without opening each record. Any change is
+    // set true so the indicators can be refreshed when the Files modal closes.
+    let attachmentCounts = {};
+    let attachDirty = false;
+
+    async function loadAttachmentCounts() {
+        if (!currentUsername) { attachmentCounts = {}; return; }
+        try {
+            const { data, error } = await supabaseClient.rpc('attachment_counts', { p_actor: currentUsername });
+            if (error) { console.warn('attachment_counts:', error.message); return; }
+            const map = {};
+            (data || []).forEach(r => { map[`${r.entity_type}:${r.entity_id}`] = parseInt(r.cnt, 10) || 0; });
+            attachmentCounts = map;
+        } catch (e) { console.warn('attachment_counts:', e); }
+    }
+
+    // Small paperclip+count chip for a collapsed record row/card. Renders only
+    // when the record has ≥1 attached file; clicking it opens the Files modal
+    // without toggling the row.
+    function attachInd(type, id) {
+        const n = attachmentCounts[`${type}:${id}`] || 0;
+        if (!n) return '';
+        return `<span class="attach-ind" title="${n} file${n === 1 ? '' : 's'} attached — click to view" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')">📎${n}</span>`;
+    }
+
+    // Re-render every list that carries attachment indicators (open cards keep
+    // their state — expansion is tracked separately in recExpanded).
+    function rerenderAttachmentLists() {
+        ['renderClaimsCharges', 'renderIncome', 'renderInvoices', 'renderBills'].forEach(fn => {
+            if (typeof window[fn] === 'function') { try { window[fn](); } catch (e) { /* tab not built yet */ } }
+        });
+    }
+
     async function efAttach(payload) {
         const res = await fetch(SUPABASE_URL + '/functions/v1/attachments', {
             method: 'POST',
@@ -5539,10 +5582,13 @@
         ov.style.display = 'flex';
         loadAttachmentsList();
     }
-    function closeAttachments() {
+    async function closeAttachments() {
         document.getElementById('attachments-overlay').style.display = 'none';
         document.getElementById('attachments-file-input').value = '';
         attachCtx = null;
+        // If files were added/removed while open, refresh the counts (and the
+        // row/card indicators) from the authoritative server side.
+        if (attachDirty) { attachDirty = false; await loadAttachmentCounts(); rerenderAttachmentLists(); }
     }
 
     async function loadAttachmentsList() {
@@ -5617,6 +5663,7 @@
         }
         prog.textContent = failed ? `${done} uploaded, ${failed} failed.` : `${done} file${done === 1 ? '' : 's'} uploaded.`;
         document.getElementById('attachments-file-input').value = '';
+        if (done) attachDirty = true;
         loadAttachmentsList();
     }
 
@@ -5633,6 +5680,7 @@
         const { data, error } = await supabaseClient.rpc('delete_attachment', { p_actor: currentUsername, p_id: id });
         if (error) { alert('Error: ' + error.message); return; }
         try { await efAttach({ action: 'delete-object', path: data || path }); } catch (e) { console.warn('storage object cleanup:', e); }
+        attachDirty = true;
         loadAttachmentsList();
     }
 
@@ -7696,7 +7744,7 @@
                 const endDate = projectedEndDate(i.start_date, i.amount, i.weekly_amount) || (i.end_date || '-');
                 const open = recExpanded.income.has(i.income_id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('income','${i.income_id}')">
-                    <td class="id-cell"><span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span> ${i.income_id}</td>
+                    <td class="id-cell"><span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span> ${i.income_id} ${attachInd('income', i.income_id)}</td>
                     <td>${escHtml(empName)}</td>
                     <td class="id-cell">${i.employee_id}</td>
                     <td>${escHtml(i.income_type)}</td>
@@ -7741,6 +7789,7 @@
                         <span class="rec-caret" data-caret="income-${i.income_id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${escHtml(empName)}</span>
                         <span class="rec-sub">${i.income_id}</span>
+                        ${attachInd('income', i.income_id)}
                         <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${i.status}</span></span>
                     </div>
                     <div class="rec-card-body">${incomeDetailHtml(i, empName, weeks, rem, endDate, editable)}</div>
@@ -11055,6 +11104,7 @@
                             <span class="rec-caret" data-caret="invoices-${inv.invoice_id}">${open ? '▾' : '▸'}</span>
                             <span class="rec-title">${inv.invoice_number ? `#${escHtml(inv.invoice_number)} — ` : ''}${escHtml(inv.customer_name)}</span>
                             <span class="rec-sub">${inv.invoice_date || '-'}</span>
+                            ${attachInd('invoice', inv.invoice_id)}
                             <span class="rec-right"><span class="status-badge status-${inv.status}">${inv.status}</span> ${formatMoney(inv.total_amount)}</span>
                         </div>
                         <div class="rec-card-body">${invoiceDetailHtml(inv)}</div>
@@ -11228,6 +11278,7 @@
                             <span class="rec-caret" data-caret="bills-${b.bill_id}">${open ? '▾' : '▸'}</span>
                             <span class="rec-title">${escHtml(b.vendor_name)}</span>
                             <span class="rec-sub">${b.bill_number ? '#' + escHtml(b.bill_number) : ''} ${b.due_date ? '· due ' + b.due_date : ''}</span>
+                            ${attachInd('bill', b.bill_id)}
                             <span class="rec-right"><span class="status-badge status-${b.status}">${b.status}</span> ${formatMoney(b.amount)}</span>
                         </div>
                         <div class="rec-card-body">
