@@ -2584,8 +2584,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.37';
+    const APP_VERSION = 'v3.38';
     const CHANGELOG = [
+        { version: 'v3.38', date: '2026-08-20', notes: 'View Only accounts can now look after their own record, with managers kept in the loop. (1) A View Only user can open their own Status history — read only; they still cannot change their own status or edit any other field. (2) They can upload their own Driver License, Work Permit and Medical Card from their employee card. They can add and view those documents but cannot rename or delete them, so a document cannot be withdrawn once it has been submitted. They cannot upload to anyone else, to a truck, or to a claim, charge, invoice or bill. (3) As soon as a View Only user uploads one of their documents, everyone at Medium level and above gets a notification naming the person and the document, so it can be reviewed — tap the notification to jump straight to that employee. Managers uploading documents themselves create no notification, since they already know. Security note: the rule limiting a View Only user to their own record is now enforced on the server, not just hidden in the screen.' },
         { version: 'v3.37', date: '2026-08-20', notes: 'Shorter, consistent file names for uploaded documents. Names are now built as a short document code, the record ID and the date — for example "DL-3OFL0002S-20260820.jpg" for a Driver License, or "REG-3OFL0001V-20260820.jpg" for a truck registration (DL = Driver License, WP = Work Permit, MC = Medical Card, REG = Registration, INS = Insurance Card). A general file on a record is just the record ID and date. A second file the same day gets -2, -3 and so on. This replaces the previous long names like "Driver License — Antonio Ortiz Arevalo.jpg", which were unwieldy and turned into runs of underscores in storage. Names are still fully editable before you upload, and files already uploaded have been renamed to the new format — only the name shown changes, the files themselves are untouched. Also fixed earlier today: uploading to an employee or truck failed because the list of record types allowed to hold files was duplicated in three places and only some had been updated; all three now agree.' },
         { version: 'v3.36', date: '2026-08-20', notes: 'Employees and trucks can now hold their documents, and files can be named properly. (1) Each employee has upload slots for Driver License, Work Permit and Medical Card, and each truck has slots for Registration and Insurance Card — tap a slot to upload or view. Uploading is completely optional; nothing is required. (2) The Expiring Documents screen now shows the same slots, so when something is about to expire you can open the actual document right there instead of going to look for it. (3) A paperclip count appears on employee and truck rows that have files, the same way it already does on claims and charges. (4) When you upload, files are now listed first with an editable name — pre-filled with something tidy like "Medical Card — Luis Melara" — so a camera file name like "IMG_20260819_223344_1.jpg" does not end up in the record. You can also rename a file that is already uploaded with the ✎ button. Renaming only changes the name shown; the file itself is untouched.' },
         { version: 'v3.35', date: '2026-08-20', notes: 'Finished fixing the doubled window title bar of the installed app. The operating system builds that title bar as "{installed app name} + page title", and it remembers the app name from when the app was first installed — so the old, long name ("Tracker — Logistics · HR · Claims") kept showing before the page title, doubling the wording. Now, when the app is running as an installed window, the page title holds only the company name (nothing else), so the bar reads cleanly — e.g. "Tracker — Logistics · HR · Claims - 3 Of Life LLC" on an existing install, or "Tracker - 3 Of Life LLC" once reinstalled — with no repeated words either way. Opened in a normal browser tab it still shows the full "… · Unified Logistics · HR · Claims". You do NOT need to reinstall to clear the duplication — just reload; reinstalling only shortens the app-name prefix to "Tracker".' },
@@ -5276,8 +5277,8 @@
         renderNotifications();
     }
 
-    const NOTIF_KIND_LABEL = { claim: 'Claim', charge: 'Charge', income: 'Additional Income' };
-    const NOTIF_KIND_ICON = { claim: '📋', charge: '➖', income: '➕' };
+    const NOTIF_KIND_LABEL = { claim: 'Claim', charge: 'Charge', income: 'Additional Income', document: 'Document' };
+    const NOTIF_KIND_ICON = { claim: '📋', charge: '➖', income: '➕', document: '📎' };
 
     function renderNotifications() {
         const container = document.getElementById('notifications-tbody');
@@ -5323,7 +5324,15 @@
         if (n) n.read_at = n.read_at || new Date().toISOString();
         updateNotifBadge();
 
-        if (kind === 'claim' || kind === 'charge') {
+        if (kind === 'document') {
+            // record_id is the employee the document belongs to — open their
+            // record so the reviewer lands on the Documents slots directly.
+            openTab(null, 'tab-employees');
+            document.getElementById('btn-tab-employees')?.classList.add('active');
+            const es = document.getElementById('employee-search'); if (es) es.value = recordId;
+            recExpanded.employees.add(recordId);
+            renderEmployees();
+        } else if (kind === 'claim' || kind === 'charge') {
             openTab(null, 'tab-claims');
             document.getElementById('btn-tab-claims')?.classList.add('active');
             const ks = document.getElementById('cc-kind'); if (ks) ks.value = kind;
@@ -5653,7 +5662,7 @@
     function attachSlotHtml(type, id, docLabel) {
         const label = DOC_LABELS[docLabel] || 'Document';
         const n = attachmentLabelCounts[`${type}:${id}:${docLabel}`] || 0;
-        if (!n && !canEdit()) {
+        if (!n && !canUploadTo(type, id)) {
             return `<span class="doc-slot muted" title="No ${escHtml(label)} on file">${escHtml(label)} <span class="doc-slot-val">—</span></span>`;
         }
         const title = n ? `${n} file${n === 1 ? '' : 's'} for ${label} — click to view` : `Upload ${label}`;
@@ -5764,7 +5773,7 @@
         if (sub) sub.textContent = docLabel
             ? `${DOC_LABELS[docLabel] || 'Document'} on file for ${who}. Optional — nothing requires an upload.`
             : 'Photos, videos and documents for this record. Optional — nothing requires an upload.';
-        document.getElementById('attachments-add-btn').style.display = canEdit() ? 'inline-block' : 'none';
+        document.getElementById('attachments-add-btn').style.display = canUploadTo(type, id) ? 'inline-block' : 'none';
         document.getElementById('attachments-progress').textContent = '';
         ov.style.display = 'flex';
         loadAttachmentsList();
@@ -5880,7 +5889,7 @@
     }
 
     function stageSelectedAttachments(fileList) {
-        if (!attachCtx || !canEdit()) return;
+        if (!attachCtx || !canUploadTo(attachCtx.type, attachCtx.id)) return;
         Array.from(fileList || []).forEach(f => {
             const { ext } = splitExt(f.name);
             attachStage.push({ file: f, name: suggestAttachName(), ext });
@@ -5914,7 +5923,7 @@
     }
 
     async function uploadStagedAttachments() {
-        if (!attachCtx || !attachStage.length || !canEdit()) return;
+        if (!attachCtx || !attachStage.length || !canUploadTo(attachCtx.type, attachCtx.id)) return;
         const prog = document.getElementById('attachments-progress');
         const btn = document.getElementById('attach-upload-btn');
         if (btn) btn.disabled = true;
@@ -9762,6 +9771,22 @@
     // --- INLINE EDITING (Admin + Medium) --------------------------------
     function canEdit() {
         return currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator' || currentUserRole === 'Medium';
+    }
+
+    // A View Only account belongs to one employee and may maintain that one
+    // record only. The server enforces this too (_attach_scope_ok confines role
+    // 'User' to their own employee row) — these helpers just keep the UI honest
+    // so a button is never offered that the server would refuse.
+    function isViewOnly() { return currentUserRole === 'User'; }
+    function myEmployeeId() { return (currentUser && currentUser.employee_id) || null; }
+
+    // Who may ADD a file to a given record. Deliberately narrower than canEdit:
+    // a View Only user can upload their own documents but cannot rename or
+    // delete them, so a submitted document can't be withdrawn after a manager
+    // has been notified to review it.
+    function canUploadTo(type, id) {
+        if (canEdit()) return true;
+        return isViewOnly() && type === 'employee' && !!id && id === myEmployeeId();
     }
 
     // Prompt through a list of [label, key, currentValue] and collect only
