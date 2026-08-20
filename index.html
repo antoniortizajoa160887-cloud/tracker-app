@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Kept WITHOUT a leading "Tracker" on purpose: when installed as a PWA
-         the OS window title bar shows "{manifest name} - {document.title}",
-         i.e. it already prepends the app name "Tracker". Repeating "Tracker"
-         here is what produced the doubled title bar. document.title is kept to
-         the tagline (+ company once signed in); the in-app header still shows
-         the full "{Company} / Tracker — Unified Logistics · HR · Claims". -->
+    <!-- When installed as a PWA the OS composes the window title bar as
+         "{manifest app name} + {document.title}", and the app name is a
+         "Tracker …" brand string that the OS CACHES at install time (an
+         already-installed app keeps its old, verbose name until reinstalled).
+         To guarantee no doubled/overlapping title bar in every case, the
+         installed-window document.title must contain NEITHER "Tracker" NOR the
+         "Logistics · HR · Claims" tagline — only the company name (or nothing).
+         A normal browser tab has no such prepend, so there we show the full
+         brand. The early script below sets the pre-login title; updateAppTitle()
+         keeps it correct afterward. The in-app header is unaffected and still
+         shows "{Company} / Tracker — Unified Logistics · HR · Claims". -->
     <title>Unified Logistics · HR · Claims</title>
+    <script>
+      (function () {
+        try {
+          var mm = window.matchMedia;
+          var standalone = (mm && (mm('(display-mode: standalone)').matches
+              || mm('(display-mode: window-controls-overlay)').matches
+              || mm('(display-mode: minimal-ui)').matches))
+              || window.navigator.standalone === true;
+          // Installed window: leave the title empty so the OS shows just the
+          // app name (no tagline to double). Browser tab: full brand.
+          document.title = standalone ? '' : 'Tracker — Unified Logistics · HR · Claims';
+        } catch (e) {}
+      })();
+    </script>
     <meta name="theme-color" content="#0b6e64">
     <!-- Content-Security-Policy, delivered via meta so it applies on any static
          host (GitHub Pages included -- unlike an HTTP response header, this
@@ -2550,8 +2569,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.34';
+    const APP_VERSION = 'v3.35';
     const CHANGELOG = [
+        { version: 'v3.35', date: '2026-08-20', notes: 'Finished fixing the doubled window title bar of the installed app. The operating system builds that title bar as "{installed app name} + page title", and it remembers the app name from when the app was first installed — so the old, long name ("Tracker — Logistics · HR · Claims") kept showing before the page title, doubling the wording. Now, when the app is running as an installed window, the page title holds only the company name (nothing else), so the bar reads cleanly — e.g. "Tracker — Logistics · HR · Claims - 3 Of Life LLC" on an existing install, or "Tracker - 3 Of Life LLC" once reinstalled — with no repeated words either way. Opened in a normal browser tab it still shows the full "… · Unified Logistics · HR · Claims". You do NOT need to reinstall to clear the duplication — just reload; reinstalling only shortens the app-name prefix to "Tracker".' },
         { version: 'v3.34', date: '2026-08-20', notes: 'Fixed the doubled window title bar. When the app is installed and opened in its own window, the operating system builds the title bar as "{app name} + page title" — and because both already said "Tracker — … Logistics · HR · Claims", the whole thing showed twice. The installed app name is now simply "Tracker" and the page title no longer repeats it, so the window title bar reads cleanly as "Tracker · Unified Logistics · HR · Claims" (and "Tracker · {Company} · Unified Logistics · HR · Claims" once signed in). The in-app header is unchanged — it still shows "{Company} / Tracker — Unified Logistics · HR · Claims". Note: a window/tab that was already open may need a refresh, and an already-installed app may keep its old name until reinstalled.' },
         { version: 'v3.33', date: '2026-08-20', notes: 'Login and branding polish. (1) The app title/branding no longer appears twice — the sidebar corner simply reads "Tracker", while the main title bar carries the full "{Company} / Tracker — Unified Logistics · HR · Claims". (2) The login screen has a show/hide password eye — tap it to reveal what you typed and check it. (3) Pressing Enter now signs you in (Enter on the username field jumps to the password field; Enter on the password field submits) — no need to click Sign In. (4) The app icons (browser tab, taskbar, home screen) now use the rounded-corner logo instead of a hard square, matching the official logo everywhere.' },
         { version: 'v3.32', date: '2026-08-20', notes: 'Records with uploaded files now show a paperclip badge so you can tell at a glance which ones have documents, photos or videos — no more opening each one to check. Wherever files can be attached — Claims & Charges, Additional Income, Invoices and Bills — any record with one or more files shows a small 📎 chip with the count right on its collapsed row/card. Tap the chip to open that record\'s Files directly. The count updates as soon as you add or remove files.' },
@@ -3632,14 +3652,25 @@
         }
         const full = coName ? `${coName} / ${base}` : base;
         const titleEl = document.getElementById('app-title');
-        if (titleEl) titleEl.textContent = full;
-        // Window / browser-tab title. When installed as a PWA the OS titlebar
-        // shows "{app name} - {document.title}" and the app name is already
-        // "Tracker", so we deliberately keep "Tracker" OUT of document.title to
-        // avoid a doubled titlebar. Result: "Tracker - {Company} · Unified
-        // Logistics · HR · Claims" (or just the tagline when signed out).
+        if (titleEl) titleEl.textContent = full;   // in-app header — unchanged
+        // Window / tab title. An installed PWA's OS title bar is composed as
+        // "{manifest app name} + {document.title}", and the app name (a
+        // "Tracker …" brand) is cached by the OS at install time — so to avoid
+        // ANY doubling we keep only the company name in the installed-window
+        // title (never "Tracker" or the tagline, which the app name already
+        // carries). A normal browser tab has no prepend, so show the full brand.
         const tagline = base.replace(/^Tracker\s*[—-]\s*/, ''); // "Unified Logistics · HR · Claims"
-        document.title = coName ? `${coName} · ${tagline}` : tagline;
+        let standalone = false;
+        try {
+            const mm = window.matchMedia;
+            standalone = !!(mm && (mm('(display-mode: standalone)').matches
+                || mm('(display-mode: window-controls-overlay)').matches
+                || mm('(display-mode: minimal-ui)').matches))
+                || window.navigator.standalone === true;
+        } catch (e) {}
+        document.title = standalone
+            ? (coName || '')                                  // OS supplies the app name
+            : (coName ? `${coName} · ${tagline}` : `Tracker — ${tagline}`);
     }
 
     function initAppSession() {
