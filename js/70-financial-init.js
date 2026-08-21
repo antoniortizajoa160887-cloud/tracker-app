@@ -284,7 +284,7 @@
             const items = groups[status];
             const collapsed = collapsedStatusGroups.invoices.has(status);
             const groupTotal = items.reduce((a, i) => a + (parseFloat(i.total_amount) || 0), 0);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('invoices','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('invoices','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
             if (collapsed) return;
             items.forEach(inv => {
                 const open = recExpanded.invoices.has(inv.invoice_id);
@@ -295,7 +295,7 @@
                             <span class="rec-title">${inv.invoice_number ? `#${escHtml(inv.invoice_number)} — ` : ''}${escHtml(inv.customer_name)}</span>
                             <span class="rec-sub">${inv.invoice_date || '-'}</span>
                             ${attachInd('invoice', inv.invoice_id)}
-                            <span class="rec-right"><span class="status-badge status-${inv.status}">${enumLabel(inv.status)}</span> ${formatMoney(inv.total_amount)}</span>
+                            <span class="rec-right">${statusBadge(inv.status)} ${formatMoney(inv.total_amount)}</span>
                         </div>
                         <div class="rec-card-body">${invoiceDetailHtml(inv)}</div>
                     </div>`);
@@ -458,7 +458,7 @@
             const items = groups[status];
             const collapsed = collapsedStatusGroups.bills.has(status);
             const groupTotal = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('bills','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('bills','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
             if (collapsed) return;
             items.forEach(b => {
                 const open = recExpanded.bills.has(b.bill_id);
@@ -469,7 +469,7 @@
                             <span class="rec-title">${escHtml(b.vendor_name)}</span>
                             <span class="rec-sub">${b.bill_number ? '#' + escHtml(b.bill_number) : ''} ${b.due_date ? '· due ' + b.due_date : ''}</span>
                             ${attachInd('bill', b.bill_id)}
-                            <span class="rec-right"><span class="status-badge status-${b.status}">${enumLabel(b.status)}</span> ${formatMoney(b.amount)}</span>
+                            <span class="rec-right">${statusBadge(b.status)} ${formatMoney(b.amount)}</span>
                         </div>
                         <div class="rec-card-body">
                             <div class="rec-detail-grid">

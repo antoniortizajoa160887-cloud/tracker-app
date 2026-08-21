@@ -118,8 +118,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.60';
+    const APP_VERSION = 'v3.61';
     const CHANGELOG = [
+        { version: 'v3.61', date: '2026-08-21', notes: 'Internal code cleanup — no change to how the app looks or works. The small coloured status pill shown on records (Active, Deducting, Paid, Unpaid, and so on) was written out in about eighteen separate places in the code; it is now produced by one shared piece of code, so it stays consistent and is easier to maintain going forward. This was verified to produce byte-for-byte identical screens in both English and Spanish.' },
         { version: 'v3.60', date: '2026-08-21', notes: 'Two finishing touches for the bilingual experience. (1) The status and type words the app calculates and shows on records — Active/Inactive, Deducting, Queued, Paying, Paid, Absorbed, Released, Stopped, Unpaid, Void, the person types (Employee, Contractor, Staff, Provider, Owner, Manager) and pay types (Daily, Weekly, Provider) — now appear in Spanish when the app is set to Español, everywhere they show (status badges, group headers, record cards and tables). This is display-only: the stored values never change, so all filtering, grouping, sorting and reports keep working exactly as before, and English is unchanged. (2) The language buttons on the login screen and in Settings now show the country flags as small drawn flags instead of emoji, so the flags appear correctly on every device — including Windows computers, where the flag emoji used to show as the letters “US” / “MX” instead of a flag.' },
         { version: 'v3.59', date: '2026-08-21', notes: 'More of the app now speaks Spanish. The bilingual coverage previously left the pop-up messages — the small confirmation, warning and error boxes (for example “Delete employee?”, “Enter a company name.”, “Company code must be 3 or 4 characters.”) — in English. Those pop-ups across the whole app (employees, claims, charges, income, provider pay, invoices, bills, vehicles, routes, imports, users, messaging, savings & release, and the admin tools) now appear in Spanish when the app is set to Español, and exactly as before in English. A handful of technical server error details and bulk-import result summaries remain in English. Nothing about how the app works has changed — this is wording only.' },
         { version: 'v3.58', date: '2026-08-21', notes: 'Photos now show in the file viewer on every device and browser. The previous two attempts each fixed one side and broke the other (a memory-copy step worked on computers but not iPhones; loading the picture over its direct link then failed on computers because of a stale security rule cached on the device). This version sidesteps both problems: the viewer downloads the photo and shows it as inline data, a method that works under every version of the app’s security rules and is never affected by an out-of-date background helper — so it displays whether you open the app through tracker-logic.com or the Cloudflare link, on phone or computer. Videos and PDFs are unaffected, and Previous/Next, zoom, rotate, flip, the uploader/date, Download and Close all work as before.' },
@@ -543,6 +544,15 @@
         const key = 'ev_' + String(v).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
         const tr = t(key);
         return tr === undefined ? v : tr;
+    }
+
+    // The standard status pill: colour comes from the raw value via the
+    // `status-${v}` CSS class, the shown text from enumLabel(v). One place so a
+    // status pill can never drift between the ~18 spots that render one. (Badges
+    // with extra styles or a conditional class — e.g. the Active/quit employee
+    // pill — are left inline on purpose, since they aren't this exact shape.)
+    function statusBadge(v) {
+        return `<span class="status-badge status-${v}">${enumLabel(v)}</span>`;
     }
 
     function groupByStatus(list, statusField) {
