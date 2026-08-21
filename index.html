@@ -7803,21 +7803,21 @@
                     </div>
                     <div>
                         <div style="background:var(--surface-2); border-radius:6px; height:8px; margin:8px 0 4px; overflow:hidden;"><div style="background:var(--primary); height:100%; width:${pct}%;"></div></div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${pct}% of goal</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${pct}% ${t('d_of_goal')}</div>
                         <div class="form-row" style="margin:0 0 8px;align-items:center;">
-                            <div class="field"><label>Goal</label><div class="money">${formatMoney(goal)}</div></div>
-                            <div class="field"><label>Weekly saving</label><div>${formatMoney(c.weekly_deduction)}</div></div>
-                            <div class="field"><label>Saved so far</label><div class="money" style="color:#059669;">${formatMoney(saved)}</div></div>
-                            <div class="field"><label>Remaining to goal</label><div class="money">${formatMoney(remaining)}</div></div>
-                            <div class="field"><label>Start</label><div>${c.start_date || '-'}</div></div>
+                            <div class="field"><label>${t('d_goal')}</label><div class="money">${formatMoney(goal)}</div></div>
+                            <div class="field"><label>${t('d_weekly_saving')}</label><div>${formatMoney(c.weekly_deduction)}</div></div>
+                            <div class="field"><label>${t('d_saved_so_far')}</label><div class="money" style="color:#059669;">${formatMoney(saved)}</div></div>
+                            <div class="field"><label>${t('d_remaining_to_goal')}</label><div class="money">${formatMoney(remaining)}</div></div>
+                            <div class="field"><label>${t('d_start')}</label><div>${c.start_date || '-'}</div></div>
                         </div>
                         ${editable ? `<div class="rec-actions" style="margin-bottom:8px;">
-                            <button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); editWeekDeposit('${c.charge_id}')">✎ Edit</button>
-                            <button class="del-btn" onclick="event.stopPropagation(); deleteWeekDeposit('${c.charge_id}')">✕ Delete</button>
-                            ${c.status !== 'Released' ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}')">🔓 Release</button>
-                            <button class="btn-small" style="margin:0;background:#b45309;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}', true)">⏰ Early Release</button>` : ''}
+                            <button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); editWeekDeposit('${c.charge_id}')">${t('d_edit_full')}</button>
+                            <button class="del-btn" onclick="event.stopPropagation(); deleteWeekDeposit('${c.charge_id}')">${t('d_delete')}</button>
+                            ${c.status !== 'Released' ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}')">${t('d_release')}</button>
+                            <button class="btn-small" style="margin:0;background:#b45309;" onclick="event.stopPropagation(); openReleaseStatement('${c.charge_id}', true)">${t('d_early_release')}</button>` : ''}
                         </div>` : ''}
-                        ${sched.rows.length ? `<div class="table-wrapper" style="max-height:260px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Saved that week</th><th style="text-align:left;">Total saved</th><th style="text-align:left;">Remaining</th></tr></thead><tbody>${scheduleRows}</tbody></table></div>` : ''}
+                        ${sched.rows.length ? `<div class="table-wrapper" style="max-height:260px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">${t('d_th_date')}</th><th style="text-align:left;">${t('d_th_saved_week')}</th><th style="text-align:left;">${t('d_total_saved')}</th><th style="text-align:left;">${t('d_remaining')}</th></tr></thead><tbody>${scheduleRows}</tbody></table></div>` : ''}
                     </div>
                 </div>`;
         };
@@ -7839,12 +7839,12 @@
         });
 
         if (grid) grid.innerHTML = `
-            <div class="stat-card"><div class="stat-label">Active deposits</div><div class="stat-value">${list.length}</div></div>
-            <div class="stat-card"><div class="stat-label">Total saved</div><div class="stat-value" style="color:#059669;">${formatMoney(totalSaved)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total remaining</div><div class="stat-value">${formatMoney(totalRemaining)}</div></div>`;
+            <div class="stat-card"><div class="stat-label">${t('d_active_deposits')}</div><div class="stat-value">${list.length}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_total_saved')}</div><div class="stat-value" style="color:#059669;">${formatMoney(totalSaved)}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_total_remaining')}</div><div class="stat-value">${formatMoney(totalRemaining)}</div></div>`;
 
         const body = document.getElementById('weekdeposit-tbody');
-        if (body) body.innerHTML = rows || '<div style="text-align:center; color:var(--text-muted); padding:20px;">No deposits found.</div>';
+        if (body) body.innerHTML = rows || `<div style="text-align:center; color:var(--text-muted); padding:20px;">${t('d_no_deposits')}</div>`;
     }
 
     // ===== Release eligibility (90-day Week in Deposit / 30-day last week worked) =====
@@ -8459,8 +8459,8 @@
                 eligible, issue: eligible ? nextThursdayOnOrAfter(eligible) : null,
                 handover: eligible ? addDaysStr(nextThursdayOnOrAfter(eligible), 2) : null,
                 action: eligible && todayStr() >= eligible
-                    ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}')">🔓 Release</button>`
-                    : `<button class="btn-small" style="margin:0;background:#b45309;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}', true)">⏰ Early Release</button>`
+                    ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}')">${t('d_release')}</button>`
+                    : `<button class="btn-small" style="margin:0;background:#b45309;" onclick="openReleaseStatement('${escJsAttr(c.charge_id)}', true)">${t('d_early_release')}</button>`
             });
         });
         employees.filter(e => e.status === 'Inactive').forEach(e => {
@@ -8474,8 +8474,8 @@
                 eligible, issue: eligible ? nextThursdayOnOrAfter(eligible) : null,
                 handover: eligible ? addDaysStr(nextThursdayOnOrAfter(eligible), 2) : null,
                 action: eligible && todayStr() >= eligible
-                    ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}')">🔓 Release</button>`
-                    : `<button class="btn-small" style="margin:0;background:#b45309;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}', true)">⏰ Early Release</button>`
+                    ? `<button class="btn-small" style="margin:0;background:#7c3aed;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}')">${t('d_release')}</button>`
+                    : `<button class="btn-small" style="margin:0;background:#b45309;" onclick="openLastPaycheckRelease('${escJsAttr(e.id)}', true)">${t('d_early_release')}</button>`
             });
         });
         rows.sort((a, b) => String(a.eligible || '9999').localeCompare(String(b.eligible || '9999')));
@@ -8485,9 +8485,9 @@
             const readyNow = rows.filter(r => r.eligible && todayStr() >= r.eligible).length;
             const totalSavings = rows.filter(r => r.kind === 'Week in Deposit').reduce((a, r) => a + r.amount, 0);
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Ready to release now</div><div class="stat-value">${readyNow}</div></div>
-                <div class="stat-card"><div class="stat-label">Total tracked</div><div class="stat-value">${rows.length}</div></div>
-                <div class="stat-card"><div class="stat-label">Week in Deposit savings</div><div class="stat-value">${formatMoney(totalSavings)}</div></div>`;
+                <div class="stat-card"><div class="stat-label">${t('d_ready_now')}</div><div class="stat-value">${readyNow}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_total_tracked')}</div><div class="stat-value">${rows.length}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_wid_savings')}</div><div class="stat-value">${formatMoney(totalSavings)}</div></div>`;
         }
 
         const q = (document.getElementById('savingsreport-search')?.value || '').toLowerCase();
@@ -8504,7 +8504,7 @@
 
         const body = document.getElementById('savingsreport-tbody');
         if (!body) return;
-        if (!filtered.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing to show — no open Week in Deposit savings and no Inactive employees with an unreleased last paycheck (matching the current filters).</div>'; return; }
+        if (!filtered.length) { body.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px;">${t('d_nothing_savings')}</div>`; return; }
 
         // Group by employee, employee groups sorted by name.
         const groups = {};
@@ -8518,12 +8518,12 @@
                 </div>
                 <div class="rec-card-body" style="display:block;">
                     <div class="rec-detail-grid">
-                        <div><div class="k">Pending/outstanding elsewhere</div><div class="v" style="${r.pending > 0.004 ? 'color:#dc2626;font-weight:700;' : ''}">${formatMoney(r.pending)}</div></div>
-                        <div><div class="k">Eligible date</div><div class="v">${r.eligible || 'Unknown — no Last Date Worked on file'}</div></div>
-                        <div><div class="k">Check issued (Thu)</div><div class="v">${r.issue || '-'}</div></div>
-                        <div><div class="k">Handed over (Sat)</div><div class="v">${r.handover || '-'}</div></div>
+                        <div><div class="k">${t('d_pending_elsewhere')}</div><div class="v" style="${r.pending > 0.004 ? 'color:#dc2626;font-weight:700;' : ''}">${formatMoney(r.pending)}</div></div>
+                        <div><div class="k">${t('d_eligible_date')}</div><div class="v">${r.eligible || 'Unknown — no Last Date Worked on file'}</div></div>
+                        <div><div class="k">${t('d_check_issued')}</div><div class="v">${r.issue || '-'}</div></div>
+                        <div><div class="k">${t('d_handed_over')}</div><div class="v">${r.handover || '-'}</div></div>
                     </div>
-                    ${r.action ? `<div class="rec-actions" style="margin-top:10px;">${r.action}</div>` : (r.eligible ? `<div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Not eligible until ${r.eligible}.</div>` : '')}
+                    ${r.action ? `<div class="rec-actions" style="margin-top:10px;">${r.action}</div>` : (r.eligible ? `<div style="font-size:11px; color:var(--text-muted); margin-top:8px;">${t('d_not_eligible_until')} ${r.eligible}.</div>` : '')}
                 </div>
             </div>`;
         body.innerHTML = empIds.map(empId => {
@@ -8575,15 +8575,15 @@
             const totalDeducted = releaseHistoryCache.reduce((a, r) => a + (parseFloat(r.total_deducted) || 0), 0);
             const earlyCount = releaseHistoryCache.filter(r => r.was_early).length;
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Total Releases</div><div class="stat-value">${releaseHistoryCache.length}</div></div>
-                <div class="stat-card"><div class="stat-label">Net Released to Employees</div><div class="stat-value" style="color:#059669;">${formatMoney(totalReleased)}</div></div>
-                <div class="stat-card"><div class="stat-label">Total Applied to Deductions</div><div class="stat-value">${formatMoney(totalDeducted)}</div></div>
-                <div class="stat-card"><div class="stat-label">Early Releases</div><div class="stat-value">${earlyCount}</div></div>`;
+                <div class="stat-card"><div class="stat-label">${t('d_total_releases')}</div><div class="stat-value">${releaseHistoryCache.length}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_net_released_emp')}</div><div class="stat-value" style="color:#059669;">${formatMoney(totalReleased)}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_total_applied_ded')}</div><div class="stat-value">${formatMoney(totalDeducted)}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_early_releases')}</div><div class="stat-value">${earlyCount}</div></div>`;
         }
 
         const body = document.getElementById('releasehistory-tbody');
         if (!body) return;
-        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No releases recorded yet (matching the current filters).</div>'; return; }
+        if (!rows.length) { body.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_releases')}</div>`; return; }
         const nameOf = (empId) => { const emp = employees.find(e => e.id === empId); return emp ? `${emp.first_name} ${emp.last_name}` : empId; };
         const groups = {};
         rows.forEach(r => { (groups[r.employee_id] = groups[r.employee_id] || []).push(r); });
@@ -8596,27 +8596,27 @@
             <div class="rec-card${open ? ' open' : ''}" id="rec-releasehistory-${r.id}">
                 <div class="rec-card-head" onclick="toggleRecCard('releasehistory','${r.id}')">
                     <span class="rec-caret" data-caret="releasehistory-${r.id}">${open ? '▾' : '▸'}</span>
-                    <span class="rec-title"><span class="type-pill">${r.release_type === 'wd' ? 'Week in Deposit' : 'Last Paycheck'}</span>${r.was_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
-                    <span class="rec-sub">${new Date(r.released_at).toISOString().split('T')[0]} · by ${escHtml(r.released_by)}</span>
+                    <span class="rec-title"><span class="type-pill">${r.release_type === 'wd' ? t('week_in_deposit_opt') : t('last_paycheck_opt')}</span>${r.was_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
+                    <span class="rec-sub">${new Date(r.released_at).toISOString().split('T')[0]} · ${t('d_by')} ${escHtml(r.released_by)}</span>
                     <span class="rec-right" style="color:#059669;">${formatMoney(r.net_release)}</span>
                 </div>
                 <div class="rec-card-body">
                     <div class="rec-detail-grid">
                         ${hasBreakdown ? `
-                        <div><div class="k">Base Pay</div><div class="v">${formatMoney(r.base_pay_amount || 0)}</div></div>
-                        <div><div class="k">Additional Income</div><div class="v">${formatMoney(r.additional_income_amount || 0)}</div></div>` : ''}
-                        <div><div class="k">Original Amount</div><div class="v">${formatMoney(r.gross_amount)}</div></div>
-                        <div><div class="k">Total Deductions</div><div class="v" style="${r.total_deducted > 0.004 ? 'color:#dc2626;' : ''}">${formatMoney(r.total_deducted)}</div></div>
-                        <div><div class="k">Final Amount Released</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(r.net_release)}</div></div>
-                        <div><div class="k">Requested via approval?</div><div class="v">${r.was_via_request ? 'Yes' : 'No — direct release'}</div></div>
+                        <div><div class="k">${t('d_base_pay')}</div><div class="v">${formatMoney(r.base_pay_amount || 0)}</div></div>
+                        <div><div class="k">${t('d_additional_income_c')}</div><div class="v">${formatMoney(r.additional_income_amount || 0)}</div></div>` : ''}
+                        <div><div class="k">${t('d_original_amount')}</div><div class="v">${formatMoney(r.gross_amount)}</div></div>
+                        <div><div class="k">${t('d_total_deductions_c')}</div><div class="v" style="${r.total_deducted > 0.004 ? 'color:#dc2626;' : ''}">${formatMoney(r.total_deducted)}</div></div>
+                        <div><div class="k">${t('d_final_released')}</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(r.net_release)}</div></div>
+                        <div><div class="k">${t('d_requested_via')}</div><div class="v">${r.was_via_request ? 'Yes' : 'No — direct release'}</div></div>
                     </div>
                     ${items.length ? `
-                    <div class="detail-subhead" style="margin-top:8px;">Applied to</div>
+                    <div class="detail-subhead" style="margin-top:8px;">${t('d_applied_to')}</div>
                     <div style="font-size:12px;">
                         ${(r.settle || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — settled in full <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
                         ${(r.absorb || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — declared a loss (Absorbed) <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
                         ${r.prepay ? `<div style="padding:3px 0;"><span class="type-pill">${r.prepay.type === 'claim' ? 'Claim' : 'Charge'}</span> ${r.prepay.id} — partial prepayment <span style="color:#7c3aed;">−${formatMoney(r.prepay.amount)}</span></div>` : ''}
-                    </div>` : '<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">No other outstanding claims or charges at the time of release.</div>'}
+                    </div>` : `<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">${t('d_no_other_outstanding')}</div>`}
                 </div>
             </div>`;
         };
@@ -8922,12 +8922,12 @@
         const chargesTotal = empCharges.reduce((a, ch) => a + (parseFloat(ch.amount) || 0), 0);
         const incomeTotal = empIncome.reduce((a, i) => a + (parseFloat(i.amount) || 0), 0);
         grid.innerHTML = `
-            <div class="stat-card"><div class="stat-label">Claims</div><div class="stat-value">${empClaims.length}</div></div>
-            <div class="stat-card"><div class="stat-label">Charges</div><div class="stat-value">${empCharges.length}</div></div>
-            <div class="stat-card"><div class="stat-label">Additional income</div><div class="stat-value">${empIncome.length}</div></div>
-            <div class="stat-card"><div class="stat-label">Total claims</div><div class="stat-value">${formatMoney(claimsTotal)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total charges</div><div class="stat-value">${formatMoney(chargesTotal)}</div></div>
-            <div class="stat-card"><div class="stat-label">Total income</div><div class="stat-value" style="color:#059669;">${formatMoney(incomeTotal)}</div></div>`;
+            <div class="stat-card"><div class="stat-label">${t('d_stat_claims')}</div><div class="stat-value">${empClaims.length}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_stat_charges')}</div><div class="stat-value">${empCharges.length}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_stat_add_income')}</div><div class="stat-value">${empIncome.length}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_total_claims')}</div><div class="stat-value">${formatMoney(claimsTotal)}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_total_charges')}</div><div class="stat-value">${formatMoney(chargesTotal)}</div></div>
+            <div class="stat-card"><div class="stat-label">${t('d_total_income')}</div><div class="stat-value" style="color:#059669;">${formatMoney(incomeTotal)}</div></div>`;
     }
 
     // Extracted so both renderStatement's status-grouping loop and any
@@ -8949,20 +8949,20 @@
                 <div>
                     ${progressBarHtml(owed > 0 ? Math.round((paidSoFar / owed) * 100) : 0)}
                     <div class="form-row" style="margin:6px 0 4px;align-items:center;">
-                        <div class="field"><label>Company</label><div>${c.company_name ? escHtml(c.company_name) : '—'}</div></div>
-                        <div class="field"><label>Claimant account</label><div>${c.claimant_account ? escHtml(c.claimant_account) : '—'}</div></div>
-                        <div class="field"><label>Carrier claim #</label><div>${c.carrier_claim_number ? escHtml(c.carrier_claim_number) : '—'}</div></div>
-                        <div class="field"><label>Customer claim #</label><div>${c.customer_claim_number ? escHtml(c.customer_claim_number) : '—'}</div></div>
-                        <div class="field"><label>Weekly rate</label><div>${formatMoney(rateOn(c, asOf))}</div></div>
-                        <div class="field"><label>Weeks to $0</label><div>${weeks}</div></div>
-                        <div class="field"><label>Ends</label><div>${endDate}</div></div>
-                        <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                        <div class="field"><label>Balance</label><div class="money">${formatMoney(bal)}</div></div>
+                        <div class="field"><label>${t('d_company')}</label><div>${c.company_name ? escHtml(c.company_name) : '—'}</div></div>
+                        <div class="field"><label>${t('d_claimant_account')}</label><div>${c.claimant_account ? escHtml(c.claimant_account) : '—'}</div></div>
+                        <div class="field"><label>${t('d_carrier_claim')}</label><div>${c.carrier_claim_number ? escHtml(c.carrier_claim_number) : '—'}</div></div>
+                        <div class="field"><label>${t('d_customer_claim')}</label><div>${c.customer_claim_number ? escHtml(c.customer_claim_number) : '—'}</div></div>
+                        <div class="field"><label>${t('d_weekly_rate')}</label><div>${formatMoney(rateOn(c, asOf))}</div></div>
+                        <div class="field"><label>${t('d_weeks_to_zero')}</label><div>${weeks}</div></div>
+                        <div class="field"><label>${t('d_ends')}</label><div>${endDate}</div></div>
+                        <div class="field"><label>${t('d_paid_so_far')}</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
+                        <div class="field"><label>${t('d_balance')}</label><div class="money">${formatMoney(bal)}</div></div>
                     </div>
-                    <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printClaimSchedule('${c.claim_id}')">🖨 Print schedule</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printClaimSchedule('${c.claim_id}')">${t('d_print_schedule')}</button>
                     ${sched.rows.length
-                        ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${c.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
-                        : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the claim is resolved, or needs a start date and weekly amount.</div>`}
+                        ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">${t('d_th_date')}</th><th style="text-align:left;">${t('d_th_deducted')}</th><th style="text-align:left;">${t('d_th_running_balance')}</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${c.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
+                        : `<div style="font-size:12px;color:var(--text-muted);">${t('d_no_schedule_claim')}</div>`}
                 </div>
             </div>`;
     }
@@ -8984,17 +8984,17 @@
                 <div>
                     ${progressBarHtml(owed > 0 ? Math.round((paidSoFar / owed) * 100) : 0)}
                     <div class="form-row" style="margin:6px 0 0;align-items:center;">
-                        <div class="field"><label>Weekly rate</label><div>${formatMoney(chargeRateOn(ch, asOf))}</div></div>
-                        <div class="field"><label>Weeks</label><div>${weeks}</div></div>
-                        <div class="field"><label>Ends</label><div>${endDate}</div></div>
-                        <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                        <div class="field"><label>Balance</label><div class="money">${formatMoney(bal)}</div></div>
-                        <div class="field"><label>Start</label><div>${ch.start_date || '-'}</div></div>
+                        <div class="field"><label>${t('d_weekly_rate')}</label><div>${formatMoney(chargeRateOn(ch, asOf))}</div></div>
+                        <div class="field"><label>${t('d_weeks')}</label><div>${weeks}</div></div>
+                        <div class="field"><label>${t('d_ends')}</label><div>${endDate}</div></div>
+                        <div class="field"><label>${t('d_paid_so_far')}</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
+                        <div class="field"><label>${t('d_balance')}</label><div class="money">${formatMoney(bal)}</div></div>
+                        <div class="field"><label>${t('d_start')}</label><div>${ch.start_date || '-'}</div></div>
                     </div>
-                    <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printChargeSchedule('${ch.charge_id}')">🖨 Print schedule</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);margin:4px 0 0;" onclick="event.stopPropagation(); printChargeSchedule('${ch.charge_id}')">${t('d_print_schedule')}</button>
                     ${sched.rows.length
-                        ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Deducted</th><th style="text-align:left;">Running balance</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${ch.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
-                        : `<div style="font-size:12px;color:var(--text-muted);">No schedule to project — the charge is resolved, or needs a start date and weekly amount.</div>`}
+                        ? `<div class="table-wrapper" style="max-height:340px;"><table style="font-size:12px;"><thead><tr><th style="text-align:left;">${t('d_th_date')}</th><th style="text-align:left;">${t('d_th_deducted')}</th><th style="text-align:left;">${t('d_th_running_balance')}</th></tr></thead><tbody>${scheduleRows}</tbody></table></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Projected weekly from ${ch.start_date || '—'} at the recorded rate(s), skipping recorded pauses, until $0.00.</div>`
+                        : `<div style="font-size:12px;color:var(--text-muted);">${t('d_no_schedule_charge')}</div>`}
                 </div>
             </div>`;
     }
@@ -9005,7 +9005,7 @@
         const asOf = statementAsOf();
         updateStatementWeekLabel();
         renderStatementStats(empId, asOf);
-        if (!empId) { container.innerHTML = '<div class="panel" style="text-align:center;color:var(--text-muted);">Select an employee above to see their statement.</div>'; return; }
+        if (!empId) { container.innerHTML = `<div class="panel" style="text-align:center;color:var(--text-muted);">${t('d_select_emp_stmt')}</div>`; return; }
 
         const emp = employees.find(e => e.id === empId);
         const empClaims = claims.filter(c => c.employee_id === empId);
@@ -9018,9 +9018,9 @@
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${emp.person_type} · <span class="status-badge ${emp.status==='Active'?'status-active':'status-quit'}">${emp.status}</span>${emp.department ? ' · ' + escHtml(emp.department) : ''}</div>
             </div>
             <div class="panel">
-                <h2>Current deductions — full breakdown</h2>`;
+                <h2>${t('d_current_deductions')}</h2>`;
 
-        if(!empClaims.length && !empCharges.length) html += `<div style="text-align:center;color:var(--text-muted);padding:15px;">No current claims or charges for this employee.</div>`;
+        if(!empClaims.length && !empCharges.length) html += `<div style="text-align:center;color:var(--text-muted);padding:15px;">${t('d_no_current_cc')}</div>`;
 
         // Claims and charges share a status vocabulary and get grouped
         // together by status (Deducting people together, Queued together,
@@ -9047,7 +9047,7 @@
         html += `</div>`;
 
         if (empIncome.length) {
-            html += `<div class="panel"><h2>Additional income — full breakdown</h2>`;
+            html += `<div class="panel"><h2>${t('d_add_income_breakdown')}</h2>`;
             empIncome.forEach(i => {
                 const weeks = weeksNeeded(i.amount, i.weekly_amount);
                 const rem = remainingBalanceAsOf(i.amount, i.weekly_amount, i.start_date, i.status, asOf);
@@ -9062,12 +9062,12 @@
                         <div>
                             ${progressBarHtml((parseFloat(i.amount) || 0) > 0 ? Math.round((paidSoFar / parseFloat(i.amount)) * 100) : 0)}
                             <div class="form-row" style="margin:6px 0 0;align-items:center;">
-                                <div class="field"><label>Weekly</label><div style="color:#059669;">+${formatMoney(i.weekly_amount)}</div></div>
-                                <div class="field"><label>Weeks</label><div>${weeks}</div></div>
-                                <div class="field"><label>Ends</label><div>${endDate}</div></div>
-                                <div class="field"><label>Paid so far</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
-                                <div class="field"><label>Remaining</label><div class="money" style="color:#059669;">${formatMoney(rem)}</div></div>
-                                <div class="field"><label>Start</label><div>${i.start_date || '-'}</div></div>
+                                <div class="field"><label>${t('d_weekly')}</label><div style="color:#059669;">+${formatMoney(i.weekly_amount)}</div></div>
+                                <div class="field"><label>${t('d_weeks')}</label><div>${weeks}</div></div>
+                                <div class="field"><label>${t('d_ends')}</label><div>${endDate}</div></div>
+                                <div class="field"><label>${t('d_paid_so_far')}</label><div class="money" style="color:#059669;">${formatMoney(paidSoFar)}</div></div>
+                                <div class="field"><label>${t('d_remaining')}</label><div class="money" style="color:#059669;">${formatMoney(rem)}</div></div>
+                                <div class="field"><label>${t('d_start')}</label><div>${i.start_date || '-'}</div></div>
                             </div>
                         </div>
                     </div>`;
@@ -9427,7 +9427,7 @@
 
         const cardsWrap = document.getElementById('providerpay-cards');
         if (!providerEmps.length) {
-            cardsWrap.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted);">No one is set to <strong>Provider</strong> pay yet. Go to the Employees tab and switch a person's Pay to <em>Provider</em>.</div>`;
+            cardsWrap.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted);">${t('d_no_provider_set')}</div>`;
             return;
         }
 
@@ -9445,20 +9445,20 @@
                             <div class="id-cell" style="font-size:11px; color:var(--text-muted);">${emp.id}</div>
                         </div>
                         <div style="flex:0 0 140px;">
-                            <label style="font-size:10px;">Amount this week</label>
+                            <label style="font-size:10px;">${t('d_amount_this_week')}</label>
                             <input type="number" min="0" step="0.01" inputmode="decimal" value="${cell.amount || ''}" placeholder="0.00"
                                 ${editable ? '' : 'disabled'} onchange="onProviderAmountChange('${emp.id}', this.value)">
                         </div>
                         <div style="flex:1 1 220px;">
-                            <label style="font-size:10px;">Notes (optional)</label>
-                            <input type="text" value="${escHtml(cell.notes || '')}" placeholder="e.g. invoice #, what for"
+                            <label style="font-size:10px;">${t('d_notes_optional')}</label>
+                            <input type="text" value="${escHtml(cell.notes || '')}" placeholder="${t('d_provider_notes_ph')}"
                                 ${editable ? '' : 'disabled'} onchange="onProviderNotesChange('${emp.id}', this.value)">
                         </div>
                         ${provBillsHtml}
                     </div>
                 </div>`;
         }).join('');
-        cardsWrap.innerHTML = rows + `<div style="text-align:right; font-weight:700; padding:10px 4px 0;">Total this week: ${formatMoney(grand)}</div>`;
+        cardsWrap.innerHTML = rows + `<div style="text-align:right; font-weight:700; padding:10px 4px 0;">${t('d_total_this_week')}: ${formatMoney(grand)}</div>`;
     }
 
     // Loaded alongside Daily Pay's own current-week cache, same reasoning
@@ -9621,13 +9621,13 @@
         if (dailyTableMissing) {
             setup.style.display = 'block';
             setup.className = 'setup-banner';
-            setup.innerHTML = '⚙️ <strong>One-time setup needed.</strong> The daily-pay tables don\'t exist in your database yet, so entries can\'t be saved. Ask your admin to run the short SQL setup (provided with this update) in Supabase → SQL Editor. Everything else in the app keeps working normally.';
+            setup.innerHTML = t('d_dp_setup');
         } else {
             setup.style.display = 'none';
         }
 
         if (!dailyEmps.length) {
-            cardsWrap.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:var(--text-muted);">No one is set to <strong>Daily Rate</strong> yet. Go to the Employees tab and switch a person's Pay to <em>Daily</em> (the ↺ button in the Pay column).</div>`;
+            cardsWrap.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:var(--text-muted);">${t('d_no_daily_set')}</div>`;
             return;
         }
 
@@ -9674,7 +9674,7 @@
                 </tr>`;
             });
             cardsWrap.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Name</th>${DAY_LABELS.map((d, i) => `<th>${d} ${fmtMD(dates[i])}</th>`).join('')}<th>Week Total</th>
+                <th>${t('d_th_id')}</th><th>${t('d_th_name')}</th>${DAY_LABELS.map((d, i) => `<th>${d} ${fmtMD(dates[i])}</th>`).join('')}<th>${t('d_week_total')}</th>
             </tr></thead><tbody>${rows}</tbody></table></div>
             <div class="dp-grand">Total (${dailyEmps.length}): <span id="dailypay-grand">${formatMoney(grand)}</span></div>`;
             return;
@@ -10391,7 +10391,7 @@
 
         if (isDesktopView()) {
             container.className = '';
-            if (!calc.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>'; renderPayrollFoot(0, 0, 0, 0, 0, 0); return; }
+            if (!calc.length) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_people_match')}</div>`; renderPayrollFoot(0, 0, 0, 0, 0, 0); return; }
             let rows = '';
             calc.forEach(({ emp, payType, base, routePay, income, gross, ded, net }) => {
                 totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
@@ -10413,15 +10413,16 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Name</th><th>Type</th><th>Base (wk)</th><th>Route (wk)</th><th>Income (wk)</th><th>Gross</th><th>Deductions</th><th>Net</th>
+                <th data-i18n="d_th_id">ID</th><th data-i18n="d_th_name">Name</th><th data-i18n="d_type">Type</th><th data-i18n="d_base_wk">Base (wk)</th><th data-i18n="d_route_wk">Route (wk)</th><th data-i18n="d_income_wk">Income (wk)</th><th data-i18n="d_gross">Gross</th><th data-i18n="d_deductions_h">Deductions</th><th data-i18n="d_net">Net</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             renderPayrollFoot(calc.length, totBase, totRoute, totGross, totDed, totNet);
             updateRecSortUI('payroll');
+            applyTranslations();
             return;
         }
 
         container.className = 'record-grid';
-        container.innerHTML = calc.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No people match these filters.</div>';
+        container.innerHTML = calc.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_people_match')}</div>`;
 
         calc.forEach(({ emp, payType, base, routePay, income, gross, ded, net }) => {
             totBase += base; totRoute += routePay; totIncome += income; totGross += gross; totDed += ded; totNet += net;
@@ -10438,12 +10439,12 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k">Type</div><div class="v">${emp.person_type}</div></div>
-                            <div><div class="k">Base pay (wk)</div><div class="v">${formatMoney(base)}${payPill}</div></div>
-                            <div><div class="k">Route pay (wk)</div><div class="v">${formatMoney(routePay)}</div></div>
-                            <div><div class="k">Gross</div><div class="v">${formatMoney(gross)}</div></div>
-                            <div><div class="k">Weekly deductions</div><div class="v" style="color:#dc2626;">${ded > 0 ? '−' + formatMoney(ded) : formatMoney(0)}</div></div>
-                            <div><div class="k">Net pay</div><div class="v" style="font-weight:700;">${formatMoney(net)}</div></div>
+                            <div><div class="k" data-i18n="d_type">Type</div><div class="v">${emp.person_type}</div></div>
+                            <div><div class="k" data-i18n="d_base_pay_wk">Base pay (wk)</div><div class="v">${formatMoney(base)}${payPill}</div></div>
+                            <div><div class="k" data-i18n="d_route_pay_wk">Route pay (wk)</div><div class="v">${formatMoney(routePay)}</div></div>
+                            <div><div class="k" data-i18n="d_gross">Gross</div><div class="v">${formatMoney(gross)}</div></div>
+                            <div><div class="k" data-i18n="d_weekly_deductions">Weekly deductions</div><div class="v" style="color:#dc2626;">${ded > 0 ? '−' + formatMoney(ded) : formatMoney(0)}</div></div>
+                            <div><div class="k" data-i18n="d_net_pay">Net pay</div><div class="v" style="font-weight:700;">${formatMoney(net)}</div></div>
                         </div>
                         ${payrollDetailHtml(emp, payType, base, routePay, ded, income)}
                     </div>
@@ -10452,6 +10453,7 @@
 
         renderPayrollFoot(calc.length, totBase, totRoute, totGross, totDed, totNet);
         updateRecSortUI('payroll');
+        applyTranslations();
     }
 
     function renderPayrollFoot(count, totBase, totRoute, totGross, totDed, totNet) {
@@ -10467,10 +10469,10 @@
         const grid = document.getElementById('payroll-stats-grid');
         if (grid) {
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">People</div><div class="stat-value">${count}</div></div>
-                <div class="stat-card"><div class="stat-label">Gross (wk)</div><div class="stat-value">${formatMoney(totGross)}</div></div>
-                <div class="stat-card"><div class="stat-label">Deductions (wk)</div><div class="stat-value">${formatMoney(totDed)}</div></div>
-                <div class="stat-card"><div class="stat-label">Net Pay (wk)</div><div class="stat-value">${formatMoney(totNet)}</div></div>
+                <div class="stat-card"><div class="stat-label" data-i18n="d_people">People</div><div class="stat-value">${count}</div></div>
+                <div class="stat-card"><div class="stat-label" data-i18n="d_gross_wk">Gross (wk)</div><div class="stat-value">${formatMoney(totGross)}</div></div>
+                <div class="stat-card"><div class="stat-label" data-i18n="d_deductions_wk">Deductions (wk)</div><div class="stat-value">${formatMoney(totDed)}</div></div>
+                <div class="stat-card"><div class="stat-label" data-i18n="d_net_pay_wk">Net Pay (wk)</div><div class="stat-value">${formatMoney(totNet)}</div></div>
             `;
         }
     }
@@ -10482,26 +10484,26 @@
         if (payType === 'Daily') {
             const days = currentWeekDailyDetail[emp.id] || [];
             baseHtml = days.length
-                ? `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Day</th><th style="text-align:right;">Pay</th></tr></thead><tbody>${days.map(d => `<tr><td>${d.label}</td><td style="text-align:right;">${d.is_off ? '<em style="color:var(--text-muted);">OFF</em>' : formatMoney(d.amount)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td>Base (daily total)</td><td style="text-align:right;">${formatMoney(base)}</td></tr></tbody></table>`
-                : `<div style="color:var(--text-muted);font-size:12px;">No daily pay entered for ${currentWeekLabel}.</div>`;
+                ? `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;" data-i18n="d_th_day">Day</th><th style="text-align:right;" data-i18n="d_th_pay">Pay</th></tr></thead><tbody>${days.map(d => `<tr><td>${d.label}</td><td style="text-align:right;">${d.is_off ? '<em style="color:var(--text-muted);">OFF</em>' : formatMoney(d.amount)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td data-i18n="d_base_daily_total">Base (daily total)</td><td style="text-align:right;">${formatMoney(base)}</td></tr></tbody></table>`
+                : `<div style="color:var(--text-muted);font-size:12px;"><span data-i18n="d_no_daily_pay">No daily pay entered for</span> ${currentWeekLabel}.</div>`;
         } else if (payType === 'Provider') {
             const notes = currentWeekProviderNotes[emp.id] || '';
             baseHtml = base > 0 || notes
-                ? `<table style="width:100%;font-size:12px;"><tbody><tr><td>Provider pay${notes ? ' · ' + escHtml(notes) : ''}</td><td style="text-align:right;font-weight:700;">${formatMoney(base)}</td></tr></tbody></table>`
-                : `<div style="color:var(--text-muted);font-size:12px;">No provider pay entered for ${currentWeekLabel}.</div>`;
+                ? `<table style="width:100%;font-size:12px;"><tbody><tr><td><span data-i18n="d_provider_pay">Provider pay</span>${notes ? ' · ' + escHtml(notes) : ''}</td><td style="text-align:right;font-weight:700;">${formatMoney(base)}</td></tr></tbody></table>`
+                : `<div style="color:var(--text-muted);font-size:12px;"><span data-i18n="d_no_provider_pay">No provider pay entered for</span> ${currentWeekLabel}.</div>`;
         } else {
-            baseHtml = `<table style="width:100%;font-size:12px;"><tbody><tr><td>Weekly salary</td><td style="text-align:right;font-weight:700;">${formatMoney(base)}</td></tr></tbody></table>`;
+            baseHtml = `<table style="width:100%;font-size:12px;"><tbody><tr><td data-i18n="d_weekly_salary">Weekly salary</td><td style="text-align:right;font-weight:700;">${formatMoney(base)}</td></tr></tbody></table>`;
         }
 
         const rb = routeBreakdown(emp);
         const routeHtml = rb.length
-            ? `<div style="margin-top:12px;"><div class="detail-subhead">Route pay · ${currentWeekLabel}</div><table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Route</th><th style="text-align:right;">Pay</th></tr></thead><tbody>${rb.map(r => `<tr><td>${r.date || '—'}</td><td>${r.id || '—'}</td><td style="text-align:right;">${formatMoney(r.pay)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td colspan="2">Route total</td><td style="text-align:right;">${formatMoney(routePay)}</td></tr></tbody></table></div>`
+            ? `<div style="margin-top:12px;"><div class="detail-subhead"><span data-i18n="d_route_pay_dot">Route pay</span> · ${currentWeekLabel}</div><table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;" data-i18n="d_th_date">Date</th><th style="text-align:left;" data-i18n="d_th_route">Route</th><th style="text-align:right;" data-i18n="d_th_pay">Pay</th></tr></thead><tbody>${rb.map(r => `<tr><td>${r.date || '—'}</td><td>${r.id || '—'}</td><td style="text-align:right;">${formatMoney(r.pay)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:1px solid var(--border);"><td colspan="2" data-i18n="d_route_total">Route total</td><td style="text-align:right;">${formatMoney(routePay)}</td></tr></tbody></table></div>`
             : '';
 
         const ib = incomeBreakdown(emp.id);
         const incomeHtml = ib.length
             ? `<div style="margin-top:12px;">
-                    <div class="detail-subhead">Additional income</div>
+                    <div class="detail-subhead" data-i18n="d_additional_income">Additional income</div>
                     <div style="font-size:12px;">
                         ${ib.map(it => `
                             <div style="padding:6px 0;border-bottom:1px solid var(--border);">
@@ -10513,7 +10515,7 @@
                                 </div>
                             </div>`).join('')}
                         <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:6px;">
-                            <span>Income total</span>
+                            <span data-i18n="d_income_total">Income total</span>
                             <span style="color:#059669;">+${formatMoney(income || 0)}</span>
                         </div>
                     </div>
@@ -10542,20 +10544,20 @@
                             </div>
                         </div>`).join('')}
                     <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:6px;">
-                        <span>Total deductions</span>
+                        <span data-i18n="d_total_deductions">Total deductions</span>
                         <span style="color:#dc2626;">−${formatMoney(ded)}</span>
                     </div>
                 </div>${wasCapped ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Capped at this week's gross pay (${formatMoney(gross)}) — the full scheduled amount is ${formatMoney(scheduledTotal)}. Net pay can't go below $0.00. The claim/charge balance still follows its own calendar schedule regardless of pay, so if a week is known in advance to have no pay, pausing it (Claims tab) keeps the balance accurate too.</div>` : ''}`
-            : `<div style="color:var(--text-muted);font-size:12px;">No active weekly deductions.</div>`;
+            : `<div style="color:var(--text-muted);font-size:12px;" data-i18n="d_no_active_ded">No active weekly deductions.</div>`;
 
-        return `<div style="padding:8px 12px 0;"><button type="button" class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); printPayrollForEmployee('${emp.id}')">🖨 Print payslip</button></div>
+        return `<div style="padding:8px 12px 0;"><button type="button" class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); printPayrollForEmployee('${emp.id}')" data-i18n="d_print_payslip">🖨 Print payslip</button></div>
                 <div style="display:flex;flex-wrap:wrap;gap:16px;padding:12px 12px;">
                     <div style="flex:1;min-width:240px;">
-                        <div class="detail-subhead">Paid days / base pay${payType !== 'Weekly' ? ' · ' + currentWeekLabel : ''}</div>
+                        <div class="detail-subhead"><span data-i18n="d_paid_days_base">Paid days / base pay</span>${payType !== 'Weekly' ? ' · ' + currentWeekLabel : ''}</div>
                         ${baseHtml}${routeHtml}${incomeHtml}
                     </div>
                     <div style="flex:1;min-width:240px;">
-                        <div class="detail-subhead">Weekly deductions</div>
+                        <div class="detail-subhead" data-i18n="d_weekly_deductions">Weekly deductions</div>
                         ${dedHtml}
                     </div>
                 </div>`;
@@ -10861,7 +10863,7 @@
         container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
         const { data, error } = await supabaseClient.rpc('get_pending_release_requests', { p_actor: currentUsername, p_company: currentCompany });
         if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
-        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No pending release requests.</div>'; return; }
+        if (!data || !data.length) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_pending_release')}</div>`; return; }
 
         container.className = 'record-grid';
         container.innerHTML = data.map(r => {
@@ -10873,25 +10875,25 @@
             <div class="rec-card${open ? ' open' : ''}" id="rec-approvals-rel${r.id}">
                 <div class="rec-card-head" onclick="toggleRecCard('approvals','rel${r.id}')">
                     <span class="rec-caret" data-caret="approvals-rel${r.id}">${open ? '▾' : '▸'}</span>
-                    <span class="rec-title">${escHtml(empName)} <span class="type-pill">${r.release_type === 'wd' ? 'Week in Deposit' : 'Last Paycheck'}</span>${r.is_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
-                    <span class="rec-sub">requested by ${escHtml(r.requested_by)}</span>
+                    <span class="rec-title">${escHtml(empName)} <span class="type-pill">${r.release_type === 'wd' ? t('week_in_deposit_opt') : t('last_paycheck_opt')}</span>${r.is_early ? ' <span class="type-pill" style="background:#b45309;color:#fff;">Early</span>' : ''}</span>
+                    <span class="rec-sub">${t('d_requested_by')} ${escHtml(r.requested_by)}</span>
                     <span class="rec-right">${formatMoney(r.net_release)}</span>
                 </div>
                 <div class="rec-card-body">
                     <div class="rec-detail-grid">
-                        <div><div class="k">Original Amount</div><div class="v">${formatMoney(r.saved_amount)}</div></div>
-                        <div><div class="k">Net to Release</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(r.net_release)}</div></div>
-                        <div><div class="k">Requested</div><div class="v">${new Date(r.requested_at).toLocaleString()}</div></div>
+                        <div><div class="k">${t('d_original_amount')}</div><div class="v">${formatMoney(r.saved_amount)}</div></div>
+                        <div><div class="k">${t('d_net_to_release')}</div><div class="v" style="color:#059669;font-weight:700;">${formatMoney(r.net_release)}</div></div>
+                        <div><div class="k">${t('d_requested')}</div><div class="v">${new Date(r.requested_at).toLocaleString()}</div></div>
                     </div>
-                    ${items.length ? `<div class="detail-subhead" style="margin-top:8px;">Plan</div>
+                    ${items.length ? `<div class="detail-subhead" style="margin-top:8px;">${t('d_plan')}</div>
                     <div style="font-size:12px;">
                         ${(r.settle || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — settle in full <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
                         ${(r.absorb || []).map(i => `<div style="padding:3px 0;"><span class="type-pill">${i.type === 'claim' ? 'Claim' : 'Charge'}</span> ${i.id} — declare a loss (Absorbed) <span style="color:#dc2626;">−${formatMoney(i.amount)}</span></div>`).join('')}
                         ${r.prepay ? `<div style="padding:3px 0;"><span class="type-pill">${r.prepay.type === 'claim' ? 'Claim' : 'Charge'}</span> ${r.prepay.id} — partial prepayment <span style="color:#7c3aed;">−${formatMoney(r.prepay.amount)}</span></div>` : ''}
-                    </div>` : '<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">No other outstanding claims or charges.</div>'}
+                    </div>` : `<div style="font-size:12px; color:var(--text-muted); margin-top:6px;">${t('d_no_other_cc')}</div>`}
                     <div class="rec-actions">
-                        <button class="btn-small" style="background:var(--primary);margin:0;" onclick="approveReleaseRequest(${r.id})">Approve</button>
-                        <button class="del-btn" onclick="rejectReleaseRequest(${r.id})">✕ Reject</button>
+                        <button class="btn-small" style="background:var(--primary);margin:0;" onclick="approveReleaseRequest(${r.id})">${t('d_approve')}</button>
+                        <button class="del-btn" onclick="rejectReleaseRequest(${r.id})">${t('d_reject')}</button>
                     </div>
                 </div>
             </div>`;
@@ -11236,7 +11238,46 @@
             d_no_income: 'No additional income found.',
             d_income_setup_note: 'Run the income setup SQL (the <strong>additional_income</strong> table) to start logging additional income.',
             d_th_effective: 'Effective', d_th_weekly: 'Weekly', d_no_rate_changes: 'No rate changes — using the base weekly amount.',
-            d_th_paused: 'Paused', d_th_resume: 'Resume', d_no_pauses: 'No pauses recorded yet.'
+            d_th_paused: 'Paused', d_th_resume: 'Resume', d_no_pauses: 'No pauses recorded yet.',
+            // --- R5a: dynamic card chrome — Payroll ---
+            d_no_people_match: 'No people match these filters.', d_th_name: 'Name',
+            d_base_wk: 'Base (wk)', d_route_wk: 'Route (wk)', d_income_wk: 'Income (wk)', d_gross: 'Gross', d_deductions_h: 'Deductions', d_net: 'Net',
+            d_base_pay_wk: 'Base pay (wk)', d_route_pay_wk: 'Route pay (wk)', d_weekly_deductions: 'Weekly deductions', d_net_pay: 'Net pay',
+            d_people: 'People', d_gross_wk: 'Gross (wk)', d_deductions_wk: 'Deductions (wk)', d_net_pay_wk: 'Net Pay (wk)',
+            d_th_day: 'Day', d_th_pay: 'Pay', d_base_daily_total: 'Base (daily total)', d_provider_pay: 'Provider pay', d_weekly_salary: 'Weekly salary',
+            d_route_pay_dot: 'Route pay', d_th_route: 'Route', d_route_total: 'Route total',
+            d_no_daily_pay: 'No daily pay entered for', d_no_provider_pay: 'No provider pay entered for',
+            d_additional_income: 'Additional income', d_income_total: 'Income total', d_total_deductions: 'Total deductions', d_no_active_ded: 'No active weekly deductions.',
+            d_print_payslip: '🖨 Print payslip', d_paid_days_base: 'Paid days / base pay',
+            // --- R5a: dynamic card chrome — Statement, Week Deposit, Savings/Release, Release History, Pay ---
+            d_stat_claims: 'Claims', d_stat_charges: 'Charges', d_stat_add_income: 'Additional income',
+            d_total_claims: 'Total claims', d_total_charges: 'Total charges', d_total_income: 'Total income',
+            d_select_emp_stmt: 'Select an employee above to see their statement.', d_current_deductions: 'Current deductions — full breakdown',
+            d_no_current_cc: 'No current claims or charges for this employee.', d_add_income_breakdown: 'Additional income — full breakdown',
+            d_claimant_account: 'Claimant account', d_weekly_rate: 'Weekly rate', d_weeks_to_zero: 'Weeks to $0', d_paid_so_far: 'Paid so far',
+            d_print_schedule: '🖨 Print schedule', d_th_deducted: 'Deducted', d_th_running_balance: 'Running balance',
+            d_no_schedule_claim: 'No schedule to project — the claim is resolved, or needs a start date and weekly amount.',
+            d_no_schedule_charge: 'No schedule to project — the charge is resolved, or needs a start date and weekly amount.',
+            d_weekly: 'Weekly', d_remaining: 'Remaining',
+            d_goal: 'Goal', d_weekly_saving: 'Weekly saving', d_saved_so_far: 'Saved so far', d_remaining_to_goal: 'Remaining to goal',
+            d_of_goal: 'of goal', d_release: '🔓 Release', d_early_release: '⏰ Early Release', d_th_saved_week: 'Saved that week',
+            d_total_saved: 'Total saved', d_active_deposits: 'Active deposits', d_total_remaining: 'Total remaining', d_no_deposits: 'No deposits found.',
+            d_ready_now: 'Ready to release now', d_total_tracked: 'Total tracked', d_wid_savings: 'Week in Deposit savings',
+            d_nothing_savings: 'Nothing to show — no open Week in Deposit savings and no Inactive employees with an unreleased last paycheck (matching the current filters).',
+            d_pending_elsewhere: 'Pending/outstanding elsewhere', d_eligible_date: 'Eligible date', d_check_issued: 'Check issued (Thu)',
+            d_handed_over: 'Handed over (Sat)', d_not_eligible_until: 'Not eligible until',
+            d_total_releases: 'Total Releases', d_net_released_emp: 'Net Released to Employees', d_total_applied_ded: 'Total Applied to Deductions',
+            d_early_releases: 'Early Releases', d_no_releases: 'No releases recorded yet (matching the current filters).',
+            d_base_pay: 'Base Pay', d_additional_income_c: 'Additional Income', d_original_amount: 'Original Amount',
+            d_total_deductions_c: 'Total Deductions', d_final_released: 'Final Amount Released', d_requested_via: 'Requested via approval?',
+            d_applied_to: 'Applied to', d_no_other_outstanding: 'No other outstanding claims or charges at the time of release.', d_by: 'by',
+            d_no_pending_release: 'No pending release requests.', d_net_to_release: 'Net to Release', d_requested: 'Requested', d_plan: 'Plan',
+            d_no_other_cc: 'No other outstanding claims or charges.', d_approve: 'Approve', d_reject: '✕ Reject', d_requested_by: 'requested by',
+            d_no_provider_set: 'No one is set to <strong>Provider</strong> pay yet. Go to the Employees tab and switch a person\'s Pay to <em>Provider</em>.',
+            d_amount_this_week: 'Amount this week', d_notes_optional: 'Notes (optional)', d_provider_notes_ph: 'e.g. invoice #, what for', d_total_this_week: 'Total this week',
+            d_dp_setup: '⚙️ <strong>One-time setup needed.</strong> The daily-pay tables don\'t exist in your database yet, so entries can\'t be saved. Ask your admin to run the short SQL setup (provided with this update) in Supabase → SQL Editor. Everything else in the app keeps working normally.',
+            d_no_daily_set: 'No one is set to <strong>Daily Rate</strong> yet. Go to the Employees tab and switch a person\'s Pay to <em>Daily</em> (the ↺ button in the Pay column).',
+            d_week_total: 'Week Total'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11461,7 +11502,46 @@
             d_no_income: 'No se encontraron ingresos adicionales.',
             d_income_setup_note: 'Ejecute el SQL de configuración de ingresos (la tabla <strong>additional_income</strong>) para empezar a registrar ingresos adicionales.',
             d_th_effective: 'Vigente', d_th_weekly: 'Semanal', d_no_rate_changes: 'Sin cambios de tarifa — usando el monto semanal base.',
-            d_th_paused: 'Pausado', d_th_resume: 'Reanudar', d_no_pauses: 'Aún no hay pausas registradas.'
+            d_th_paused: 'Pausado', d_th_resume: 'Reanudar', d_no_pauses: 'Aún no hay pausas registradas.',
+            // --- R5a: dynamic card chrome — Payroll ---
+            d_no_people_match: 'Nadie coincide con estos filtros.', d_th_name: 'Nombre',
+            d_base_wk: 'Base (sem)', d_route_wk: 'Ruta (sem)', d_income_wk: 'Ingreso (sem)', d_gross: 'Bruto', d_deductions_h: 'Deducciones', d_net: 'Neto',
+            d_base_pay_wk: 'Pago base (sem)', d_route_pay_wk: 'Pago por ruta (sem)', d_weekly_deductions: 'Deducciones semanales', d_net_pay: 'Pago neto',
+            d_people: 'Personas', d_gross_wk: 'Bruto (sem)', d_deductions_wk: 'Deducciones (sem)', d_net_pay_wk: 'Pago neto (sem)',
+            d_th_day: 'Día', d_th_pay: 'Pago', d_base_daily_total: 'Base (total diario)', d_provider_pay: 'Pago a proveedor', d_weekly_salary: 'Salario semanal',
+            d_route_pay_dot: 'Pago por ruta', d_th_route: 'Ruta', d_route_total: 'Total de ruta',
+            d_no_daily_pay: 'Sin pago diario ingresado para', d_no_provider_pay: 'Sin pago a proveedor ingresado para',
+            d_additional_income: 'Ingreso adicional', d_income_total: 'Total de ingresos', d_total_deductions: 'Total de deducciones', d_no_active_ded: 'Sin deducciones semanales activas.',
+            d_print_payslip: '🖨 Imprimir recibo', d_paid_days_base: 'Días pagados / pago base',
+            // --- R5a: dynamic card chrome — Statement, Week Deposit, Savings/Release, Release History, Pay ---
+            d_stat_claims: 'Reclamos', d_stat_charges: 'Cargos', d_stat_add_income: 'Ingreso adicional',
+            d_total_claims: 'Total de reclamos', d_total_charges: 'Total de cargos', d_total_income: 'Total de ingresos',
+            d_select_emp_stmt: 'Seleccione un empleado arriba para ver su estado de cuenta.', d_current_deductions: 'Deducciones actuales — desglose completo',
+            d_no_current_cc: 'Sin reclamos ni cargos actuales para este empleado.', d_add_income_breakdown: 'Ingreso adicional — desglose completo',
+            d_claimant_account: 'Cuenta del reclamante', d_weekly_rate: 'Tarifa semanal', d_weeks_to_zero: 'Semanas hasta $0', d_paid_so_far: 'Pagado hasta ahora',
+            d_print_schedule: '🖨 Imprimir cronograma', d_th_deducted: 'Deducido', d_th_running_balance: 'Saldo acumulado',
+            d_no_schedule_claim: 'Sin cronograma que proyectar — el reclamo está resuelto o necesita una fecha de inicio y un monto semanal.',
+            d_no_schedule_charge: 'Sin cronograma que proyectar — el cargo está resuelto o necesita una fecha de inicio y un monto semanal.',
+            d_weekly: 'Semanal', d_remaining: 'Restante',
+            d_goal: 'Meta', d_weekly_saving: 'Ahorro semanal', d_saved_so_far: 'Ahorrado hasta ahora', d_remaining_to_goal: 'Falta para la meta',
+            d_of_goal: 'de la meta', d_release: '🔓 Liberar', d_early_release: '⏰ Liberación anticipada', d_th_saved_week: 'Ahorrado esa semana',
+            d_total_saved: 'Total ahorrado', d_active_deposits: 'Depósitos activos', d_total_remaining: 'Total restante', d_no_deposits: 'No se encontraron depósitos.',
+            d_ready_now: 'Listo para liberar ahora', d_total_tracked: 'Total en seguimiento', d_wid_savings: 'Ahorros de Semana de Fondo',
+            d_nothing_savings: 'Nada que mostrar — no hay ahorros de Semana de Fondo abiertos ni empleados Inactivos con un último cheque sin liberar (según los filtros actuales).',
+            d_pending_elsewhere: 'Pendiente en otro lugar', d_eligible_date: 'Fecha de elegibilidad', d_check_issued: 'Cheque emitido (jue)',
+            d_handed_over: 'Entregado (sáb)', d_not_eligible_until: 'No elegible hasta',
+            d_total_releases: 'Total de liberaciones', d_net_released_emp: 'Neto liberado a empleados', d_total_applied_ded: 'Total aplicado a deducciones',
+            d_early_releases: 'Liberaciones anticipadas', d_no_releases: 'Aún no hay liberaciones registradas (según los filtros actuales).',
+            d_base_pay: 'Pago base', d_additional_income_c: 'Ingreso adicional', d_original_amount: 'Monto original',
+            d_total_deductions_c: 'Total de deducciones', d_final_released: 'Monto final liberado', d_requested_via: '¿Solicitado por aprobación?',
+            d_applied_to: 'Aplicado a', d_no_other_outstanding: 'Sin otros reclamos o cargos pendientes al momento de la liberación.', d_by: 'por',
+            d_no_pending_release: 'No hay solicitudes de liberación pendientes.', d_net_to_release: 'Neto a liberar', d_requested: 'Solicitado', d_plan: 'Plan',
+            d_no_other_cc: 'Sin otros reclamos o cargos pendientes.', d_approve: 'Aprobar', d_reject: '✕ Rechazar', d_requested_by: 'solicitado por',
+            d_no_provider_set: 'Nadie está configurado con pago <strong>Proveedor</strong> aún. Vaya a la pestaña Empleados y cambie el Pago de una persona a <em>Proveedor</em>.',
+            d_amount_this_week: 'Monto de esta semana', d_notes_optional: 'Notas (opcional)', d_provider_notes_ph: 'p. ej. n.º de factura, concepto', d_total_this_week: 'Total de esta semana',
+            d_dp_setup: '⚙️ <strong>Se necesita configuración única.</strong> Las tablas de pago diario aún no existen en su base de datos, por lo que no se pueden guardar entradas. Pida a su administrador que ejecute la breve configuración SQL (incluida con esta actualización) en Supabase → SQL Editor. Todo lo demás en la app sigue funcionando normalmente.',
+            d_no_daily_set: 'Nadie está configurado con <strong>Tarifa diaria</strong> aún. Vaya a la pestaña Empleados y cambie el Pago de una persona a <em>Diaria</em> (el botón ↺ en la columna Pago).',
+            d_week_total: 'Total semanal'
         }
     };
 
