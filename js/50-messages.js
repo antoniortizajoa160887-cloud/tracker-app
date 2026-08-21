@@ -1,3 +1,7 @@
+/* Tracker app — part 6/8: 50-messages.js
+   Direct messaging — per-person, per-item threads, with file attachments and emoji.
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== MESSAGES — direct messaging, per-item threads ==================
     // A 1:1 chat between app_user accounts. Conversations are split by topic
     // AND by the specific item they're about: General (no item), a specific

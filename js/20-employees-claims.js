@@ -1,3 +1,7 @@
+/* Tracker app — part 3/8: 20-employees-claims.js
+   Employees & Claims/Charges — idle-timeout + global listeners, cloud fetchers, the employee directory, the claims and charges forms, and the combined Claims & Charges list.
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== Idle session timeout: 10 minutes of no activity signs the user out,
     // with a 30s warning first so in-progress form entries aren't lost silently. =====
     const IDLE_LIMIT_MS = 10 * 60 * 1000;

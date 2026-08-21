@@ -1,3 +1,7 @@
+/* Tracker app — part 2/8: 10-auth.js
+   Auth & session security — two-level tab navigation config, TOTP two-factor auth, the unusual-activity heads-up, Sign Out All Users (grace period + countdown), and account-menu 2FA management.
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== Two-level nav: which tabs live under which group =====
     const TAB_GROUPS = {
         'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],

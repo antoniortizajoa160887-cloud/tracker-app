@@ -1,3 +1,7 @@
+/* Tracker app — part 7/8: 60-i18n-sessions.js
+   Appearance/theme, internationalization (the TRANSLATIONS dictionary + t / applyTranslations / setLanguage), Fleet data loading, and Sessions & sign-in-attempt admin.
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== Appearance (Light / Dark theme) =====
     // ===== Language (English / Español) =====
     // First pass: navigation, login screen, and common header controls.

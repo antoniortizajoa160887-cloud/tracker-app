@@ -1,3 +1,7 @@
+/* Tracker app — part 4/8: 30-attach-import-deposit.js
+   Attachments, Excel/CSV import (individual + combined), Week in Deposit ("semana de fondo"), and the 90/30-day release-eligibility logic.
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== Attachments =====================================================
     // One shared system for files/photos/videos on claims, charges, income,
     // invoices, bills, employees and vehicles. Metadata lives in the

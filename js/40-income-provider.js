@@ -1,3 +1,7 @@
+/* Tracker app — part 5/8: 40-income-provider.js
+   Additional Income, Provider Pay, and the Provider-Pay ↔ Bills Payable linkage.
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== ADDITIONAL INCOME (mirror of charges, but ADDS to pay) =====
     let incomeTableMissing = false;
 

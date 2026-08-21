@@ -1,3 +1,7 @@
+/* Tracker app — part 8/8: 70-financial-init.js
+   Financial (Invoices, Bills), Fleet rendering, Export/Import all data, summary reports, and the app init/bootstrap block (runs last).
+   Split out of the original single-file index.html for maintainability; classic
+   script, loaded in order with its siblings and sharing one global scope. */
     // ===== FINANCIAL: Invoices (accounts receivable) =====================
     let invoices = [];
     let invoiceLineItems = {}; // invoice_id -> [{id, line_date, description, rate, qty, extra, amount}]
