@@ -1747,7 +1747,7 @@
             return `
                 <div class="panel collapsed" style="margin-bottom:8px;">
                     <div class="panel-head" onclick="toggleCollapse(this)">
-                        <span style="font-size:13px;"><span class="type-pill">${c.charge_id}</span> <b>${escHtml(empName(c.employee_id))}</b> · <span class="status-badge status-${c.status}">${c.status}</span></span>
+                        <span style="font-size:13px;"><span class="type-pill">${c.charge_id}</span> <b>${escHtml(empName(c.employee_id))}</b> · <span class="status-badge status-${c.status}">${enumLabel(c.status)}</span></span>
                         <span class="caret">&#9662;</span>
                     </div>
                     <div>
@@ -1782,7 +1782,7 @@
         statusesPresent.forEach(status => {
             const group = list.filter(c => c.status === status);
             const collapsed = collapsedStatusGroups.weekdeposit.has(status);
-            rows += `<div class="detail-subhead" style="margin:12px 0 6px; cursor:pointer;" onclick="toggleStatusGroup('weekdeposit','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:normal;">(${group.length})</span></div>`;
+            rows += `<div class="detail-subhead" style="margin:12px 0 6px; cursor:pointer;" onclick="toggleStatusGroup('weekdeposit','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:normal;">(${group.length})</span></div>`;
             if (collapsed) return;
             group.forEach(c => { rows += cardHtml(c); });
         });

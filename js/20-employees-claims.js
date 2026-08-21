@@ -1099,15 +1099,15 @@
                            <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
                            <option value="Inactive" ${emp.status !== 'Active' ? 'selected' : ''}>Inactive</option>
                        </select>`
-                    : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
+                    : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${enumLabel(emp.status)}</span>`;
                 const open = recExpanded.employees.has(emp.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('employees','${emp.id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id} ${attachInd('employee', emp.id)}</td>
                     <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
-                    <td>${emp.person_type}</td>
+                    <td>${enumLabel(emp.person_type)}</td>
                     <td>${escHtml(emp.department) || '-'}</td>
                     <td>${emp.start_date || '-'}</td>
-                    <td>${pt}${payToggle}</td>
+                    <td>${enumLabel(pt)}${payToggle}</td>
                     <td>${statusCell}</td>
                     <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')" data-i18n="d_edit">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
                 </tr>
@@ -1134,7 +1134,7 @@
                        <option value="Active" ${emp.status === 'Active' ? 'selected' : ''}>Active</option>
                        <option value="Inactive" ${emp.status !== 'Active' ? 'selected' : ''}>Inactive</option>
                    </select>`
-                : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span>`;
+                : `<span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${enumLabel(emp.status)}</span>`;
             const open = recExpanded.employees.has(emp.id);
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}">
@@ -1143,11 +1143,11 @@
                         <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="rec-sub">${emp.id}</span>
                         ${attachInd('employee', emp.id)}
-                        <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : pt === 'Provider' ? 'pay-provider' : 'pay-weekly'}">${pt}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${emp.status}</span></span>
+                        <span class="rec-right"><span class="pay-pill ${pt === 'Daily' ? 'pay-daily' : pt === 'Provider' ? 'pay-provider' : 'pay-weekly'}">${enumLabel(pt)}</span> <span class="status-badge ${emp.status === 'Active' ? 'status-active' : 'status-quit'}">${enumLabel(emp.status)}</span></span>
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k" data-i18n="d_type">Type</div><div class="v">${emp.person_type}</div></div>
+                            <div><div class="k" data-i18n="d_type">Type</div><div class="v">${enumLabel(emp.person_type)}</div></div>
                             <div><div class="k" data-i18n="d_department">Department</div><div class="v">${escHtml(emp.department) || '-'}</div></div>
                             <div><div class="k" data-i18n="d_start_date">Start date</div><div class="v">${emp.start_date || '-'}</div></div>
                         </div>
@@ -1158,7 +1158,7 @@
                             <button class="del-btn" onclick="deleteEmployee('${emp.id}')" data-i18n="d_delete">✕ Delete</button>
                         </div>
                         <div class="rec-quick-settings">
-                            <span class="rec-qs-item"><span class="rec-qs-label" data-i18n="d_pay">Pay</span> ${pt}${payToggle}</span>
+                            <span class="rec-qs-item"><span class="rec-qs-label" data-i18n="d_pay">Pay</span> ${enumLabel(pt)}${payToggle}</span>
                             <span class="rec-qs-item"><span class="rec-qs-label" data-i18n="d_status">Status</span> ${statusCell}</span>
                         </div>` : ''}
                     </div>
@@ -1646,7 +1646,7 @@
             let rows = '';
             groupByStatus(list).forEach(({ status, items }) => {
                 const collapsed = collapsedStatusGroups.cc.has(status);
-                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><td colspan="13"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><td colspan="13"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
                 if (collapsed) return;
                 items.forEach(r => {
                     const k = ccKindOf(r);
@@ -1673,7 +1673,7 @@
                         <td>${formatMoney(bal)}</td>
                         <td>${r.start_date || '-'}</td>
                         <td>${endDate}</td>
-                        <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+                        <td><span class="status-badge status-${r.status}">${enumLabel(r.status)}</span></td>
                         <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="${editFn}('${id}')">✎</button><button class="del-btn" onclick="${delFn}('${id}')">✕</button>` : ''}</td>
                     </tr>
                     <tr class="rec-card${open ? ' open' : ''}" id="rec-${tbl}-${id}" style="display:${open ? 'table-row' : 'none'};">
@@ -1692,7 +1692,7 @@
         container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_cc')}</div>`;
         groupByStatus(list).forEach(({ status, items }) => {
             const collapsed = collapsedStatusGroups.cc.has(status);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
             if (collapsed) return;
             items.forEach(r => {
                 const k = ccKindOf(r);
@@ -1713,7 +1713,7 @@
                             <span class="rec-title">${escHtml(empName)}</span>
                             <span class="rec-sub">${CC_KIND_BADGE[k]} ${id}</span>
                             ${attachInd(k, id)}
-                            <span class="rec-right"${balColor}>${formatMoney(bal)} <span class="status-badge status-${r.status}">${r.status}</span></span>
+                            <span class="rec-right"${balColor}>${formatMoney(bal)} <span class="status-badge status-${r.status}">${enumLabel(r.status)}</span></span>
                         </div>
                         <div class="rec-card-body">${ccDetailHtml(r, empName, weeks, bal, endDate, editable)}</div>
                     </div>`);
@@ -1749,7 +1749,7 @@
                 <tr><td>Claim amount</td><td>${formatMoney(c.claim_amount)}</td></tr>
                 <tr><td>Weekly rate</td><td>${formatMoney(rateOn(c, todayStr()))}</td></tr>
                 <tr><td>Start date</td><td>${c.start_date || '-'}</td></tr>
-                <tr><td>Status</td><td>${c.status}</td></tr>
+                <tr><td>Status</td><td>${enumLabel(c.status)}</td></tr>
                 <tr><td>Paid so far</td><td>${formatMoney(paidSoFar)}</td></tr>
                 <tr class="print-totals"><td>Current balance</td><td>${formatMoney(bal)}</td></tr>
             </tbody></table>
@@ -1777,7 +1777,7 @@
                 <tr><td>Charge amount</td><td>${formatMoney(ch.amount)}</td></tr>
                 <tr><td>Weekly rate</td><td>${formatMoney(chargeRateOn(ch, todayStr()))}</td></tr>
                 <tr><td>Start date</td><td>${ch.start_date || '-'}</td></tr>
-                <tr><td>Status</td><td>${ch.status}</td></tr>
+                <tr><td>Status</td><td>${enumLabel(ch.status)}</td></tr>
                 <tr><td>Paid so far</td><td>${formatMoney(paidSoFar)}</td></tr>
                 <tr class="print-totals"><td>Current balance</td><td>${formatMoney(bal)}</td></tr>
             </tbody></table>

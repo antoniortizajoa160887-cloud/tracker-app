@@ -284,7 +284,7 @@
             const items = groups[status];
             const collapsed = collapsedStatusGroups.invoices.has(status);
             const groupTotal = items.reduce((a, i) => a + (parseFloat(i.total_amount) || 0), 0);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('invoices','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('invoices','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
             if (collapsed) return;
             items.forEach(inv => {
                 const open = recExpanded.invoices.has(inv.invoice_id);
@@ -295,7 +295,7 @@
                             <span class="rec-title">${inv.invoice_number ? `#${escHtml(inv.invoice_number)} — ` : ''}${escHtml(inv.customer_name)}</span>
                             <span class="rec-sub">${inv.invoice_date || '-'}</span>
                             ${attachInd('invoice', inv.invoice_id)}
-                            <span class="rec-right"><span class="status-badge status-${inv.status}">${inv.status}</span> ${formatMoney(inv.total_amount)}</span>
+                            <span class="rec-right"><span class="status-badge status-${inv.status}">${enumLabel(inv.status)}</span> ${formatMoney(inv.total_amount)}</span>
                         </div>
                         <div class="rec-card-body">${invoiceDetailHtml(inv)}</div>
                     </div>`);
@@ -458,7 +458,7 @@
             const items = groups[status];
             const collapsed = collapsedStatusGroups.bills.has(status);
             const groupTotal = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('bills','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('bills','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length}) · ${formatMoney(groupTotal)}</span></div>`);
             if (collapsed) return;
             items.forEach(b => {
                 const open = recExpanded.bills.has(b.bill_id);
@@ -469,7 +469,7 @@
                             <span class="rec-title">${escHtml(b.vendor_name)}</span>
                             <span class="rec-sub">${b.bill_number ? '#' + escHtml(b.bill_number) : ''} ${b.due_date ? '· due ' + b.due_date : ''}</span>
                             ${attachInd('bill', b.bill_id)}
-                            <span class="rec-right"><span class="status-badge status-${b.status}">${b.status}</span> ${formatMoney(b.amount)}</span>
+                            <span class="rec-right"><span class="status-badge status-${b.status}">${enumLabel(b.status)}</span> ${formatMoney(b.amount)}</span>
                         </div>
                         <div class="rec-card-body">
                             <div class="rec-detail-grid">
@@ -666,7 +666,7 @@
         const services = (vehicleServices[v.id] || []).slice().sort((a, b) => String(b.service_date).localeCompare(String(a.service_date)));
         const rows = services.length
             ? services.map(s => `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px;">
-                    <span><strong>${s.service_date}</strong> — ${escHtml(s.description)} <span class="status-badge ${s.type === 'Performed' ? 'status-active' : ''}" style="margin-left:6px;">${s.type}</span>${s.mileage_at_service ? ` · ${Number(s.mileage_at_service).toLocaleString()} mi` : ''}${s.next_service_mileage ? ` <span style="color:var(--text-muted);">(next at ${Number(s.next_service_mileage).toLocaleString()} mi)</span>` : ''}</span>
+                    <span><strong>${s.service_date}</strong> — ${escHtml(s.description)} <span class="status-badge ${s.type === 'Performed' ? 'status-active' : ''}" style="margin-left:6px;">${enumLabel(s.type)}</span>${s.mileage_at_service ? ` · ${Number(s.mileage_at_service).toLocaleString()} mi` : ''}${s.next_service_mileage ? ` <span style="color:var(--text-muted);">(next at ${Number(s.next_service_mileage).toLocaleString()} mi)</span>` : ''}</span>
                     ${editable ? `<span class="del-btn" onclick="deleteVehicleService(${s.id}, '${escJsAttr(v.id)}')">✕</span>` : ''}
                 </div>`).join('')
             : `<div style="color:var(--text-muted); font-size:12px;" data-i18n="d_no_service_records">No service records yet.</div>`;

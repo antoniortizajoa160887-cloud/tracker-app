@@ -118,8 +118,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.59';
+    const APP_VERSION = 'v3.60';
     const CHANGELOG = [
+        { version: 'v3.60', date: '2026-08-21', notes: 'Two finishing touches for the bilingual experience. (1) The status and type words the app calculates and shows on records — Active/Inactive, Deducting, Queued, Paying, Paid, Absorbed, Released, Stopped, Unpaid, Void, the person types (Employee, Contractor, Staff, Provider, Owner, Manager) and pay types (Daily, Weekly, Provider) — now appear in Spanish when the app is set to Español, everywhere they show (status badges, group headers, record cards and tables). This is display-only: the stored values never change, so all filtering, grouping, sorting and reports keep working exactly as before, and English is unchanged. (2) The language buttons on the login screen and in Settings now show the country flags as small drawn flags instead of emoji, so the flags appear correctly on every device — including Windows computers, where the flag emoji used to show as the letters “US” / “MX” instead of a flag.' },
         { version: 'v3.59', date: '2026-08-21', notes: 'More of the app now speaks Spanish. The bilingual coverage previously left the pop-up messages — the small confirmation, warning and error boxes (for example “Delete employee?”, “Enter a company name.”, “Company code must be 3 or 4 characters.”) — in English. Those pop-ups across the whole app (employees, claims, charges, income, provider pay, invoices, bills, vehicles, routes, imports, users, messaging, savings & release, and the admin tools) now appear in Spanish when the app is set to Español, and exactly as before in English. A handful of technical server error details and bulk-import result summaries remain in English. Nothing about how the app works has changed — this is wording only.' },
         { version: 'v3.58', date: '2026-08-21', notes: 'Photos now show in the file viewer on every device and browser. The previous two attempts each fixed one side and broke the other (a memory-copy step worked on computers but not iPhones; loading the picture over its direct link then failed on computers because of a stale security rule cached on the device). This version sidesteps both problems: the viewer downloads the photo and shows it as inline data, a method that works under every version of the app’s security rules and is never affected by an out-of-date background helper — so it displays whether you open the app through tracker-logic.com or the Cloudflare link, on phone or computer. Videos and PDFs are unaffected, and Previous/Next, zoom, rotate, flip, the uploader/date, Download and Close all work as before.' },
         { version: 'v3.57', date: '2026-08-21', notes: 'Fixes photos not showing in the file viewer on iPhone (and any device where they appeared as a broken-image icon). The viewer now loads each photo, video or PDF directly from its secure link instead of copying it into memory first — the copying step was being blocked on iPhones and left the picture blank, while it worked on computers. Nothing else changes: files still open inside the app (never a new tab), with Previous/Next, zoom, rotate, flip, the uploader and date, Download and Close all as before. Videos also start playing a little sooner now, since they no longer have to download fully before showing.' },
@@ -529,6 +530,21 @@
     // status not listed here (e.g. Income's own "Paying"/"Stopped") still
     // groups correctly, just sorted after the known ones alphabetically.
     const REC_STATUS_ORDER = ['Deducting', 'Paying', 'Queued', 'Paid', 'Absorbed', 'Tk from check', 'Stopped'];
+
+    // Display-only label for a stored enum value (status, pay type, person type).
+    // The stored value stays English EVERYWHERE that matters — the database, all
+    // comparisons, the `status-${v}` CSS class, and the status group keys — so
+    // this is used ONLY to localize the text a user sees. An unknown value falls
+    // back to the raw value, so a status never renders blank. (The `ev_*` keys
+    // live in TRANSLATIONS; in English each maps back to the exact original word,
+    // so English output is unchanged.)
+    function enumLabel(v) {
+        if (v === null || v === undefined || v === '') return v;
+        const key = 'ev_' + String(v).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const tr = t(key);
+        return tr === undefined ? v : tr;
+    }
+
     function groupByStatus(list, statusField) {
         statusField = statusField || 'status';
         const groups = {};
@@ -930,7 +946,7 @@
         if (setup) setup.style.display = cfg.missing() ? 'block' : 'none';
         document.getElementById(cfg.dom.cur).innerHTML = `${formatMoney(_dedRateOn(cfg, rec, todayStr()))} / wk <span style="opacity:.7;">(current)</span> · balance ${formatMoney(_dedBalance(cfg, rec))}`;
         const paused = _dedPausedOn(cfg, rec, todayStr());
-        document.getElementById(cfg.dom.pstat).innerHTML = `Current: <span class="status-badge status-${paused ? 'Paused' : 'Deducting'}">${paused ? 'Paused' : 'Active'}</span>`;
+        document.getElementById(cfg.dom.pstat).innerHTML = `Current: <span class="status-badge status-${paused ? 'Paused' : 'Deducting'}">${enumLabel(paused ? 'Paused' : 'Active')}</span>`;
 
         const rc = (cfg.rc()[cfg.idOf(rec)] || []).slice().sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
         document.getElementById(cfg.dom.rhist).innerHTML = rc.length
