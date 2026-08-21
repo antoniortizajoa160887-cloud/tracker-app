@@ -1130,6 +1130,20 @@
     </div>
 </div>
 
+<!-- Unusual-activity heads-up, shown once right after sign-in when there have
+     been many recent failed attempts (on your own account, or — for admins —
+     on any account/network). -->
+<div id="security-alert-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:10001; align-items:center; justify-content:center; padding:20px;">
+    <div class="card" style="max-width:420px; width:100%;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="font-size:22px;">⚠️</span>
+            <h2 style="margin:0; color:var(--secondary);">Unusual sign-in activity</h2>
+        </div>
+        <div id="security-alert-body" style="font-size:0.88rem; color:var(--text); line-height:1.5;"></div>
+        <div id="security-alert-actions" style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;"></div>
+    </div>
+</div>
+
 <!-- Inactivity warning — shown 30s before an idle auto-logout -->
 <div id="idle-warning-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;">
     <div style="background:var(--surface); border-radius:10px; padding:22px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
@@ -2402,8 +2416,8 @@
             <button type="submit" class="btn" style="margin-top:0.5rem;">+ Create User</button>
         </form>
     </div>
-    <div class="panel">
-        <h2>System Users</h2>
+    <div class="panel collapsed">
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span>System Users</span> <span class="caret">&#9662;</span></h2>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-users" onchange="setSortField('users', this.value)">
@@ -2681,8 +2695,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.43';
+    const APP_VERSION = 'v3.44';
     const CHANGELOG = [
+        { version: 'v3.44', date: '2026-08-21', notes: 'Tidier Users screen, clearer tables, and a heads-up when sign-ins look suspicious. (1) On the Users screen the "System Users" list is now collapsible and starts collapsed — tap its heading to open it — so "Active sessions" and "Recent failed sign-ins" are easier to reach without scrolling past a long list. (2) Active sessions, Recent failed sign-ins, and System Users now all show as tidy tables on phone and desktop alike (on a narrow phone the table scrolls sideways inside its box), instead of switching to cards on mobile. Signing a session out works exactly as before — the Sign out button is in each session’s row. (3) New: right after you sign in, if there have been many failed sign-in attempts you get a short pop-up. You are warned about attempts on your own account (with a shortcut to change your password), and Administrators are additionally warned when any account or network has had many failures in the last 24 hours (with a shortcut to review them). "Many" means an account or network that got locked, or 10 or more failed tries. If nothing looks unusual, no pop-up appears.' },
         { version: 'v3.43', date: '2026-08-21', notes: 'Small consistency fix so account options match on phone and desktop. The “Sign out my other devices” option now also appears in the desktop side-menu account section (bottom-left), where previously it was only in the phone’s ⋮ menu. Everything else is unchanged: on a phone or installed app, the ⋮ button (top-right) still opens Change Password, Two-Factor Authentication, Sign out my other devices, and Sign Out; two-factor setup and the sign-in code prompt already work the same on phone, desktop and the installed app; and Administrators still find “Active sessions” and “Recent failed sign-ins” on the Users screen, which lays out as tap-friendly cards on a phone.' },
         { version: 'v3.42', date: '2026-08-21', notes: 'Two-factor authentication (2FA) for stronger sign-in security. You can now protect your account with a second step at sign-in: a 6-digit code from a free authenticator app on your phone (Google Authenticator, Microsoft Authenticator, Authy, 1Password, and others). Once it is on, signing in asks for your password and then the current code, so a stolen password by itself is no longer enough to get in. (1) To turn it on yourself, open the account menu (the ⋮ button, or the bottom of the side menu) → Two-Factor Authentication → Set up now. Add the account to your authenticator app — tap “Open in authenticator app” on a phone, or type the shown key — then enter the 6-digit code once to confirm and save the eight one-time recovery codes it gives you. (2) Manager-level accounts (Medium and Administrator, plus Super Admin) are asked to set this up the next time they sign in and cannot skip it; View Only accounts may turn it on but are never required to. (3) Lost your phone? Enter one of your saved recovery codes in place of the app code (each works once), or ask an Administrator to reset your 2FA from the Users screen — after a reset you just set it up again. (4) Administrators can see who has 2FA on (a 🔐 marker on the Users list) and reset it for anyone who gets locked out. Everything is checked on the server; the secret and the recovery codes are stored hashed and are never shown again after setup.' },
         { version: 'v3.41', date: '2026-08-21', notes: 'Security improvements around signing in. (1) Sign-in attempts are now also limited per network, not just per account. Previously someone could try one password against many different usernames without ever tripping the 5-attempt account lock \u2014 that gap is closed. The network limit is deliberately generous (30 failed attempts in 15 minutes, then a 15-minute pause) so a normal office sharing one internet connection is never affected. (2) Administrators can now see every active sign-in under Users \u2192 Active sessions, and sign any of them out immediately \u2014 useful if a phone or laptop goes missing. Everyone can see their own sessions, and there is a new \u201cSign out my other devices\u201d option in the account menu. For safety the session itself is never exposed, so this screen can show and end sessions but can never be used to impersonate anyone. (3) Administrators can see recent failed sign-ins under Users \u2192 Recent failed sign-ins, so an attack in progress is visible rather than silently recorded. (4) Sessions now last 8 hours instead of 12; the 10-minute inactivity sign-out is unchanged.' },
@@ -3822,8 +3837,74 @@
         currentUser.token_expires_at = Date.now() + TOKEN_TTL_MS;
         localStorage.setItem('unified_user', JSON.stringify(currentUser));
         initAppSession();
-        // Medium+ accounts without 2FA are required to set it up now.
+        // Medium+ accounts without 2FA are required to set it up now. Otherwise,
+        // surface any unusual sign-in activity (skipped while a mandatory 2FA
+        // enrollment overlay is up so we don't stack two modals).
         if (row.must_enroll_2fa) startTwofaEnroll(true);
+        else maybeShowSecurityAlert(row.recent_fail_count);
+    }
+
+    // ===== Unusual-activity heads-up (shown once after sign-in) =====
+    function showSecurityAlert(bodyHtml, actions) {
+        document.getElementById('security-alert-body').innerHTML = bodyHtml;
+        const actEl = document.getElementById('security-alert-actions');
+        actEl.innerHTML = '';
+        (actions || []).forEach(a => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = a.primary ? 'btn' : 'btn-small';
+            b.textContent = a.label;
+            b.onclick = () => { closeSecurityAlert(); if (a.fn) a.fn(); };
+            actEl.appendChild(b);
+        });
+        document.getElementById('security-alert-overlay').style.display = 'flex';
+    }
+    function closeSecurityAlert() { document.getElementById('security-alert-overlay').style.display = 'none'; }
+
+    // Warn about (a) your own account's recent failed sign-ins, and (b) for
+    // admins, any account/network with many recent failures. "Many" = hit
+    // lockout (5/account, 30/network -> locked_until set) or 10+ failures, in
+    // the last 24h. Shows one combined pop-up only when something qualifies.
+    async function maybeShowSecurityAlert(recentFailCount) {
+        const parts = [];
+        const actions = [];
+        const mine = parseInt(recentFailCount, 10) || 0;
+        if (mine >= 5) {
+            parts.push(`<p style="margin:0 0 10px;">There ${mine === 1 ? 'was' : 'were'} <strong>${mine}</strong> failed sign-in attempt${mine === 1 ? '' : 's'} on <strong>your account</strong> recently. If that wasn't you, change your password now.</p>`);
+            actions.push({ label: '🔑 Change my password', primary: true, fn: () => toggleChangePasswordCard() });
+        }
+        let adminCount = 0;
+        if (currentUserRole === 'Administrator' || currentUserRole === 'SuperAdmin') {
+            try {
+                const { data } = await supabaseClient.rpc('list_login_attempts', { p_actor: currentUsername });
+                const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+                adminCount = (data || []).filter(r => {
+                    const recent = r.last_fail_at && new Date(r.last_fail_at).getTime() >= cutoff;
+                    const heavy = !!r.locked_until || (r.fail_count || 0) >= 10;
+                    return recent && heavy;
+                }).length;
+            } catch (e) { console.error('security scan failed:', e); }
+            if (adminCount > 0) {
+                parts.push(`<p style="margin:0 0 10px;"><strong>${adminCount}</strong> account${adminCount === 1 ? '' : 's'} or network${adminCount === 1 ? '' : 's'} had many failed sign-ins in the last 24 hours. Review them to check for an attack in progress.</p>`);
+                actions.push({ label: '🔎 Review sign-ins', primary: mine < 5, fn: () => openFailedSignins() });
+            }
+        }
+        if (!parts.length) return;
+        actions.push({ label: 'Dismiss', primary: false, fn: null });
+        showSecurityAlert(parts.join(''), actions);
+    }
+
+    // Jump to Administration -> Users and open the failed sign-ins panel.
+    function openFailedSignins() {
+        try {
+            openGroup('grp-admin');
+            openTab({ currentTarget: document.getElementById('btn-tab-users') }, 'tab-users');
+        } catch (e) { console.error(e); }
+        setTimeout(() => {
+            const bodyEl = document.getElementById('login-attempts-body');
+            const panel = bodyEl && bodyEl.closest('.panel');
+            if (panel) panel.classList.remove('collapsed');
+        }, 80);
     }
 
     // Begin enrollment: fetch a fresh secret + otpauth URI and show the overlay.
@@ -10988,22 +11069,25 @@
         // Only an Administrator or SuperAdmin may sign someone else out; anyone
         // may end their own session.
         const canRevokeOthers = currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator';
-        body.innerHTML = rows.map(r => {
+        const trs = rows.map(r => {
             const mine = r.username === currentUsername;
             const allowed = mine || canRevokeOthers;
-            return `
-            <div class="rec-card" style="padding:9px 11px;">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span class="rec-title">${escHtml(r.username)}</span>
-                    <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(r.role === 'User' ? 'View Only' : r.role)}</span>
-                    ${r.is_current ? '<span class="status-badge status-active">This device</span>' : ''}
-                    <span style="margin-left:auto; font-size:11px; color:var(--text-muted); font-family:var(--mono);">
-                        started ${fmtWhen(r.created_at)} · seen ${fmtWhen(r.last_seen)} · ends ${new Date(r.expires_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                    </span>
-                    ${allowed && !r.is_current ? `<button type="button" class="btn-small del-btn" style="margin:0;" onclick="revokeSession(${r.id}, '${escJsAttr(r.username)}')">Sign out</button>` : ''}
-                </div>
-            </div>`;
+            const action = (allowed && !r.is_current)
+                ? `<button type="button" class="btn-small del-btn" style="margin:0;" onclick="revokeSession(${r.id}, '${escJsAttr(r.username)}')">Sign out</button>`
+                : '';
+            return `<tr>
+                <td>${escHtml(r.username)}${r.is_current ? ' <span class="status-badge status-active">This device</span>' : ''}</td>
+                <td><span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(r.role === 'User' ? 'View Only' : r.role)}</span></td>
+                <td style="white-space:nowrap;">${fmtWhen(r.created_at)}</td>
+                <td style="white-space:nowrap;">${fmtWhen(r.last_seen)}</td>
+                <td style="white-space:nowrap;">${new Date(r.expires_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</td>
+                <td style="text-align:center;">${action}</td>
+            </tr>`;
         }).join('');
+        body.className = '';
+        body.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+            <th>User</th><th>Role</th><th>Started</th><th>Last seen</th><th>Ends</th><th>Action</th>
+        </tr></thead><tbody>${trs}</tbody></table></div>`;
     }
 
     async function revokeSession(id, who) {
@@ -11032,19 +11116,20 @@
         const rows = data || [];
         if (count) count.textContent = `(${rows.length})`;
         if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No failed sign-ins in the last 7 days.</div>'; return; }
-        body.innerHTML = rows.map(r => {
+        const trs = rows.map(r => {
             const locked = r.locked_until && new Date(r.locked_until) > new Date();
-            return `
-            <div class="rec-card" style="padding:9px 11px;">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span class="type-pill" style="font-size:9px; padding:1px 6px;">${r.kind === 'network' ? 'Network' : 'Account'}</span>
-                    <span class="rec-title" style="font-family:var(--mono);">${escHtml(r.subject)}</span>
-                    <span style="font-size:12px; color:${r.fail_count >= 5 ? '#dc2626' : 'var(--text-muted)'}; font-weight:700;">${r.fail_count} failed</span>
-                    ${locked ? '<span class="exp-pill exp-over">locked</span>' : ''}
-                    <span style="margin-left:auto; font-size:11px; color:var(--text-muted); font-family:var(--mono);">${fmtWhen(r.last_fail_at)}</span>
-                </div>
-            </div>`;
+            return `<tr>
+                <td><span class="type-pill" style="font-size:9px; padding:1px 6px;">${r.kind === 'network' ? 'Network' : 'Account'}</span></td>
+                <td style="font-family:var(--mono);">${escHtml(r.subject)}</td>
+                <td style="text-align:center; color:${r.fail_count >= 5 ? '#dc2626' : 'var(--text-muted)'}; font-weight:700;">${r.fail_count}</td>
+                <td style="text-align:center;">${locked ? '<span class="exp-pill exp-over">locked</span>' : ''}</td>
+                <td style="white-space:nowrap; font-family:var(--mono);">${fmtWhen(r.last_fail_at)}</td>
+            </tr>`;
         }).join('');
+        body.className = '';
+        body.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+            <th>Type</th><th>Who</th><th>Failed</th><th>Status</th><th>Last attempt</th>
+        </tr></thead><tbody>${trs}</tbody></table></div>`;
     }
 
     async function fetchUsersList() {
@@ -11090,40 +11175,10 @@
             role: u => u.role || '', created: u => u.created_at || ''
         });
 
-        if (isDesktopView()) {
-            container.className = '';
-            let rows = '';
-            data.forEach(u => {
-                try {
-                    const canManage = u.can_manage && (currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator');
-                    let roleCell = `<span class="type-pill">${u.role}</span>`;
-                    if (canManage) {
-                        const roles = allowedRolesForActor();
-                        const opts = roles.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`).join('');
-                        roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
-                    }
-                    const twofaBtn = u.twofa_enabled ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUser2FA('${u.username}')" title="Turn off this user's 2FA (device lost)">🔐 Reset 2FA</button>` : '';
-                    const actionHtml = u.can_manage
-                        ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">🪪 ID</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button>${twofaBtn}<button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
-                        : '<span style="color:#94a3b8; font-size:11px;">Restricted</span>';
-                    rows += `<tr>
-                        <td>${u.username}${u.twofa_enabled ? ' <span title="Two-factor on" style="font-size:11px;">🔐</span>' : ''}</td>
-                        <td class="id-cell">${u.employee_id || '-'}</td>
-                        <td>${roleCell}</td>
-                        <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                        <td style="text-align:center; white-space:nowrap;">${actionHtml}</td>
-                    </tr>`;
-                } catch (e) { console.error('user row render failed for', u && u.username, e); }
-            });
-            container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>Username</th><th>Employee ID</th><th>Role</th><th>Created</th><th>Action</th>
-            </tr></thead><tbody>${rows}</tbody></table></div>`;
-            updateRecSortUI('users');
-            return;
-        }
-
-        container.className = 'record-grid';
-        container.innerHTML = '';
+        // One table on every screen size; the .table-wrapper scrolls sideways
+        // on a narrow phone rather than switching to cards.
+        container.className = '';
+        let rows = '';
         data.forEach(u => {
             try {
                 const canManage = u.can_manage && (currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator');
@@ -11133,32 +11188,22 @@
                     const opts = roles.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`).join('');
                     roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
                 }
-                const twofaBtn = u.twofa_enabled ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUser2FA('${u.username}')">🔐 Reset 2FA</button>` : '';
+                const twofaBtn = u.twofa_enabled ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUser2FA('${u.username}')" title="Turn off this user's 2FA (device lost)">🔐 Reset 2FA</button>` : '';
                 const actionHtml = u.can_manage
-                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">🪪 Edit ID</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset password</button>${twofaBtn}<button class="del-btn" onclick="deleteUser('${u.username}')">✕ Delete</button>`
-                    : '<span style="color:#94a3b8; font-size:11px;">Restricted — outside your scope</span>';
-                const open = recExpanded.users ? recExpanded.users.has(u.username) : false;
-
-                container.insertAdjacentHTML('beforeend', `
-                    <div class="rec-card${open ? ' open' : ''}" id="rec-users-${u.username}">
-                        <div class="rec-card-head" onclick="toggleRecCard('users','${u.username}')">
-                            <span class="rec-caret" data-caret="users-${u.username}">${open ? '▾' : '▸'}</span>
-                            <span class="rec-title">${u.username}${u.twofa_enabled ? ' 🔐' : ''}</span>
-                            <span class="rec-sub">${u.employee_id || ''}</span>
-                            <span class="rec-right"><span class="type-pill">${u.role}</span></span>
-                        </div>
-                        <div class="rec-card-body">
-                            <div class="rec-detail-grid">
-                                <div><div class="k">Role</div><div class="v">${roleCell}</div></div>
-                                <div><div class="k">Created</div><div class="v">${new Date(u.created_at).toLocaleDateString()}</div></div>
-                            </div>
-                            <div class="rec-actions">${actionHtml}</div>
-                        </div>
-                    </div>`);
-            } catch (e) {
-                console.error('user row render failed for', u && u.username, e);
-            }
+                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">🪪 ID</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button>${twofaBtn}<button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
+                    : '<span style="color:#94a3b8; font-size:11px;">Restricted</span>';
+                rows += `<tr>
+                    <td>${u.username}${u.twofa_enabled ? ' <span title="Two-factor on" style="font-size:11px;">🔐</span>' : ''}</td>
+                    <td class="id-cell">${u.employee_id || '-'}</td>
+                    <td>${roleCell}</td>
+                    <td style="white-space:nowrap;">${new Date(u.created_at).toLocaleDateString()}</td>
+                    <td style="text-align:center; white-space:nowrap;">${actionHtml}</td>
+                </tr>`;
+            } catch (e) { console.error('user row render failed for', u && u.username, e); }
         });
+        container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+            <th>Username</th><th>Employee ID</th><th>Role</th><th>Created</th><th>Action</th>
+        </tr></thead><tbody>${rows}</tbody></table></div>`;
         updateRecSortUI('users');
     }
 
