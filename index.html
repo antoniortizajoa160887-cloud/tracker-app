@@ -2115,10 +2115,11 @@
             <div id="dm-thread-body" class="msg-thread-body"></div>
             <div id="dm-composer" class="msg-composer" style="display:none;">
                 <div id="dm-emoji-panel" style="display:none; flex-wrap:wrap; gap:2px; max-height:120px; overflow-y:auto; padding:6px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); margin-bottom:6px;"></div>
+                <div id="dm-stage-panel"></div>
                 <div class="msg-composer-input-row">
                     <button type="button" class="btn-small" title="Emoji" onclick="toggleDmEmojiPanel()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">😊</button>
                     <button type="button" class="btn-small" id="dm-attach-btn" title="Attach a photo, video or document" onclick="document.getElementById('dm-file-input').click()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">📎</button>
-                    <input type="file" id="dm-file-input" style="display:none;" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="sendChatFiles(this.files)">
+                    <input type="file" id="dm-file-input" style="display:none;" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="stageChatFiles(this.files)">
                     <input type="text" id="dm-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){sendDirectMessage();}">
                     <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="sendDirectMessage()">➤</button>
                 </div>
@@ -2584,8 +2585,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.39';
+    const APP_VERSION = 'v3.40';
     const CHANGELOG = [
+        { version: 'v3.40', date: '2026-08-21', notes: 'Files shared in a conversation can now be renamed before they are sent, the same way they already could from a record\u2019s Files. Picking a file in a chat no longer sends it straight away: it is listed first with an editable name, pre-filled to match the rest of the app \u2014 for example \"3OFL00110D-20260821\" for a charge, with -2, -3 for more than one the same day \u2014 so a camera name like \"IMG_20260819_223344_1.jpg\" never ends up on the record. You can rename any of them, remove one you picked by mistake, then press Send. The extension is kept out of the editable box so it cannot be broken, names are cleaned up automatically, and anything staged but not sent is discarded if you switch to another conversation. Files still attach to the claim, charge or income the conversation is about, and the paperclip counts on those records update immediately.' },
         { version: 'v3.39', date: '2026-08-20', notes: 'Messaging now always talks about the right person\u2019s records, and View Only users can share files in a conversation. (1) When a conversation involves a View Only user, picking Claims, Charges or Income now always lists THAT person\u2019s records \u2014 whoever opened the conversation. Previously, if a View Only user started a chat with a manager, the list showed the manager\u2019s records instead of their own. So Sixto messaging Antonio about a claim now sees Sixto\u2019s claims, and Anahi messaging Sixto sees Sixto\u2019s claims too. Manager-to-manager conversations are unchanged. (2) View Only users can now attach photos, videos and documents inside a conversation about one of their own claims, charges or income, and the file is filed against that record automatically \u2014 so it also appears in that record\u2019s Files. They can open anything attached to their own records, including files a manager added, but still cannot delete or rename them. They cannot attach to anyone else\u2019s record, or to a truck, invoice or bill. (3) Who may start a conversation is unchanged: a View Only user can message managers, and managers can message anyone.' },
         { version: 'v3.38', date: '2026-08-20', notes: 'View Only accounts can now look after their own record, with managers kept in the loop. (1) A View Only user can open their own Status history — read only; they still cannot change their own status or edit any other field. (2) They can upload their own Driver License, Work Permit and Medical Card from their employee card. They can add and view those documents but cannot rename or delete them, so a document cannot be withdrawn once it has been submitted. They cannot upload to anyone else, to a truck, or to a claim, charge, invoice or bill. (3) As soon as a View Only user uploads one of their documents, everyone at Medium level and above gets a notification naming the person and the document, so it can be reviewed — tap the notification to jump straight to that employee. Managers uploading documents themselves create no notification, since they already know. Security note: the rule limiting a View Only user to their own record is now enforced on the server, not just hidden in the screen.' },
         { version: 'v3.37', date: '2026-08-20', notes: 'Shorter, consistent file names for uploaded documents. Names are now built as a short document code, the record ID and the date — for example "DL-3OFL0002S-20260820.jpg" for a Driver License, or "REG-3OFL0001V-20260820.jpg" for a truck registration (DL = Driver License, WP = Work Permit, MC = Medical Card, REG = Registration, INS = Insurance Card). A general file on a record is just the record ID and date. A second file the same day gets -2, -3 and so on. This replaces the previous long names like "Driver License — Antonio Ortiz Arevalo.jpg", which were unwieldy and turned into runs of underscores in storage. Names are still fully editable before you upload, and files already uploaded have been renamed to the new format — only the name shown changes, the files themselves are untouched. Also fixed earlier today: uploading to an employee or truck failed because the list of record types allowed to hold files was duplicated in three places and only some had been updated; all three now agree.' },
@@ -5874,19 +5876,25 @@
     // (DL-3OFL0002S-20260820), or "{record id}-{YYYYMMDD}" for a general file,
     // with -2, -3… when that's already taken. Short, sorts by date, and stays
     // correct if the person or truck is later renamed.
-    function suggestAttachName() {
-        if (!attachCtx) return 'File';
-        const code = attachCtx.docLabel ? (DOC_CODES[attachCtx.docLabel] || '') : '';
+    // Shared by the Files modal and the chat composer so both produce the same
+    // "{CODE}-{record id}-{YYYYMMDD}" convention and can never drift apart.
+    function buildAttachName(id, docLabel, taken) {
+        const code = docLabel ? (DOC_CODES[docLabel] || '') : '';
         const d = new Date();
         const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-        const base = `${code ? code + '-' : ''}${attachCtx.id}-${stamp}`;
-        const taken = new Set();
-        (attachListCache || []).forEach(a => taken.add(splitExt(a.file_name).base.toLowerCase()));
-        attachStage.forEach(st => taken.add(String(st.name).toLowerCase()));
+        const base = `${code ? code + '-' : ''}${id}-${stamp}`;
         if (!taken.has(base.toLowerCase())) return base;
         let n = 2;
         while (taken.has(`${base}-${n}`.toLowerCase())) n++;
         return `${base}-${n}`;
+    }
+
+    function suggestAttachName() {
+        if (!attachCtx) return 'File';
+        const taken = new Set();
+        (attachListCache || []).forEach(a => taken.add(splitExt(a.file_name).base.toLowerCase()));
+        attachStage.forEach(st => taken.add(String(st.name).toLowerCase()));
+        return buildAttachName(attachCtx.id, attachCtx.docLabel, taken);
     }
 
     function stageSelectedAttachments(fileList) {
@@ -9351,6 +9359,9 @@
 
     async function selectDmThread(username, topic, ref) {
         dmActiveUser = username; dmActiveTopic = topic; dmActiveRef = ref || null;
+        // Anything staged but not sent belongs to the previous conversation.
+        chatStage = [];
+        renderChatStage();
         await fetchDmThread();
         renderDmThread(true);
         await fetchDmThreads();
@@ -9483,8 +9494,14 @@
         const size = m.attach_size ? ' · ' + formatBytes(m.attach_size) : '';
         return `<button type="button" class="btn-small" style="margin:2px 0 0; background:var(--excel-blue);" onclick="viewAttachment('${escJsAttr(m.attach_path)}')">${icon} ${escHtml(m.attach_name || 'file')}${size}</button>`;
     }
-    async function sendChatFiles(files) {
-        const arr = Array.from(files || []);
+    // Chat uploads are staged with an editable, pre-filled name first — the same
+    // two-step flow and naming convention as the Files modal — so a camera name
+    // like "IMG_20260819_223344_1.jpg" never lands on the record. The file is
+    // filed against the conversation's claim/charge/income either way.
+    let chatStage = [];   // [{ file, name (no extension), ext }]
+
+    async function stageChatFiles(fileList) {
+        const arr = Array.from(fileList || []);
         const input = document.getElementById('dm-file-input');
         if (input) input.value = '';
         if (!arr.length) return;
@@ -9498,38 +9515,99 @@
             alert('You can only share files on your own claims, charges and income.');
             return;
         }
-        const prog = document.getElementById('dm-composer');
+        // Names already on this record, so the numeric suffix continues correctly
+        // rather than restarting at (2) for every chat upload.
+        const taken = new Set();
+        try {
+            const { data } = await supabaseClient.rpc('list_attachments', {
+                p_actor: currentUsername, p_entity_type: entityType, p_entity_id: dmActiveRef
+            });
+            (data || []).forEach(a => taken.add(splitExt(a.file_name).base.toLowerCase()));
+        } catch (e) { /* suggestion only — a collision is cosmetic, not fatal */ }
+
+        arr.forEach(f => {
+            const { ext } = splitExt(f.name);
+            chatStage.forEach(st => taken.add(String(st.name).toLowerCase()));
+            chatStage.push({ file: f, name: buildAttachName(dmActiveRef, null, taken), ext });
+        });
+        renderChatStage();
+    }
+
+    function setChatStagedName(i, val) { if (chatStage[i]) chatStage[i].name = val; }
+    function removeChatStaged(i) { chatStage.splice(i, 1); renderChatStage(); }
+    function clearChatStage() { chatStage = []; renderChatStage(); }
+
+    function renderChatStage() {
+        const el = document.getElementById('dm-stage-panel');
+        if (!el) return;
+        if (!chatStage.length) { el.innerHTML = ''; return; }
+        el.innerHTML = `
+            <div style="padding:6px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); margin-bottom:6px;">
+                <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); font-weight:700; margin-bottom:4px;">Ready to send — rename if you like</div>
+                ${chatStage.map((st, i) => `
+                    <div class="stage-row">
+                        <input type="text" value="${escHtml(st.name)}" oninput="setChatStagedName(${i}, this.value)" placeholder="File name">
+                        <span class="stage-meta">${st.ext ? '.' + escHtml(st.ext) : ''} · ${formatBytes(st.file.size)}</span>
+                        <span class="del-btn" style="cursor:pointer;" title="Remove" onclick="removeChatStaged(${i})">✕</span>
+                    </div>`).join('')}
+                <div style="margin-top:6px;">
+                    <button type="button" class="btn-small" id="dm-send-files-btn" style="margin:0;" onclick="sendStagedChatFiles()">Send ${chatStage.length} file${chatStage.length === 1 ? '' : 's'}</button>
+                    <button type="button" class="btn-small" style="margin:0 0 0 6px; background:#64748b;" onclick="clearChatStage()">Cancel</button>
+                </div>
+            </div>`;
+    }
+
+    async function sendStagedChatFiles() {
+        if (!chatStage.length) return;
+        if (!dmActiveUser || !dmActiveTopic) { alert('Pick a conversation first (tap +).'); return; }
+        const entityType = dmTopicEntityType(dmActiveTopic);
+        if (!entityType || !dmActiveRef) return;
+        if (!canUploadTo(entityType, dmActiveRef)) {
+            alert('You can only share files on your own claims, charges and income.');
+            return;
+        }
+        const btn = document.getElementById('dm-send-files-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+        const items = chatStage.slice();
         let ok = 0, failed = 0;
-        for (const original of arr) {
+        for (const st of items) {
             try {
-                if (original.size > 104857600) throw new Error(`${original.name}: over the 100 MB limit`);
-                const file = await compressImageFile(original);
-                const signed = await efAttach({ action: 'sign-upload', entity_type: entityType, entity_id: dmActiveRef, file_name: file.name });
+                if (st.file.size > 104857600) throw new Error(`${st.file.name}: over the 100 MB limit`);
+                const file = await compressImageFile(st.file);
+                // compressImageFile may re-encode to JPEG, so take the extension
+                // from what is actually being uploaded.
+                const ext = splitExt(file.name).ext || st.ext;
+                const finalName = sanitizeAttachName(st.name) + (ext ? '.' + ext : '');
+                const signed = await efAttach({ action: 'sign-upload', entity_type: entityType, entity_id: dmActiveRef, file_name: finalName });
                 const up = await fetch(signed.signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file });
                 if (!up.ok) throw new Error('Upload failed (HTTP ' + up.status + ')');
                 const { error: recErr } = await supabaseClient.rpc('record_attachment', {
                     p_actor: currentUsername, p_entity_type: entityType, p_entity_id: dmActiveRef,
-                    p_storage_path: signed.path, p_file_name: file.name, p_mime_type: file.type || null, p_size_bytes: file.size, p_kind: null
+                    p_storage_path: signed.path, p_file_name: finalName, p_mime_type: file.type || null, p_size_bytes: file.size, p_kind: null
                 });
                 if (recErr) throw new Error(recErr.message);
                 const kind = (file.type || '').startsWith('image/') ? 'photo' : (file.type || '').startsWith('video/') ? 'video' : 'document';
                 const { error: sendErr } = await supabaseClient.rpc('dm_send', {
                     p_actor: currentUsername, p_recipient: dmActiveUser, p_body: '', p_topic: dmActiveTopic, p_ref_id: dmActiveRef,
-                    p_attach_path: signed.path, p_attach_name: file.name, p_attach_kind: kind, p_attach_size: file.size
+                    p_attach_path: signed.path, p_attach_name: finalName, p_attach_kind: kind, p_attach_size: file.size
                 });
                 if (sendErr) throw new Error(sendErr.message);
                 ok++;
             } catch (e) {
                 failed++;
-                console.error('sendChatFiles:', e);
+                console.error('sendStagedChatFiles:', e);
                 alert('Could not send file: ' + (e && e.message ? e.message : e));
             }
         }
+        chatStage = [];
+        renderChatStage();
+        if (ok) { attachDirty = true; await loadAttachmentCounts(); rerenderAttachmentLists(); }
         await fetchDmThread();
         renderDmThread(true);
         await fetchDmThreads();
         renderDmThreads();
     }
+
 
     function startMessagePolling() {
         stopMessagePolling();
