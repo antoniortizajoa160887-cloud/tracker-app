@@ -33,10 +33,12 @@
 // bump, a device that already has an old copy of this file installed
 // will keep running it indefinitely.
 
-const CACHE_NAME = 'tracker-shell-v42';
+const CACHE_NAME = 'tracker-shell-v43';
 const SHELL_URLS = [
     './',
     './index.html',
+    './styles.css',
+    './app.js',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
