@@ -331,11 +331,26 @@
     function dmFileChip(m, label) {
         const icon = m.attach_kind === 'photo' ? '📷' : m.attach_kind === 'video' ? '🎬' : '📄';
         const size = m.attach_size ? ' · ' + formatBytes(m.attach_size) : '';
-        // Attribution for the viewer: the message sender uploaded this file, at
-        // the message's time. mime is left blank so the file-name extension
-        // drives the render mode (chat files always keep their extension).
-        const who = m.mine ? (currentUsername || '') : (label || '');
-        return `<button type="button" class="btn-small" style="margin:2px 0 0; background:var(--excel-blue);" onclick="viewAttachment('${escJsAttr(m.attach_path)}','${escJsAttr(m.attach_name || '')}','','${escJsAttr(who)}','${escJsAttr(m.created_at || '')}')">${icon} ${escHtml(m.attach_name || 'file')}${size}</button>`;
+        return `<button type="button" class="btn-small" style="margin:2px 0 0; background:var(--excel-blue);" onclick="openChatFile(${m.id})">${icon} ${escHtml(m.attach_name || 'file')}${size}</button>`;
+    }
+
+    // Open the file viewer on this chat's attachments as a gallery, so ‹/› page
+    // through every file in the open conversation (chronological), starting at
+    // the clicked one. Attribution: the sender uploaded it, at the message time;
+    // mime is left blank so the file-name extension drives the render mode.
+    function openChatFile(msgId) {
+        const atts = (dmThreadMsgs || []).filter(m => m.attach_path);
+        if (!atts.length) return;
+        const label = dmActivePersonLabel();
+        const items = atts.map(m => ({
+            path: m.attach_path,
+            name: m.attach_name || 'file',
+            mime: '',
+            by: m.mine ? (currentUsername || '') : (label || ''),
+            at: m.created_at || ''
+        }));
+        const idx = Math.max(0, atts.findIndex(m => m.id === msgId));
+        openFileGallery(items, idx);
     }
     // Chat uploads are staged with an editable, pre-filled name first — the same
     // two-step flow and naming convention as the Files modal — so a camera name

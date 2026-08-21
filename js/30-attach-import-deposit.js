@@ -199,12 +199,12 @@
             return;
         }
         const icon = { photo: '📷', video: '🎬', document: '📄' };
-        listEl.innerHTML = rows.map(a => `
+        listEl.innerHTML = rows.map((a, i) => `
             <div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;">
                 <span style="font-size:16px;">${icon[a.kind] || '📄'}</span>
                 <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(a.file_name)}">${escHtml(a.file_name)}${(!attachCtx.docLabel && a.doc_label) ? ` <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(DOC_LABELS[a.doc_label] || a.doc_label)}</span>` : ''}</span>
                 <span style="color:var(--text-muted); white-space:nowrap;">${formatBytes(a.size_bytes)}</span>
-                <button type="button" class="btn-small" style="margin:0; padding:3px 9px;" onclick="viewAttachment('${escJsAttr(a.storage_path)}','${escJsAttr(a.file_name || '')}','${escJsAttr(a.mime_type || '')}','${escJsAttr(a.uploaded_by || '')}','${escJsAttr(a.uploaded_at || '')}')">View</button>
+                <button type="button" class="btn-small" style="margin:0; padding:3px 9px;" onclick="openFileFromList(${i})">View</button>
                 ${canEdit() ? `<button type="button" class="btn-small" style="margin:0; padding:3px 8px; background:var(--navy);" title="Rename this file" onclick="renameAttachmentUi(${a.id}, '${escJsAttr(a.file_name)}')">✎</button>` : ''}
                 ${canEdit() ? `<span class="del-btn" style="cursor:pointer;" onclick="deleteAttachmentUi(${a.id}, '${escJsAttr(a.storage_path)}')">✕</span>` : ''}
             </div>`).join('');
@@ -385,6 +385,14 @@
     // Download button can reuse it and closeFileViewer can revoke it (no leaks).
     let currentViewer = null;   // { url, blob, name }
     let fvZoom = 1;             // image zoom scale (1 = fit)
+    let fvRot = 0;             // image rotation in degrees (0/90/180/270)
+    let fvFlipX = 1, fvFlipY = 1;   // image flip (±1 on each axis)
+    // Prev/Next gallery: the viewer holds a small playlist so you can page
+    // through a set of files (a record's Files, or a chat's attachments)
+    // without closing and reopening. Each item: { path, name, mime, by, at }.
+    let fvItems = [];
+    let fvIndex = 0;
+    let fvReq = 0;             // race guard — newest fvShow wins on fast paging
 
     // Best-effort MIME so we can pick a render mode even for old rows that were
     // stored without one — fall back to the file-name extension.
@@ -400,51 +408,77 @@
         return map[ext] || '';
     }
 
-    async function viewAttachment(path, fileName, mime, uploadedBy, uploadedAt) {
+    // Open a set of files with prev/next, starting at `index`. Both call sites
+    // (a record's Files list, a chat thread) build the item list and hand it
+    // here; a single-item list simply hides the nav.
+    function openFileGallery(items, index) {
+        const overlay = document.getElementById('file-viewer-overlay');
+        if (!overlay) return;
+        fvItems = Array.isArray(items) ? items : [];
+        if (!fvItems.length) return;
+        overlay.style.display = 'flex';
+        fvShow(Math.max(0, Math.min(index || 0, fvItems.length - 1)));
+    }
+
+    // Backward-compatible single-file entry (kept for any caller that opens one
+    // file by its fields). Wraps it as a one-item gallery — nav auto-hides.
+    function viewAttachment(path, fileName, mime, uploadedBy, uploadedAt) {
+        openFileGallery([{ path: path, name: fileName, mime: mime, by: uploadedBy, at: uploadedAt }], 0);
+    }
+
+    async function fvShow(index) {
         const overlay = document.getElementById('file-viewer-overlay');
         const body = document.getElementById('file-viewer-body');
         const titleEl = document.getElementById('file-viewer-title');
         const metaEl = document.getElementById('file-viewer-meta');
         const zoomBar = document.getElementById('file-viewer-zoom');
         if (!overlay || !body) return;
+        if (index < 0 || index >= fvItems.length) return;
+        fvIndex = index;
+        const it = fvItems[index] || {};
+        const path = it.path;
         fvReset();          // revoke any previous blob, clear old media
-        fvZoom = 1;
-        const name = fileName || (path ? String(path).split('/').pop() : 'file');
+        fvZoom = 1; fvRot = 0; fvFlipX = 1; fvFlipY = 1;
+        const name = it.name || (path ? String(path).split('/').pop() : 'file');
         titleEl.textContent = name;
         // Attribution — who uploaded + the exact date/time (both guarded).
         let when = '';
-        if (uploadedAt) { const d = new Date(uploadedAt); if (!isNaN(d.getTime())) when = d.toLocaleString(); }
-        const who = (uploadedBy && String(uploadedBy).trim()) ? String(uploadedBy) : '—';
+        if (it.at) { const d = new Date(it.at); if (!isNaN(d.getTime())) when = d.toLocaleString(); }
+        const who = (it.by && String(it.by).trim()) ? String(it.by) : '—';
         metaEl.innerHTML = `${escHtml(t('fv_uploaded_by'))} <strong>${escHtml(who)}</strong>${when ? ' · ' + escHtml(when) : ''}`;
         zoomBar.style.display = 'none';
-        body.style.alignItems = 'center'; body.style.justifyContent = 'center';
-        body.innerHTML = `<div style="color:#cbd5e1; font-size:13px; padding:24px;">${escHtml(t('fv_loading'))}</div>`;
-        overlay.style.display = 'flex';
+        body.innerHTML = `<div style="margin:auto; color:#cbd5e1; font-size:13px; padding:24px;">${escHtml(t('fv_loading'))}</div>`;
+        fvUpdateNav();
+        const myReq = ++fvReq;   // paging fast? only the newest request may render
         try {
             const r = await efAttach({ action: 'sign-download', path });
             const resp = await fetch(r.signedUrl);
+            if (myReq !== fvReq) return;              // superseded before bytes arrived
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);
+            if (myReq !== fvReq) { try { URL.revokeObjectURL(url); } catch (e) {} return; }
             currentViewer = { url, blob, name };
-            const kind = fvGuessMime(name, mime);
+            const kind = fvGuessMime(name, it.mime);
             if (kind.indexOf('image/') === 0) {
-                body.innerHTML = `<img id="file-viewer-img" src="${url}" alt="${escHtml(name)}" style="max-width:100%; max-height:82vh; display:block; transform-origin:top left; transition:transform 0.05s linear;">`;
+                // margin:auto centres the image on both axes when it fits and,
+                // crucially, lets it scroll (not clip) when it is taller/wider
+                // than the box — e.g. a portrait phone photo on a small screen.
+                body.innerHTML = `<img id="file-viewer-img" src="${url}" alt="${escHtml(name)}" style="margin:auto; max-width:100%; max-height:82vh; display:block; transform-origin:center center; transition:transform 0.08s linear;">`;
                 zoomBar.style.display = 'inline-flex';
-                fvLabelZoomButtons();
+                fvLabelImgTools();
                 fvApplyZoom();
             } else if (kind.indexOf('video/') === 0) {
-                body.innerHTML = `<video src="${url}" controls playsinline style="max-width:100%; max-height:82vh; outline:none;"></video>`;
+                body.innerHTML = `<video src="${url}" controls playsinline style="margin:auto; max-width:100%; max-height:82vh; outline:none;"></video>`;
             } else if (kind.indexOf('audio/') === 0) {
-                body.innerHTML = `<div style="padding:28px; width:100%; box-sizing:border-box;"><audio src="${url}" controls style="width:100%;"></audio></div>`;
+                body.innerHTML = `<div style="margin:auto; padding:28px; width:100%; box-sizing:border-box;"><audio src="${url}" controls style="width:100%;"></audio></div>`;
             } else if (kind === 'application/pdf') {
-                body.style.alignItems = 'stretch';
                 body.innerHTML = `<iframe src="${url}" title="${escHtml(name)}" style="width:100%; height:82vh; border:0; background:#fff;"></iframe>`;
             } else {
                 // Info + Download for types the browser can't render inline.
                 const sz = (currentViewer.blob && currentViewer.blob.size) ? formatBytes(currentViewer.blob.size) : '';
                 const typeLabel = kind || (splitExt(name).ext ? splitExt(name).ext.toUpperCase() : '');
-                body.innerHTML = `<div style="text-align:center; color:#e2e8f0; padding:40px 22px;">
+                body.innerHTML = `<div style="margin:auto; text-align:center; color:#e2e8f0; padding:40px 22px;">
                     <div style="font-size:54px; line-height:1;">📄</div>
                     <div style="margin-top:12px; font-weight:600; word-break:break-word;">${escHtml(name)}</div>
                     <div style="margin-top:4px; font-size:12px; color:#94a3b8;">${escHtml(typeLabel)}${sz ? ' · ' + escHtml(sz) : ''}</div>
@@ -453,32 +487,26 @@
             }
         } catch (e) {
             console.error('file viewer:', e);
-            body.innerHTML = `<div style="color:#fca5a5; font-size:13px; padding:28px; text-align:center;">${escHtml(t('fv_error'))}<br><span style="color:#94a3b8; font-size:11px;">${escHtml(e && e.message ? e.message : String(e))}</span></div>`;
+            body.innerHTML = `<div style="margin:auto; color:#fca5a5; font-size:13px; padding:28px; text-align:center;">${escHtml(t('fv_error'))}<br><span style="color:#94a3b8; font-size:11px;">${escHtml(e && e.message ? e.message : String(e))}</span></div>`;
         }
     }
 
-    // Localize the zoom buttons' tooltips/labels (applyTranslations only covers
+    // Localize the image-tool button tooltips (applyTranslations only covers
     // text + placeholders, not title/aria-label, so set them here at open time).
-    function fvLabelZoomButtons() {
-        const bar = document.getElementById('file-viewer-zoom');
-        if (!bar) return;
-        const btns = bar.querySelectorAll('button');
-        const labels = [t('fv_zoom_out'), t('fv_zoom_reset'), t('fv_zoom_in')]; // order: −, ⟳, +
-        btns.forEach((b, i) => { if (labels[i]) { b.title = labels[i]; b.setAttribute('aria-label', labels[i]); } });
+    function fvLabelImgTools() {
+        const set = (id, key) => { const b = document.getElementById(id); if (b) { b.title = t(key); b.setAttribute('aria-label', t(key)); } };
+        set('fv-btn-zoomout', 'fv_zoom_out'); set('fv-btn-zoomreset', 'fv_zoom_reset'); set('fv-btn-zoomin', 'fv_zoom_in');
+        set('fv-btn-rotl', 'fv_rotate_left'); set('fv-btn-rotr', 'fv_rotate_right');
+        set('fv-btn-fliph', 'fv_flip_h'); set('fv-btn-flipv', 'fv_flip_v');
     }
 
+    // Apply the combined image transform: rotation + flip + zoom, about the
+    // centre. margin:auto (set in the markup) keeps it centred and, because the
+    // body is overflow:auto, still scrollable to every edge when it overflows.
     function fvApplyZoom() {
         const img = document.getElementById('file-viewer-img');
-        const body = document.getElementById('file-viewer-body');
         if (!img) return;
-        img.style.transform = 'scale(' + fvZoom + ')';
-        // When zoomed past fit, anchor top-left so the overflow is reachable by
-        // scrolling; otherwise keep the image centered.
-        if (body) {
-            const zoomed = fvZoom > 1;
-            body.style.alignItems = zoomed ? 'flex-start' : 'center';
-            body.style.justifyContent = zoomed ? 'flex-start' : 'center';
-        }
+        img.style.transform = 'rotate(' + fvRot + 'deg) scaleX(' + (fvZoom * fvFlipX) + ') scaleY(' + (fvZoom * fvFlipY) + ')';
     }
 
     // dir: +1 zoom in, -1 zoom out, 0 reset to fit. Clamped 0.25×–5×.
@@ -486,6 +514,44 @@
         if (dir === 0) fvZoom = 1;
         else fvZoom = Math.min(5, Math.max(0.25, +(fvZoom + dir * 0.25).toFixed(2)));
         fvApplyZoom();
+    }
+
+    // Rotate the image 90° left (-1) or right (+1), kept in 0–359.
+    function fvRotate(dir) {
+        fvRot = ((fvRot + dir * 90) % 360 + 360) % 360;
+        fvApplyZoom();
+    }
+
+    // Flip (mirror) the image horizontally ('h') or vertically ('v').
+    function fvFlip(axis) {
+        if (axis === 'v') fvFlipY = -fvFlipY; else fvFlipX = -fvFlipX;
+        fvApplyZoom();
+    }
+
+    // Open a record's Files list as a gallery, starting at the clicked row.
+    // attachListCache already holds the rendered rows, in order.
+    function openFileFromList(i) {
+        const items = (attachListCache || []).map(a => ({
+            path: a.storage_path, name: a.file_name, mime: a.mime_type, by: a.uploaded_by, at: a.uploaded_at
+        }));
+        openFileGallery(items, i);
+    }
+
+    function fvPrev() { if (fvIndex > 0) fvShow(fvIndex - 1); }
+    function fvNext() { if (fvIndex < fvItems.length - 1) fvShow(fvIndex + 1); }
+
+    // Show/hide the ‹ pos › nav and reflect position + end-of-list disabling.
+    function fvUpdateNav() {
+        const nav = document.getElementById('file-viewer-nav');
+        const pos = document.getElementById('file-viewer-pos');
+        const prev = document.getElementById('file-viewer-prev');
+        const next = document.getElementById('file-viewer-next');
+        if (!nav) return;
+        if (fvItems.length <= 1) { nav.style.display = 'none'; return; }
+        nav.style.display = 'inline-flex';
+        if (pos) pos.textContent = (fvIndex + 1) + ' / ' + fvItems.length;
+        if (prev) { const d = fvIndex <= 0; prev.disabled = d; prev.style.opacity = d ? '0.4' : ''; prev.title = t('fv_prev'); prev.setAttribute('aria-label', t('fv_prev')); }
+        if (next) { const d = fvIndex >= fvItems.length - 1; next.disabled = d; next.style.opacity = d ? '0.4' : ''; next.title = t('fv_next'); next.setAttribute('aria-label', t('fv_next')); }
     }
 
     // Ctrl/⌘ + wheel zooms the image, matching the buttons.
@@ -525,13 +591,21 @@
         const ov = document.getElementById('file-viewer-overlay');
         if (ov) ov.style.display = 'none';
         fvReset();
+        fvItems = []; fvIndex = 0;
     }
 
-    // Esc closes the viewer; Ctrl/⌘+wheel zooms. Attached once at load.
+    // Esc closes the viewer; ←/→ page prev/next (unless a media/input control has
+    // focus, so video scrubbing and typing keep the arrows); Ctrl/⌘+wheel zooms.
+    // Attached once at load.
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const ov = document.getElementById('file-viewer-overlay');
-            if (ov && ov.style.display !== 'none') closeFileViewer();
+        const ov = document.getElementById('file-viewer-overlay');
+        if (!ov || ov.style.display === 'none') return;
+        if (e.key === 'Escape') { closeFileViewer(); return; }
+        if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && fvItems.length > 1) {
+            const tag = (document.activeElement && document.activeElement.tagName) || '';
+            if (/^(VIDEO|AUDIO|IFRAME|INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+            e.preventDefault();
+            if (e.key === 'ArrowLeft') fvPrev(); else fvNext();
         }
     });
     document.addEventListener('wheel', fvWheelZoom, { passive: false });
