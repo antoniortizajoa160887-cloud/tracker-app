@@ -33,7 +33,7 @@
 // bump, a device that already has an old copy of this file installed
 // will keep running it indefinitely.
 
-const CACHE_NAME = 'tracker-shell-v46';
+const CACHE_NAME = 'tracker-shell-v47';
 const SHELL_URLS = [
     './',
     './index.html',
@@ -76,6 +76,13 @@ self.addEventListener('fetch', (event) => {
     if (req.method !== 'GET') return; // writes are never cacheable — leave untouched
 
     const url = new URL(req.url);
+    // Only ever touch real http(s) requests. A blob:/data:/filesystem: URL has
+    // the app's own origin, so it would otherwise slip past the cross-origin
+    // check below and be intercepted — but a service worker can't fetch a
+    // blob: URL created in a page (different agent), which breaks it. The
+    // in-app file viewer renders photos/videos/PDFs from blob: URLs, so this
+    // guard is what lets them load. Leave every non-http(s) scheme untouched.
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
     if (url.origin !== self.location.origin) return; // cross-origin: leave untouched
 
     event.respondWith(

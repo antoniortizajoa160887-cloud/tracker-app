@@ -317,12 +317,22 @@
             </div>
             <span title="Close" aria-label="Close" style="font-size:24px; color:var(--text-muted); cursor:pointer; line-height:1; padding:0 4px;" onclick="closeFileViewer()">&times;</span>
         </div>
-        <div id="file-viewer-body" style="flex:1; min-height:220px; overflow:auto; background:#0b1220; display:flex; align-items:center; justify-content:center; position:relative;"></div>
+        <div id="file-viewer-body" style="flex:1; min-height:220px; overflow:auto; background:#0b1220; display:flex; position:relative;"></div>
         <div style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-top:1px solid var(--border); flex-wrap:wrap;">
-            <div id="file-viewer-zoom" style="display:none; align-items:center; gap:4px;">
-                <button type="button" class="btn-small" style="margin:0; padding:4px 11px; font-size:15px; line-height:1;" onclick="fileViewerZoom(-1)">−</button>
-                <button type="button" class="btn-small" style="margin:0; padding:4px 11px; line-height:1;" onclick="fileViewerZoom(0)">⟳</button>
-                <button type="button" class="btn-small" style="margin:0; padding:4px 11px; font-size:15px; line-height:1;" onclick="fileViewerZoom(1)">+</button>
+            <div id="file-viewer-nav" style="display:none; align-items:center; gap:6px;">
+                <button type="button" class="btn-small" id="file-viewer-prev" style="margin:0; padding:4px 11px; font-size:15px; line-height:1;" onclick="fvPrev()">‹</button>
+                <span id="file-viewer-pos" style="font-size:11.5px; color:var(--text-muted); min-width:46px; text-align:center;"></span>
+                <button type="button" class="btn-small" id="file-viewer-next" style="margin:0; padding:4px 11px; font-size:15px; line-height:1;" onclick="fvNext()">›</button>
+            </div>
+            <div id="file-viewer-zoom" style="display:none; align-items:center; gap:4px; flex-wrap:wrap;">
+                <button type="button" class="btn-small" id="fv-btn-zoomout" style="margin:0; padding:4px 11px; font-size:15px; line-height:1;" onclick="fileViewerZoom(-1)">−</button>
+                <button type="button" class="btn-small" id="fv-btn-zoomreset" style="margin:0; padding:4px 11px; line-height:1;" onclick="fileViewerZoom(0)">⟳</button>
+                <button type="button" class="btn-small" id="fv-btn-zoomin" style="margin:0; padding:4px 11px; font-size:15px; line-height:1;" onclick="fileViewerZoom(1)">+</button>
+                <span style="width:1px; align-self:stretch; background:var(--border); margin:2px 3px;"></span>
+                <button type="button" class="btn-small" id="fv-btn-rotl" style="margin:0; padding:4px 10px; font-size:14px; line-height:1;" onclick="fvRotate(-1)">↺</button>
+                <button type="button" class="btn-small" id="fv-btn-rotr" style="margin:0; padding:4px 10px; font-size:14px; line-height:1;" onclick="fvRotate(1)">↻</button>
+                <button type="button" class="btn-small" id="fv-btn-fliph" style="margin:0; padding:4px 10px; font-size:14px; line-height:1;" onclick="fvFlip('h')">⇋</button>
+                <button type="button" class="btn-small" id="fv-btn-flipv" style="margin:0; padding:4px 10px; font-size:14px; line-height:1;" onclick="fvFlip('v')">⇅</button>
             </div>
             <span style="margin-left:auto;"></span>
             <button type="button" class="btn-small" id="file-viewer-download" style="margin:0; background:var(--navy);" onclick="downloadCurrentFile()" data-i18n="fv_download">Download</button>
