@@ -1458,26 +1458,26 @@
 <!-- TAB 1: ROUTE TRACKER -->
 <div id="tab-tracker" class="tab-content">
     <div class="card" id="tracker-form-card">
-        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="route-form-titletext">Log New Route</span> <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="route-form-titletext" data-i18n="log_new_route">Log New Route</span> <span class="caret">&#9662;</span></h2>
         <form id="route-form">
             <div class="grid-form">
-                <div class="field"><label>Delivery Date</label><input type="date" id="f-date" required></div>
-                <div class="field"><label>Company</label><select id="f-contractor"></select></div>
-                <div class="field"><label>Route Type</label><select id="f-type"><option value="Regular">Regular</option><option value="Dedicated">Dedicated</option></select></div>
-                <div class="field"><label>3rd Man</label><select id="f-3rdman"><option value="None">None (N)</option><option value="NYC">NYC</option><option value="Y">Yes (Y)</option></select></div>
-                <div class="field"><label>Driver</label><input type="text" id="f-driver" required></div>
-                <div class="field"><label>Route #</label><input type="text" id="f-routeNum"></div>
-                <div class="field"><label>Route ID</label><input type="text" id="f-routeId"></div>
-                <div class="field"><label>Miles</label><input type="number" id="f-miles" step="0.1" value="0"></div>
-                <div class="field"><label>Manifest Stops</label><input type="number" id="f-manifest" value="0"></div>
-                <div class="field"><label>Pullbacks</label><input type="number" id="f-pullbacks" value="0"></div>
-                <div class="field"><label>Incompletes</label><input type="number" id="f-incompletes" value="0"></div>
-                <div class="field"><label>Dedicated Flat Pay</label><input type="number" id="f-dedicated" step="0.01" value="0"></div>
-                <div class="field"><label>Deductions</label><input type="number" id="f-deductions" step="0.01" value="0"></div>
-                <div class="field"><label>Extra Pay</label><input type="number" id="f-extra" step="0.01" value="0"></div>
+                <div class="field"><label data-i18n="delivery_date">Delivery Date</label><input type="date" id="f-date" required></div>
+                <div class="field"><label data-i18n="company_field">Company</label><select id="f-contractor"></select></div>
+                <div class="field"><label data-i18n="route_type">Route Type</label><select id="f-type"><option value="Regular">Regular</option><option value="Dedicated">Dedicated</option></select></div>
+                <div class="field"><label data-i18n="third_man">3rd Man</label><select id="f-3rdman"><option value="None">None (N)</option><option value="NYC">NYC</option><option value="Y">Yes (Y)</option></select></div>
+                <div class="field"><label data-i18n="driver">Driver</label><input type="text" id="f-driver" required></div>
+                <div class="field"><label data-i18n="route_num">Route #</label><input type="text" id="f-routeNum"></div>
+                <div class="field"><label data-i18n="route_id">Route ID</label><input type="text" id="f-routeId"></div>
+                <div class="field"><label data-i18n="miles">Miles</label><input type="number" id="f-miles" step="0.1" value="0"></div>
+                <div class="field"><label data-i18n="manifest_stops">Manifest Stops</label><input type="number" id="f-manifest" value="0"></div>
+                <div class="field"><label data-i18n="pullbacks">Pullbacks</label><input type="number" id="f-pullbacks" value="0"></div>
+                <div class="field"><label data-i18n="incompletes">Incompletes</label><input type="number" id="f-incompletes" value="0"></div>
+                <div class="field"><label data-i18n="dedicated_flat_pay">Dedicated Flat Pay</label><input type="number" id="f-dedicated" step="0.01" value="0"></div>
+                <div class="field"><label data-i18n="deductions">Deductions</label><input type="number" id="f-deductions" step="0.01" value="0"></div>
+                <div class="field"><label data-i18n="extra_pay">Extra Pay</label><input type="number" id="f-extra" step="0.01" value="0"></div>
             </div>
-            <button type="submit" class="btn" id="route-save-btn" style="margin-top:0.5rem;">+ Add Route</button>
-            <button type="button" class="btn-small" id="route-cancel-btn" style="display:none;background:#64748b;" onclick="cancelRouteEdit()">Cancel edit</button>
+            <button type="submit" class="btn" id="route-save-btn" style="margin-top:0.5rem;" data-i18n="add_route">+ Add Route</button>
+            <button type="button" class="btn-small" id="route-cancel-btn" style="display:none;background:#64748b;" onclick="cancelRouteEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
     </div>
     <div class="card" style="padding:0; border:none; box-shadow:none;">
@@ -1485,10 +1485,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Delivery Date</th><th>Company</th><th>Reg/Ded</th><th>Driver</th>
-                        <th>Route #</th><th>Route ID</th><th>Miles</th><th>Manifest Stops</th>
-                        <th>Pullbacks</th><th>Loaded Stops</th><th>Incompletes</th><th>Completed Stops</th>
-                        <th>Mileage pay</th><th>Fuel pay</th><th>Total Daily Pay</th><th>Total Pay per Route</th><th id="th-action">Action</th>
+                        <th data-i18n="delivery_date">Delivery Date</th><th data-i18n="company_field">Company</th><th data-i18n="th_regded">Reg/Ded</th><th data-i18n="driver">Driver</th>
+                        <th data-i18n="route_num">Route #</th><th data-i18n="route_id">Route ID</th><th data-i18n="miles">Miles</th><th data-i18n="manifest_stops">Manifest Stops</th>
+                        <th data-i18n="pullbacks">Pullbacks</th><th data-i18n="th_loaded">Loaded Stops</th><th data-i18n="incompletes">Incompletes</th><th data-i18n="th_completed">Completed Stops</th>
+                        <th data-i18n="th_mileage_pay">Mileage pay</th><th data-i18n="th_fuel_pay">Fuel pay</th><th data-i18n="th_total_daily">Total Daily Pay</th><th data-i18n="th_total_route">Total Pay per Route</th><th id="th-action" data-i18n="th_action">Action</th>
                     </tr>
                 </thead>
                 <tbody id="tracker-body"></tbody>
@@ -1501,26 +1501,26 @@
 <div id="tab-report" class="tab-content">
     <div class="report-layout">
         <div class="slicer-panel">
-            <div class="slicer-box"><div class="slicer-header">Company <span class="slicer-clear" onclick="clearFilter('contractor')" id="clr-contractor">❌</span></div><div class="slicer-items" id="slicer-contractor"></div></div>
-            <div class="slicer-box"><div class="slicer-header">Year <span class="slicer-clear" onclick="clearFilter('year')" id="clr-year">❌</span></div><div class="slicer-items" id="slicer-year"></div></div>
-            <div class="slicer-box"><div class="slicer-header">Week <span class="slicer-clear" onclick="clearFilter('week')" id="clr-week">❌</span></div><div class="slicer-items" id="slicer-week"></div></div>
-            <div class="slicer-box"><div class="slicer-header">Delivery Date <span class="slicer-clear" onclick="clearFilter('date')" id="clr-date">❌</span></div><div class="slicer-items" id="slicer-date"></div></div>
-            <div class="slicer-box"><div class="slicer-header">3rd. Man <span class="slicer-clear" onclick="clearFilter('thirdMan')" id="clr-thirdMan">❌</span></div><div class="slicer-items" id="slicer-thirdMan"></div></div>
+            <div class="slicer-box"><div class="slicer-header" data-i18n="company_field">Company <span class="slicer-clear" onclick="clearFilter('contractor')" id="clr-contractor">❌</span></div><div class="slicer-items" id="slicer-contractor"></div></div>
+            <div class="slicer-box"><div class="slicer-header" data-i18n="year_label">Year <span class="slicer-clear" onclick="clearFilter('year')" id="clr-year">❌</span></div><div class="slicer-items" id="slicer-year"></div></div>
+            <div class="slicer-box"><div class="slicer-header" data-i18n="week_label">Week <span class="slicer-clear" onclick="clearFilter('week')" id="clr-week">❌</span></div><div class="slicer-items" id="slicer-week"></div></div>
+            <div class="slicer-box"><div class="slicer-header" data-i18n="delivery_date">Delivery Date <span class="slicer-clear" onclick="clearFilter('date')" id="clr-date">❌</span></div><div class="slicer-items" id="slicer-date"></div></div>
+            <div class="slicer-box"><div class="slicer-header" data-i18n="third_man">3rd. Man <span class="slicer-clear" onclick="clearFilter('thirdMan')" id="clr-thirdMan">❌</span></div><div class="slicer-items" id="slicer-thirdMan"></div></div>
         </div>
         <div>
             <div style="margin-bottom: 0.5rem;">
-                <button class="btn-small" onclick="toggleAllNodes(true)">➕ Expand All</button>
-                <button class="btn-small" onclick="toggleAllNodes(false)">➖ Collapse All</button>
+                <button class="btn-small" onclick="toggleAllNodes(true)" data-i18n="expand_all">➕ Expand All</button>
+                <button class="btn-small" onclick="toggleAllNodes(false)" data-i18n="collapse_all">➖ Collapse All</button>
             </div>
             <div class="table-wrapper" style="margin-top:0;">
                 <table id="report-table">
                     <thead>
                         <tr>
-                            <th style="text-align:left; min-width: 150px;">Row Labels</th>
-                            <th>Delivery Area*</th><th>Miles**</th><th>Manifest Stops**</th><th>Pullbacks**</th>
-                            <th>Loaded Stops*</th><th>Incompletes*</th><th>Completed Stops*</th><th>Mileage pay*</th>
-                            <th>Fuel pay**</th><th>3rd. Man.**</th><th>Dedicated Flat*</th><th>Deductions*</th>
-                            <th>Extra Pay*</th><th>Total Pay per Route*</th>
+                            <th style="text-align:left; min-width: 150px;" data-i18n="row_labels">Row Labels</th>
+                            <th data-i18n="th_delivery_area">Delivery Area*</th><th data-i18n="th_miles2">Miles**</th><th data-i18n="th_manifest2">Manifest Stops**</th><th data-i18n="th_pullbacks2">Pullbacks**</th>
+                            <th data-i18n="th_loaded2">Loaded Stops*</th><th data-i18n="th_incompletes2">Incompletes*</th><th data-i18n="th_completed2">Completed Stops*</th><th data-i18n="th_mileage2">Mileage pay*</th>
+                            <th data-i18n="th_fuel2">Fuel pay**</th><th data-i18n="th_thirdman2">3rd. Man.**</th><th data-i18n="th_dedicated_flat">Dedicated Flat*</th><th data-i18n="th_deductions2">Deductions*</th>
+                            <th data-i18n="th_extra2">Extra Pay*</th><th data-i18n="th_total_route2">Total Pay per Route*</th>
                         </tr>
                     </thead>
                     <tbody id="report-body"><tr><td colspan="15" style="text-align:center; padding: 2rem;">Loading data...</td></tr></tbody>
@@ -1534,37 +1534,37 @@
 <!-- TAB: VEHICLES -->
 <div id="tab-vehicles" class="tab-content">
     <div class="panel" id="vehicle-form-panel">
-        <h2>Add Vehicle</h2>
+        <h2 data-i18n="add_vehicle_title">Add Vehicle</h2>
         <form id="vehicle-form">
             <div class="form-row">
-                <div class="field"><label>Truck #</label><input type="text" id="vTruckNum" placeholder="Company ID #"></div>
-                <div class="field"><label>Year</label><input type="text" id="vYear" required></div>
-                <div class="field"><label>Make</label><input type="text" id="vMake" placeholder="e.g. Freightliner" required></div>
-                <div class="field"><label>Model</label><input type="text" id="vModel" placeholder="e.g. Cascadia"></div>
+                <div class="field"><label data-i18n="truck_num">Truck #</label><input type="text" id="vTruckNum" placeholder="Company ID #" data-i18n-placeholder="truck_num_ph"></div>
+                <div class="field"><label data-i18n="year_label">Year</label><input type="text" id="vYear" required></div>
+                <div class="field"><label data-i18n="make">Make</label><input type="text" id="vMake" placeholder="e.g. Freightliner" data-i18n-placeholder="make_ph" required></div>
+                <div class="field"><label data-i18n="model">Model</label><input type="text" id="vModel" placeholder="e.g. Cascadia" data-i18n-placeholder="model_ph"></div>
             </div>
             <div class="form-row">
-                <div class="field"><label>License Plate</label><input type="text" id="vPlate"></div>
+                <div class="field"><label data-i18n="license_plate">License Plate</label><input type="text" id="vPlate"></div>
                 <div class="field"><label>VIN</label><input type="text" id="vVin"></div>
-                <div class="field"><label>Registration Expiry</label><input type="date" id="vRegExp"></div>
+                <div class="field"><label data-i18n="reg_expiry">Registration Expiry</label><input type="date" id="vRegExp"></div>
             </div>
             <div class="form-row">
-                <div class="field"><label>Insurance Company</label><input type="text" id="vInsCo"></div>
-                <div class="field"><label>Policy Number</label><input type="text" id="vInsPol"></div>
-                <div class="field"><label>Insurance Expiry</label><input type="date" id="vInsExp"></div>
+                <div class="field"><label data-i18n="ins_company">Insurance Company</label><input type="text" id="vInsCo"></div>
+                <div class="field"><label data-i18n="policy_number">Policy Number</label><input type="text" id="vInsPol"></div>
+                <div class="field"><label data-i18n="ins_expiry">Insurance Expiry</label><input type="date" id="vInsExp"></div>
             </div>
-            <div class="form-row"><div class="field field-wide"><label>Notes</label><input type="text" id="vNotes"></div></div>
-            <button type="submit" class="btn" id="vehicle-save-btn">+ Add Vehicle</button>
-            <button type="button" class="btn-small" id="vehicle-cancel-btn" style="display:none;background:#64748b;" onclick="cancelVehicleEdit()">Cancel edit</button>
+            <div class="form-row"><div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="vNotes"></div></div>
+            <button type="submit" class="btn" id="vehicle-save-btn" data-i18n="add_vehicle_btn">+ Add Vehicle</button>
+            <button type="button" class="btn-small" id="vehicle-cancel-btn" style="display:none;background:#64748b;" onclick="cancelVehicleEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
     </div>
 
     <div class="panel" id="schedule-maintenance-panel">
-        <h2>📅 Schedule Maintenance</h2>
+        <h2 data-i18n="sched_maint">📅 Schedule Maintenance</h2>
         <div class="form-row">
-            <div class="field field-wide"><label>Truck</label><select id="sched-maint-truck"></select></div>
-            <div class="field"><label>Date</label><input type="date" id="sched-maint-date"></div>
-            <div class="field field-wide"><label>Description</label><input type="text" id="sched-maint-desc" placeholder="e.g. Oil Change, DOT Inspection"></div>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="scheduleMaintenance()">+ Schedule</button>
+            <div class="field field-wide"><label data-i18n="truck">Truck</label><select id="sched-maint-truck"></select></div>
+            <div class="field"><label data-i18n="date_label">Date</label><input type="date" id="sched-maint-date"></div>
+            <div class="field field-wide"><label data-i18n="description">Description</label><input type="text" id="sched-maint-desc" placeholder="e.g. Oil Change, DOT Inspection" data-i18n-placeholder="sched_desc_ph"></div>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="scheduleMaintenance()" data-i18n="schedule_btn">+ Schedule</button>
         </div>
         <div id="upcoming-maint-list"></div>
     </div>
@@ -1572,20 +1572,20 @@
     <div class="panel">
         <div class="stat-grid" id="vehicle-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search truck #, year, make, model, plate, VIN..." oninput="renderVehicles()"></div>
+            <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search truck #, year, make, model, plate, VIN..." data-i18n-placeholder="vehicle_search_ph" oninput="renderVehicles()"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportVehiclesExcel()">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('vehicles-import-input').click()">⬆️ Import</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportVehiclesExcel()" data-i18n="export_btn">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('vehicles-import-input').click()" data-i18n="import_btn">⬆️ Import</button>
             <input type="file" id="vehicles-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importVehiclesExcel(event)">
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-vehicles" onchange="setSortField('vehicles', this.value)">
-                <option value="truck">Truck #</option>
-                <option value="vehicle">Vehicle</option>
-                <option value="plate">Plate</option>
-                <option value="regexp">Reg. Expiry</option>
-                <option value="insexp">Insurance Expiry</option>
+                <option value="truck" data-i18n="truck_num">Truck #</option>
+                <option value="vehicle" data-i18n="opt_vehicle">Vehicle</option>
+                <option value="plate" data-i18n="opt_plate">Plate</option>
+                <option value="regexp" data-i18n="opt_reg_exp">Reg. Expiry</option>
+                <option value="insexp" data-i18n="ins_expiry">Insurance Expiry</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-vehicles" onclick="flipSortDir('vehicles')">▲</button>
         </div>
@@ -2315,28 +2315,28 @@
 <!-- TAB: EXPIRING DOCUMENTS -->
 <div id="tab-expiring" class="tab-content">
     <div class="panel">
-        <h2>Expiring Documents</h2>
-        <div class="note-box">Registration and insurance from Fleet, plus driver license, work permit, and medical card from Employees — all in one place, soonest first. Already-expired items show at the top.</div>
+        <h2 data-i18n="expiring_title">Expiring Documents</h2>
+        <div class="note-box" data-i18n="expiring_note">Registration and insurance from Fleet, plus driver license, work permit, and medical card from Employees — all in one place, soonest first. Already-expired items show at the top.</div>
         <div class="form-row" style="margin-top:8px; margin-bottom:0; align-items:flex-end;">
             <div class="field">
-                <label>Show within</label>
+                <label data-i18n="show_within">Show within</label>
                 <select id="expiring-window" onchange="renderExpiringDocuments()">
-                    <option value="30">30 days</option>
-                    <option value="60" selected>60 days</option>
-                    <option value="90">90 days</option>
-                    <option value="365">1 year</option>
-                    <option value="99999">Everything on file</option>
+                    <option value="30" data-i18n="days_30">30 days</option>
+                    <option value="60" selected data-i18n="days_60">60 days</option>
+                    <option value="90" data-i18n="days_90">90 days</option>
+                    <option value="365" data-i18n="year_1">1 year</option>
+                    <option value="99999" data-i18n="everything_on_file">Everything on file</option>
                 </select>
             </div>
             <div class="field">
-                <label>Category</label>
+                <label data-i18n="category">Category</label>
                 <select id="expiring-category" onchange="renderExpiringDocuments()">
-                    <option value="">All categories</option>
-                    <option value="Fleet">Fleet only</option>
-                    <option value="Employee">Employee documents only</option>
+                    <option value="" data-i18n="all_categories">All categories</option>
+                    <option value="Fleet" data-i18n="fleet_only">Fleet only</option>
+                    <option value="Employee" data-i18n="emp_docs_only">Employee documents only</option>
                 </select>
             </div>
-            <div class="field field-wide"><input type="text" id="expiring-search" placeholder="Search name, truck #..." oninput="renderExpiringDocuments()"></div>
+            <div class="field field-wide"><input type="text" id="expiring-search" placeholder="Search name, truck #..." data-i18n-placeholder="expiring_search_ph" oninput="renderExpiringDocuments()"></div>
         </div>
     </div>
     <div class="stat-grid" id="expiring-stats-grid" style="margin-bottom:12px;"></div>
@@ -11105,7 +11105,31 @@
             home_subtitle: 'Here\'s where things stand right now.',
             notif_note: 'New claims, charges, and additional income you\'ve been assigned show up here. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company\'s, same as the rest of the app.',
             date_range: 'Date range', range_all: 'All time', range_30: 'Last 30 days', range_60: 'Last 60 days',
-            range_90: 'Last 90 days', range_365: 'Last year', sort_short: 'Sort', opt_date: 'Date', mark_all_read: 'Mark all as read'
+            range_90: 'Last 90 days', range_365: 'Last year', sort_short: 'Sort', opt_date: 'Date', mark_all_read: 'Mark all as read',
+            // --- R3: Logistics (Tracker, Report, Fleet, Expiring) ---
+            log_new_route: 'Log New Route', delivery_date: 'Delivery Date', route_type: 'Route Type', third_man: '3rd Man',
+            driver: 'Driver', route_num: 'Route #', route_id: 'Route ID', miles: 'Miles', manifest_stops: 'Manifest Stops',
+            pullbacks: 'Pullbacks', incompletes: 'Incompletes', dedicated_flat_pay: 'Dedicated Flat Pay', deductions: 'Deductions',
+            extra_pay: 'Extra Pay', add_route: '+ Add Route', th_regded: 'Reg/Ded', th_loaded: 'Loaded Stops',
+            th_completed: 'Completed Stops', th_mileage_pay: 'Mileage pay', th_fuel_pay: 'Fuel pay', th_total_daily: 'Total Daily Pay',
+            th_total_route: 'Total Pay per Route',
+            year_label: 'Year', week_label: 'Week', expand_all: '➕ Expand All', collapse_all: '➖ Collapse All', row_labels: 'Row Labels',
+            th_delivery_area: 'Delivery Area*', th_miles2: 'Miles**', th_manifest2: 'Manifest Stops**', th_pullbacks2: 'Pullbacks**',
+            th_loaded2: 'Loaded Stops*', th_incompletes2: 'Incompletes*', th_completed2: 'Completed Stops*', th_mileage2: 'Mileage pay*',
+            th_fuel2: 'Fuel pay**', th_thirdman2: '3rd. Man.**', th_dedicated_flat: 'Dedicated Flat*', th_deductions2: 'Deductions*',
+            th_extra2: 'Extra Pay*', th_total_route2: 'Total Pay per Route*',
+            add_vehicle_title: 'Add Vehicle', truck_num: 'Truck #', truck_num_ph: 'Company ID #', make: 'Make', make_ph: 'e.g. Freightliner',
+            model: 'Model', model_ph: 'e.g. Cascadia', license_plate: 'License Plate', reg_expiry: 'Registration Expiry',
+            ins_company: 'Insurance Company', policy_number: 'Policy Number', ins_expiry: 'Insurance Expiry', add_vehicle_btn: '+ Add Vehicle',
+            sched_maint: '📅 Schedule Maintenance', truck: 'Truck', date_label: 'Date', description: 'Description',
+            sched_desc_ph: 'e.g. Oil Change, DOT Inspection', schedule_btn: '+ Schedule',
+            vehicle_search_ph: 'Search truck #, year, make, model, plate, VIN...', export_btn: '⬇️ Export', import_btn: '⬆️ Import',
+            opt_vehicle: 'Vehicle', opt_plate: 'Plate', opt_reg_exp: 'Reg. Expiry',
+            expiring_title: 'Expiring Documents',
+            expiring_note: 'Registration and insurance from Fleet, plus driver license, work permit, and medical card from Employees — all in one place, soonest first. Already-expired items show at the top.',
+            show_within: 'Show within', days_30: '30 days', days_60: '60 days', days_90: '90 days', year_1: '1 year',
+            everything_on_file: 'Everything on file', category: 'Category', all_categories: 'All categories', fleet_only: 'Fleet only',
+            emp_docs_only: 'Employee documents only', expiring_search_ph: 'Search name, truck #...'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11200,7 +11224,31 @@
             home_subtitle: 'Así están las cosas ahora mismo.',
             notif_note: 'Los reclamos, cargos e ingresos adicionales que se le asignen aparecen aquí. Toque uno para ir directo a él. Las cuentas de Solo Lectura solo ven los suyos; los demás ven los de toda su compañía, igual que en el resto de la app.',
             date_range: 'Rango de fechas', range_all: 'Todo el tiempo', range_30: 'Últimos 30 días', range_60: 'Últimos 60 días',
-            range_90: 'Últimos 90 días', range_365: 'Último año', sort_short: 'Ordenar', opt_date: 'Fecha', mark_all_read: 'Marcar todo como leído'
+            range_90: 'Últimos 90 días', range_365: 'Último año', sort_short: 'Ordenar', opt_date: 'Fecha', mark_all_read: 'Marcar todo como leído',
+            // --- R3: Logistics (Tracker, Report, Fleet, Expiring) ---
+            log_new_route: 'Registrar nueva ruta', delivery_date: 'Fecha de entrega', route_type: 'Tipo de ruta', third_man: '3er hombre',
+            driver: 'Conductor', route_num: 'N.º de ruta', route_id: 'ID de ruta', miles: 'Millas', manifest_stops: 'Paradas del manifiesto',
+            pullbacks: 'Devoluciones', incompletes: 'Incompletas', dedicated_flat_pay: 'Pago fijo dedicado', deductions: 'Deducciones',
+            extra_pay: 'Pago extra', add_route: '+ Agregar ruta', th_regded: 'Reg/Ded', th_loaded: 'Paradas cargadas',
+            th_completed: 'Paradas completadas', th_mileage_pay: 'Pago por millaje', th_fuel_pay: 'Pago de combustible', th_total_daily: 'Pago diario total',
+            th_total_route: 'Pago total por ruta',
+            year_label: 'Año', week_label: 'Semana', expand_all: '➕ Expandir todo', collapse_all: '➖ Contraer todo', row_labels: 'Etiquetas de fila',
+            th_delivery_area: 'Área de entrega*', th_miles2: 'Millas**', th_manifest2: 'Paradas del manifiesto**', th_pullbacks2: 'Devoluciones**',
+            th_loaded2: 'Paradas cargadas*', th_incompletes2: 'Incompletas*', th_completed2: 'Paradas completadas*', th_mileage2: 'Pago por millaje*',
+            th_fuel2: 'Pago de combustible**', th_thirdman2: '3er hombre**', th_dedicated_flat: 'Fijo dedicado*', th_deductions2: 'Deducciones*',
+            th_extra2: 'Pago extra*', th_total_route2: 'Pago total por ruta*',
+            add_vehicle_title: 'Agregar vehículo', truck_num: 'N.º de camión', truck_num_ph: 'N.º ID de la compañía', make: 'Marca', make_ph: 'p. ej. Freightliner',
+            model: 'Modelo', model_ph: 'p. ej. Cascadia', license_plate: 'Placa', reg_expiry: 'Vencimiento de registro',
+            ins_company: 'Compañía de seguro', policy_number: 'Número de póliza', ins_expiry: 'Vencimiento del seguro', add_vehicle_btn: '+ Agregar vehículo',
+            sched_maint: '📅 Programar mantenimiento', truck: 'Camión', date_label: 'Fecha', description: 'Descripción',
+            sched_desc_ph: 'p. ej. Cambio de aceite, Inspección DOT', schedule_btn: '+ Programar',
+            vehicle_search_ph: 'Buscar n.º de camión, año, marca, modelo, placa, VIN...', export_btn: '⬇️ Exportar', import_btn: '⬆️ Importar',
+            opt_vehicle: 'Vehículo', opt_plate: 'Placa', opt_reg_exp: 'Venc. de registro',
+            expiring_title: 'Documentos por vencer',
+            expiring_note: 'Registro y seguro de la Flota, más licencia de conducir, permiso de trabajo y tarjeta médica de Empleados — todo en un solo lugar, lo más próximo primero. Los ya vencidos aparecen arriba.',
+            show_within: 'Mostrar dentro de', days_30: '30 días', days_60: '60 días', days_90: '90 días', year_1: '1 año',
+            everything_on_file: 'Todo en el archivo', category: 'Categoría', all_categories: 'Todas las categorías', fleet_only: 'Solo Flota',
+            emp_docs_only: 'Solo documentos de empleados', expiring_search_ph: 'Buscar nombre, n.º de camión...'
         }
     };
 
