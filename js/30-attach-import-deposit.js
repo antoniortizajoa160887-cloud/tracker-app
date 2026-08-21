@@ -408,6 +408,18 @@
         return map[ext] || '';
     }
 
+    // Read a Blob into a data: URL. Used so images render from data: (allowed by
+    // img-src in every CSP version, and invisible to the service worker) rather
+    // than a blob:/cross-origin URL that a stale cache or worker can break.
+    function blobToDataURL(blob) {
+        return new Promise((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(fr.result);
+            fr.onerror = () => reject(fr.error || new Error('read failed'));
+            fr.readAsDataURL(blob);
+        });
+    }
+
     // Open a set of files with prev/next, starting at `index`. Both call sites
     // (a record's Files list, a chat thread) build the item list and hand it
     // here; a single-item list simply hides the nav.
@@ -451,20 +463,31 @@
         fvUpdateNav();
         const myReq = ++fvReq;   // paging fast? only the newest request may render
         try {
-            // Render straight from the signed URL. It is cross-origin (Supabase),
-            // so the service worker never touches it and iOS renders it natively
-            // — unlike a blob: URL, which has our own origin and gets intercepted
-            // by the worker (broken image on iPhone). Download fetches on demand.
             const r = await efAttach({ action: 'sign-download', path });
             if (myReq !== fvReq) return;              // superseded before the URL came back
             const src = r.signedUrl;
             currentViewer = { signedUrl: src, name: name };
             const kind = fvGuessMime(name, it.mime);
             if (kind.indexOf('image/') === 0) {
-                // margin:auto centres the image on both axes when it fits and,
-                // crucially, lets it scroll (not clip) when it is taller/wider
+                // Inline the image as a data: URL. We fetch the bytes (cross-origin
+                // to Supabase — always allowed by connect-src) and hand them to the
+                // <img> as data:. This renders under EVERY version of the CSP
+                // (img-src has always allowed data:) and is never seen by the
+                // service worker — so photos show even on a device carrying a stale
+                // cached HTML/CSP or an old service worker. (A same-origin blob:
+                // URL got intercepted by the worker on iPhone; a direct
+                // cross-origin <img src> was blocked by a stale CSP on desktop.)
+                // margin:auto centres it and lets it scroll (not clip) when taller
                 // than the box — e.g. a portrait phone photo on a small screen.
-                body.innerHTML = `<img id="file-viewer-img" src="${escHtml(src)}" alt="${escHtml(name)}" style="margin:auto; max-width:100%; max-height:82vh; display:block; transform-origin:center center; transition:transform 0.08s linear;">`;
+                const resp = await fetch(src);
+                if (myReq !== fvReq) return;
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const blob = await resp.blob();
+                if (myReq !== fvReq) return;
+                const dataUrl = await blobToDataURL(blob);
+                if (myReq !== fvReq) return;
+                currentViewer.blob = blob;            // reuse for Download, no re-fetch
+                body.innerHTML = `<img id="file-viewer-img" src="${dataUrl}" alt="${escHtml(name)}" style="margin:auto; max-width:100%; max-height:82vh; display:block; transform-origin:center center; transition:transform 0.08s linear;">`;
                 zoomBar.style.display = 'inline-flex';
                 fvLabelImgTools();
                 fvApplyZoom();
@@ -569,13 +592,18 @@
     // stays entirely in-app, no navigation. The fetch is cross-origin, so the
     // service worker never touches it.
     async function downloadCurrentFile() {
-        if (!currentViewer || !currentViewer.signedUrl) return;
+        if (!currentViewer || (!currentViewer.signedUrl && !currentViewer.blob)) return;
         const btn = document.getElementById('file-viewer-download');
         try {
             if (btn) btn.disabled = true;
-            const resp = await fetch(currentViewer.signedUrl);
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            const url = URL.createObjectURL(await resp.blob());
+            // Images already hold their bytes (fetched for display) — reuse them.
+            let blob = currentViewer.blob;
+            if (!blob) {
+                const resp = await fetch(currentViewer.signedUrl);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                blob = await resp.blob();
+            }
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = currentViewer.name || 'file';
