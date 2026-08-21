@@ -1109,9 +1109,12 @@
             <div style="font-weight:700; font-size:0.9rem; margin-bottom:6px;">2. Enter the 6-digit code it shows</div>
             <input type="text" id="twofa-confirm-code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6" style="letter-spacing:0.18em; text-align:center; font-size:1.1rem;" onkeydown="if(event.key==='Enter'){event.preventDefault(); confirm2faEnrollment();}">
             <p id="twofa-enroll-error" style="color:#ef4444; font-size:0.85rem; margin:0.5rem 0 0;"></p>
-            <div style="margin-top:0.85rem; display:flex; gap:8px;">
+            <div style="margin-top:0.85rem; display:flex; gap:8px; flex-wrap:wrap;">
                 <button type="button" class="btn-small" id="twofa-enroll-verify-btn" style="margin:0; background:var(--navy);" onclick="confirm2faEnrollment()">Verify &amp; turn on</button>
+                <button type="button" class="btn-small" id="twofa-enroll-retry-btn" style="margin:0; display:none;" onclick="startTwofaEnroll(enroll2faState && enroll2faState.mandatory)">Try again</button>
                 <button type="button" class="btn-small" id="twofa-enroll-cancel-btn" style="margin:0;" onclick="closeTwofaEnroll()">Cancel</button>
+                <button type="button" class="btn-small" id="twofa-enroll-skip-btn" style="margin:0; display:none;" onclick="skipTwofaEnroll()">Skip for now</button>
+                <button type="button" class="btn-small" id="twofa-enroll-signout-btn" style="margin:0; display:none; background:#b91c1c; color:#fff;" onclick="logout()">Sign out</button>
             </div>
         </div>
 
@@ -2640,6 +2643,35 @@
         };
     })();
 
+    // Retry wrapper for calls where a dropped mobile connection must not fail the
+    // whole flow (auth / 2FA). A *network* failure — the promise rejects, or the
+    // returned error has no PostgREST code and reads like a fetch failure ("Load
+    // failed" on iOS, "Failed to fetch" on Chrome) — is retried a few times with
+    // backoff. Real application errors (they carry a PostgREST `.code`) are
+    // returned immediately and never retried.
+    function _isNetworkErr(err) {
+        if (!err) return false;
+        if (err.code) return false; // PostgREST/Postgres error -> not a network drop
+        return /load failed|failed to fetch|networkerror|network request|timeout|fetch/i.test(err.message || String(err));
+    }
+    async function rpcResilient(name, params, opts) {
+        const retries = (opts && opts.retries != null) ? opts.retries : 3;
+        const delays = [400, 900, 1600, 2500];
+        let last = { data: null, error: { message: 'Load failed' } };
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await supabaseClient.rpc(name, params);
+                if (!res.error || !_isNetworkErr(res.error)) return res; // success or app-error
+                last = res;
+            } catch (e) {
+                if (!_isNetworkErr(e)) return { data: null, error: e };
+                last = { data: null, error: e };
+            }
+            if (attempt < retries) await new Promise(r => setTimeout(r, delays[Math.min(attempt, delays.length - 1)]));
+        }
+        return last;
+    }
+
     let currentUser = null;
     let currentUserRole = 'User';
     let currentUsername = '';
@@ -2695,8 +2727,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.45';
+    const APP_VERSION = 'v3.46';
     const CHANGELOG = [
+        { version: 'v3.46', date: '2026-08-21', notes: 'More reliable two-factor setup on phones — and you can never get locked out. (1) If your connection briefly drops while turning on 2FA or signing in, the app now retries automatically instead of failing with a “Load failed” error, and if it still can’t reach the server it shows a clear “Network problem — check your connection and try again” message. Your typed 6-digit code is kept, so you can just tap Verify again. (2) When 2FA setup is required for your role, the setup screen now always offers “Skip for now” (you’ll be asked again the next time you sign in) and “Sign out”, plus a “Try again” button if setup couldn’t even start. This means a bad connection during setup can no longer trap your account — a problem a Super Admin hit on a mobile connection.' },
         { version: 'v3.45', date: '2026-08-21', notes: 'The unusual-activity sign-in pop-up now names who is affected, and is shown to Medium level and above. Previously it only told you how many accounts or networks had many failed sign-ins; now it lists each one by username and employee ID (a network shows its address instead), so you can see exactly which account is being targeted and jump straight to it. The same username-and-ID detail now also shows in the Users → Recent failed sign-ins list. Managers at Medium level (not only Administrators) now receive this heads-up and can open the Recent failed sign-ins screen. The warning about your own account is unchanged.' },
         { version: 'v3.44', date: '2026-08-21', notes: 'Tidier Users screen, clearer tables, and a heads-up when sign-ins look suspicious. (1) On the Users screen the "System Users" list is now collapsible and starts collapsed — tap its heading to open it — so "Active sessions" and "Recent failed sign-ins" are easier to reach without scrolling past a long list. (2) Active sessions, Recent failed sign-ins, and System Users now all show as tidy tables on phone and desktop alike (on a narrow phone the table scrolls sideways inside its box), instead of switching to cards on mobile. Signing a session out works exactly as before — the Sign out button is in each session’s row. (3) New: right after you sign in, if there have been many failed sign-in attempts you get a short pop-up. You are warned about attempts on your own account (with a shortcut to change your password), and Administrators are additionally warned when any account or network has had many failures in the last 24 hours (with a shortcut to review them). "Many" means an account or network that got locked, or 10 or more failed tries. If nothing looks unusual, no pop-up appears.' },
         { version: 'v3.43', date: '2026-08-21', notes: 'Small consistency fix so account options match on phone and desktop. The “Sign out my other devices” option now also appears in the desktop side-menu account section (bottom-left), where previously it was only in the phone’s ⋮ menu. Everything else is unchanged: on a phone or installed app, the ⋮ button (top-right) still opens Change Password, Two-Factor Authentication, Sign out my other devices, and Sign Out; two-factor setup and the sign-in code prompt already work the same on phone, desktop and the installed app; and Administrators still find “Active sessions” and “Recent failed sign-ins” on the Users screen, which lays out as tap-friendly cards on a phone.' },
@@ -3748,14 +3781,16 @@
         
         errEl.textContent = '';
         try {
-            const { data, error } = await supabaseClient.rpc('verify_login', { p_username: usernameInput, p_password: passwordInput });
+            const { data, error } = await rpcResilient('verify_login', { p_username: usernameInput, p_password: passwordInput });
 
             if (error) {
                 // verify_login only raises for the lockout case -- a wrong
                 // password just returns zero rows, handled below -- so any
                 // error here is safe to show verbatim (e.g. "Too many failed
                 // attempts. Try again in a few minutes.").
-                errEl.textContent = error.message || 'Invalid username or password.';
+                errEl.textContent = _isNetworkErr(error)
+                    ? 'Network problem — check your connection and try again.'
+                    : (error.message || 'Invalid username or password.');
             } else if (!data || data.length === 0) {
                 errEl.textContent = 'Invalid username or password.';
             } else if (data[0].requires_2fa) {
@@ -3806,12 +3841,14 @@
         if (!code) { errEl.textContent = 'Enter the 6-digit code.'; return; }
         btn.disabled = true;
         try {
-            const { data, error } = await supabaseClient.rpc('verify_login_2fa', {
+            const { data, error } = await rpcResilient('verify_login_2fa', {
                 p_pending_token: pendingLogin.pending_token, p_code: code
             });
             if (error) {
                 // Only the per-account lockout raises here.
-                errEl.textContent = error.message || 'Could not verify the code.';
+                errEl.textContent = _isNetworkErr(error)
+                    ? 'Network problem — check your connection and tap Verify again.'
+                    : (error.message || 'Could not verify the code.');
             } else if (!data || data.length === 0) {
                 errEl.textContent = 'Incorrect or expired code. Try again, or go back and sign in again.';
                 const c = document.getElementById('login-2fa-code'); c.value = ''; c.focus();
@@ -3922,7 +3959,12 @@
 
     // Begin enrollment: fetch a fresh secret + otpauth URI and show the overlay.
     // mandatory=true hides Cancel (a required setup can't be dismissed).
+    // Set to true when a Medium+ user chooses "Skip for now" — lasts only for
+    // this page-load, so they're prompted again on their next sign-in.
+    let twofaEnrollSkipped = false;
+
     async function startTwofaEnroll(mandatory) {
+        if (mandatory && twofaEnrollSkipped) return;   // don't re-open after a same-session skip
         enroll2faState = { mandatory: !!mandatory };
         document.getElementById('twofa-enroll-step1').style.display = 'block';
         document.getElementById('twofa-enroll-step2').style.display = 'none';
@@ -3932,25 +3974,44 @@
         document.getElementById('twofa-done-btn').disabled = true;
         document.getElementById('twofa-secret-key').textContent = '…';
         document.getElementById('twofa-enroll-intro').textContent = mandatory
-            ? 'Your role requires two-factor authentication. Set it up now to continue.'
+            ? 'Your role requires two-factor authentication. Set it up now — or skip and you’ll be asked again next time you sign in.'
             : 'Add a second step at sign-in for extra security.';
+        // Mandatory: always offer a way out (Skip / Sign out) so a network glitch
+        // can never trap the account. Optional: a plain Cancel.
         document.getElementById('twofa-enroll-cancel-btn').style.display = mandatory ? 'none' : 'inline-block';
+        document.getElementById('twofa-enroll-skip-btn').style.display = mandatory ? 'inline-block' : 'none';
+        document.getElementById('twofa-enroll-signout-btn').style.display = mandatory ? 'inline-block' : 'none';
+        document.getElementById('twofa-enroll-retry-btn').style.display = 'none';
         document.getElementById('twofa-enroll-overlay').style.display = 'flex';
         const verifyBtn = document.getElementById('twofa-enroll-verify-btn');
         verifyBtn.disabled = true;
-        try {
-            const { data, error } = await supabaseClient.rpc('begin_2fa_enrollment', { p_actor: currentUsername });
-            if (error) { document.getElementById('twofa-enroll-error').textContent = error.message; return; }
-            const row = data && data[0];
-            if (!row) { document.getElementById('twofa-enroll-error').textContent = 'Could not start enrollment.'; return; }
-            enroll2faState.otpauth_uri = row.otpauth_uri;
-            document.getElementById('twofa-secret-key').textContent = row.secret_base32;
-            document.getElementById('twofa-otpauth-link').href = row.otpauth_uri;
-            verifyBtn.disabled = false;
-            setTimeout(() => document.getElementById('twofa-confirm-code').focus(), 40);
-        } catch (err) {
-            document.getElementById('twofa-enroll-error').textContent = 'Could not reach the server: ' + (err && err.message ? err.message : err);
+        const { data, error } = await rpcResilient('begin_2fa_enrollment', { p_actor: currentUsername });
+        if (error) {
+            document.getElementById('twofa-enroll-error').textContent = _isNetworkErr(error)
+                ? 'Network problem — couldn’t start setup. Check your connection and tap Try again.'
+                : error.message;
+            document.getElementById('twofa-enroll-retry-btn').style.display = 'inline-block';
+            return;
         }
+        const row = data && data[0];
+        if (!row) {
+            document.getElementById('twofa-enroll-error').textContent = 'Could not start enrollment.';
+            document.getElementById('twofa-enroll-retry-btn').style.display = 'inline-block';
+            return;
+        }
+        enroll2faState.otpauth_uri = row.otpauth_uri;
+        document.getElementById('twofa-secret-key').textContent = row.secret_base32;
+        document.getElementById('twofa-otpauth-link').href = row.otpauth_uri;
+        verifyBtn.disabled = false;
+        setTimeout(() => document.getElementById('twofa-confirm-code').focus(), 40);
+    }
+
+    // "Skip for now" on a required setup: let them into the app for this session.
+    function skipTwofaEnroll() {
+        twofaEnrollSkipped = true;
+        enroll2faState = null;
+        window._twofaRecovery = null;
+        document.getElementById('twofa-enroll-overlay').style.display = 'none';
     }
 
     function copy2faKey() {
@@ -3965,15 +4026,19 @@
         if (!/^[0-9]{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code from your app.'; return; }
         const btn = document.getElementById('twofa-enroll-verify-btn'); btn.disabled = true;
         try {
-            const { data, error } = await supabaseClient.rpc('confirm_2fa', { p_actor: currentUsername, p_code: code });
-            if (error) { errEl.textContent = error.message; return; }
+            const { data, error } = await rpcResilient('confirm_2fa', { p_actor: currentUsername, p_code: code });
+            if (error) {
+                // Keep the typed code so the user can just tap Verify again.
+                errEl.textContent = _isNetworkErr(error)
+                    ? 'Network problem — check your connection and tap Verify again.'
+                    : error.message;
+                return;
+            }
             const codes = (data || []).map(r => r.recovery_code);
             window._twofaRecovery = codes;
             document.getElementById('twofa-recovery-codes').innerHTML = codes.map(c => `<div>${escHtml(c)}</div>`).join('');
             document.getElementById('twofa-enroll-step1').style.display = 'none';
             document.getElementById('twofa-enroll-step2').style.display = 'block';
-        } catch (err) {
-            errEl.textContent = 'Could not reach the server: ' + (err && err.message ? err.message : err);
         } finally { btn.disabled = false; }
     }
 
@@ -4034,8 +4099,13 @@
         errEl.textContent = '';
         if (!code) { errEl.textContent = 'Enter a current or recovery code.'; return; }
         try {
-            const { error } = await supabaseClient.rpc('disable_2fa', { p_actor: currentUsername, p_target: null, p_code: code });
-            if (error) { errEl.textContent = error.message; return; }
+            const { error } = await rpcResilient('disable_2fa', { p_actor: currentUsername, p_target: null, p_code: code });
+            if (error) {
+                errEl.textContent = _isNetworkErr(error)
+                    ? 'Network problem — check your connection and try again.'
+                    : error.message;
+                return;
+            }
             alert('Two-factor authentication has been turned off.');
             closeTwofaManage();
         } catch (err) {
