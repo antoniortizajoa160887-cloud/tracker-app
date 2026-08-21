@@ -2779,8 +2779,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.48';
+    const APP_VERSION = 'v3.49';
     const CHANGELOG = [
+        { version: 'v3.49', date: '2026-08-21', notes: 'The “Sign Out All Users” countdown now appears almost instantly for everyone instead of within about 20 seconds. When an Administrator starts — or cancels — a sign-out, every open screen is notified in real time and shows (or clears) the banner right away. If the real-time channel is ever unavailable, the app still falls back to its regular periodic check, so the countdown always appears; the shut-off time itself was already exact. No change to how it works otherwise.' },
         { version: 'v3.48', date: '2026-08-21', notes: 'Managers now see failed sign-ins only for their own company. The “Recent failed sign-ins” list and the unusual-activity pop-up previously showed failed attempts for accounts in every company to any Administrator or Medium manager; they now show only accounts in the manager’s own company, matching how the rest of the app is scoped. Super Admin still sees everything. Failed attempts from a network/address (which aren’t tied to any one account) stay visible to all managers so an attack in progress is still spotted.' },
         { version: 'v3.47', date: '2026-08-21', notes: 'New: “Sign Out All Users”, with a grace period and countdown. Administrators and Super Admins can now sign everyone out — an Administrator affects their own company, a Super Admin affects everyone. Find it on the Settings screen under the red Administrator zone. (1) You choose a grace period (default 5 minutes) and can add a reason. Everyone then sees a banner counting down (for example 04:59, 04:58…) that they cannot dismiss, telling them to save their work because unsaved changes will be lost, and showing your reason if you gave one. The banner turns red in the last minute and pulses in the last 30 seconds. People can keep working and saving during the countdown. (2) When the timer reaches zero, everyone is signed out of all their devices automatically — enforced on the server, so it applies even to someone who ignores the banner. (3) You can call it off before the deadline with the “Cancel (admin)” button on the banner. (4) Every Sign Out All Users is recorded under Users → Global sign-out history: who started it, when, the scope, the grace period, how many were signed out, the reason, and whether it completed or was cancelled. Signing out your own current session, and “Sign out my other devices”, are unchanged.' },
         { version: 'v3.46', date: '2026-08-21', notes: 'More reliable two-factor setup on phones — and you can never get locked out. (1) If your connection briefly drops while turning on 2FA or signing in, the app now retries automatically instead of failing with a “Load failed” error, and if it still can’t reach the server it shows a clear “Network problem — check your connection and try again” message. Your typed 6-digit code is kept, so you can just tap Verify again. (2) When 2FA setup is required for your role, the setup screen now always offers “Skip for now” (you’ll be asked again the next time you sign in) and “Sign out”, plus a “Try again” button if setup couldn’t even start. This means a bad connection during setup can no longer trap your account — a problem a Super Admin hit on a mobile connection.' },
@@ -4012,7 +4013,15 @@
     }
 
     // ===== Sign Out All Users (global sign-out with grace period) =====
-    let gsoPollTimer = null, gsoTickTimer = null, activeGlobalSignout = null;
+    let gsoPollTimer = null, gsoTickTimer = null, activeGlobalSignout = null, gsoChannel = null;
+
+    // Best-effort Realtime "poke": when an admin starts/cancels a global sign-out,
+    // a broadcast tells every open client to re-check immediately (~1s) instead of
+    // waiting for the next 20s poll. The poll remains the guaranteed fallback, and
+    // every Realtime call is wrapped so a Realtime hiccup never affects the app.
+    function pokeGlobalSignout() {
+        try { if (gsoChannel) gsoChannel.send({ type: 'broadcast', event: 'poke', payload: {} }); } catch (e) {}
+    }
 
     function openGlobalSignoutModal() {
         document.getElementById('gso-scope-label').textContent =
@@ -4044,6 +4053,7 @@
             }
             closeGlobalSignoutModal();
             checkGlobalSignout(); // show the banner immediately for the initiator
+            pokeGlobalSignout();  // and tell everyone else to re-check now
         } catch (e) {
             errEl.textContent = 'Could not reach the server: ' + (e && e.message ? e.message : e);
         } finally { btn.disabled = false; }
@@ -4056,16 +4066,25 @@
             await rpcResilient('cancel_global_signout', { p_actor: currentUsername, p_id: activeGlobalSignout.id });
         } catch (e) { /* poll will reconcile */ }
         checkGlobalSignout();
+        pokeGlobalSignout();  // clear everyone else's banner promptly
     }
 
     function startGlobalSignoutPoll() {
         stopGlobalSignoutPoll();
         checkGlobalSignout();
         gsoPollTimer = setInterval(checkGlobalSignout, 20000);
+        // Realtime fast path (best-effort; poll above is the safety net).
+        try {
+            gsoChannel = supabaseClient.channel('global-signout', { config: { broadcast: { self: true } } })
+                .on('broadcast', { event: 'poke' }, () => checkGlobalSignout())
+                .subscribe();
+        } catch (e) { gsoChannel = null; }
     }
     function stopGlobalSignoutPoll() {
         if (gsoPollTimer) { clearInterval(gsoPollTimer); gsoPollTimer = null; }
         if (gsoTickTimer) { clearInterval(gsoTickTimer); gsoTickTimer = null; }
+        try { if (gsoChannel) supabaseClient.removeChannel(gsoChannel); } catch (e) {}
+        gsoChannel = null;
     }
 
     // Poll for a pending global sign-out affecting me.
