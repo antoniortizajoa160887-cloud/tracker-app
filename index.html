@@ -3096,7 +3096,7 @@
         container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
         const { data, error } = await supabaseClient.rpc('list_system_changelog', { p_actor: currentUsername });
         if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${escHtml(error.message)}</div>`; return; }
-        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No versions logged yet.</div>'; return; }
+        if (!data || !data.length) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_versions')}</div>`; return; }
         container.innerHTML = '';
         data.forEach((c, i) => {
             const open = recExpanded.changelog.has(c.id);
@@ -3107,7 +3107,7 @@
                         <span class="rec-caret" data-caret="changelog-${c.id}">${open ? '▾' : '▸'}</span>
                         <span class="rec-title">${escHtml(c.version)}</span>
                         <span class="rec-sub">${c.entry_date}</span>
-                        <span class="rec-right">${isCurrent ? '<span class="status-badge status-active">Current</span>' : ''}</span>
+                        <span class="rec-right">${isCurrent ? `<span class="status-badge status-active">${t('d_current')}</span>` : ''}</span>
                     </div>
                     <div class="rec-card-body">
                         <div style="font-size:12px; line-height:1.5;">${escHtml(c.notes)}</div>
@@ -4153,12 +4153,12 @@
         const body = document.getElementById('gso-history-body');
         const count = document.getElementById('gso-history-count');
         if (!body) return;
-        body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">Loading…</div>';
+        body.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">${t('d_loading')}</div>`;
         const { data, error } = await supabaseClient.rpc('list_global_signouts', { p_actor: currentUsername });
         if (error) { body.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; padding:10px;">${escHtml(error.message)}</div>`; return; }
         const rows = data || [];
         if (count) count.textContent = `(${rows.length})`;
-        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No global sign-outs yet.</div>'; return; }
+        if (!rows.length) { body.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">${t('d_no_gso')}</div>`; return; }
         const trs = rows.map(r => {
             const st = r.status === 'scheduled' ? '<span class="status-badge status-active">scheduled</span>'
                      : r.status === 'cancelled' ? '<span class="exp-pill">cancelled</span>'
@@ -4166,7 +4166,7 @@
             return `<tr>
                 <td>${escHtml(r.initiated_by)}</td>
                 <td style="white-space:nowrap;">${new Date(r.initiated_at).toLocaleString()}</td>
-                <td>${escHtml(r.scope_company || 'All companies')}</td>
+                <td>${escHtml(r.scope_company || t('d_all_companies'))}</td>
                 <td style="text-align:center;">${Math.round((r.grace_seconds||0)/60)}m</td>
                 <td style="text-align:center;">${r.affected_count == null ? '-' : r.affected_count}</td>
                 <td>${st}</td>
@@ -4175,7 +4175,7 @@
         }).join('');
         body.className = '';
         body.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-            <th>Initiator</th><th>When</th><th>Scope</th><th>Grace</th><th>Affected</th><th>Status</th><th>Reason</th>
+            <th>${t('d_th_initiator')}</th><th>${t('sort_when')}</th><th>${t('d_th_scope')}</th><th>${t('d_th_grace')}</th><th>${t('d_th_affected')}</th><th>${t('status_field')}</th><th>${t('d_th_reason')}</th>
         </tr></thead><tbody>${trs}</tbody></table></div>`;
     }
 
@@ -4707,12 +4707,12 @@
 
         if (isDesktopView()) {
             container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>'; return; }
+            if (!list.length) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_companies')}</div>`; return; }
             let rows = '';
             list.forEach(c => {
                 const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === c.code);
                 let actions = '';
-                if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0 3px 0 0;" onclick="editCompany('${c.code}')">Edit</button>`;
+                if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0 3px 0 0;" onclick="editCompany('${c.code}')">${t('d_edit')}</button>`;
                 if (currentUserRole === 'SuperAdmin') actions += `<button class="del-btn" onclick="deleteCompany('${c.code}')">✕</button>`;
                 rows += `<tr>
                     <td class="id-cell">${c.code}</td>
@@ -4727,20 +4727,20 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>Code</th><th>Name</th><th>Owner</th><th>Phone</th><th>Email</th><th>Manager</th><th>Manager Phone</th><th>Created</th><th>Action</th>
+                <th>${t('sort_code')}</th><th>${t('d_th_name')}</th><th>${t('owner_label')}</th><th>${t('d_phone')}</th><th>${t('d_email')}</th><th>${t('manager_label')}</th><th>${t('d_manager_phone')}</th><th>${t('d_created')}</th><th>${t('th_action')}</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             updateRecSortUI('companies');
             return;
         }
 
         container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No companies yet.</div>';
+        container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_companies')}</div>`;
         list.forEach(c => {
             const open = recExpanded.companies ? recExpanded.companies.has(c.code) : false;
             const canEditThis = currentUserRole === 'SuperAdmin' || (currentUserRole === 'Administrator' && currentUser && currentUser.company_code === c.code);
             let actions = '';
-            if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editCompany('${c.code}')">Edit</button>`;
-            if (currentUserRole === 'SuperAdmin') actions += `<button class="del-btn" onclick="deleteCompany('${c.code}')">✕ Delete</button>`;
+            if (canEditThis) actions += `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editCompany('${c.code}')">${t('d_edit')}</button>`;
+            if (currentUserRole === 'SuperAdmin') actions += `<button class="del-btn" onclick="deleteCompany('${c.code}')">${t('d_delete')}</button>`;
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card${open ? ' open' : ''}" id="rec-companies-${c.code}">
                     <div class="rec-card-head" onclick="toggleRecCard('companies','${c.code}')">
@@ -4750,12 +4750,12 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k">Owner</div><div class="v">${c.owner || '-'}</div></div>
-                            <div><div class="k">Phone</div><div class="v">${escHtml(c.phone || '-')}</div></div>
-                            <div><div class="k">Email</div><div class="v">${escHtml(c.email || '-')}</div></div>
-                            <div><div class="k">Manager</div><div class="v">${c.manager || '-'}</div></div>
-                            <div><div class="k">Manager phone</div><div class="v">${c.manager_phone || '-'}</div></div>
-                            <div><div class="k">Created</div><div class="v">${new Date(c.created_at).toLocaleDateString()}</div></div>
+                            <div><div class="k">${t('owner_label')}</div><div class="v">${c.owner || '-'}</div></div>
+                            <div><div class="k">${t('d_phone')}</div><div class="v">${escHtml(c.phone || '-')}</div></div>
+                            <div><div class="k">${t('d_email')}</div><div class="v">${escHtml(c.email || '-')}</div></div>
+                            <div><div class="k">${t('manager_label')}</div><div class="v">${c.manager || '-'}</div></div>
+                            <div><div class="k">${t('d_manager_phone')}</div><div class="v">${c.manager_phone || '-'}</div></div>
+                            <div><div class="k">${t('d_created')}</div><div class="v">${new Date(c.created_at).toLocaleDateString()}</div></div>
                         </div>
                         ${actions ? `<div class="rec-actions">${actions}</div>` : ''}
                     </div>
@@ -6003,7 +6003,7 @@
         list = [...list].sort((a, b) => (new Date(a.created_at) - new Date(b.created_at)) * notifDir);
 
         if (!list.length) {
-            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No notifications in this range.</div>';
+            container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_notifs')}</div>`;
             return;
         }
         container.innerHTML = '';
@@ -9981,7 +9981,7 @@
         if (dmTopicFilter) list = list.filter(t => t.topic === dmTopicFilter);
         if (q) list = list.filter(t => `${dmThreadLabel(t)} ${t.other_username} ${t.topic} ${dmRefLabel(t.topic, t.ref_id)}`.toLowerCase().includes(q));
         if (!list.length) {
-            container.innerHTML = '<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">No conversations yet. Tap + to start one.</div>';
+            container.innerHTML = `<div style="padding:20px 14px; text-align:center; color:var(--text-muted); font-size:0.8rem;">${t('d_no_convos')}</div>`;
             return;
         }
         container.innerHTML = list.map(t => {
@@ -9989,7 +9989,7 @@
             const unread = parseInt(t.unread, 10) || 0;
             const refLabel = dmRefLabel(t.topic, t.ref_id);
             const snippet = t.last_body ? escHtml(t.last_body.length > 38 ? t.last_body.slice(0, 38) + '…' : t.last_body) : '';
-            const pre = (t.last_from && t.last_from === currentUsername) ? 'You: ' : '';
+            const pre = (t.last_from && t.last_from === currentUsername) ? (window.t('d_you_prefix') + ' ') : '';
             const refArg = t.ref_id ? `'${escJsAttr(t.ref_id)}'` : 'null';
             return `
                 <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmThread('${escJsAttr(t.other_username)}','${escJsAttr(t.topic)}',${refArg})">
@@ -10014,13 +10014,13 @@
         if (!list) return;
         list.insertAdjacentHTML('afterbegin', `
             <div id="dm-new-picker" style="padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); display:flex; flex-direction:column; gap:6px;">
-                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">New conversation</div>
-                <select id="dm-new-person" onchange="dmNewPickerUpdate()"><option value="">— Pick a person —</option>${peopleOpts}</select>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">${t('d_new_conversation')}</div>
+                <select id="dm-new-person" onchange="dmNewPickerUpdate()"><option value="">${t('d_pick_person')}</option>${peopleOpts}</select>
                 <select id="dm-new-topic" onchange="dmNewPickerUpdate()">${topicOpts}</select>
                 <div id="dm-new-ref-wrap"></div>
                 <div style="display:flex; gap:6px;">
-                    <button type="button" class="btn-small" style="margin:0; background:var(--primary);" onclick="openNewDmConversation()">Open chat</button>
-                    <button type="button" class="btn-small" style="margin:0; background:#64748b;" onclick="(function(){var e=document.getElementById('dm-new-picker'); if(e) e.remove(); renderDmThreads();})()">Cancel</button>
+                    <button type="button" class="btn-small" style="margin:0; background:var(--primary);" onclick="openNewDmConversation()">${t('d_open_chat')}</button>
+                    <button type="button" class="btn-small" style="margin:0; background:#64748b;" onclick="(function(){var e=document.getElementById('dm-new-picker'); if(e) e.remove(); renderDmThreads();})()">${t('cancel')}</button>
                 </div>
             </div>`);
         dmNewPickerUpdate();
@@ -10774,7 +10774,7 @@
         const { data, error } = await supabaseClient.rpc('list_pending_changes', { p_actor: currentUsername, p_company: currentCompany });
         container.innerHTML = '';
         if (error) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ef4444; padding:1rem;">${error.message}</div>`; return; }
-        if (!data || !data.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No pending requests.</div>'; return; }
+        if (!data || !data.length) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_pending')}</div>`; return; }
 
         const list = applySort(data, 'approvals', {
             requested: p => p.requested_at || '', requestedby: p => p.requested_by || '',
@@ -10794,13 +10794,13 @@
                     <td>${p.new_value ?? '-'}</td>
                     <td>${new Date(p.requested_at).toLocaleString()}</td>
                     <td style="text-align:center; white-space:nowrap;">
-                        <button class="btn-small" style="background:var(--primary); margin:0 3px 0 0;" onclick="approveChange(${p.id})">Approve</button>
+                        <button class="btn-small" style="background:var(--primary); margin:0 3px 0 0;" onclick="approveChange(${p.id})">${t('d_approve')}</button>
                         <button class="del-btn" onclick="rejectChange(${p.id})">✕</button>
                     </td>
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>Requested By</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th><th>Requested</th><th>Action</th>
+                <th>${t('d_th_requested_by')}</th><th>${t('sort_table')}</th><th>${t('d_th_record')}</th><th>${t('sort_field')}</th><th>${t('d_th_old')}</th><th>${t('d_th_new')}</th><th>${t('d_th_requested')}</th><th>${t('th_action')}</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             updateRecSortUI('approvals');
             return;
@@ -10819,16 +10819,16 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k">Table</div><div class="v">${p.table_name}</div></div>
-                            <div><div class="k">Record</div><div class="v id-cell">${p.record_id}</div></div>
-                            <div><div class="k">Field</div><div class="v">${p.field_name}</div></div>
-                            <div><div class="k">Old value</div><div class="v">${p.old_value ?? '-'}</div></div>
-                            <div><div class="k">New value</div><div class="v">${p.new_value ?? '-'}</div></div>
-                            <div><div class="k">Requested</div><div class="v">${new Date(p.requested_at).toLocaleString()}</div></div>
+                            <div><div class="k">${t('sort_table')}</div><div class="v">${p.table_name}</div></div>
+                            <div><div class="k">${t('d_record')}</div><div class="v id-cell">${p.record_id}</div></div>
+                            <div><div class="k">${t('sort_field')}</div><div class="v">${p.field_name}</div></div>
+                            <div><div class="k">${t('d_old_value')}</div><div class="v">${p.old_value ?? '-'}</div></div>
+                            <div><div class="k">${t('d_new_value')}</div><div class="v">${p.new_value ?? '-'}</div></div>
+                            <div><div class="k">${t('d_requested')}</div><div class="v">${new Date(p.requested_at).toLocaleString()}</div></div>
                         </div>
                         <div class="rec-actions">
-                            <button class="btn-small" style="background:var(--primary);margin:0;" onclick="approveChange(${p.id})">Approve</button>
-                            <button class="del-btn" onclick="rejectChange(${p.id})">✕ Reject</button>
+                            <button class="btn-small" style="background:var(--primary);margin:0;" onclick="approveChange(${p.id})">${t('d_approve')}</button>
+                            <button class="del-btn" onclick="rejectChange(${p.id})">${t('d_reject')}</button>
                         </div>
                     </div>
                 </div>`);
@@ -10953,7 +10953,7 @@
         }
 
         const container = document.getElementById('log-tbody');
-        if (!rows.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No changes logged yet.</div>'; return; }
+        if (!rows.length) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_changes_logged')}</div>`; return; }
 
         rows = applySort(rows, 'log', {
             changed: a => a.changed_at || '', who: a => a.actor || '',
@@ -10975,7 +10975,7 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>When</th><th>Who</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th>
+                <th>${t('sort_when')}</th><th>${t('sort_who')}</th><th>${t('sort_table')}</th><th>${t('d_th_record')}</th><th>${t('sort_field')}</th><th>${t('d_th_old')}</th><th>${t('d_th_new')}</th>
             </tr></thead><tbody>${trs}</tbody></table></div>`;
             updateRecSortUI('log');
             return;
@@ -10995,11 +10995,11 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k">Table</div><div class="v">${a.table_name}</div></div>
-                            <div><div class="k">Record</div><div class="v id-cell">${a.record_id}</div></div>
-                            <div><div class="k">Field</div><div class="v">${a.field_name}</div></div>
-                            <div><div class="k">Old value</div><div class="v">${a.old_value ?? '-'}</div></div>
-                            <div><div class="k">New value</div><div class="v">${a.new_value ?? '-'}</div></div>
+                            <div><div class="k">${t('sort_table')}</div><div class="v">${a.table_name}</div></div>
+                            <div><div class="k">${t('d_record')}</div><div class="v id-cell">${a.record_id}</div></div>
+                            <div><div class="k">${t('sort_field')}</div><div class="v">${a.field_name}</div></div>
+                            <div><div class="k">${t('d_old_value')}</div><div class="v">${a.old_value ?? '-'}</div></div>
+                            <div><div class="k">${t('d_new_value')}</div><div class="v">${a.new_value ?? '-'}</div></div>
                         </div>
                     </div>
                 </div>`);
@@ -11277,7 +11277,23 @@
             d_amount_this_week: 'Amount this week', d_notes_optional: 'Notes (optional)', d_provider_notes_ph: 'e.g. invoice #, what for', d_total_this_week: 'Total this week',
             d_dp_setup: '⚙️ <strong>One-time setup needed.</strong> The daily-pay tables don\'t exist in your database yet, so entries can\'t be saved. Ask your admin to run the short SQL setup (provided with this update) in Supabase → SQL Editor. Everything else in the app keeps working normally.',
             d_no_daily_set: 'No one is set to <strong>Daily Rate</strong> yet. Go to the Employees tab and switch a person\'s Pay to <em>Daily</em> (the ↺ button in the Pay column).',
-            d_week_total: 'Week Total'
+            d_week_total: 'Week Total',
+            // --- R5a: dynamic card chrome — Companies, Invoices, Bills, Approvals, Log, Notifications, Messages, Home, Changelog, Users/Sessions ---
+            d_no_companies: 'No companies yet.', d_created: 'Created', d_manager_phone: 'Manager Phone',
+            d_no_line_items: 'No line items.', d_no_line_items_hint: 'No line items yet — click "+ Add Line", or just save with the total below alone.', d_desc_route_ph: 'Description / route', d_rate_ph: 'Rate', d_qty_ph: 'Qty', d_extra_ph: 'Extra', d_amount_ph: 'Amount',
+            d_stat_unpaid: 'Unpaid', d_invoiced_month: 'Invoiced This Month', d_total_invoices: 'Total Invoices', d_no_invoices: 'No invoices found.',
+            d_overdue: 'Overdue', d_total_bills: 'Total Bills', d_no_bills: 'No bills found.',
+            d_no_pending: 'No pending requests.', d_th_requested_by: 'Requested By', d_th_record: 'Record', d_th_old: 'Old', d_th_new: 'New', d_th_requested: 'Requested',
+            d_record: 'Record', d_old_value: 'Old value', d_new_value: 'New value',
+            d_no_changes_logged: 'No changes logged yet.',
+            d_no_notifs: 'No notifications in this range.',
+            d_no_convos: 'No conversations yet. Tap + to start one.', d_you_prefix: 'You:', d_new_conversation: 'New conversation', d_pick_person: '— Pick a person —', d_open_chat: 'Open chat',
+            d_home_active_emps: 'Active Employees', d_home_open_claims: 'Open Claims', d_home_active_charges: 'Active Charges', d_home_income_week: 'Income This Week', d_home_expiring: 'Expiring Soon', d_home_unread: 'Unread Notifications',
+            d_no_versions: 'No versions logged yet.', d_current: 'Current',
+            d_no_sessions: 'No active sessions.', d_th_user: 'User', d_th_started: 'Started', d_th_last_seen: 'Last seen', d_th_ends: 'Ends', d_sign_out_btn: 'Sign out', d_this_device: 'This device',
+            d_no_failed: 'No failed sign-ins in the last 7 days.', d_th_type: 'Type', d_th_who: 'Who', d_th_failed: 'Failed', d_th_last_attempt: 'Last attempt',
+            d_no_users: 'No users found.', d_restricted: 'Restricted', d_id_btn: '🪪 ID', d_reset_pw: '🔑 Reset', d_reset_2fa: '🔐 Reset 2FA',
+            d_no_gso: 'No global sign-outs yet.', d_th_initiator: 'Initiator', d_th_scope: 'Scope', d_th_grace: 'Grace', d_th_affected: 'Affected', d_th_reason: 'Reason', d_all_companies: 'All companies'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11541,7 +11557,23 @@
             d_amount_this_week: 'Monto de esta semana', d_notes_optional: 'Notas (opcional)', d_provider_notes_ph: 'p. ej. n.º de factura, concepto', d_total_this_week: 'Total de esta semana',
             d_dp_setup: '⚙️ <strong>Se necesita configuración única.</strong> Las tablas de pago diario aún no existen en su base de datos, por lo que no se pueden guardar entradas. Pida a su administrador que ejecute la breve configuración SQL (incluida con esta actualización) en Supabase → SQL Editor. Todo lo demás en la app sigue funcionando normalmente.',
             d_no_daily_set: 'Nadie está configurado con <strong>Tarifa diaria</strong> aún. Vaya a la pestaña Empleados y cambie el Pago de una persona a <em>Diaria</em> (el botón ↺ en la columna Pago).',
-            d_week_total: 'Total semanal'
+            d_week_total: 'Total semanal',
+            // --- R5a: dynamic card chrome — Companies, Invoices, Bills, Approvals, Log, Notifications, Messages, Home, Changelog, Users/Sessions ---
+            d_no_companies: 'Aún no hay compañías.', d_created: 'Creado', d_manager_phone: 'Teléfono del gerente',
+            d_no_line_items: 'Sin conceptos.', d_no_line_items_hint: 'Aún no hay conceptos — haga clic en "+ Agregar línea", o simplemente guarde solo con el total de abajo.', d_desc_route_ph: 'Descripción / ruta', d_rate_ph: 'Tarifa', d_qty_ph: 'Cant.', d_extra_ph: 'Extra', d_amount_ph: 'Monto',
+            d_stat_unpaid: 'Sin pagar', d_invoiced_month: 'Facturado este mes', d_total_invoices: 'Total de facturas', d_no_invoices: 'No se encontraron facturas.',
+            d_overdue: 'Vencidas', d_total_bills: 'Total de cuentas', d_no_bills: 'No se encontraron cuentas.',
+            d_no_pending: 'No hay solicitudes pendientes.', d_th_requested_by: 'Solicitado por', d_th_record: 'Registro', d_th_old: 'Anterior', d_th_new: 'Nuevo', d_th_requested: 'Solicitado',
+            d_record: 'Registro', d_old_value: 'Valor anterior', d_new_value: 'Valor nuevo',
+            d_no_changes_logged: 'Aún no hay cambios registrados.',
+            d_no_notifs: 'No hay notificaciones en este rango.',
+            d_no_convos: 'Aún no hay conversaciones. Toque + para iniciar una.', d_you_prefix: 'Tú:', d_new_conversation: 'Nueva conversación', d_pick_person: '— Elegir una persona —', d_open_chat: 'Abrir chat',
+            d_home_active_emps: 'Empleados activos', d_home_open_claims: 'Reclamos abiertos', d_home_active_charges: 'Cargos activos', d_home_income_week: 'Ingreso de esta semana', d_home_expiring: 'Por vencer pronto', d_home_unread: 'Notificaciones sin leer',
+            d_no_versions: 'Aún no hay versiones registradas.', d_current: 'Actual',
+            d_no_sessions: 'No hay sesiones activas.', d_th_user: 'Usuario', d_th_started: 'Iniciada', d_th_last_seen: 'Última actividad', d_th_ends: 'Termina', d_sign_out_btn: 'Cerrar sesión', d_this_device: 'Este dispositivo',
+            d_no_failed: 'No hay inicios de sesión fallidos en los últimos 7 días.', d_th_type: 'Tipo', d_th_who: 'Quién', d_th_failed: 'Fallidos', d_th_last_attempt: 'Último intento',
+            d_no_users: 'No se encontraron usuarios.', d_restricted: 'Restringido', d_id_btn: '🪪 ID', d_reset_pw: '🔑 Restablecer', d_reset_2fa: '🔐 Restablecer 2FA',
+            d_no_gso: 'Aún no hay cierres de sesión globales.', d_th_initiator: 'Iniciador', d_th_scope: 'Alcance', d_th_grace: 'Gracia', d_th_affected: 'Afectados', d_th_reason: 'Motivo', d_all_companies: 'Todas las compañías'
         }
     };
 
@@ -11792,14 +11824,14 @@
         const body = document.getElementById('sessions-body');
         const count = document.getElementById('sessions-count');
         if (!body) return;
-        body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">Loading…</div>';
+        body.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">${t('d_loading')}</div>`;
         const { data, error } = await supabaseClient.rpc('list_sessions', {
             p_actor: currentUsername, p_company: currentCompany
         });
         if (error) { body.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; padding:10px;">${escHtml(error.message)}</div>`; return; }
         const rows = data || [];
         if (count) count.textContent = `(${rows.length})`;
-        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No active sessions.</div>'; return; }
+        if (!rows.length) { body.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">${t('d_no_sessions')}</div>`; return; }
         // Only an Administrator or SuperAdmin may sign someone else out; anyone
         // may end their own session.
         const canRevokeOthers = currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator';
@@ -11807,10 +11839,10 @@
             const mine = r.username === currentUsername;
             const allowed = mine || canRevokeOthers;
             const action = (allowed && !r.is_current)
-                ? `<button type="button" class="btn-small del-btn" style="margin:0;" onclick="revokeSession(${r.id}, '${escJsAttr(r.username)}')">Sign out</button>`
+                ? `<button type="button" class="btn-small del-btn" style="margin:0;" onclick="revokeSession(${r.id}, '${escJsAttr(r.username)}')">${t('d_sign_out_btn')}</button>`
                 : '';
             return `<tr>
-                <td>${escHtml(r.username)}${r.is_current ? ' <span class="status-badge status-active">This device</span>' : ''}</td>
+                <td>${escHtml(r.username)}${r.is_current ? ` <span class="status-badge status-active">${t('d_this_device')}</span>` : ''}</td>
                 <td><span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(r.role === 'User' ? 'View Only' : r.role)}</span></td>
                 <td style="white-space:nowrap;">${fmtWhen(r.created_at)}</td>
                 <td style="white-space:nowrap;">${fmtWhen(r.last_seen)}</td>
@@ -11820,7 +11852,7 @@
         }).join('');
         body.className = '';
         body.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-            <th>User</th><th>Role</th><th>Started</th><th>Last seen</th><th>Ends</th><th>Action</th>
+            <th>${t('d_th_user')}</th><th>${t('role_field')}</th><th>${t('d_th_started')}</th><th>${t('d_th_last_seen')}</th><th>${t('d_th_ends')}</th><th>${t('th_action')}</th>
         </tr></thead><tbody>${trs}</tbody></table></div>`;
     }
 
@@ -11844,12 +11876,12 @@
         const body = document.getElementById('login-attempts-body');
         const count = document.getElementById('login-attempts-count');
         if (!body) return;
-        body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">Loading…</div>';
+        body.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">${t('d_loading')}</div>`;
         const { data, error } = await supabaseClient.rpc('list_login_attempts', { p_actor: currentUsername });
         if (error) { body.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; padding:10px;">${escHtml(error.message)}</div>`; return; }
         const rows = data || [];
         if (count) count.textContent = `(${rows.length})`;
-        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No failed sign-ins in the last 7 days.</div>'; return; }
+        if (!rows.length) { body.innerHTML = `<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">${t('d_no_failed')}</div>`; return; }
         const trs = rows.map(r => {
             const locked = r.locked_until && new Date(r.locked_until) > new Date();
             return `<tr>
@@ -11862,7 +11894,7 @@
         }).join('');
         body.className = '';
         body.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-            <th>Type</th><th>Who</th><th>Failed</th><th>Status</th><th>Last attempt</th>
+            <th>${t('d_th_type')}</th><th>${t('d_th_who')}</th><th>${t('d_th_failed')}</th><th>${t('status_field')}</th><th>${t('d_th_last_attempt')}</th>
         </tr></thead><tbody>${trs}</tbody></table></div>`;
     }
 
@@ -11870,7 +11902,7 @@
         const container = document.getElementById('users-table-body');
         if(!container) return;
 
-        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">Loading…</div>';
+        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_loading')}</div>`;
 
         let data, error;
         try {
@@ -11894,13 +11926,13 @@
             if (empSel) {
                 const avail = employees.filter(emp => !takenEmpIds.has(emp.id))
                     .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' }));
-                empSel.innerHTML = '<option value="">— Select employee —</option>' +
+                empSel.innerHTML = `<option value="">${t('select_employee_opt')}</option>` +
                     avail.map(emp => `<option value="${emp.id}">${employeeOptionLabel(emp)}</option>`).join('');
             }
         } catch (e) { console.error('assign-to-employee dropdown:', e); }
 
         if (!data || !data.length) {
-            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No users found.</div>';
+            container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_users')}</div>`;
             return;
         }
 
@@ -11922,10 +11954,10 @@
                     const opts = roles.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`).join('');
                     roleCell = `<select onchange="changeUserRole('${u.username}', this.value, '${u.role}')" style="width:auto; min-height:34px; padding:4px 6px; font-size:12px;">${opts}</select>`;
                 }
-                const twofaBtn = u.twofa_enabled ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUser2FA('${u.username}')" title="Turn off this user's 2FA (device lost)">🔐 Reset 2FA</button>` : '';
+                const twofaBtn = u.twofa_enabled ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUser2FA('${u.username}')" title="Turn off this user's 2FA (device lost)">${t('d_reset_2fa')}</button>` : '';
                 const actionHtml = u.can_manage
-                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">🪪 ID</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">🔑 Reset</button>${twofaBtn}<button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
-                    : '<span style="color:#94a3b8; font-size:11px;">Restricted</span>';
+                    ? `<button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="editUserEmployeeId('${u.username}', '${u.employee_id || ''}')">${t('d_id_btn')}</button><button class="btn-small" style="margin:0 4px 0 0; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="resetUserPassword('${u.username}')">${t('d_reset_pw')}</button>${twofaBtn}<button class="del-btn" onclick="deleteUser('${u.username}')">✕</button>`
+                    : `<span style="color:#94a3b8; font-size:11px;">${t('d_restricted')}</span>`;
                 rows += `<tr>
                     <td>${u.username}${u.twofa_enabled ? ' <span title="Two-factor on" style="font-size:11px;">🔐</span>' : ''}</td>
                     <td class="id-cell">${u.employee_id || '-'}</td>
@@ -11936,7 +11968,7 @@
             } catch (e) { console.error('user row render failed for', u && u.username, e); }
         });
         container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-            <th>Username</th><th>Employee ID</th><th>Role</th><th>Created</th><th>Action</th>
+            <th>${t('username_label')}</th><th>${t('sort_employee_id')}</th><th>${t('role_field')}</th><th>${t('d_created')}</th><th>${t('th_action')}</th>
         </tr></thead><tbody>${rows}</tbody></table></div>`;
         updateRecSortUI('users');
     }
@@ -12468,16 +12500,16 @@
         const el = document.getElementById('inv-line-items-editor');
         if (!el) return;
         if (!invoiceDraftLines.length) {
-            el.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:4px 0;">No line items yet — click "+ Add Line", or just save with the total below alone.</div>';
+            el.innerHTML = `<div style="color:var(--text-muted); font-size:12px; padding:4px 0;">${t('d_no_line_items_hint')}</div>`;
         } else {
             el.innerHTML = invoiceDraftLines.map((r, i) => `
                 <div class="form-row" style="margin:0 0 6px; align-items:center;">
                     <div class="field"><input type="date" value="${r.line_date || ''}" onchange="updateInvoiceLineItemRow(${i},'line_date',this.value)"></div>
-                    <div class="field field-wide"><input type="text" placeholder="Description / route" value="${escHtml(r.description || '')}" oninput="updateInvoiceLineItemRow(${i},'description',this.value)"></div>
-                    <div class="field"><input type="number" step="0.01" placeholder="Rate" value="${r.rate ?? ''}" oninput="updateInvoiceLineItemRow(${i},'rate',this.value)"></div>
-                    <div class="field" style="max-width:70px;"><input type="number" step="1" placeholder="Qty" value="${r.qty ?? 1}" oninput="updateInvoiceLineItemRow(${i},'qty',this.value)"></div>
-                    <div class="field"><input type="number" step="0.01" placeholder="Extra" value="${r.extra ?? ''}" oninput="updateInvoiceLineItemRow(${i},'extra',this.value)"></div>
-                    <div class="field"><input type="number" step="0.01" placeholder="Amount" value="${r.amount ?? ''}" oninput="updateInvoiceLineItemRow(${i},'amount',this.value)"></div>
+                    <div class="field field-wide"><input type="text" placeholder="${t('d_desc_route_ph')}" value="${escHtml(r.description || '')}" oninput="updateInvoiceLineItemRow(${i},'description',this.value)"></div>
+                    <div class="field"><input type="number" step="0.01" placeholder="${t('d_rate_ph')}" value="${r.rate ?? ''}" oninput="updateInvoiceLineItemRow(${i},'rate',this.value)"></div>
+                    <div class="field" style="max-width:70px;"><input type="number" step="1" placeholder="${t('d_qty_ph')}" value="${r.qty ?? 1}" oninput="updateInvoiceLineItemRow(${i},'qty',this.value)"></div>
+                    <div class="field"><input type="number" step="0.01" placeholder="${t('d_extra_ph')}" value="${r.extra ?? ''}" oninput="updateInvoiceLineItemRow(${i},'extra',this.value)"></div>
+                    <div class="field"><input type="number" step="0.01" placeholder="${t('d_amount_ph')}" value="${r.amount ?? ''}" oninput="updateInvoiceLineItemRow(${i},'amount',this.value)"></div>
                     <span class="del-btn" onclick="removeInvoiceLineItemRow(${i})">✕</span>
                 </div>`).join('');
         }
@@ -12607,30 +12639,30 @@
                     <span>${li.line_date ? escHtml(li.line_date) + ' — ' : ''}${escHtml(li.description)}${li.rate != null ? ` · rate ${formatMoney(li.rate)}` : ''}${li.qty && li.qty != 1 ? ` × ${li.qty}` : ''}${li.extra ? ` + ${formatMoney(li.extra)} extra` : ''} <strong>${formatMoney(li.amount)}</strong></span>
                     ${editable ? `<span class="del-btn" onclick="deleteInvoiceLineItem(${li.id}, '${escJsAttr(inv.invoice_id)}')">✕</span>` : ''}
                 </div>`).join('')
-            : '<div style="color:var(--text-muted); font-size:12px;">No line items.</div>';
+            : `<div style="color:var(--text-muted); font-size:12px;">${t('d_no_line_items')}</div>`;
         return `
             <div class="rec-detail-grid">
-                <div><div class="k">Bill To</div><div class="v" style="white-space:pre-line;">${inv.bill_to ? escHtml(inv.bill_to) : '-'}</div></div>
-                <div><div class="k">Due Date</div><div class="v">${inv.due_date || '-'}</div></div>
-                <div><div class="k">Notes</div><div class="v">${inv.notes ? escHtml(inv.notes) : '-'}</div></div>
+                <div><div class="k">${t('bill_to')}</div><div class="v" style="white-space:pre-line;">${inv.bill_to ? escHtml(inv.bill_to) : '-'}</div></div>
+                <div><div class="k">${t('due_date')}</div><div class="v">${inv.due_date || '-'}</div></div>
+                <div><div class="k">${t('notes')}</div><div class="v">${inv.notes ? escHtml(inv.notes) : '-'}</div></div>
             </div>
-            <div class="detail-subhead" style="margin-top:10px;">Line Items</div>
+            <div class="detail-subhead" style="margin-top:10px;">${t('line_items')}</div>
             ${editable ? `
             <div class="form-row" style="margin:6px 0;">
                 <div class="field"><input type="date" id="ili-date-${inv.invoice_id}"></div>
-                <div class="field field-wide"><input type="text" id="ili-desc-${inv.invoice_id}" placeholder="Description / route"></div>
-                <div class="field"><input type="number" step="0.01" id="ili-rate-${inv.invoice_id}" placeholder="Rate"></div>
-                <div class="field" style="max-width:70px;"><input type="number" step="1" id="ili-qty-${inv.invoice_id}" placeholder="Qty" value="1"></div>
-                <div class="field"><input type="number" step="0.01" id="ili-extra-${inv.invoice_id}" placeholder="Extra"></div>
-                <div class="field"><input type="number" step="0.01" id="ili-amount-${inv.invoice_id}" placeholder="Amount"></div>
-                <button type="button" class="btn-small" style="background:var(--navy);" onclick="addInvoiceLineItemToExisting('${escJsAttr(inv.invoice_id)}')">+ Add</button>
+                <div class="field field-wide"><input type="text" id="ili-desc-${inv.invoice_id}" placeholder="${t('d_desc_route_ph')}"></div>
+                <div class="field"><input type="number" step="0.01" id="ili-rate-${inv.invoice_id}" placeholder="${t('d_rate_ph')}"></div>
+                <div class="field" style="max-width:70px;"><input type="number" step="1" id="ili-qty-${inv.invoice_id}" placeholder="${t('d_qty_ph')}" value="1"></div>
+                <div class="field"><input type="number" step="0.01" id="ili-extra-${inv.invoice_id}" placeholder="${t('d_extra_ph')}"></div>
+                <div class="field"><input type="number" step="0.01" id="ili-amount-${inv.invoice_id}" placeholder="${t('d_amount_ph')}"></div>
+                <button type="button" class="btn-small" style="background:var(--navy);" onclick="addInvoiceLineItemToExisting('${escJsAttr(inv.invoice_id)}')">${t('d_add')}</button>
             </div>` : ''}
             <div>${rows}</div>
             <div style="text-align:right; font-weight:700; margin-top:6px; font-family:var(--mono);">Total: ${formatMoney(inv.total_amount)}</div>
             <div class="rec-actions" style="margin-top:10px;">
                 ${attachBtnHtml('invoice', inv.invoice_id)}
-                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editInvoice('${escJsAttr(inv.invoice_id)}')">Edit</button>
-                <button class="del-btn" onclick="deleteInvoice('${escJsAttr(inv.invoice_id)}')">✕ Delete</button>` : ''}
+                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editInvoice('${escJsAttr(inv.invoice_id)}')">${t('d_edit')}</button>
+                <button class="del-btn" onclick="deleteInvoice('${escJsAttr(inv.invoice_id)}')">${t('d_delete')}</button>` : ''}
             </div>`;
     }
 
@@ -12644,9 +12676,9 @@
             const thisMonth = invoices.filter(i => i.invoice_date && i.invoice_date >= monthStart && i.status !== 'Void');
             const thisMonthTotal = thisMonth.reduce((a, i) => a + (parseFloat(i.total_amount) || 0), 0);
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Unpaid</div><div class="stat-value">${unpaid.length}</div><div style="font-size:10px; color:var(--text-muted);">${formatMoney(unpaidTotal)}</div></div>
-                <div class="stat-card"><div class="stat-label">Invoiced This Month</div><div class="stat-value">${formatMoney(thisMonthTotal)}</div><div style="font-size:10px; color:var(--text-muted);">${thisMonth.length} invoice(s)</div></div>
-                <div class="stat-card"><div class="stat-label">Total Invoices</div><div class="stat-value">${invoices.length}</div></div>`;
+                <div class="stat-card"><div class="stat-label">${t('d_stat_unpaid')}</div><div class="stat-value">${unpaid.length}</div><div style="font-size:10px; color:var(--text-muted);">${formatMoney(unpaidTotal)}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_invoiced_month')}</div><div class="stat-value">${formatMoney(thisMonthTotal)}</div><div style="font-size:10px; color:var(--text-muted);">${thisMonth.length} invoice(s)</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_total_invoices')}</div><div class="stat-value">${invoices.length}</div></div>`;
         }
         // Customer filter options (distinct customers), preserving selection.
         const custSel = document.getElementById('invoice-customer-filter');
@@ -12654,7 +12686,7 @@
             const prev = custSel.value;
             const customers = Array.from(new Set(invoices.map(i => i.customer_name).filter(Boolean)))
                 .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-            custSel.innerHTML = '<option value="">All customers</option>' + customers.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+            custSel.innerHTML = `<option value="">${t('all_customers')}</option>` + customers.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
             custSel.value = prev || '';
         }
 
@@ -12682,7 +12714,7 @@
         const container = document.getElementById('invoices-tbody');
         if (!container) return;
         container.className = 'record-grid';
-        if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No invoices found.</div>'; return; }
+        if (!list.length) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_invoices')}</div>`; return; }
         container.innerHTML = '';
 
         // Group into Unpaid first, then Paid, then Void (then any other status).
@@ -12817,9 +12849,9 @@
             const unpaidTotal = unpaid.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
             const overdue = unpaid.filter(b => b.due_date && b.due_date < todayStr());
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Unpaid</div><div class="stat-value">${unpaid.length}</div><div style="font-size:10px; color:var(--text-muted);">${formatMoney(unpaidTotal)}</div></div>
-                <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value">${overdue.length}</div></div>
-                <div class="stat-card"><div class="stat-label">Total Bills</div><div class="stat-value">${bills.length}</div></div>`;
+                <div class="stat-card"><div class="stat-label">${t('d_stat_unpaid')}</div><div class="stat-value">${unpaid.length}</div><div style="font-size:10px; color:var(--text-muted);">${formatMoney(unpaidTotal)}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_overdue')}</div><div class="stat-value">${overdue.length}</div></div>
+                <div class="stat-card"><div class="stat-label">${t('d_total_bills')}</div><div class="stat-value">${bills.length}</div></div>`;
         }
         // Vendor filter options (distinct vendors), preserving selection.
         const venSel = document.getElementById('bill-vendor-filter');
@@ -12827,7 +12859,7 @@
             const prev = venSel.value;
             const vendors = Array.from(new Set(bills.map(b => b.vendor_name).filter(Boolean)))
                 .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-            venSel.innerHTML = '<option value="">All vendors</option>' + vendors.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+            venSel.innerHTML = `<option value="">${t('all_vendors')}</option>` + vendors.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
             venSel.value = prev || '';
         }
 
@@ -12855,7 +12887,7 @@
         const container = document.getElementById('bills-tbody');
         if (!container) return;
         container.className = 'record-grid';
-        if (!list.length) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No bills found.</div>'; return; }
+        if (!list.length) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_bills')}</div>`; return; }
         container.innerHTML = '';
         const editable = canEdit();
 
@@ -12886,13 +12918,13 @@
                         </div>
                         <div class="rec-card-body">
                             <div class="rec-detail-grid">
-                                <div><div class="k">Bill Date</div><div class="v">${b.bill_date || '-'}</div></div>
-                                <div><div class="k">Notes</div><div class="v">${b.notes ? escHtml(b.notes) : '-'}</div></div>
+                                <div><div class="k">${t('bill_date')}</div><div class="v">${b.bill_date || '-'}</div></div>
+                                <div><div class="k">${t('notes')}</div><div class="v">${b.notes ? escHtml(b.notes) : '-'}</div></div>
                             </div>
                             <div class="rec-actions" style="margin-top:10px;">
                                 ${attachBtnHtml('bill', b.bill_id)}
-                                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editBill('${escJsAttr(b.bill_id)}')">Edit</button>
-                                <button class="del-btn" onclick="deleteBill('${escJsAttr(b.bill_id)}')">✕ Delete</button>` : ''}
+                                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editBill('${escJsAttr(b.bill_id)}')">${t('d_edit')}</button>
+                                <button class="del-btn" onclick="deleteBill('${escJsAttr(b.bill_id)}')">${t('d_delete')}</button>` : ''}
                             </div>
                         </div>
                     </div>`);
@@ -13157,7 +13189,7 @@
 
         const welcomeName = (currentUser && currentUser.first_name) ? currentUser.first_name : currentUsername;
         const welcomeEl = document.getElementById('home-welcome');
-        if (welcomeEl) welcomeEl.textContent = `Welcome, ${welcomeName}`;
+        if (welcomeEl) welcomeEl.textContent = `${t('welcome_prefix')} ${welcomeName}`;
 
         const activeEmployees = employees.filter(e => e.status === 'Active').length;
 
@@ -13191,14 +13223,14 @@
             </div>`;
 
         grid.innerHTML =
-            card('Active Employees', activeEmployees, '', "openHomeShortcut('tab-employees')") +
-            card('Open Claims', openClaims.length, formatMoney(openClaimsTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
-            card('Active Charges', openCharges.length, formatMoney(openChargesTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
+            card(t('d_home_active_emps'), activeEmployees, '', "openHomeShortcut('tab-employees')") +
+            card(t('d_home_open_claims'), openClaims.length, formatMoney(openClaimsTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
+            card(t('d_home_active_charges'), openCharges.length, formatMoney(openChargesTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
             card('Semana de Fondo', savingsInProgress + ' in progress', formatMoney(savingsSavedTotal) + ' saved so far', "openHomeShortcut('tab-weekdeposit')") +
-            card('Income This Week', formatMoney(incomeThisWeekTotal), incomeThisWeek.length + ' record(s)', "openHomeShortcut('tab-income')") +
-            card('Fleet', vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')") +
-            card('Expiring Soon', expiringSoon, 'within 30 days', "openHomeShortcut('tab-expiring')") +
-            card('Unread Notifications', unreadNotifs, '', "openHomeShortcut('tab-notifications')");
+            card(t('d_home_income_week'), formatMoney(incomeThisWeekTotal), incomeThisWeek.length + ' record(s)', "openHomeShortcut('tab-income')") +
+            card(t('d_stat_fleet'), vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')") +
+            card(t('d_home_expiring'), expiringSoon, 'within 30 days', "openHomeShortcut('tab-expiring')") +
+            card(t('d_home_unread'), unreadNotifs, '', "openHomeShortcut('tab-notifications')");
     }
 
     // Home's stat cards jump to a real group's tab — reuses the same
