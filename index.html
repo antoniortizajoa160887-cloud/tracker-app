@@ -1698,12 +1698,12 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-employees" onchange="setSortField('employees', this.value)">
-                <option value="name">Name</option>
-                <option value="id">ID</option>
-                <option value="type">Type</option>
-                <option value="department">Department</option>
-                <option value="start">Start date</option>
-                <option value="status">Status</option>
+                <option value="name" data-i18n="th_name">Name</option>
+                <option value="id" data-i18n="th_id">ID</option>
+                <option value="type" data-i18n="type_label">Type</option>
+                <option value="department" data-i18n="department">Department</option>
+                <option value="start" data-i18n="start_date">Start date</option>
+                <option value="status" data-i18n="status_field">Status</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-employees" onclick="flipSortDir('employees')">▲</button>
         </div>
@@ -1862,14 +1862,14 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-cc" onchange="setSortField('cc', this.value)">
-                <option value="employee">Employee</option>
-                <option value="kind">Kind</option>
-                <option value="id">ID</option>
-                <option value="type">Type</option>
-                <option value="amount">Amount</option>
-                <option value="balance">Balance</option>
-                <option value="status">Status</option>
-                <option value="start">Start ded.</option>
+                <option value="employee" data-i18n="employee_field">Employee</option>
+                <option value="kind" data-i18n="sort_kind">Kind</option>
+                <option value="id" data-i18n="th_id">ID</option>
+                <option value="type" data-i18n="type_label">Type</option>
+                <option value="amount" data-i18n="amount_label">Amount</option>
+                <option value="balance" data-i18n="th_balance">Balance</option>
+                <option value="status" data-i18n="status_field">Status</option>
+                <option value="start" data-i18n="sort_start_ded">Start ded.</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-cc" onclick="flipSortDir('cc')">▲</button>
         </div>
@@ -1921,13 +1921,13 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-income" onchange="setSortField('income', this.value)">
-                <option value="employee">Employee</option>
-                <option value="income_id">Income ID</option>
-                <option value="type">Income type</option>
-                <option value="amount">Amount</option>
-                <option value="remaining">Remaining</option>
-                <option value="status">Status</option>
-                <option value="start">Start</option>
+                <option value="employee" data-i18n="employee_field">Employee</option>
+                <option value="income_id" data-i18n="th_income_id">Income ID</option>
+                <option value="type" data-i18n="income_type">Income type</option>
+                <option value="amount" data-i18n="amount_label">Amount</option>
+                <option value="remaining" data-i18n="th_remaining">Remaining</option>
+                <option value="status" data-i18n="status_field">Status</option>
+                <option value="start" data-i18n="sort_start">Start</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-income" onclick="flipSortDir('income')">▲</button>
         </div>
@@ -2151,14 +2151,14 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-payroll" onchange="setSortField('payroll', this.value)">
-                <option value="employee">Employee</option>
-                <option value="id">ID</option>
-                <option value="type">Type</option>
-                <option value="base">Base (wk)</option>
-                <option value="gross">Gross</option>
-                <option value="deductions">Deductions</option>
-                <option value="net">Net</option>
-                <option value="status">Status</option>
+                <option value="employee" data-i18n="employee_field">Employee</option>
+                <option value="id" data-i18n="th_id">ID</option>
+                <option value="type" data-i18n="type_label">Type</option>
+                <option value="base" data-i18n="sort_base">Base (wk)</option>
+                <option value="gross" data-i18n="sort_gross">Gross</option>
+                <option value="deductions" data-i18n="deductions">Deductions</option>
+                <option value="net" data-i18n="sort_net">Net</option>
+                <option value="status" data-i18n="status_field">Status</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-payroll" onclick="flipSortDir('payroll')">▲</button>
         </div>
@@ -2381,12 +2381,12 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-invoices" onchange="setSortField('invoices', this.value)">
-                <option value="date">Invoice date</option>
-                <option value="number">Invoice #</option>
-                <option value="customer">Customer</option>
-                <option value="due">Due date</option>
-                <option value="amount">Amount</option>
-                <option value="status">Status</option>
+                <option value="date" data-i18n="inv_date">Invoice date</option>
+                <option value="number" data-i18n="inv_number">Invoice #</option>
+                <option value="customer" data-i18n="inv_customer">Customer</option>
+                <option value="due" data-i18n="due_date">Due date</option>
+                <option value="amount" data-i18n="amount_label">Amount</option>
+                <option value="status" data-i18n="status_field">Status</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-invoices" onclick="flipSortDir('invoices')">▲</button>
         </div>
@@ -2422,12 +2422,12 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-bills" onchange="setSortField('bills', this.value)">
-                <option value="due">Due date</option>
-                <option value="date">Bill date</option>
-                <option value="vendor">Vendor</option>
-                <option value="number">Bill #</option>
-                <option value="amount">Amount</option>
-                <option value="status">Status</option>
+                <option value="due" data-i18n="due_date">Due date</option>
+                <option value="date" data-i18n="bill_date">Bill date</option>
+                <option value="vendor" data-i18n="vendor">Vendor</option>
+                <option value="number" data-i18n="sort_bill_num">Bill #</option>
+                <option value="amount" data-i18n="amount_label">Amount</option>
+                <option value="status" data-i18n="status_field">Status</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-bills" onclick="flipSortDir('bills')">▲</button>
         </div>
@@ -2457,10 +2457,10 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-users" onchange="setSortField('users', this.value)">
-                <option value="username">Username</option>
-                <option value="employee_id">Employee ID</option>
-                <option value="role">Role</option>
-                <option value="created">Created</option>
+                <option value="username" data-i18n="username_label">Username</option>
+                <option value="employee_id" data-i18n="sort_employee_id">Employee ID</option>
+                <option value="role" data-i18n="role_field">Role</option>
+                <option value="created" data-i18n="sort_created">Created</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-users" onclick="flipSortDir('users')">▲</button>
         </div>
@@ -2541,11 +2541,11 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-companies" onchange="setSortField('companies', this.value)">
-                <option value="name">Name</option>
-                <option value="code">Code</option>
-                <option value="owner">Owner</option>
-                <option value="manager">Manager</option>
-                <option value="created">Created</option>
+                <option value="name" data-i18n="th_name">Name</option>
+                <option value="code" data-i18n="sort_code">Code</option>
+                <option value="owner" data-i18n="owner_label">Owner</option>
+                <option value="manager" data-i18n="manager_label">Manager</option>
+                <option value="created" data-i18n="sort_created">Created</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-companies" onclick="flipSortDir('companies')">▲</button>
         </div>
@@ -2561,10 +2561,10 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-approvals" onchange="setSortField('approvals', this.value)">
-                <option value="requested">Requested</option>
-                <option value="requestedby">Requested by</option>
-                <option value="table">Table</option>
-                <option value="field">Field</option>
+                <option value="requested" data-i18n="sort_requested">Requested</option>
+                <option value="requestedby" data-i18n="sort_requested_by">Requested by</option>
+                <option value="table" data-i18n="sort_table">Table</option>
+                <option value="field" data-i18n="sort_field">Field</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-approvals" onclick="flipSortDir('approvals')">▲</button>
         </div>
@@ -2585,10 +2585,10 @@
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-log" onchange="setSortField('log', this.value)">
-                <option value="changed">When</option>
-                <option value="who">Who</option>
-                <option value="table">Table</option>
-                <option value="field">Field</option>
+                <option value="changed" data-i18n="sort_when">When</option>
+                <option value="who" data-i18n="sort_who">Who</option>
+                <option value="table" data-i18n="sort_table">Table</option>
+                <option value="field" data-i18n="sort_field">Field</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-log" onclick="flipSortDir('log')">▲</button>
         </div>
@@ -11202,7 +11202,12 @@
             reset_system_btn: '☢️ Reset System (Keep Companies & Super Admin)',
             changelog_title: 'Changelog',
             changelog_note: 'Every change delivered to this app, newest first — stored server-side so this history survives even across app file changes. Only visible to Super Admin.',
-            search_results_title: 'Search results'
+            search_results_title: 'Search results',
+            // --- R4b: record-grid sort-dropdown options ---
+            sort_kind: 'Kind', sort_start_ded: 'Start ded.', sort_start: 'Start', sort_base: 'Base (wk)',
+            sort_gross: 'Gross', sort_net: 'Net', sort_bill_num: 'Bill #', sort_employee_id: 'Employee ID',
+            sort_created: 'Created', sort_code: 'Code', sort_requested: 'Requested', sort_requested_by: 'Requested by',
+            sort_table: 'Table', sort_field: 'Field', sort_when: 'When', sort_who: 'Who'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11394,7 +11399,12 @@
             reset_system_btn: '☢️ Restablecer sistema (conservar compañías y Súper Admin)',
             changelog_title: 'Registro de cambios',
             changelog_note: 'Cada cambio entregado a esta app, más reciente primero — almacenado en el servidor para que este historial sobreviva incluso a cambios del archivo de la app. Solo visible para el Súper Admin.',
-            search_results_title: 'Resultados de búsqueda'
+            search_results_title: 'Resultados de búsqueda',
+            // --- R4b: record-grid sort-dropdown options ---
+            sort_kind: 'Clase', sort_start_ded: 'Inicio ded.', sort_start: 'Inicio', sort_base: 'Base (sem)',
+            sort_gross: 'Bruto', sort_net: 'Neto', sort_bill_num: 'Cuenta n.º', sort_employee_id: 'ID de empleado',
+            sort_created: 'Creado', sort_code: 'Código', sort_requested: 'Solicitado', sort_requested_by: 'Solicitado por',
+            sort_table: 'Tabla', sort_field: 'Campo', sort_when: 'Cuándo', sort_who: 'Quién'
         }
     };
 
