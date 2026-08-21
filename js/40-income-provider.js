@@ -137,7 +137,7 @@
             let rows = '';
             groupByStatus(list).forEach(({ status, items }) => {
                 const collapsed = collapsedStatusGroups.income.has(status);
-                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><td colspan="12"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
                 if (collapsed) return;
                 items.forEach(i => {
                 const emp = employees.find(e => e.id === i.employee_id);
@@ -157,7 +157,7 @@
                     <td>${formatMoney(rem)}</td>
                     <td>${i.start_date || '-'}</td>
                     <td>${endDate}</td>
-                    <td><span class="status-badge status-${i.status}">${enumLabel(i.status)}</span></td>
+                    <td>${statusBadge(i.status)}</td>
                     <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="editIncome('${i.income_id}')">✎</button><button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕</button>` : ''}</td>
                 </tr>
                 <tr class="rec-card${open ? ' open' : ''}" id="rec-income-${i.income_id}" style="display:${open ? 'table-row' : 'none'};">
@@ -177,7 +177,7 @@
         container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_income')}</div>`;
         groupByStatus(list).forEach(({ status, items }) => {
             const collapsed = collapsedStatusGroups.income.has(status);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
             if (collapsed) return;
             items.forEach(i => {
             const emp = employees.find(e => e.id === i.employee_id);
@@ -193,7 +193,7 @@
                         <span class="rec-title">${escHtml(empName)}</span>
                         <span class="rec-sub">${i.income_id}</span>
                         ${attachInd('income', i.income_id)}
-                        <span class="rec-right" style="color:#059669;">${formatMoney(rem)} <span class="status-badge status-${i.status}">${enumLabel(i.status)}</span></span>
+                        <span class="rec-right" style="color:#059669;">${formatMoney(rem)} ${statusBadge(i.status)}</span>
                     </div>
                     <div class="rec-card-body">${incomeDetailHtml(i, empName, weeks, rem, endDate, editable)}</div>
                 </div>`);
@@ -317,7 +317,7 @@
         return `
             <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
-                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${escHtml(c.damage_type)} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${c.status}">${enumLabel(c.status)}</span></span>
+                    <span style="font-size:13px;"><span class="type-pill">Claim</span> <b>${c.claim_id}</b> · ${escHtml(c.damage_type)} · <span class="money">${formatMoney(bal)}</span> · ${statusBadge(c.status)}</span>
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
@@ -352,7 +352,7 @@
         return `
             <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                 <div class="panel-head" onclick="toggleCollapse(this)">
-                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${escHtml(ch.charge_type)} · <span class="money">${formatMoney(bal)}</span> · <span class="status-badge status-${ch.status}">${enumLabel(ch.status)}</span></span>
+                    <span style="font-size:13px;"><span class="type-pill">Charge</span> <b>${ch.charge_id}</b> · ${escHtml(ch.charge_type)} · <span class="money">${formatMoney(bal)}</span> · ${statusBadge(ch.status)}</span>
                     <span class="caret">&#9662;</span>
                 </div>
                 <div>
@@ -413,7 +413,7 @@
         statusesPresent.forEach(status => {
             const group = combined.filter(x => x.status === status);
             const collapsed = collapsedStatusGroups.statement.has(status);
-            html += `<div class="detail-subhead" style="margin:12px 0 6px; cursor:pointer;" onclick="toggleStatusGroup('statement','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:normal;">(${group.length})</span></div>`;
+            html += `<div class="detail-subhead" style="margin:12px 0 6px; cursor:pointer;" onclick="toggleStatusGroup('statement','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:normal;">(${group.length})</span></div>`;
             if (collapsed) return;
             group.forEach(x => { html += x.render(); });
         });
@@ -430,7 +430,7 @@
                 html += `
                     <div class="panel collapsed" style="background:var(--surface-2); margin-bottom:8px;">
                         <div class="panel-head" onclick="toggleCollapse(this)">
-                            <span style="font-size:13px;"><span class="type-pill">Income</span> <b>${i.income_id}</b> · ${escHtml(i.income_type)} · <span class="money" style="color:#059669;">${formatMoney(rem)}</span> · <span class="status-badge status-${i.status}">${enumLabel(i.status)}</span></span>
+                            <span style="font-size:13px;"><span class="type-pill">Income</span> <b>${i.income_id}</b> · ${escHtml(i.income_type)} · <span class="money" style="color:#059669;">${formatMoney(rem)}</span> · ${statusBadge(i.status)}</span>
                             <span class="caret">&#9662;</span>
                         </div>
                         <div>

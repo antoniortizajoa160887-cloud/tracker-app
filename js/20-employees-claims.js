@@ -1646,7 +1646,7 @@
             let rows = '';
             groupByStatus(list).forEach(({ status, items }) => {
                 const collapsed = collapsedStatusGroups.cc.has(status);
-                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><td colspan="13"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
+                rows += `<tr class="rec-group-row" style="cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><td colspan="13"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400;">(${items.length})</span></td></tr>`;
                 if (collapsed) return;
                 items.forEach(r => {
                     const k = ccKindOf(r);
@@ -1673,7 +1673,7 @@
                         <td>${formatMoney(bal)}</td>
                         <td>${r.start_date || '-'}</td>
                         <td>${endDate}</td>
-                        <td><span class="status-badge status-${r.status}">${enumLabel(r.status)}</span></td>
+                        <td>${statusBadge(r.status)}</td>
                         <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;" onclick="${editFn}('${id}')">✎</button><button class="del-btn" onclick="${delFn}('${id}')">✕</button>` : ''}</td>
                     </tr>
                     <tr class="rec-card${open ? ' open' : ''}" id="rec-${tbl}-${id}" style="display:${open ? 'table-row' : 'none'};">
@@ -1692,7 +1692,7 @@
         container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_cc')}</div>`;
         groupByStatus(list).forEach(({ status, items }) => {
             const collapsed = collapsedStatusGroups.cc.has(status);
-            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${enumLabel(status)}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
+            container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> ${statusBadge(status)} <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
             if (collapsed) return;
             items.forEach(r => {
                 const k = ccKindOf(r);
@@ -1713,7 +1713,7 @@
                             <span class="rec-title">${escHtml(empName)}</span>
                             <span class="rec-sub">${CC_KIND_BADGE[k]} ${id}</span>
                             ${attachInd(k, id)}
-                            <span class="rec-right"${balColor}>${formatMoney(bal)} <span class="status-badge status-${r.status}">${enumLabel(r.status)}</span></span>
+                            <span class="rec-right"${balColor}>${formatMoney(bal)} ${statusBadge(r.status)}</span>
                         </div>
                         <div class="rec-card-body">${ccDetailHtml(r, empName, weeks, bal, endDate, editable)}</div>
                     </div>`);
