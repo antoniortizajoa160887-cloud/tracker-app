@@ -276,6 +276,7 @@
     .tabs.sub-tabs { display: none; border-radius: 0; margin-bottom: 1rem; }
     .tabs.sub-tabs.open { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes gsoPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.72; } }
 
     /* ---- Sidebar nav: a fixed always-open panel on desktop, an off-canvas
        drawer on mobile (toggled by the hamburger button). Same nav content
@@ -1144,6 +1145,38 @@
         </div>
         <div id="security-alert-body" style="font-size:0.88rem; color:var(--text); line-height:1.5;"></div>
         <div id="security-alert-actions" style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;"></div>
+    </div>
+</div>
+
+<!-- "Sign Out All Users" live countdown banner. Non-dismissable, non-blocking
+     (users keep working and can save); the ticker signs everyone out at zero. -->
+<div id="global-signout-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9998; padding:10px 16px; text-align:center; font-size:0.9rem; font-weight:700; color:#fff; box-shadow:0 2px 12px rgba(0,0,0,0.3);">
+    <span id="gso-banner-text"></span>
+    <button type="button" id="gso-banner-cancel" style="display:none; margin-left:10px; background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.5); border-radius:6px; padding:2px 10px; font-size:0.8rem; cursor:pointer;" onclick="adminCancelGlobalSignout()">Cancel (admin)</button>
+</div>
+
+<!-- Initiator confirmation for Sign Out All Users -->
+<div id="global-signout-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:10002; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+    <div class="card" style="max-width:460px; width:100%; margin:auto;">
+        <h2 style="margin-top:0; color:#b91c1c;">🚪 Sign Out All Users</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Everyone <span id="gso-scope-label"></span> will get a countdown warning and then be signed out of all devices. Their unsaved work will be lost.</p>
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;">Grace period</label>
+        <select id="gso-grace" style="margin-bottom:8px;">
+            <option value="300" selected>5 minutes</option>
+            <option value="600">10 minutes</option>
+            <option value="900">15 minutes</option>
+            <option value="120">2 minutes</option>
+            <option value="60">1 minute</option>
+        </select>
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;">Reason (optional — shown to everyone)</label>
+        <input type="text" id="gso-reason" maxlength="200" placeholder="e.g. system maintenance" style="margin-bottom:8px;">
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;">Type <span style="font-family:var(--mono); color:#b91c1c;">SIGN OUT ALL</span> to confirm</label>
+        <input type="text" id="gso-confirm" placeholder="SIGN OUT ALL" autocapitalize="characters" style="margin-bottom:4px;">
+        <p id="gso-modal-error" style="color:#ef4444; font-size:0.83rem; margin:0.3rem 0;"></p>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+            <button type="button" class="btn-small" id="gso-submit-btn" style="margin:0; background:#b91c1c; color:#fff;" onclick="submitGlobalSignout()">Start sign-out</button>
+            <button type="button" class="btn-small" style="margin:0;" onclick="closeGlobalSignoutModal()">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -2466,6 +2499,21 @@
             <div id="login-attempts-body" class="record-grid"></div>
         </div>
     </div>
+
+    <!-- Audit trail of "Sign Out All Users" actions. -->
+    <div class="panel collapsed">
+        <div class="panel-head" onclick="toggleCollapse(this)">
+            <span>Global sign-out history <span id="gso-history-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
+            <span class="caret">&#9662;</span>
+        </div>
+        <div>
+            <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadGlobalSignoutHistory()">↻ Refresh</button>
+                <span style="font-size:11px; color:var(--text-muted);">Every 'Sign Out All Users' action: who started it, when, why, and how many were affected.</span>
+            </div>
+            <div id="gso-history-body" class="record-grid"></div>
+        </div>
+    </div>
 </div>
 
 <!-- TAB: COMPANIES -->
@@ -2581,6 +2629,10 @@
             <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllCharges()">🗑️ Delete All Charges</button>
             <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllUsers()">🗑️ Delete All Users</button>
             <button class="btn" style="background: #991b1b;" onclick="adminResetAllDataExceptUsers()">⚠️ Reset All Data (Except Users)</button>
+        </div>
+        <div style="margin-top:14px; padding-top:12px; border-top:1px dashed #fca5a5;">
+            <button class="btn" style="background: #7f1d1d;" onclick="openGlobalSignoutModal()">🚪 Sign Out All Users</button>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin:6px 0 0;">Gives everyone a countdown warning, then signs them out of all devices. Administrators affect their own company; Super Admin affects everyone.</p>
         </div>
     </div>
     <div class="panel" id="superadmin-danger-zone" style="border-color: #7f1d1d; display: none; background: rgba(127,29,29,0.04);">
@@ -2727,8 +2779,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.46';
+    const APP_VERSION = 'v3.47';
     const CHANGELOG = [
+        { version: 'v3.47', date: '2026-08-21', notes: 'New: “Sign Out All Users”, with a grace period and countdown. Administrators and Super Admins can now sign everyone out — an Administrator affects their own company, a Super Admin affects everyone. Find it on the Settings screen under the red Administrator zone. (1) You choose a grace period (default 5 minutes) and can add a reason. Everyone then sees a banner counting down (for example 04:59, 04:58…) that they cannot dismiss, telling them to save their work because unsaved changes will be lost, and showing your reason if you gave one. The banner turns red in the last minute and pulses in the last 30 seconds. People can keep working and saving during the countdown. (2) When the timer reaches zero, everyone is signed out of all their devices automatically — enforced on the server, so it applies even to someone who ignores the banner. (3) You can call it off before the deadline with the “Cancel (admin)” button on the banner. (4) Every Sign Out All Users is recorded under Users → Global sign-out history: who started it, when, the scope, the grace period, how many were signed out, the reason, and whether it completed or was cancelled. Signing out your own current session, and “Sign out my other devices”, are unchanged.' },
         { version: 'v3.46', date: '2026-08-21', notes: 'More reliable two-factor setup on phones — and you can never get locked out. (1) If your connection briefly drops while turning on 2FA or signing in, the app now retries automatically instead of failing with a “Load failed” error, and if it still can’t reach the server it shows a clear “Network problem — check your connection and try again” message. Your typed 6-digit code is kept, so you can just tap Verify again. (2) When 2FA setup is required for your role, the setup screen now always offers “Skip for now” (you’ll be asked again the next time you sign in) and “Sign out”, plus a “Try again” button if setup couldn’t even start. This means a bad connection during setup can no longer trap your account — a problem a Super Admin hit on a mobile connection.' },
         { version: 'v3.45', date: '2026-08-21', notes: 'The unusual-activity sign-in pop-up now names who is affected, and is shown to Medium level and above. Previously it only told you how many accounts or networks had many failed sign-ins; now it lists each one by username and employee ID (a network shows its address instead), so you can see exactly which account is being targeted and jump straight to it. The same username-and-ID detail now also shows in the Users → Recent failed sign-ins list. Managers at Medium level (not only Administrators) now receive this heads-up and can open the Recent failed sign-ins screen. The warning about your own account is unchanged.' },
         { version: 'v3.44', date: '2026-08-21', notes: 'Tidier Users screen, clearer tables, and a heads-up when sign-ins look suspicious. (1) On the Users screen the "System Users" list is now collapsible and starts collapsed — tap its heading to open it — so "Active sessions" and "Recent failed sign-ins" are easier to reach without scrolling past a long list. (2) Active sessions, Recent failed sign-ins, and System Users now all show as tidy tables on phone and desktop alike (on a narrow phone the table scrolls sideways inside its box), instead of switching to cards on mobile. Signing a session out works exactly as before — the Sign out button is in each session’s row. (3) New: right after you sign in, if there have been many failed sign-in attempts you get a short pop-up. You are warned about attempts on your own account (with a shortcut to change your password), and Administrators are additionally warned when any account or network has had many failures in the last 24 hours (with a shortcut to review them). "Many" means an account or network that got locked, or 10 or more failed tries. If nothing looks unusual, no pop-up appears.' },
@@ -3631,7 +3684,7 @@
         if(tabName === 'tab-income') renderIncome();
         if(tabName === 'tab-weekdeposit') renderWeekDeposit();
         if(tabName === 'tab-report') renderDailyReport();
-        if(tabName === 'tab-users') { fetchUsersList(); loadSessions(); loadLoginAttempts(); }
+        if(tabName === 'tab-users') { fetchUsersList(); loadSessions(); loadLoginAttempts(); loadGlobalSignoutHistory(); }
         if(tabName === 'tab-statement') populateStatementDropdown();
         if(tabName === 'tab-dailypay') renderDailyPay();
         if(tabName === 'tab-providerpay') renderProviderPay();
@@ -3957,6 +4010,146 @@
         }, 80);
     }
 
+    // ===== Sign Out All Users (global sign-out with grace period) =====
+    let gsoPollTimer = null, gsoTickTimer = null, activeGlobalSignout = null;
+
+    function openGlobalSignoutModal() {
+        document.getElementById('gso-scope-label').textContent =
+            (currentUserRole === 'SuperAdmin') ? 'in every company' : 'in your company';
+        document.getElementById('gso-reason').value = '';
+        document.getElementById('gso-confirm').value = '';
+        document.getElementById('gso-modal-error').textContent = '';
+        document.getElementById('gso-grace').value = '300';
+        document.getElementById('global-signout-modal').style.display = 'flex';
+    }
+    function closeGlobalSignoutModal() { document.getElementById('global-signout-modal').style.display = 'none'; }
+
+    async function submitGlobalSignout() {
+        const errEl = document.getElementById('gso-modal-error');
+        errEl.textContent = '';
+        if ((document.getElementById('gso-confirm').value || '').trim().toUpperCase() !== 'SIGN OUT ALL') {
+            errEl.textContent = 'Type SIGN OUT ALL to confirm.'; return;
+        }
+        const grace = parseInt(document.getElementById('gso-grace').value, 10) || 300;
+        const reason = (document.getElementById('gso-reason').value || '').trim();
+        const btn = document.getElementById('gso-submit-btn'); btn.disabled = true;
+        try {
+            const { data, error } = await rpcResilient('initiate_global_signout', {
+                p_actor: currentUsername, p_reason: reason || null, p_grace_seconds: grace
+            });
+            if (error) {
+                errEl.textContent = _isNetworkErr(error) ? 'Network problem — try again.' : error.message;
+                return;
+            }
+            closeGlobalSignoutModal();
+            checkGlobalSignout(); // show the banner immediately for the initiator
+        } catch (e) {
+            errEl.textContent = 'Could not reach the server: ' + (e && e.message ? e.message : e);
+        } finally { btn.disabled = false; }
+    }
+
+    async function adminCancelGlobalSignout() {
+        if (!activeGlobalSignout) return;
+        if (!confirm('Cancel the scheduled sign-out for everyone?')) return;
+        try {
+            await rpcResilient('cancel_global_signout', { p_actor: currentUsername, p_id: activeGlobalSignout.id });
+        } catch (e) { /* poll will reconcile */ }
+        checkGlobalSignout();
+    }
+
+    function startGlobalSignoutPoll() {
+        stopGlobalSignoutPoll();
+        checkGlobalSignout();
+        gsoPollTimer = setInterval(checkGlobalSignout, 20000);
+    }
+    function stopGlobalSignoutPoll() {
+        if (gsoPollTimer) { clearInterval(gsoPollTimer); gsoPollTimer = null; }
+        if (gsoTickTimer) { clearInterval(gsoTickTimer); gsoTickTimer = null; }
+    }
+
+    // Poll for a pending global sign-out affecting me.
+    async function checkGlobalSignout() {
+        if (!authToken) return;
+        let data, error;
+        try { ({ data, error } = await supabaseClient.rpc('get_active_global_signout', { p_actor: currentUsername })); }
+        catch (e) { return; } // transient network — try next tick
+        if (error) {
+            // The deadline passed and the server invalidated this session.
+            if (/signed out by an administrator/i.test(error.message || '')) logout('global');
+            return;
+        }
+        const ev = data && data[0];
+        if (ev) {
+            activeGlobalSignout = { id: ev.id, effective_at: new Date(ev.effective_at).getTime(), reason: ev.reason, initiated_by: ev.initiated_by };
+            if (!gsoTickTimer) { tickGlobalSignout(); gsoTickTimer = setInterval(tickGlobalSignout, 1000); }
+        } else {
+            hideGlobalSignoutBanner(); // none pending (or cancelled)
+        }
+    }
+
+    function hideGlobalSignoutBanner() {
+        activeGlobalSignout = null;
+        if (gsoTickTimer) { clearInterval(gsoTickTimer); gsoTickTimer = null; }
+        document.getElementById('global-signout-banner').style.display = 'none';
+    }
+
+    function tickGlobalSignout() {
+        if (!activeGlobalSignout) return;
+        const banner = document.getElementById('global-signout-banner');
+        const remaining = Math.ceil((activeGlobalSignout.effective_at - Date.now()) / 1000);
+        if (remaining <= 0) {
+            document.getElementById('gso-banner-text').textContent = 'Signing you out…';
+            if (gsoTickTimer) { clearInterval(gsoTickTimer); gsoTickTimer = null; }
+            logout('global');
+            return;
+        }
+        const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const ss = String(remaining % 60).padStart(2, '0');
+        // Warning states: amber >60s, red ≤60s, critical (pulse) ≤30s.
+        let bg = '#b45309';
+        if (remaining <= 30) bg = '#7f1d1d';
+        else if (remaining <= 60) bg = '#b91c1c';
+        banner.style.background = bg;
+        banner.style.animation = remaining <= 30 ? 'gsoPulse 1s ease-in-out infinite' : 'none';
+        const reason = activeGlobalSignout.reason ? ` Reason: ${escHtml(activeGlobalSignout.reason)}.` : '';
+        document.getElementById('gso-banner-text').innerHTML =
+            `⚠️ You will be signed out in <span style="font-variant-numeric:tabular-nums;">${mm}:${ss}</span>.${reason} Save your work now — unsaved changes will be lost.`;
+        // Admins can call it off.
+        const canCancel = (currentUserRole === 'Administrator' || currentUserRole === 'SuperAdmin');
+        document.getElementById('gso-banner-cancel').style.display = canCancel ? 'inline-block' : 'none';
+        banner.style.display = 'block';
+    }
+
+    async function loadGlobalSignoutHistory() {
+        const body = document.getElementById('gso-history-body');
+        const count = document.getElementById('gso-history-count');
+        if (!body) return;
+        body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">Loading…</div>';
+        const { data, error } = await supabaseClient.rpc('list_global_signouts', { p_actor: currentUsername });
+        if (error) { body.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; padding:10px;">${escHtml(error.message)}</div>`; return; }
+        const rows = data || [];
+        if (count) count.textContent = `(${rows.length})`;
+        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No global sign-outs yet.</div>'; return; }
+        const trs = rows.map(r => {
+            const st = r.status === 'scheduled' ? '<span class="status-badge status-active">scheduled</span>'
+                     : r.status === 'cancelled' ? '<span class="exp-pill">cancelled</span>'
+                     : '<span class="exp-pill exp-over">completed</span>';
+            return `<tr>
+                <td>${escHtml(r.initiated_by)}</td>
+                <td style="white-space:nowrap;">${new Date(r.initiated_at).toLocaleString()}</td>
+                <td>${escHtml(r.scope_company || 'All companies')}</td>
+                <td style="text-align:center;">${Math.round((r.grace_seconds||0)/60)}m</td>
+                <td style="text-align:center;">${r.affected_count == null ? '-' : r.affected_count}</td>
+                <td>${st}</td>
+                <td>${escHtml(r.reason || '')}</td>
+            </tr>`;
+        }).join('');
+        body.className = '';
+        body.innerHTML = `<div class="table-wrapper"><table><thead><tr>
+            <th>Initiator</th><th>When</th><th>Scope</th><th>Grace</th><th>Affected</th><th>Status</th><th>Reason</th>
+        </tr></thead><tbody>${trs}</tbody></table></div>`;
+    }
+
     // Begin enrollment: fetch a fresh secret + otpauth URI and show the overlay.
     // mandatory=true hides Cancel (a required setup can't be dismissed).
     // Set to true when a Medium+ user chooses "Skip for now" — lasts only for
@@ -4237,6 +4430,7 @@
         });
 
         startIdleWatch();
+        startGlobalSignoutPoll();
     }
 
     function checkExistingSession() {
@@ -4268,11 +4462,13 @@
 
     function logout(reason) {
         stopIdleWatch();
+        stopGlobalSignoutPoll();
         // Best-effort: invalidate the server-side session so the token can't be reused.
         try { if (authToken) supabaseClient.rpc('end_session', { p_token: authToken }); } catch (e) {}
         authToken = null;
         localStorage.removeItem('unified_user');
         if (reason === 'idle') sessionStorage.setItem('logout_reason', 'idle');
+        if (reason === 'global') sessionStorage.setItem('logout_reason', 'global');
         location.reload();
     }
 
@@ -12978,6 +13174,10 @@
         sessionStorage.removeItem('logout_reason');
         const notice = document.getElementById('login-timeout-notice');
         if (notice) notice.style.display = 'block';
+    } else if (sessionStorage.getItem('logout_reason') === 'global') {
+        sessionStorage.removeItem('logout_reason');
+        const notice = document.getElementById('login-timeout-notice');
+        if (notice) { notice.textContent = 'You were signed out by an administrator. Please sign in again.'; notice.style.display = 'block'; }
     }
     checkExistingSession();
 
