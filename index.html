@@ -1073,7 +1073,7 @@
         <!-- Language picker hidden until full translation coverage is done —
              see id="language-picker-block" below and its Settings-tab twin.
              Re-show both once every tab is translated, not before. -->
-        <div id="login-language-picker-block" style="display:none;">
+        <div id="login-language-picker-block">
             <div data-i18n="language_label" style="font-size:0.7rem; color:#8b98a5; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Language</div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:0.85rem;">
                 <button type="button" class="btn-small" id="login-lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
@@ -2244,9 +2244,7 @@
 
 <!-- TAB 7: SETTINGS -->
 <div id="tab-settings" class="tab-content">
-    <!-- Language panel hidden until full translation coverage is done —
-         re-show once every tab is translated, not before. -->
-    <div class="panel" id="settings-language-panel" style="display:none;">
+    <div class="panel" id="settings-language-panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="language_label">Language <span class="caret">&#9662;</span></h2>
         <div class="note-box" data-i18n="language_note">Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -2779,8 +2777,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.50';
+    const APP_VERSION = 'v3.51';
     const CHANGELOG = [
+        { version: 'v3.51', date: '2026-08-21', notes: 'The app is now bilingual — English and Español. A language switch appears on the login screen and in Settings (under “Language”). Pick English or Español and the whole interface changes at once: the side menu and tabs, every form, filter, button, table header and note box, the account and sign-out menus, the login and two-factor screens, and the record cards themselves — Employees, Claims & Charges, Income, Payroll, Statement, Week in Deposit, Savings & Release, Release History, Invoices, Bills, Companies, Users, Approvals, Log and the rest. Your choice is saved on this device only, so other people signed in elsewhere keep their own language. On a brand-new device where nothing has been chosen yet, the app follows the device’s own language (Spanish if the device is set to Spanish, otherwise English) until you pick one — picking a language from the switch is what locks it in. A small number of pop-up confirmation messages and a few status words still show in English for now and will be translated in a later update; nothing is ever left blank, since anything not yet translated simply falls back to English.' },
         { version: 'v3.50', date: '2026-08-21', notes: 'Two-factor setup reminders are now every 15 days instead of on every sign-in. If your role recommends 2FA and you tap “Skip for now”, you won’t be asked again for 15 days — then you’ll get one more reminder, and so on until you turn it on. It is never forced: you can always skip or sign out, the setup screen retries automatically if the connection drops, and once 2FA is on the reminders stop. If an Administrator resets your 2FA, the 15-day reminder cycle starts fresh.' },
         { version: 'v3.49', date: '2026-08-21', notes: 'The “Sign Out All Users” countdown now appears almost instantly for everyone instead of within about 20 seconds. When an Administrator starts — or cancels — a sign-out, every open screen is notified in real time and shows (or clears) the banner right away. If the real-time channel is ever unavailable, the app still falls back to its regular periodic check, so the countdown always appears; the shut-off time itself was already exact. No change to how it works otherwise.' },
         { version: 'v3.48', date: '2026-08-21', notes: 'Managers now see failed sign-ins only for their own company. The “Recent failed sign-ins” list and the unusual-activity pop-up previously showed failed attempts for accounts in every company to any Administrator or Medium manager; they now show only accounts in the manager’s own company, matching how the rest of the app is scoped. Super Admin still sees everything. Failed attempts from a network/address (which aren’t tied to any one account) stay visible to all managers so an attack in progress is still spotted.' },
@@ -11577,17 +11576,26 @@
         }
     };
 
-    // Translation coverage is still partial — the language switcher is
-    // hidden until it's complete (see login screen + Settings). Force
-    // English in the meantime so nobody who switched to Spanish earlier
-    // gets stuck in a half-translated view with no visible way back. Flip
-    // this to false (and re-show the two picker blocks) once coverage is done.
-    const LANGUAGE_SWITCH_HIDDEN = true;
+    // The English/Spanish switcher is live. Coverage spans every tab's fixed
+    // UI plus the dynamically-rendered record cards; any still-untranslated
+    // string (a handful of pop-up messages, enum/status values) falls back to
+    // English automatically via the ?? below, so a missing key never breaks a
+    // screen. The two picker blocks (login screen + Settings) are visible.
+    const LANGUAGE_SWITCH_HIDDEN = false;
+    function currentLang() {
+        if (LANGUAGE_SWITCH_HIDDEN) return 'en';
+        try {
+            const saved = localStorage.getItem('tracker_lang');
+            if (saved === 'en' || saved === 'es') return saved;
+            // First run with no saved choice: follow the device language for
+            // Spanish, otherwise English. Not persisted — only an explicit pick
+            // (a picker button) writes tracker_lang, so this stays a soft default.
+            const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
+            return nav.startsWith('es') ? 'es' : 'en';
+        } catch (e) { return 'en'; }
+    }
     function t(key) {
-        let lang = 'en';
-        if (!LANGUAGE_SWITCH_HIDDEN) {
-            try { lang = localStorage.getItem('tracker_lang') || 'en'; } catch (e) {}
-        }
+        const lang = currentLang();
         return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) ?? TRANSLATIONS.en[key];
     }
 
@@ -11625,8 +11633,7 @@
     }
 
     function updateLanguageButtons() {
-        let cur = 'en';
-        try { cur = localStorage.getItem('tracker_lang') || 'en'; } catch (e) {}
+        const cur = currentLang();
         const enBtn = document.getElementById('lang-btn-en'), esBtn = document.getElementById('lang-btn-es');
         const loginEnBtn = document.getElementById('login-lang-btn-en'), loginEsBtn = document.getElementById('login-lang-btn-es');
         [enBtn, loginEnBtn].forEach(b => { if (b) b.style.background = cur === 'en' ? 'var(--navy)' : '#64748b'; });
