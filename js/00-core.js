@@ -118,8 +118,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.58';
+    const APP_VERSION = 'v3.59';
     const CHANGELOG = [
+        { version: 'v3.59', date: '2026-08-21', notes: 'More of the app now speaks Spanish. The bilingual coverage previously left the pop-up messages — the small confirmation, warning and error boxes (for example “Delete employee?”, “Enter a company name.”, “Company code must be 3 or 4 characters.”) — in English. Those pop-ups across the whole app (employees, claims, charges, income, provider pay, invoices, bills, vehicles, routes, imports, users, messaging, savings & release, and the admin tools) now appear in Spanish when the app is set to Español, and exactly as before in English. A handful of technical server error details and bulk-import result summaries remain in English. Nothing about how the app works has changed — this is wording only.' },
         { version: 'v3.58', date: '2026-08-21', notes: 'Photos now show in the file viewer on every device and browser. The previous two attempts each fixed one side and broke the other (a memory-copy step worked on computers but not iPhones; loading the picture over its direct link then failed on computers because of a stale security rule cached on the device). This version sidesteps both problems: the viewer downloads the photo and shows it as inline data, a method that works under every version of the app’s security rules and is never affected by an out-of-date background helper — so it displays whether you open the app through tracker-logic.com or the Cloudflare link, on phone or computer. Videos and PDFs are unaffected, and Previous/Next, zoom, rotate, flip, the uploader/date, Download and Close all work as before.' },
         { version: 'v3.57', date: '2026-08-21', notes: 'Fixes photos not showing in the file viewer on iPhone (and any device where they appeared as a broken-image icon). The viewer now loads each photo, video or PDF directly from its secure link instead of copying it into memory first — the copying step was being blocked on iPhones and left the picture blank, while it worked on computers. Nothing else changes: files still open inside the app (never a new tab), with Previous/Next, zoom, rotate, flip, the uploader and date, Download and Close all as before. Videos also start playing a little sooner now, since they no longer have to download fully before showing.' },
         { version: 'v3.56', date: '2026-08-21', notes: 'The in-app file viewer now has Previous / Next buttons, so you can flip through a set of files without closing and reopening. Open any photo, video or document from a record’s Files — or from a chat conversation — and use the ‹ and › buttons (or the ← and → arrow keys) to move to the next or previous file in that set. A small counter (for example “2 / 5”) shows where you are, and the buttons dim at the first and last file. For photos and images you can now also rotate (left or right) and flip (horizontal or vertical) — handy for a picture taken sideways or mirrored — right next to the zoom controls; the zoom, rotation and flip all reset when you move to another file. This release also fixes the viewer sometimes opening with the picture missing — a broken-image icon or a blank area instead of the photo: images now load and display reliably on computers and phones alike, including large portrait photos that previously could be cut off above the top edge of the screen. Everything else about the viewer is unchanged — it still opens in the app (never a new tab), shows who uploaded each file and when, and has Download and Close.' },
@@ -950,17 +951,17 @@
         if (!editing) return;
         const amt = parseFloat(document.getElementById(cfg.dom.rcAmt).value);
         const date = document.getElementById(cfg.dom.rcDate).value;
-        if (!date || isNaN(amt)) { alert('Enter both a new weekly amount and an effective date.'); return; }
-        if (amt < 0) { alert('Weekly amount cannot be negative.'); return; }
+        if (!date || isNaN(amt)) { alert(t('a_enter_amount_date')); return; }
+        if (amt < 0) { alert(t('a_weekly_neg')); return; }
         const existing = cfg.rc()[editing] || [];
         if (existing.some(r => r.effective_date === date)) {
-            alert(`There's already a rate change effective ${date} for this ${cfg.label}. Remove the existing one first if you want to replace it.`);
+            alert(t('a_rate_change_exists').replace('{date}', date).replace('{label}', cfg.label));
             return;
         }
         const params = { p_actor: currentUsername, p_company: _dedHistCompany(cfg), p_effective_date: date, p_weekly_amount: amt };
         params[cfg.rpcKey] = editing;
         const { error } = await supabaseClient.rpc(cfg.rpcAddRate, params);
-        if (error) { if (isMissingTable(error)) { cfg.setMissing(true); _dedRenderHistPanels(cfg); } else alert('Error: ' + error.message); return; }
+        if (error) { if (isMissingTable(error)) { cfg.setMissing(true); _dedRenderHistPanels(cfg); } else alert(t('err_prefix') + error.message); return; }
         document.getElementById(cfg.dom.rcAmt).value = ''; document.getElementById(cfg.dom.rcDate).value = '';
         await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
@@ -969,8 +970,8 @@
         if (!editing) return;
         const date = document.getElementById(cfg.dom.pDate).value;
         const resume = document.getElementById(cfg.dom.pResume).value || null;
-        if (!date) { alert('Enter a paused date.'); return; }
-        if (resume && resume <= date) { alert('Expected resume date must be after the paused date.'); return; }
+        if (!date) { alert(t('a_enter_paused_date')); return; }
+        if (resume && resume <= date) { alert(t('a_resume_after_paused')); return; }
         const existing = cfg.ps()[editing] || [];
         const overlaps = existing.some(p => {
             const pStart = p.paused_date, pEnd = p.resume_date;
@@ -980,26 +981,26 @@
             const existingEndsBeforeNew = pEnd && pEnd <= date;
             return !(newEndsBeforeExisting || existingEndsBeforeNew);
         });
-        if (overlaps) { alert(`This overlaps with an existing pause window for this ${cfg.label}. Remove or adjust the existing one first.`); return; }
+        if (overlaps) { alert(t('a_pause_overlaps').replace('{label}', cfg.label)); return; }
         const params = { p_actor: currentUsername, p_company: _dedHistCompany(cfg), p_paused_date: date, p_resume_date: resume };
         params[cfg.rpcKey] = editing;
         const { error } = await supabaseClient.rpc(cfg.rpcAddPause, params);
-        if (error) { if (isMissingTable(error)) { cfg.setMissing(true); _dedRenderHistPanels(cfg); } else alert('Error: ' + error.message); return; }
+        if (error) { if (isMissingTable(error)) { cfg.setMissing(true); _dedRenderHistPanels(cfg); } else alert(t('err_prefix') + error.message); return; }
         document.getElementById(cfg.dom.pDate).value = ''; document.getElementById(cfg.dom.pResume).value = '';
         await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
     async function _dedDeleteRateChange(cfg, rid) {
-        if (rid === undefined || rid === null) { alert('Error: could not identify which rate change to delete — try refreshing the page.'); return; }
-        if (!confirm('Remove this rate change?')) return;
+        if (rid === undefined || rid === null) { alert(t('a_no_rate_id')); return; }
+        if (!confirm(t('c_remove_rate_change'))) return;
         const { error } = await supabaseClient.rpc(cfg.rpcDelRate, { p_actor: currentUsername, p_id: rid });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
     async function _dedDeletePause(cfg, pid) {
-        if (pid === undefined || pid === null) { alert('Error: could not identify which pause to delete — try refreshing the page.'); return; }
-        if (!confirm('Remove this pause record?')) return;
+        if (pid === undefined || pid === null) { alert(t('a_no_pause_id')); return; }
+        if (!confirm(t('c_remove_pause'))) return;
         const { error } = await supabaseClient.rpc(cfg.rpcDelPause, { p_actor: currentUsername, p_id: pid });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         await _dedLoadHistory(cfg); _dedRenderHistPanels(cfg); cfg.rerender();
     }
 

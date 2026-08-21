@@ -83,7 +83,7 @@
         const co = requireWriteCompany();
         if (!co) return;
         const customer = document.getElementById('inv-customer').value.trim();
-        if (!customer) { alert('Enter a customer name.'); return; }
+        if (!customer) { alert(t('a_enter_customer')); return; }
         const lineItemsPayload = invoiceDraftLines
             .filter(r => r.description || r.amount)
             .map(r => ({ line_date: r.line_date || null, description: r.description || '', rate: r.rate === '' ? null : parseFloat(r.rate), qty: parseFloat(r.qty) || 1, extra: r.extra === '' ? null : parseFloat(r.extra), amount: parseFloat(r.amount) || 0 }));
@@ -97,7 +97,7 @@
                 p_invoice_date: document.getElementById('inv-date').value || null, p_due_date: document.getElementById('inv-due-date').value || null,
                 p_status: document.getElementById('inv-status').value, p_notes: document.getElementById('inv-notes').value.trim() || null
             });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
         } else {
             const invoiceId = `${idPrefix()}${String(nextInvoiceNumber() + 1).padStart(settings.chargeDigits, '0')}INV`;
             const { error } = await supabaseClient.rpc('create_invoice', {
@@ -108,7 +108,7 @@
                 p_status: document.getElementById('inv-status').value, p_notes: document.getElementById('inv-notes').value.trim() || null,
                 p_total_amount: total, p_line_items: lineItemsPayload
             });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
         }
         cancelInvoiceEdit();
         fetchInvoicesFromCloud();
@@ -150,9 +150,9 @@
 
     async function deleteInvoice(id) {
         if (!canEdit()) return;
-        if (!confirm('Delete invoice ' + id + ' and all its line items?')) return;
+        if (!confirm(t('c_del_invoice').replace('{id}', id))) return;
         const { error } = await supabaseClient.rpc('delete_invoice', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         fetchInvoicesFromCloud();
     }
 
@@ -164,7 +164,7 @@
         const qtyEl = document.getElementById(`ili-qty-${invoiceId}`);
         const extraEl = document.getElementById(`ili-extra-${invoiceId}`);
         const amountEl = document.getElementById(`ili-amount-${invoiceId}`);
-        if (!descEl.value.trim()) { alert('Enter a description.'); return; }
+        if (!descEl.value.trim()) { alert(t('a_enter_desc')); return; }
         const { error } = await supabaseClient.rpc('add_invoice_line_item', {
             p_actor: currentUsername, p_invoice_id: invoiceId,
             p_line_date: dateEl.value || null, p_description: descEl.value.trim(),
@@ -173,7 +173,7 @@
             p_extra: extraEl.value === '' ? null : parseFloat(extraEl.value),
             p_amount: parseFloat(amountEl.value) || 0
         });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         recExpanded.invoices.add(invoiceId);
         fetchInvoicesFromCloud();
     }
@@ -181,7 +181,7 @@
     async function deleteInvoiceLineItem(id, invoiceId) {
         if (!canEdit()) return;
         const { error } = await supabaseClient.rpc('delete_invoice_line_item', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         recExpanded.invoices.add(invoiceId);
         fetchInvoicesFromCloud();
     }
@@ -327,7 +327,7 @@
         const co = requireWriteCompany();
         if (!co) return;
         const vendor = document.getElementById('bill-vendor').value.trim();
-        if (!vendor) { alert('Enter a vendor name.'); return; }
+        if (!vendor) { alert(t('a_enter_vendor')); return; }
         const amount = parseFloat(document.getElementById('bill-amount').value) || 0;
         const payload = {
             p_vendor_name: vendor, p_bill_number: document.getElementById('bill-number').value.trim() || null,
@@ -341,7 +341,7 @@
             const billId = `${idPrefix()}${String(nextBillNumber() + 1).padStart(settings.chargeDigits, '0')}BIL`;
             ({ error } = await supabaseClient.rpc('create_bill', { p_actor: currentUsername, p_id: billId, p_company: co, ...payload }));
         }
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         cancelBillEdit();
         fetchBillsFromCloud();
     }
@@ -374,9 +374,9 @@
 
     async function deleteBill(id) {
         if (!canEdit()) return;
-        if (!confirm('Delete bill ' + id + '?')) return;
+        if (!confirm(t('c_del_bill').replace('{id}', id))) return;
         const { error } = await supabaseClient.rpc('delete_bill', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         fetchBillsFromCloud();
     }
 
@@ -523,7 +523,7 @@
                 p_insurance_policy: payload.insurance_policy, p_insurance_expiry: payload.insurance_expiry, p_notes: payload.notes
             }));
         }
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         cancelVehicleEdit();
         this.reset();
         fetchVehiclesFromCloud();
@@ -558,9 +558,9 @@
 
     async function deleteVehicle(id) {
         if (!canEdit()) return;
-        if (!confirm('Delete this vehicle and its whole service log?')) return;
+        if (!confirm(t('c_del_vehicle'))) return;
         const { error } = await supabaseClient.rpc('delete_vehicle', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         fetchVehiclesFromCloud();
     }
 
@@ -571,14 +571,14 @@
         const typeEl = document.getElementById(`vs-type-${vehicleId}`);
         const mileageEl = document.getElementById(`vs-mileage-${vehicleId}`);
         const nextMileageEl = document.getElementById(`vs-next-mileage-${vehicleId}`);
-        if (!dateEl.value || !descEl.value.trim()) { alert('Enter both a date and a description.'); return; }
+        if (!dateEl.value || !descEl.value.trim()) { alert(t('a_enter_date_desc')); return; }
         const { error } = await supabaseClient.rpc('add_vehicle_service', {
             p_actor: currentUsername, p_vehicle_id: vehicleId, p_service_date: dateEl.value,
             p_description: descEl.value.trim(), p_type: typeEl.value,
             p_mileage_at_service: mileageEl.value ? parseInt(mileageEl.value, 10) : null,
             p_next_service_mileage: nextMileageEl.value ? parseInt(nextMileageEl.value, 10) : null
         });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         recExpanded.vehicles.add(vehicleId);
         fetchVehiclesFromCloud();
     }
@@ -586,7 +586,7 @@
     async function deleteVehicleService(id, vehicleId) {
         if (!canEdit() || !id) return;
         const { error } = await supabaseClient.rpc('delete_vehicle_service', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         recExpanded.vehicles.add(vehicleId);
         fetchVehiclesFromCloud();
     }
@@ -611,14 +611,14 @@
         const truckEl = document.getElementById('sched-maint-truck');
         const dateEl = document.getElementById('sched-maint-date');
         const descEl = document.getElementById('sched-maint-desc');
-        if (!truckEl.value) { alert('Pick a truck.'); return; }
-        if (!dateEl.value || !descEl.value.trim()) { alert('Enter both a date and a description.'); return; }
+        if (!truckEl.value) { alert(t('a_pick_truck')); return; }
+        if (!dateEl.value || !descEl.value.trim()) { alert(t('a_enter_date_desc')); return; }
         const { error } = await supabaseClient.rpc('add_vehicle_service', {
             p_actor: currentUsername, p_vehicle_id: truckEl.value, p_service_date: dateEl.value,
             p_description: descEl.value.trim(), p_type: 'Scheduled',
             p_mileage_at_service: null, p_next_service_mileage: null
         });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         dateEl.value = ''; descEl.value = '';
         await fetchVehiclesFromCloud();
     }
@@ -1204,7 +1204,7 @@
     }
 
     function exportExcel() {
-        if(!routes.length) return alert("No data to export!");
+        if(!routes.length) return alert(t('a_no_export'));
         const ws = XLSX.utils.json_to_sheet(routes);
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Tracker");
         XLSX.writeFile(wb, "Unified_Dashboard_Backup.xlsx");

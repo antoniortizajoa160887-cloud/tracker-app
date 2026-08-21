@@ -289,7 +289,29 @@
             d_no_failed: 'No failed sign-ins in the last 7 days.', d_th_type: 'Type', d_th_who: 'Who', d_th_failed: 'Failed', d_th_last_attempt: 'Last attempt',
             d_no_users: 'No users found.', d_restricted: 'Restricted', d_id_btn: '🪪 ID', d_reset_pw: '🔑 Reset', d_reset_2fa: '🔐 Reset 2FA',
             d_no_gso: 'No global sign-outs yet.', d_th_initiator: 'Initiator', d_th_scope: 'Scope', d_th_grace: 'Grace', d_th_affected: 'Affected', d_th_reason: 'Reason', d_all_companies: 'All companies',
-            fv_close: 'Close', fv_download: 'Download', fv_uploaded_by: 'Uploaded by', fv_loading: 'Loading…', fv_no_preview: 'Preview not available for this file type — download to view.', fv_error: 'Could not open this file.', fv_zoom_in: 'Zoom in', fv_zoom_out: 'Zoom out', fv_zoom_reset: 'Reset zoom', fv_prev: 'Previous', fv_next: 'Next', fv_rotate_left: 'Rotate left', fv_rotate_right: 'Rotate right', fv_flip_h: 'Flip horizontal', fv_flip_v: 'Flip vertical'
+            fv_close: 'Close', fv_download: 'Download', fv_uploaded_by: 'Uploaded by', fv_loading: 'Loading…', fv_no_preview: 'Preview not available for this file type — download to view.', fv_error: 'Could not open this file.', fv_zoom_in: 'Zoom in', fv_zoom_out: 'Zoom out', fv_zoom_reset: 'Reset zoom', fv_prev: 'Previous', fv_next: 'Next', fv_rotate_left: 'Rotate left', fv_rotate_right: 'Rotate right', fv_flip_h: 'Flip horizontal', fv_flip_v: 'Flip vertical',
+            // ---- Pop-up messages (alert/confirm/prompt) — shared error prefixes ----
+            err_prefix: 'Error: ', err_could_not_reach: 'Could not reach the server: ',
+            // 00-core (deduction rate/pause history)
+            a_enter_amount_date: 'Enter both a new weekly amount and an effective date.', a_weekly_neg: 'Weekly amount cannot be negative.', a_rate_change_exists: 'There\'s already a rate change effective {date} for this {label}. Remove the existing one first if you want to replace it.', a_enter_paused_date: 'Enter a paused date.', a_resume_after_paused: 'Expected resume date must be after the paused date.', a_pause_overlaps: 'This overlaps with an existing pause window for this {label}. Remove or adjust the existing one first.', a_no_rate_id: 'Error: could not identify which rate change to delete — try refreshing the page.', c_remove_rate_change: 'Remove this rate change?', a_no_pause_id: 'Error: could not identify which pause to delete — try refreshing the page.', c_remove_pause: 'Remove this pause record?',
+            // 10-auth (2FA / sign-out)
+            c_cancel_signout: 'Cancel the scheduled sign-out for everyone?', a_2fa_off: 'Two-factor authentication has been turned off.', c_reset_2fa: 'Turn off two-factor authentication for "{user}"?\n\nUse this only if they lost their device. They\'ll be asked to set it up again next time they sign in (if their role requires it).', a_2fa_reset_for: 'Two-factor authentication was reset for "{user}".',
+            err_could_not_save: 'Could not save: ', err_saving_claim: 'Error saving claim: ', err_saving_charge: 'Error saving charge: ',
+            // 20-employees-claims
+            a_pw_updated: 'Password updated successfully.', a_select_company_first: 'Select a specific company first (top-right dropdown) before adding records.', a_company_code_len: 'Company code must be 3 or 4 characters.', a_enter_company_name: 'Enter a company name.', a_copied: 'Copied to clipboard.', c_del_company: 'Delete company {code} and ALL its data (employees, routes, claims, charges, users)? This cannot be undone.', a_print_ios: 'Printing doesn\'t work reliably from the installed app icon — this is a long-standing Safari limitation on iPhone/iPad, not something in Tracker itself.\n\nTo print: open this same page in Safari (not the home screen icon) and print from there.', a_emp_details_missing: 'The employee_details table is not set up yet — the extra ID fields (license, permit, medical card, notes) were not saved. Run the provided SQL setup once, then re-save.', a_no_import_perm: 'You do not have permission to import.', a_csv_empty: 'CSV appears to be empty.', a_csv_cols: 'CSV must include at least "First Name" and "Last Name" columns.', a_import_done: 'Import finished: {ok} added{fail}.', a_import_fail_suffix: ', {n} failed (see console)', c_del_employee: 'Delete employee {id}?', c_gen_login: 'Generate a login for {name}?', a_no_account: 'No account was returned — check the Users tab.', a_select_valid_emp: 'Please select a valid employee from the list.', a_select_emp_first: 'Select an employee first.',
+            err_saving_income: 'Error saving income: ', err_save_paytype: 'Could not save pay type: ', err_saving: 'Error saving: ', err_paying_bill: 'Error paying bill {bill}: ',
+            // 40-income-provider
+            a_income_table_missing: 'The additional_income table is not set up yet. Run the income setup SQL first.', a_select_emp_top: 'Select an employee at the top of the tab first.', a_no_income_id: 'Error: could not identify which income entry to delete — try refreshing the page.', c_del_income: 'Delete income {id}?', a_dailypay_missing: 'Daily-pay tables are not set up yet. See the yellow note in the Daily Pay tab.', c_set_emp_status: 'Set {name} to {status}?', a_tick_bill: 'Tick at least one bill to pay.', c_mark_bills_paid: 'Mark {n} bill(s) as Paid ({amount}) and add that to this week\'s provider pay?', a_no_net_pay: 'No one in the current view has a net amount to pay for this week.',
+            err_could_not_send: 'Could not send file: ',
+            // 50-messages
+            a_pick_person: 'Pick a person first.', a_pick_topic: 'Pick a topic first.', a_pick_date: 'Pick a date for the Missing Day thread.', a_pick_which: 'Pick which {kind} this conversation is about.', a_pick_convo: 'Pick a conversation first (tap +).', c_del_message: 'Delete this message?', a_share_file_hint: 'To share a file, open a Claim, Charge, or Income conversation — the file attaches to that record. (General and Missing Day chats have no record to attach to.)', a_own_files_only: 'You can only share files on your own claims, charges and income.', a_edit_prompt_hint: '\nLeave a value unchanged to keep it. Press Cancel on any field to stop.', a_must_be_number: '"{field}" must be a number. Nothing was saved.', a_release_done: 'Release approved and completed.', c_reject_change: 'Reject this change request?', c_approve_release: 'Approve and execute this release now?', c_reject_release: 'Reject this release request?',
+            // 70-financial-init
+            a_enter_customer: 'Enter a customer name.', c_del_invoice: 'Delete invoice {id} and all its line items?', a_enter_desc: 'Enter a description.', a_enter_vendor: 'Enter a vendor name.', c_del_bill: 'Delete bill {id}?', c_del_vehicle: 'Delete this vehicle and its whole service log?', a_enter_date_desc: 'Enter both a date and a description.', a_pick_truck: 'Pick a truck.', a_no_export: 'No data to export!',
+            err_could_not_upload: 'Could not upload: ', err_importing_file: 'Error importing file: ', err_parsing_file: 'Error parsing file: ', err_importing: 'Error importing: ', err_parsing_sheet: 'Error parsing sheet: ',
+            // 30-attach-import-deposit
+            p_rename_file: 'Rename file', c_del_file: 'Delete this file? This cannot be undone.', c_del_claim: 'Delete claim {id}?', a_file_empty: 'The file appears to be empty.', a_no_date_cols: 'Could not find any week/date columns starting at column B — check the file format.', a_no_goal_col: 'Could not find the goal amount column (expected a header containing "final" or "goal") after the date columns.', a_no_first_week: 'Could not read the first week\'s date in column B.', a_sheet_empty: 'That sheet appears to be empty.', a_no_7days: 'Could not find 7 day dates in row 2 (columns D–J) of "{sheet}". Make sure this matches the Daily Pay registry format.', a_no_dailypay_rows: 'No importable daily pay rows found in this sheet.', a_no_data_rows: 'No data rows found in the "{sheet}" tab.', a_no_matching_cols: 'Found {n} row(s) in "{sheet}" but none had data in the Employee or Internal RefClaim columns — double-check the sheet has those column headers.', c_del_charge: 'Delete charge {id}?', a_save_emp_first: 'Save this employee first, then edit them to pull from Daily Pay.', a_no_dailypay_emp: 'No Daily Pay entries found for this employee.', c_mark_inactive: 'Mark {name} as Inactive? This locks in today as their departure date (if not already set) and holds their Week in Deposit savings (90 days) and last paycheck (30 days) per the release rules.', a_not_releasable: 'This account can\'t be released yet. Based on this employee\'s Last Date Worked, the earliest eligible date is {date}. Use "Early Release" instead if this needs to happen sooner.', c_no_ldw_90: 'This employee has no Last Date Worked on file, so the 90-day eligibility rule can\'t be checked. Continue anyway?', a_early_release_date: 'This is an EARLY release — the normal eligible date is {date}. {tail}', a_ldw_unknown: 'unknown (no Last Date Worked on file)', a_will_send_admin: 'This will be sent to an Administrator for approval.', a_continue_q: 'Continue?', a_paycheck_released: 'This employee\'s last paycheck has already been released.', a_not_releasable2: 'This can\'t be released yet. Based on this employee\'s Last Date Worked, the earliest eligible date is {date}. Use "Early Release" instead if this needs to happen sooner.', c_no_ldw_30: 'This employee has no Last Date Worked on file, so the 30-day eligibility rule can\'t be checked. Continue anyway?', a_over_committed: 'Uncheck something first — the selected total is more than what\'s available.', a_enter_paycheck: 'Enter the paycheck amount first.', a_sent_approval: 'Sent for Administrator approval — nothing has been released yet. You\'ll see it move once it\'s been acted on.',
+            // 60-i18n-sessions (settings / users / bulk-admin / routes)
+            a_no_damage_id: 'Error: could not identify which damage type to delete — try refreshing the page.', a_no_chargetype_id: 'Error: could not identify which charge type to delete — try refreshing the page.', a_no_incometype_id: 'Error: could not identify which income type to delete — try refreshing the page.', a_id_settings_updated: 'ID settings updated for future records!', c_change_role: 'Change {user}\'s role from {old} to {new}?', c_signout_session: 'Sign out this session for {who}? They will need to sign in again.', c_signout_others: 'Sign out every other device signed in as you? This device stays signed in.', p_new_password: 'Enter a new password for "{user}":', a_pw_min: 'Password must be at least 8 characters.', a_pw_reset_for: 'Password for "{user}" has been reset.', p_employee_id: 'Employee ID for "{user}" (leave blank to unlink):', c_del_user: 'Are you sure you want to delete user "{user}"?', a_user_deleted: 'User "{user}" deleted successfully.', a_assign_user_emp: 'Please assign this user to an employee.', a_select_company_user: 'Select a specific company first (top-right dropdown) before creating a user.', a_user_created: 'User created successfully!', a_access_denied: 'Access denied. Administrator privileges required.', a_select_company_bulk: 'Select a specific company first (top-right dropdown). Bulk actions apply to one company at a time.', c_del_all_routes: 'Delete ALL route records for company {co}?', a_routes_deleted: 'Routes deleted for {co}.', c_del_all_users: 'WARNING: This deletes ALL user accounts EXCEPT your own. Proceed?', a_all_users_deleted: 'All other users deleted. Your account was kept.', c_del_all_claims: 'Delete ALL claims for company {co}?', a_claims_deleted: 'Claims deleted for {co}.', c_del_all_charges: 'Delete ALL charges for company {co}?', a_charges_deleted: 'Charges deleted for {co}.', c_wipe_company: 'CRITICAL: Wipe ALL operational data (routes, employees, claims, charges) for company {co}, except user accounts. Cannot be undone. Proceed?', a_opdata_reset: 'Operational data reset for {co}.', p_reset_system: 'This removes every user account except Super Admins, and clears the Log and Approvals. Companies and their data are kept.\n\nType RESET SYSTEM to confirm:', a_not_confirmed: 'Not confirmed — nothing was changed.', a_system_reset_done: 'System reset complete. Every non-Super Admin account was removed; the Log and Approvals are cleared. Company data is untouched.', a_select_company_route: 'Please select a Company for this route.', a_tab_empty: 'The \'{sheet}\' tab in the Excel file is empty.', a_routes_imported: 'Successfully imported and synced {n} routes from the \'{sheet}\' tab!', c_del_route: 'Delete this route?'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -570,7 +592,29 @@
             d_no_failed: 'No hay inicios de sesión fallidos en los últimos 7 días.', d_th_type: 'Tipo', d_th_who: 'Quién', d_th_failed: 'Fallidos', d_th_last_attempt: 'Último intento',
             d_no_users: 'No se encontraron usuarios.', d_restricted: 'Restringido', d_id_btn: '🪪 ID', d_reset_pw: '🔑 Restablecer', d_reset_2fa: '🔐 Restablecer 2FA',
             d_no_gso: 'Aún no hay cierres de sesión globales.', d_th_initiator: 'Iniciador', d_th_scope: 'Alcance', d_th_grace: 'Gracia', d_th_affected: 'Afectados', d_th_reason: 'Motivo', d_all_companies: 'Todas las compañías',
-            fv_close: 'Cerrar', fv_download: 'Descargar', fv_uploaded_by: 'Subido por', fv_loading: 'Cargando…', fv_no_preview: 'Vista previa no disponible para este tipo de archivo — descárguelo para verlo.', fv_error: 'No se pudo abrir este archivo.', fv_zoom_in: 'Acercar', fv_zoom_out: 'Alejar', fv_zoom_reset: 'Restablecer zoom', fv_prev: 'Anterior', fv_next: 'Siguiente', fv_rotate_left: 'Girar a la izquierda', fv_rotate_right: 'Girar a la derecha', fv_flip_h: 'Voltear horizontal', fv_flip_v: 'Voltear vertical'
+            fv_close: 'Cerrar', fv_download: 'Descargar', fv_uploaded_by: 'Subido por', fv_loading: 'Cargando…', fv_no_preview: 'Vista previa no disponible para este tipo de archivo — descárguelo para verlo.', fv_error: 'No se pudo abrir este archivo.', fv_zoom_in: 'Acercar', fv_zoom_out: 'Alejar', fv_zoom_reset: 'Restablecer zoom', fv_prev: 'Anterior', fv_next: 'Siguiente', fv_rotate_left: 'Girar a la izquierda', fv_rotate_right: 'Girar a la derecha', fv_flip_h: 'Voltear horizontal', fv_flip_v: 'Voltear vertical',
+            // ---- Pop-up messages (alert/confirm/prompt) — shared error prefixes ----
+            err_prefix: 'Error: ', err_could_not_reach: 'No se pudo conectar con el servidor: ',
+            // 00-core (deduction rate/pause history)
+            a_enter_amount_date: 'Ingrese un nuevo monto semanal y una fecha de vigencia.', a_weekly_neg: 'El monto semanal no puede ser negativo.', a_rate_change_exists: 'Ya existe un cambio de tarifa vigente el {date} para este {label}. Elimine primero el existente si desea reemplazarlo.', a_enter_paused_date: 'Ingrese una fecha de pausa.', a_resume_after_paused: 'La fecha estimada de reanudación debe ser posterior a la fecha de pausa.', a_pause_overlaps: 'Esto se superpone con una pausa existente para este {label}. Elimine o ajuste primero la existente.', a_no_rate_id: 'Error: no se pudo identificar qué cambio de tarifa eliminar — intente actualizar la página.', c_remove_rate_change: '¿Eliminar este cambio de tarifa?', a_no_pause_id: 'Error: no se pudo identificar qué pausa eliminar — intente actualizar la página.', c_remove_pause: '¿Eliminar este registro de pausa?',
+            // 10-auth (2FA / sign-out)
+            c_cancel_signout: '¿Cancelar el cierre de sesión programado para todos?', a_2fa_off: 'La autenticación de dos factores se ha desactivado.', c_reset_2fa: '¿Desactivar la autenticación de dos factores para "{user}"?\n\nUse esto solo si perdió su dispositivo. Se le pedirá configurarla de nuevo la próxima vez que inicie sesión (si su rol lo requiere).', a_2fa_reset_for: 'La autenticación de dos factores se restableció para "{user}".',
+            err_could_not_save: 'No se pudo guardar: ', err_saving_claim: 'Error al guardar el reclamo: ', err_saving_charge: 'Error al guardar el cargo: ',
+            // 20-employees-claims
+            a_pw_updated: 'Contraseña actualizada correctamente.', a_select_company_first: 'Seleccione primero una compañía específica (menú superior derecho) antes de agregar registros.', a_company_code_len: 'El código de compañía debe tener 3 o 4 caracteres.', a_enter_company_name: 'Ingrese un nombre de compañía.', a_copied: 'Copiado al portapapeles.', c_del_company: '¿Eliminar la compañía {code} y TODOS sus datos (empleados, rutas, reclamos, cargos, usuarios)? Esto no se puede deshacer.', a_print_ios: 'La impresión no funciona de forma confiable desde el ícono de la app instalada — es una limitación antigua de Safari en iPhone/iPad, no algo de Tracker.\n\nPara imprimir: abra esta misma página en Safari (no el ícono de la pantalla de inicio) e imprima desde ahí.', a_emp_details_missing: 'La tabla employee_details aún no está configurada — los campos de ID adicionales (licencia, permiso, tarjeta médica, notas) no se guardaron. Ejecute una vez la configuración SQL proporcionada y vuelva a guardar.', a_no_import_perm: 'No tiene permiso para importar.', a_csv_empty: 'El CSV parece estar vacío.', a_csv_cols: 'El CSV debe incluir al menos las columnas "First Name" y "Last Name".', a_import_done: 'Importación finalizada: {ok} agregados{fail}.', a_import_fail_suffix: ', {n} fallaron (ver consola)', c_del_employee: '¿Eliminar al empleado {id}?', c_gen_login: '¿Generar un acceso para {name}?', a_no_account: 'No se devolvió ninguna cuenta — revise la pestaña Usuarios.', a_select_valid_emp: 'Seleccione un empleado válido de la lista.', a_select_emp_first: 'Seleccione primero un empleado.',
+            err_saving_income: 'Error al guardar el ingreso: ', err_save_paytype: 'No se pudo guardar el tipo de pago: ', err_saving: 'Error al guardar: ', err_paying_bill: 'Error al pagar la factura {bill}: ',
+            // 40-income-provider
+            a_income_table_missing: 'La tabla additional_income aún no está configurada. Ejecute primero el SQL de configuración de ingresos.', a_select_emp_top: 'Seleccione primero un empleado en la parte superior de la pestaña.', a_no_income_id: 'Error: no se pudo identificar qué registro de ingreso eliminar — intente actualizar la página.', c_del_income: '¿Eliminar el ingreso {id}?', a_dailypay_missing: 'Las tablas de pago diario aún no están configuradas. Vea la nota amarilla en la pestaña Pago Diario.', c_set_emp_status: '¿Cambiar a {name} a {status}?', a_tick_bill: 'Marque al menos una factura para pagar.', c_mark_bills_paid: '¿Marcar {n} factura(s) como Pagadas ({amount}) y agregar eso al pago de proveedor de esta semana?', a_no_net_pay: 'Nadie en la vista actual tiene un monto neto a pagar para esta semana.',
+            err_could_not_send: 'No se pudo enviar el archivo: ',
+            // 50-messages
+            a_pick_person: 'Elija primero una persona.', a_pick_topic: 'Elija primero un tema.', a_pick_date: 'Elija una fecha para el hilo de Día Faltante.', a_pick_which: 'Elija sobre qué {kind} trata esta conversación.', a_pick_convo: 'Elija primero una conversación (toque +).', c_del_message: '¿Eliminar este mensaje?', a_share_file_hint: 'Para compartir un archivo, abra una conversación de Reclamo, Cargo o Ingreso — el archivo se adjunta a ese registro. (Los chats General y de Día Faltante no tienen un registro al cual adjuntar.)', a_own_files_only: 'Solo puede compartir archivos en sus propios reclamos, cargos e ingresos.', a_edit_prompt_hint: '\nDeje un valor sin cambios para conservarlo. Presione Cancelar en cualquier campo para detenerse.', a_must_be_number: '"{field}" debe ser un número. No se guardó nada.', a_release_done: 'Liberación aprobada y completada.', c_reject_change: '¿Rechazar esta solicitud de cambio?', c_approve_release: '¿Aprobar y ejecutar esta liberación ahora?', c_reject_release: '¿Rechazar esta solicitud de liberación?',
+            // 70-financial-init
+            a_enter_customer: 'Ingrese un nombre de cliente.', c_del_invoice: '¿Eliminar la factura {id} y todas sus líneas?', a_enter_desc: 'Ingrese una descripción.', a_enter_vendor: 'Ingrese un nombre de proveedor.', c_del_bill: '¿Eliminar la cuenta {id}?', c_del_vehicle: '¿Eliminar este vehículo y todo su historial de servicio?', a_enter_date_desc: 'Ingrese una fecha y una descripción.', a_pick_truck: 'Elija un camión.', a_no_export: '¡No hay datos para exportar!',
+            err_could_not_upload: 'No se pudo subir: ', err_importing_file: 'Error al importar el archivo: ', err_parsing_file: 'Error al analizar el archivo: ', err_importing: 'Error al importar: ', err_parsing_sheet: 'Error al analizar la hoja: ',
+            // 30-attach-import-deposit
+            p_rename_file: 'Renombrar archivo', c_del_file: '¿Eliminar este archivo? Esto no se puede deshacer.', c_del_claim: '¿Eliminar el reclamo {id}?', a_file_empty: 'El archivo parece estar vacío.', a_no_date_cols: 'No se encontraron columnas de semana/fecha a partir de la columna B — verifique el formato del archivo.', a_no_goal_col: 'No se encontró la columna del monto objetivo (se esperaba un encabezado que contenga "final" o "goal") después de las columnas de fecha.', a_no_first_week: 'No se pudo leer la fecha de la primera semana en la columna B.', a_sheet_empty: 'Esa hoja parece estar vacía.', a_no_7days: 'No se encontraron 7 fechas de día en la fila 2 (columnas D–J) de "{sheet}". Asegúrese de que coincida con el formato del registro de Pago Diario.', a_no_dailypay_rows: 'No se encontraron filas de pago diario importables en esta hoja.', a_no_data_rows: 'No se encontraron filas de datos en la pestaña "{sheet}".', a_no_matching_cols: 'Se encontraron {n} fila(s) en "{sheet}" pero ninguna tenía datos en las columnas Employee o Internal RefClaim — verifique que la hoja tenga esos encabezados.', c_del_charge: '¿Eliminar el cargo {id}?', a_save_emp_first: 'Guarde primero a este empleado, luego edítelo para tomar datos de Pago Diario.', a_no_dailypay_emp: 'No se encontraron entradas de Pago Diario para este empleado.', c_mark_inactive: '¿Marcar a {name} como Inactivo? Esto fija la fecha de hoy como su fecha de salida (si aún no está establecida) y retiene sus ahorros de Semana en Fondo (90 días) y su último cheque (30 días) según las reglas de liberación.', a_not_releasable: 'Esta cuenta aún no se puede liberar. Según la Última Fecha Trabajada de este empleado, la fecha elegible más temprana es {date}. Use "Liberación Anticipada" si esto debe ocurrir antes.', c_no_ldw_90: 'Este empleado no tiene una Última Fecha Trabajada registrada, por lo que no se puede verificar la regla de elegibilidad de 90 días. ¿Continuar de todos modos?', a_early_release_date: 'Esta es una liberación ANTICIPADA — la fecha elegible normal es {date}. {tail}', a_ldw_unknown: 'desconocida (sin Última Fecha Trabajada registrada)', a_will_send_admin: 'Esto se enviará a un Administrador para su aprobación.', a_continue_q: '¿Continuar?', a_paycheck_released: 'El último cheque de este empleado ya fue liberado.', a_not_releasable2: 'Esto aún no se puede liberar. Según la Última Fecha Trabajada de este empleado, la fecha elegible más temprana es {date}. Use "Liberación Anticipada" si esto debe ocurrir antes.', c_no_ldw_30: 'Este empleado no tiene una Última Fecha Trabajada registrada, por lo que no se puede verificar la regla de elegibilidad de 30 días. ¿Continuar de todos modos?', a_over_committed: 'Desmarque algo primero — el total seleccionado es mayor que lo disponible.', a_enter_paycheck: 'Ingrese primero el monto del cheque.', a_sent_approval: 'Enviado para aprobación del Administrador — aún no se ha liberado nada. Lo verá cambiar una vez que se haya actuado sobre él.',
+            // 60-i18n-sessions (settings / users / bulk-admin / routes)
+            a_no_damage_id: 'Error: no se pudo identificar qué tipo de daño eliminar — intente actualizar la página.', a_no_chargetype_id: 'Error: no se pudo identificar qué tipo de cargo eliminar — intente actualizar la página.', a_no_incometype_id: 'Error: no se pudo identificar qué tipo de ingreso eliminar — intente actualizar la página.', a_id_settings_updated: '¡Configuración de ID actualizada para registros futuros!', c_change_role: '¿Cambiar el rol de {user} de {old} a {new}?', c_signout_session: '¿Cerrar esta sesión de {who}? Deberá iniciar sesión de nuevo.', c_signout_others: '¿Cerrar sesión en todos los demás dispositivos con su cuenta? Este dispositivo permanece conectado.', p_new_password: 'Ingrese una nueva contraseña para "{user}":', a_pw_min: 'La contraseña debe tener al menos 8 caracteres.', a_pw_reset_for: 'La contraseña de "{user}" se ha restablecido.', p_employee_id: 'ID de empleado para "{user}" (deje en blanco para desvincular):', c_del_user: '¿Está seguro de que desea eliminar al usuario "{user}"?', a_user_deleted: 'Usuario "{user}" eliminado correctamente.', a_assign_user_emp: 'Asigne este usuario a un empleado.', a_select_company_user: 'Seleccione primero una compañía específica (menú superior derecho) antes de crear un usuario.', a_user_created: '¡Usuario creado correctamente!', a_access_denied: 'Acceso denegado. Se requieren privilegios de Administrador.', a_select_company_bulk: 'Seleccione primero una compañía específica (menú superior derecho). Las acciones masivas se aplican a una compañía a la vez.', c_del_all_routes: '¿Eliminar TODOS los registros de rutas de la compañía {co}?', a_routes_deleted: 'Rutas eliminadas para {co}.', c_del_all_users: 'ADVERTENCIA: Esto elimina TODAS las cuentas de usuario EXCEPTO la suya. ¿Continuar?', a_all_users_deleted: 'Todos los demás usuarios fueron eliminados. Su cuenta se conservó.', c_del_all_claims: '¿Eliminar TODOS los reclamos de la compañía {co}?', a_claims_deleted: 'Reclamos eliminados para {co}.', c_del_all_charges: '¿Eliminar TODOS los cargos de la compañía {co}?', a_charges_deleted: 'Cargos eliminados para {co}.', c_wipe_company: 'CRÍTICO: Borrar TODOS los datos operativos (rutas, empleados, reclamos, cargos) de la compañía {co}, excepto las cuentas de usuario. No se puede deshacer. ¿Continuar?', a_opdata_reset: 'Datos operativos restablecidos para {co}.', p_reset_system: 'Esto elimina todas las cuentas de usuario excepto los Súper Admin, y borra el Registro y las Aprobaciones. Las compañías y sus datos se conservan.\n\nEscriba RESET SYSTEM para confirmar:', a_not_confirmed: 'No confirmado — no se cambió nada.', a_system_reset_done: 'Restablecimiento del sistema completo. Se eliminaron todas las cuentas que no son Súper Admin; el Registro y las Aprobaciones están vacíos. Los datos de las compañías no se modificaron.', a_select_company_route: 'Seleccione una Compañía para esta ruta.', a_tab_empty: 'La pestaña \'{sheet}\' del archivo de Excel está vacía.', a_routes_imported: '¡Se importaron y sincronizaron correctamente {n} rutas de la pestaña \'{sheet}\'!', c_del_route: '¿Eliminar esta ruta?'
         }
     };
 
@@ -729,9 +773,9 @@
     });
 
     async function removeDamageType(name) {
-        if (!name) { alert('Error: could not identify which damage type to delete — try refreshing the page.'); return; }
+        if (!name) { alert(t('a_no_damage_id')); return; }
         const { error } = await supabaseClient.rpc('remove_type_value', { p_actor: currentUsername, p_kind: 'damage', p_value: name });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         damageTypes = damageTypes.filter(d => d !== name);
         renderSettingsLists();
         populateDropdowns();
@@ -750,9 +794,9 @@
     });
 
     async function removeChargeType(name) {
-        if (!name) { alert('Error: could not identify which charge type to delete — try refreshing the page.'); return; }
+        if (!name) { alert(t('a_no_chargetype_id')); return; }
         const { error } = await supabaseClient.rpc('remove_type_value', { p_actor: currentUsername, p_kind: 'charge', p_value: name });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         chargeTypes = chargeTypes.filter(ct => ct !== name);
         renderSettingsLists();
         populateDropdowns();
@@ -771,9 +815,9 @@
     });
 
     async function removeIncomeType(name) {
-        if (!name) { alert('Error: could not identify which income type to delete — try refreshing the page.'); return; }
+        if (!name) { alert(t('a_no_incometype_id')); return; }
         const { error } = await supabaseClient.rpc('remove_type_value', { p_actor: currentUsername, p_kind: 'income', p_value: name });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         incomeTypes = incomeTypes.filter(it => it !== name);
         renderSettingsLists();
         populateDropdowns();
@@ -785,7 +829,7 @@
         settings.claimDigits = parseInt(document.getElementById('set-claim-digits').value) || 5;
         settings.chargeDigits = parseInt(document.getElementById('set-charge-digits').value) || 5;
         settings.chargeSuffix = document.getElementById('set-charge-suffix').value.trim();
-        alert('ID settings updated for future records!');
+        alert(t('a_id_settings_updated'));
     });
 
     // --- USERS MANAGEMENT & INDIVIDUAL DELETION ---
@@ -806,9 +850,9 @@
     // server enforces the same limits — Admins can't grant/alter SuperAdmin).
     async function changeUserRole(username, newRole, oldRole) {
         if (newRole === oldRole) return;
-        if (!confirm(`Change ${username}'s role from ${oldRole} to ${newRole}?`)) { fetchUsersList(); return; }
+        if (!confirm(t('c_change_role').replace('{user}', username).replace('{old}', oldRole).replace('{new}', newRole))) { fetchUsersList(); return; }
         const { error } = await supabaseClient.rpc('set_user_role', { p_actor: currentUsername, p_target: username, p_new_role: newRole });
-        if (error) { alert('Error: ' + error.message); fetchUsersList(); return; }
+        if (error) { alert(t('err_prefix') + error.message); fetchUsersList(); return; }
         fetchUsersList();
     }
 
@@ -862,16 +906,16 @@
     }
 
     async function revokeSession(id, who) {
-        if (!confirm(`Sign out this session for ${who}? They will need to sign in again.`)) return;
+        if (!confirm(t('c_signout_session').replace('{who}', who))) return;
         const { error } = await supabaseClient.rpc('revoke_session', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         loadSessions();
     }
 
     async function signOutOtherDevices() {
-        if (!confirm('Sign out every other device signed in as you? This device stays signed in.')) return;
+        if (!confirm(t('c_signout_others'))) return;
         const { data, error } = await supabaseClient.rpc('revoke_my_other_sessions', { p_actor: currentUsername });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         const n = parseInt(data, 10) || 0;
         alert(n ? `Signed out ${n} other device${n === 1 ? '' : 's'}.` : 'No other devices were signed in.');
         if (document.getElementById('sessions-body')) loadSessions();
@@ -979,10 +1023,10 @@
     }
 
     async function resetUserPassword(usernameToReset) {
-        const newPass = prompt(`Enter a new password for "${usernameToReset}":`);
+        const newPass = prompt(t('p_new_password').replace('{user}', usernameToReset));
         if (newPass === null) return; // cancelled
         if (!newPass || newPass.length < 8) {
-            alert('Password must be at least 8 characters.');
+            alert(t('a_pw_min'));
             return;
         }
 
@@ -992,7 +1036,7 @@
         if (error) {
             alert('Error resetting password: ' + error.message);
         } else {
-            alert(`Password for "${usernameToReset}" has been reset.`);
+            alert(t('a_pw_reset_for').replace('{user}', usernameToReset));
         }
     }
 
@@ -1001,7 +1045,7 @@
     // employee can only ever be linked to one account at a time and that the
     // employee belongs to this user's own company.
     async function editUserEmployeeId(username, currentId) {
-        const val = prompt(`Employee ID for "${username}" (leave blank to unlink):`, currentId || '');
+        const val = prompt(t('p_employee_id').replace('{user}', username), currentId || '');
         if (val === null) return; // cancelled
         const newId = val.trim() || null;
         if (newId === (currentId || null)) return; // unchanged
@@ -1009,21 +1053,21 @@
             p_actor: currentUsername, p_target: username, p_employee_id: newId
         });
         if (error) {
-            alert('Error: ' + error.message);
+            alert(t('err_prefix') + error.message);
         } else {
             fetchUsersList();
         }
     }
 
     async function deleteUser(usernameToDel) {
-        if (confirm(`Are you sure you want to delete user "${usernameToDel}"?`)) {
+        if (confirm(t('c_del_user').replace('{user}', usernameToDel))) {
             const { error } = await supabaseClient.rpc('delete_user', {
                 p_actor: currentUsername, p_target: usernameToDel
             });
             if (error) {
                 alert('Error deleting user: ' + error.message);
             } else {
-                alert(`User "${usernameToDel}" deleted successfully.`);
+                alert(t('a_user_deleted').replace('{user}', usernameToDel));
                 fetchUsersList();
             }
         }
@@ -1035,16 +1079,16 @@
         const password = document.getElementById('new-user-pass').value;
         const role = document.getElementById('new-user-role').value;
         const employeeId = document.getElementById('new-user-employee').value;
-        if (role !== 'SuperAdmin' && !employeeId) { alert('Please assign this user to an employee.'); return; }
+        if (role !== 'SuperAdmin' && !employeeId) { alert(t('a_assign_user_emp')); return; }
         let userCo = writeCompany();
-        if (role !== 'SuperAdmin' && !userCo) { alert('Select a specific company first (top-right dropdown) before creating a user.'); return; }
+        if (role !== 'SuperAdmin' && !userCo) { alert(t('a_select_company_user')); return; }
         const { error } = await supabaseClient.rpc('create_user', {
             p_actor: currentUsername, p_username: username, p_password: password, p_role: role,
             p_company: userCo, p_employee_id: employeeId || null
         });
-        if (error) alert('Error: ' + error.message);
+        if (error) alert(t('err_prefix') + error.message);
         else {
-            alert('User created successfully!');
+            alert(t('a_user_created'));
             document.getElementById('create-user-form').reset();
             fetchUsersList();
         }
@@ -1055,12 +1099,12 @@
     // Scope: a company must be selected. Deletes are limited to that company.
     function dangerScope() {
         if (currentUserRole !== 'Administrator' && currentUserRole !== 'SuperAdmin') {
-            alert('Access denied. Administrator privileges required.');
+            alert(t('a_access_denied'));
             return undefined;
         }
         const co = (currentUserRole === 'SuperAdmin') ? currentCompany : (currentUser ? currentUser.company_code : null);
         if (!co) {
-            alert('Select a specific company first (top-right dropdown). Bulk actions apply to one company at a time.');
+            alert(t('a_select_company_bulk'));
             return undefined;
         }
         return co;
@@ -1068,55 +1112,55 @@
 
     async function adminDeleteAllRoutes() {
         const co = dangerScope(); if (co === undefined) return;
-        if (confirm(`Delete ALL route records for company ${co}?`)) {
+        if (confirm(t('c_del_all_routes').replace('{co}', co))) {
             const { error } = await supabaseClient.rpc('delete_all_routes', { p_actor: currentUsername, p_company: co });
-            if (error) alert('Error: ' + error.message);
-            else alert('Routes deleted for ' + co + '.');
+            if (error) alert(t('err_prefix') + error.message);
+            else alert(t('a_routes_deleted').replace('{co}', co));
             fetchRoutesFromCloud();
         }
     }
 
     async function adminDeleteAllUsers() {
         if (currentUserRole !== 'Administrator' && currentUserRole !== 'SuperAdmin') {
-            alert('Access denied. Administrator privileges required.');
+            alert(t('a_access_denied'));
             return;
         }
-        if (confirm("WARNING: This deletes ALL user accounts EXCEPT your own. Proceed?")) {
+        if (confirm(t('c_del_all_users'))) {
             const { error } = await supabaseClient.rpc('delete_all_other_users', { p_actor: currentUsername });
-            if (error) alert('Error: ' + error.message);
-            else { alert('All other users deleted. Your account was kept.'); fetchUsersList(); }
+            if (error) alert(t('err_prefix') + error.message);
+            else { alert(t('a_all_users_deleted')); fetchUsersList(); }
         }
     }
 
     async function adminDeleteAllClaims() {
         const co = dangerScope(); if (co === undefined) return;
-        if (confirm(`Delete ALL claims for company ${co}?`)) {
+        if (confirm(t('c_del_all_claims').replace('{co}', co))) {
             const { error } = await supabaseClient.rpc('delete_all_claims', { p_actor: currentUsername, p_company: co });
-            if (error) alert('Error: ' + error.message);
-            else alert('Claims deleted for ' + co + '.');
+            if (error) alert(t('err_prefix') + error.message);
+            else alert(t('a_claims_deleted').replace('{co}', co));
             fetchClaimsFromCloud();
         }
     }
 
     async function adminDeleteAllCharges() {
         const co = dangerScope(); if (co === undefined) return;
-        if (confirm(`Delete ALL charges for company ${co}?`)) {
+        if (confirm(t('c_del_all_charges').replace('{co}', co))) {
             const { error } = await supabaseClient.rpc('delete_all_charges', { p_actor: currentUsername, p_company: co });
-            if (error) alert('Error: ' + error.message);
-            else alert('Charges deleted for ' + co + '.');
+            if (error) alert(t('err_prefix') + error.message);
+            else alert(t('a_charges_deleted').replace('{co}', co));
             fetchChargesFromCloud();
         }
     }
 
     async function adminResetAllDataExceptUsers() {
         const co = dangerScope(); if (co === undefined) return;
-        if (confirm(`CRITICAL: Wipe ALL operational data (routes, employees, claims, charges) for company ${co}, except user accounts. Cannot be undone. Proceed?`)) {
+        if (confirm(t('c_wipe_company').replace('{co}', co))) {
             try {
                 const { error } = await supabaseClient.rpc('reset_company_data', { p_actor: currentUsername, p_company: co });
                 if (error) {
                     alert('Error resetting data: ' + error.message);
                 } else {
-                    alert('Operational data reset for ' + co + '.');
+                    alert(t('a_opdata_reset').replace('{co}', co));
                 }
                 fetchAllDataFromCloud();
             } catch (err) {
@@ -1131,12 +1175,12 @@
     // phrase to confirm, given the scale of what this removes.
     async function superAdminResetSystem() {
         if (currentUserRole !== 'SuperAdmin') return;
-        const typed = prompt('This removes every user account except Super Admins, and clears the Log and Approvals. Companies and their data are kept.\n\nType RESET SYSTEM to confirm:');
-        if (typed !== 'RESET SYSTEM') { if (typed !== null) alert('Not confirmed — nothing was changed.'); return; }
+        const typed = prompt(t('p_reset_system'));
+        if (typed !== 'RESET SYSTEM') { if (typed !== null) alert(t('a_not_confirmed')); return; }
         try {
             const { error } = await supabaseClient.rpc('reset_system_data', { p_actor: currentUsername });
-            if (error) { alert('Error: ' + error.message); return; }
-            alert('System reset complete. Every non-Super Admin account was removed; the Log and Approvals are cleared. Company data is untouched.');
+            if (error) { alert(t('err_prefix') + error.message); return; }
+            alert(t('a_system_reset_done'));
             fetchUsersList();
             renderLog();
             renderApprovals();
@@ -1211,7 +1255,7 @@
         const selCode = document.getElementById('f-contractor').value;
         const selCompany = (companies || []).find(c => c.code === selCode);
         const routeCo = selCode || requireWriteCompany();
-        if (!routeCo) { alert('Please select a Company for this route.'); return; }
+        if (!routeCo) { alert(t('a_select_company_route')); return; }
         // store the company name in the route's contractor field (keeps the
         // Daily Report grouping working), and scope the record by its code
         rawData.contractor = selCompany ? selCompany.name : (rawData.contractor || selCode);
@@ -1226,7 +1270,7 @@
             // key column), so it's stripped out explicitly before sending.
             const { id: _unusedId, ...routeFields } = rawData;
             const { data, error } = await supabaseClient.rpc('edit_route', { p_actor: currentUsername, p_id: parseInt(editingRouteId), p_fields: routeFields });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             cancelRouteEdit();
             fetchRoutesFromCloud();
             return;
@@ -1235,7 +1279,7 @@
         const payload = buildRoutePayload(rawData);
         payload.company_code = routeCo;
         const { error } = await supabaseClient.rpc('create_route', { p_actor: currentUsername, p_fields: payload });
-        if (error) alert('Error: ' + error.message);
+        if (error) alert(t('err_prefix') + error.message);
         else {
             document.getElementById('route-form').reset();
             fetchRoutesFromCloud();
@@ -1261,7 +1305,7 @@
                 const json = XLSX.utils.sheet_to_json(worksheet, { range: 1 });
                 
                 if (!json.length) {
-                    alert(`The '${targetSheetName}' tab in the Excel file is empty.`);
+                    alert(t('a_tab_empty').replace('{sheet}', targetSheetName));
                     return;
                 }
 
@@ -1302,7 +1346,7 @@
                 if (error) {
                     alert('Error syncing routes to Supabase: ' + error.message);
                 } else {
-                    alert(`Successfully imported and synced ${newRoutes.length} routes from the '${targetSheetName}' tab!`);
+                    alert(t('a_routes_imported').replace('{n}', newRoutes.length).replace('{sheet}', targetSheetName));
                     document.getElementById('file-upload').value = '';
                     fetchRoutesFromCloud();
                 }
@@ -1331,9 +1375,9 @@
     }
 
     async function deleteRoute(id) {
-        if(confirm("Delete this route?")) {
+        if(confirm(t('c_del_route'))) {
             const { error } = await supabaseClient.rpc('delete_route', { p_actor: currentUsername, p_id: id });
-            if (error) alert('Error: ' + error.message);
+            if (error) alert(t('err_prefix') + error.message);
             fetchRoutesFromCloud();
         }
     }

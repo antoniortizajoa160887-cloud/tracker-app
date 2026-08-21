@@ -348,7 +348,7 @@
 
     async function adminCancelGlobalSignout() {
         if (!activeGlobalSignout) return;
-        if (!confirm('Cancel the scheduled sign-out for everyone?')) return;
+        if (!confirm(t('c_cancel_signout'))) return;
         try {
             await rpcResilient('cancel_global_signout', { p_actor: currentUsername, p_id: activeGlobalSignout.id });
         } catch (e) { /* poll will reconcile */ }
@@ -615,7 +615,7 @@
                     : error.message;
                 return;
             }
-            alert('Two-factor authentication has been turned off.');
+            alert(t('a_2fa_off'));
             closeTwofaManage();
         } catch (err) {
             errEl.textContent = 'Could not reach the server: ' + (err && err.message ? err.message : err);
@@ -625,14 +625,14 @@
     // Admin reset: turn off another user's 2FA (device-lost recovery). Server
     // restricts this to Administrator/SuperAdmin.
     async function resetUser2FA(usernameToReset) {
-        if (!confirm(`Turn off two-factor authentication for "${usernameToReset}"?\n\nUse this only if they lost their device. They'll be asked to set it up again next time they sign in (if their role requires it).`)) return;
+        if (!confirm(t('c_reset_2fa').replace('{user}', usernameToReset))) return;
         try {
             const { error } = await supabaseClient.rpc('disable_2fa', { p_actor: currentUsername, p_target: usernameToReset });
             if (error) { alert(error.message); return; }
-            alert(`Two-factor authentication was reset for "${usernameToReset}".`);
+            alert(t('a_2fa_reset_for').replace('{user}', usernameToReset));
             fetchUsersList();
         } catch (err) {
-            alert('Could not reach the server: ' + (err && err.message ? err.message : err));
+            alert(t('err_could_not_reach') + (err && err.message ? err.message : err));
         }
     }
 
