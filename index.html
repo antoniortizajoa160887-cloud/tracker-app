@@ -2695,8 +2695,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.44';
+    const APP_VERSION = 'v3.45';
     const CHANGELOG = [
+        { version: 'v3.45', date: '2026-08-21', notes: 'The unusual-activity sign-in pop-up now names who is affected, and is shown to Medium level and above. Previously it only told you how many accounts or networks had many failed sign-ins; now it lists each one by username and employee ID (a network shows its address instead), so you can see exactly which account is being targeted and jump straight to it. The same username-and-ID detail now also shows in the Users → Recent failed sign-ins list. Managers at Medium level (not only Administrators) now receive this heads-up and can open the Recent failed sign-ins screen. The warning about your own account is unchanged.' },
         { version: 'v3.44', date: '2026-08-21', notes: 'Tidier Users screen, clearer tables, and a heads-up when sign-ins look suspicious. (1) On the Users screen the "System Users" list is now collapsible and starts collapsed — tap its heading to open it — so "Active sessions" and "Recent failed sign-ins" are easier to reach without scrolling past a long list. (2) Active sessions, Recent failed sign-ins, and System Users now all show as tidy tables on phone and desktop alike (on a narrow phone the table scrolls sideways inside its box), instead of switching to cards on mobile. Signing a session out works exactly as before — the Sign out button is in each session’s row. (3) New: right after you sign in, if there have been many failed sign-in attempts you get a short pop-up. You are warned about attempts on your own account (with a shortcut to change your password), and Administrators are additionally warned when any account or network has had many failures in the last 24 hours (with a shortcut to review them). "Many" means an account or network that got locked, or 10 or more failed tries. If nothing looks unusual, no pop-up appears.' },
         { version: 'v3.43', date: '2026-08-21', notes: 'Small consistency fix so account options match on phone and desktop. The “Sign out my other devices” option now also appears in the desktop side-menu account section (bottom-left), where previously it was only in the phone’s ⋮ menu. Everything else is unchanged: on a phone or installed app, the ⋮ button (top-right) still opens Change Password, Two-Factor Authentication, Sign out my other devices, and Sign Out; two-factor setup and the sign-in code prompt already work the same on phone, desktop and the installed app; and Administrators still find “Active sessions” and “Recent failed sign-ins” on the Users screen, which lays out as tap-friendly cards on a phone.' },
         { version: 'v3.42', date: '2026-08-21', notes: 'Two-factor authentication (2FA) for stronger sign-in security. You can now protect your account with a second step at sign-in: a 6-digit code from a free authenticator app on your phone (Google Authenticator, Microsoft Authenticator, Authy, 1Password, and others). Once it is on, signing in asks for your password and then the current code, so a stolen password by itself is no longer enough to get in. (1) To turn it on yourself, open the account menu (the ⋮ button, or the bottom of the side menu) → Two-Factor Authentication → Set up now. Add the account to your authenticator app — tap “Open in authenticator app” on a phone, or type the shown key — then enter the 6-digit code once to confirm and save the eight one-time recovery codes it gives you. (2) Manager-level accounts (Medium and Administrator, plus Super Admin) are asked to set this up the next time they sign in and cannot skip it; View Only accounts may turn it on but are never required to. (3) Lost your phone? Enter one of your saved recovery codes in place of the app code (each works once), or ask an Administrator to reset your 2FA from the Users screen — after a reset you just set it up again. (4) Administrators can see who has 2FA on (a 🔐 marker on the Users list) and reset it for anyone who gets locked out. Everything is checked on the server; the secret and the recovery codes are stored hashed and are never shown again after setup.' },
@@ -3873,19 +3874,31 @@
             parts.push(`<p style="margin:0 0 10px;">There ${mine === 1 ? 'was' : 'were'} <strong>${mine}</strong> failed sign-in attempt${mine === 1 ? '' : 's'} on <strong>your account</strong> recently. If that wasn't you, change your password now.</p>`);
             actions.push({ label: '🔑 Change my password', primary: true, fn: () => toggleChangePasswordCard() });
         }
-        let adminCount = 0;
-        if (currentUserRole === 'Administrator' || currentUserRole === 'SuperAdmin') {
+        // Medium and above are shown which accounts/networks look suspicious,
+        // named (username + employee ID), not just a count.
+        if (currentUserRole === 'Medium' || currentUserRole === 'Administrator' || currentUserRole === 'SuperAdmin') {
+            let flagged = [];
             try {
                 const { data } = await supabaseClient.rpc('list_login_attempts', { p_actor: currentUsername });
                 const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-                adminCount = (data || []).filter(r => {
+                flagged = (data || []).filter(r => {
                     const recent = r.last_fail_at && new Date(r.last_fail_at).getTime() >= cutoff;
                     const heavy = !!r.locked_until || (r.fail_count || 0) >= 10;
                     return recent && heavy;
-                }).length;
+                });
             } catch (e) { console.error('security scan failed:', e); }
-            if (adminCount > 0) {
-                parts.push(`<p style="margin:0 0 10px;"><strong>${adminCount}</strong> account${adminCount === 1 ? '' : 's'} or network${adminCount === 1 ? '' : 's'} had many failed sign-ins in the last 24 hours. Review them to check for an attack in progress.</p>`);
+            if (flagged.length) {
+                const MAX = 8;
+                const items = flagged.slice(0, MAX).map(r => {
+                    if (r.kind === 'network') {
+                        return `<li>Network <strong>${escHtml(r.subject)}</strong> — ${r.fail_count} failed</li>`;
+                    }
+                    const id = r.emp_id ? ` <span style="color:var(--text-muted);">(${escHtml(r.emp_id)})</span>` : '';
+                    return `<li><strong>${escHtml(r.subject)}</strong>${id} — ${r.fail_count} failed</li>`;
+                }).join('');
+                const more = flagged.length > MAX ? `<li>…and ${flagged.length - MAX} more</li>` : '';
+                parts.push(`<p style="margin:0 0 6px;">These accounts or networks had many failed sign-ins in the last 24 hours:</p>
+                    <ul style="margin:0 0 10px; padding-left:18px;">${items}${more}</ul>`);
                 actions.push({ label: '🔎 Review sign-ins', primary: mine < 5, fn: () => openFailedSignins() });
             }
         }
@@ -11120,7 +11133,7 @@
             const locked = r.locked_until && new Date(r.locked_until) > new Date();
             return `<tr>
                 <td><span class="type-pill" style="font-size:9px; padding:1px 6px;">${r.kind === 'network' ? 'Network' : 'Account'}</span></td>
-                <td style="font-family:var(--mono);">${escHtml(r.subject)}</td>
+                <td style="font-family:var(--mono);">${escHtml(r.subject)}${(r.kind !== 'network' && r.emp_id) ? ` <span style="color:var(--text-muted);">(${escHtml(r.emp_id)})</span>` : ''}</td>
                 <td style="text-align:center; color:${r.fail_count >= 5 ? '#dc2626' : 'var(--text-muted)'}; font-weight:700;">${r.fail_count}</td>
                 <td style="text-align:center;">${locked ? '<span class="exp-pill exp-over">locked</span>' : ''}</td>
                 <td style="white-space:nowrap; font-family:var(--mono);">${fmtWhen(r.last_fail_at)}</td>
