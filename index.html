@@ -2779,8 +2779,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.49';
+    const APP_VERSION = 'v3.50';
     const CHANGELOG = [
+        { version: 'v3.50', date: '2026-08-21', notes: 'Two-factor setup reminders are now every 15 days instead of on every sign-in. If your role recommends 2FA and you tap “Skip for now”, you won’t be asked again for 15 days — then you’ll get one more reminder, and so on until you turn it on. It is never forced: you can always skip or sign out, the setup screen retries automatically if the connection drops, and once 2FA is on the reminders stop. If an Administrator resets your 2FA, the 15-day reminder cycle starts fresh.' },
         { version: 'v3.49', date: '2026-08-21', notes: 'The “Sign Out All Users” countdown now appears almost instantly for everyone instead of within about 20 seconds. When an Administrator starts — or cancels — a sign-out, every open screen is notified in real time and shows (or clears) the banner right away. If the real-time channel is ever unavailable, the app still falls back to its regular periodic check, so the countdown always appears; the shut-off time itself was already exact. No change to how it works otherwise.' },
         { version: 'v3.48', date: '2026-08-21', notes: 'Managers now see failed sign-ins only for their own company. The “Recent failed sign-ins” list and the unusual-activity pop-up previously showed failed attempts for accounts in every company to any Administrator or Medium manager; they now show only accounts in the manager’s own company, matching how the rest of the app is scoped. Super Admin still sees everything. Failed attempts from a network/address (which aren’t tied to any one account) stay visible to all managers so an attack in progress is still spotted.' },
         { version: 'v3.47', date: '2026-08-21', notes: 'New: “Sign Out All Users”, with a grace period and countdown. Administrators and Super Admins can now sign everyone out — an Administrator affects their own company, a Super Admin affects everyone. Find it on the Settings screen under the red Administrator zone. (1) You choose a grace period (default 5 minutes) and can add a reason. Everyone then sees a banner counting down (for example 04:59, 04:58…) that they cannot dismiss, telling them to save their work because unsaved changes will be lost, and showing your reason if you gave one. The banner turns red in the last minute and pulses in the last 30 seconds. People can keep working and saving during the countdown. (2) When the timer reaches zero, everyone is signed out of all their devices automatically — enforced on the server, so it applies even to someone who ignores the banner. (3) You can call it off before the deadline with the “Cancel (admin)” button on the banner. (4) Every Sign Out All Users is recorded under Users → Global sign-out history: who started it, when, the scope, the grace period, how many were signed out, the reason, and whether it completed or was cancelled. Signing out your own current session, and “Sign out my other devices”, are unchanged.' },
@@ -3930,11 +3931,19 @@
         currentUser.token_expires_at = Date.now() + TOKEN_TTL_MS;
         localStorage.setItem('unified_user', JSON.stringify(currentUser));
         initAppSession();
-        // Medium+ accounts without 2FA are required to set it up now. Otherwise,
-        // surface any unusual sign-in activity (skipped while a mandatory 2FA
-        // enrollment overlay is up so we don't stack two modals).
-        if (row.must_enroll_2fa) startTwofaEnroll(true);
+        // Medium+ accounts without 2FA are reminded to set it up — but only when
+        // their 15-day snooze isn't active (each "Skip for now" snoozes it), so we
+        // nudge every 15 days rather than every sign-in, and never force it.
+        // Otherwise surface any unusual sign-in activity.
+        if (row.must_enroll_2fa && !twofaSnoozeActive(row.twofa_snooze_until)) startTwofaEnroll(true);
         else maybeShowSecurityAlert(row.recent_fail_count);
+    }
+
+    // Is the 2FA-reminder snooze still in the future?
+    function twofaSnoozeActive(ts) {
+        if (!ts) return false;
+        const t = new Date(ts).getTime();
+        return !isNaN(t) && Date.now() < t;
     }
 
     // ===== Unusual-activity heads-up (shown once after sign-in) =====
@@ -4187,7 +4196,7 @@
         document.getElementById('twofa-done-btn').disabled = true;
         document.getElementById('twofa-secret-key').textContent = '…';
         document.getElementById('twofa-enroll-intro').textContent = mandatory
-            ? 'Your role requires two-factor authentication. Set it up now — or skip and you’ll be asked again next time you sign in.'
+            ? 'Your role recommends two-factor authentication. Set it up now, or skip — we’ll remind you again in 15 days.'
             : 'Add a second step at sign-in for extra security.';
         // Mandatory: always offer a way out (Skip / Sign out) so a network glitch
         // can never trap the account. Optional: a plain Cancel.
@@ -4219,12 +4228,20 @@
         setTimeout(() => document.getElementById('twofa-confirm-code').focus(), 40);
     }
 
-    // "Skip for now" on a required setup: let them into the app for this session.
-    function skipTwofaEnroll() {
+    // "Skip for now": let them into the app, and snooze the reminder 15 days so
+    // they're nudged again next time rather than on every sign-in.
+    async function skipTwofaEnroll() {
         twofaEnrollSkipped = true;
         enroll2faState = null;
         window._twofaRecovery = null;
         document.getElementById('twofa-enroll-overlay').style.display = 'none';
+        try {
+            const { data } = await rpcResilient('skip_2fa_enrollment', { p_actor: currentUsername });
+            if (currentUser && typeof data === 'string' && data) {
+                currentUser.twofa_snooze_until = data;   // scalar timestamptz from the RPC
+                try { localStorage.setItem('unified_user', JSON.stringify(currentUser)); } catch (e) {}
+            }
+        } catch (e) { /* best-effort; the gate re-checks next login */ }
     }
 
     function copy2faKey() {
@@ -4265,6 +4282,7 @@
         // Reflect enrolled state so the mandatory gate won't reappear on restore.
         if (currentUser) {
             currentUser.must_enroll_2fa = false;
+            currentUser.twofa_snooze_until = null;
             try { localStorage.setItem('unified_user', JSON.stringify(currentUser)); } catch (e) {}
         }
         enroll2faState = null;
@@ -4471,8 +4489,8 @@
                 currentUserRole = currentUser.role;
                 authToken = currentUser.session_token;
                 initAppSession();
-                // A Medium+ account that still hasn't enrolled is gated on restore too.
-                if (currentUser.must_enroll_2fa) startTwofaEnroll(true);
+                // Same 15-day reminder gate on a restored session.
+                if (currentUser.must_enroll_2fa && !twofaSnoozeActive(currentUser.twofa_snooze_until)) startTwofaEnroll(true);
             } catch(e) {
                 console.error('Session restore failed:', e);
                 localStorage.removeItem('unified_user');
