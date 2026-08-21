@@ -1940,40 +1940,40 @@
     <div class="panel" style="margin-bottom:12px;">
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
-                <label>Person type</label>
+                <label data-i18n="person_type">Person type</label>
                 <select id="statement-type-filter" onchange="populateStatementEmployeeDropdown()">
-                    <option value="">All types</option>
-                    <option value="Contractor">Contractor</option>
-                    <option value="Employee">Employee</option>
-                    <option value="Provider">Provider</option>
-                    <option value="Staff">Staff</option>
+                    <option value="" data-i18n="all_types">All types</option>
+                    <option value="Contractor" data-i18n="contractor">Contractor</option>
+                    <option value="Employee" data-i18n="opt_employee">Employee</option>
+                    <option value="Provider" data-i18n="opt_provider">Provider</option>
+                    <option value="Staff" data-i18n="opt_staff">Staff</option>
                 </select>
             </div>
             <div class="field">
-                <label>Status</label>
+                <label data-i18n="status_field">Status</label>
                 <select id="statement-status-filter" onchange="populateStatementEmployeeDropdown()">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="">All statuses</option>
+                    <option value="Active" data-i18n="active_opt">Active</option>
+                    <option value="Inactive" data-i18n="inactive_opt">Inactive</option>
+                    <option value="" data-i18n="all_statuses">All statuses</option>
                 </select>
             </div>
             <div class="field field-wide">
-                <input type="text" id="statement-search" placeholder="Search name or ID..." oninput="populateStatementEmployeeDropdown()">
+                <input type="text" id="statement-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="populateStatementEmployeeDropdown()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('statement')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="form-row" style="margin-bottom:0; margin-top:8px;">
             <div class="field" style="flex:1 1 300px;">
-                <label>Employee</label>
-                <select id="statement-emp-select" onchange="renderStatement()"><option value="">— Select employee —</option></select>
+                <label data-i18n="employee_field">Employee</label>
+                <select id="statement-emp-select" onchange="renderStatement()"><option value="" data-i18n="select_employee_opt">— Select employee —</option></select>
             </div>
         </div>
         <div class="week-nav" style="margin-top:10px;">
-            <button class="btn-small" onclick="shiftStatementWeek(-1)">◀ Prev</button>
+            <button class="btn-small" onclick="shiftStatementWeek(-1)" data-i18n="prev_btn">◀ Prev</button>
             <span class="wk-label" id="statement-week-label">—</span>
-            <button class="btn-small" onclick="shiftStatementWeek(1)">Next ▶</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="goToThisStatementWeek()">This week</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="printStatement()">🖨 Print</button>
+            <button class="btn-small" onclick="shiftStatementWeek(1)" data-i18n="next_btn">Next ▶</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="goToThisStatementWeek()" data-i18n="this_week">This week</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="printStatement()" data-i18n="print_btn">🖨 Print</button>
         </div>
         <div class="stat-grid" id="statement-stats-grid" style="margin-top:10px;"></div>
     </div>
@@ -1984,43 +1984,43 @@
 <!-- TAB: DAILY PAY -->
 <div id="tab-dailypay" class="tab-content">
     <div class="panel" style="margin-bottom:12px;">
-        <h2>Daily Pay Timesheet</h2>
+        <h2 data-i18n="dailypay_title">Daily Pay Timesheet</h2>
         <div id="dailypay-setup" style="display:none;"></div>
         <div class="week-nav">
-            <button class="btn-small" onclick="shiftPayWeek(-1)">◀ Prev</button>
+            <button class="btn-small" onclick="shiftPayWeek(-1)" data-i18n="prev_btn">◀ Prev</button>
             <span class="wk-label" id="dailypay-week-label">—</span>
-            <button class="btn-small" onclick="shiftPayWeek(1)">Next ▶</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayWeek()">This week</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('dailypay-xlsx-input').click()">Import Registry</button>
+            <button class="btn-small" onclick="shiftPayWeek(1)" data-i18n="next_btn">Next ▶</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayWeek()" data-i18n="this_week">This week</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('dailypay-xlsx-input').click()" data-i18n="import_registry">Import Registry</button>
             <input type="file" id="dailypay-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importDailyPayExcel(event)">
-            <span class="save-flash" id="dailypay-saveflash">Saved ✓</span>
+            <span class="save-flash" id="dailypay-saveflash" data-i18n="saved_flash">Saved ✓</span>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
-                <label>Person type</label>
+                <label data-i18n="person_type">Person type</label>
                 <select id="dailypay-type-filter" onchange="renderDailyPay()">
-                    <option value="">All types</option>
-                    <option value="Contractor">Contractor</option>
-                    <option value="Employee">Employee</option>
-                    <option value="Provider">Provider</option>
-                    <option value="Staff">Staff</option>
+                    <option value="" data-i18n="all_types">All types</option>
+                    <option value="Contractor" data-i18n="contractor">Contractor</option>
+                    <option value="Employee" data-i18n="opt_employee">Employee</option>
+                    <option value="Provider" data-i18n="opt_provider">Provider</option>
+                    <option value="Staff" data-i18n="opt_staff">Staff</option>
                 </select>
             </div>
             <div class="field">
-                <label>Status</label>
+                <label data-i18n="status_field">Status</label>
                 <select id="dailypay-status-filter" onchange="renderDailyPay()">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="">All statuses</option>
+                    <option value="Active" data-i18n="active_opt">Active</option>
+                    <option value="Inactive" data-i18n="inactive_opt">Inactive</option>
+                    <option value="" data-i18n="all_statuses">All statuses</option>
                 </select>
             </div>
             <div class="field field-wide">
-                <input type="text" id="dailypay-search" placeholder="Search name or ID..." oninput="renderDailyPay()">
+                <input type="text" id="dailypay-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderDailyPay()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('dailypay')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportDailyPayExcel()">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportDailyPayExcel()" data-i18n="export_btn">⬇️ Export</button>
         </div>
-        <div class="note-box" style="margin-top:10px;">
+        <div class="note-box" style="margin-top:10px;" data-i18n="dailypay_note">
             Enter each person's pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person's pay type in the Employees tab).
         </div>
     </div>
@@ -2031,39 +2031,39 @@
 
 <!-- TAB: WEEK IN DEPOSIT -->
 <div id="tab-weekdeposit" class="tab-content">
-    <div class="note-box" style="margin-bottom:12px;">These are read from the existing <strong>Semana de Fondo</strong> charges already recorded on the Charges &amp; Income tab — a savings goal, built up week by week. This view doesn't create new ones; add a new deposit the same way as any other charge, using "Semana de Fondo" as the charge type.</div>
+    <div class="note-box" style="margin-bottom:12px;" data-i18n="weekdeposit_note">These are read from the existing <strong>Semana de Fondo</strong> charges already recorded on the Charges &amp; Income tab — a savings goal, built up week by week. This view doesn't create new ones; add a new deposit the same way as any other charge, using "Semana de Fondo" as the charge type.</div>
     <div class="panel" id="weekdeposit-form-panel" style="display:none;">
-        <h2>Edit Deposit</h2>
+        <h2 data-i18n="edit_deposit">Edit Deposit</h2>
         <form id="weekdeposit-form" style="margin-top:8px;">
             <div class="form-row">
                 <div class="field field-wide">
-                    <label>Employee</label>
+                    <label data-i18n="employee_field">Employee</label>
                     <select id="wd-employee" required disabled></select>
                 </div>
-                <div class="field"><label>Savings Goal ($)</label><input type="number" id="wd-goal" min="0" step="0.01" required></div>
-                <div class="field"><label>Weekly Saving ($)</label><input type="number" id="wd-weekly" min="0" step="0.01" required></div>
-                <div class="field"><label>Start Date</label><input type="date" id="wd-start" required></div>
-                <div class="field field-wide"><label>Notes</label><input type="text" id="wd-notes" placeholder="optional"></div>
+                <div class="field"><label data-i18n="savings_goal">Savings Goal ($)</label><input type="number" id="wd-goal" min="0" step="0.01" required></div>
+                <div class="field"><label data-i18n="weekly_saving">Weekly Saving ($)</label><input type="number" id="wd-weekly" min="0" step="0.01" required></div>
+                <div class="field"><label data-i18n="start_date">Start Date</label><input type="date" id="wd-start" required></div>
+                <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="wd-notes" placeholder="optional" data-i18n-placeholder="optional_ph"></div>
             </div>
-            <button type="submit" class="btn" id="wd-submit-btn">💾 Save changes</button>
-            <button type="button" class="btn-small" id="wd-cancel-btn" style="background:#64748b;" onclick="cancelWeekDepositEdit()">Cancel</button>
+            <button type="submit" class="btn" id="wd-submit-btn" data-i18n="save_changes">💾 Save changes</button>
+            <button type="button" class="btn-small" id="wd-cancel-btn" style="background:#64748b;" onclick="cancelWeekDepositEdit()" data-i18n="cancel">Cancel</button>
         </form>
     </div>
     <div class="stat-grid" id="weekdeposit-stats-grid" style="margin-bottom:12px;"></div>
     <div class="panel">
         <div class="form-row" style="margin-bottom:10px;">
-            <div class="field"><label>Status</label>
+            <div class="field"><label data-i18n="status_field">Status</label>
                 <select id="weekdeposit-status-filter" onchange="renderWeekDeposit()">
-                    <option value="" selected>All statuses</option>
-                    <option value="Deducting">Deducting</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Absorbed">Absorbed</option>
+                    <option value="" selected data-i18n="all_statuses">All statuses</option>
+                    <option value="Deducting" data-i18n="deducting_opt">Deducting</option>
+                    <option value="Paid" data-i18n="paid_opt">Paid</option>
+                    <option value="Absorbed" data-i18n="absorbed_opt">Absorbed</option>
                 </select>
             </div>
-            <div class="field field-wide"><input type="text" id="weekdeposit-search" placeholder="Search name or ID..." oninput="renderWeekDeposit()"></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('weekdeposit')">✕ Clear filters</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildWeekDepositSummaryReport(), 'week_in_deposit_summary.xlsx')">📊 Summary Report (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildWeekDepositSummaryReport())">📊 Summary Report (PDF)</button>
+            <div class="field field-wide"><input type="text" id="weekdeposit-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderWeekDeposit()"></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('weekdeposit')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildWeekDepositSummaryReport(), 'week_in_deposit_summary.xlsx')" data-i18n="summary_report_excel">📊 Summary Report (Excel)</button>
+            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildWeekDepositSummaryReport())" data-i18n="summary_report_pdf">📊 Summary Report (PDF)</button>
         </div>
         <div id="weekdeposit-tbody"></div>
     </div>
@@ -2072,32 +2072,32 @@
 <!-- TAB: PROVIDER PAY -->
 <div id="tab-providerpay" class="tab-content">
     <div class="panel" style="margin-bottom:12px;">
-        <h2>Provider Pay</h2>
+        <h2 data-i18n="providerpay_title">Provider Pay</h2>
         <div class="week-nav">
-            <button class="btn-small" onclick="shiftProviderWeek(-1)">◀ Prev</button>
+            <button class="btn-small" onclick="shiftProviderWeek(-1)" data-i18n="prev_btn">◀ Prev</button>
             <span class="wk-label" id="providerpay-week-label">—</span>
-            <button class="btn-small" onclick="shiftProviderWeek(1)">Next ▶</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="goToThisProviderWeek()">This week</button>
-            <span class="save-flash" id="providerpay-saveflash">Saved ✓</span>
+            <button class="btn-small" onclick="shiftProviderWeek(1)" data-i18n="next_btn">Next ▶</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="goToThisProviderWeek()" data-i18n="this_week">This week</button>
+            <span class="save-flash" id="providerpay-saveflash" data-i18n="saved_flash">Saved ✓</span>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
-                <label>Status</label>
+                <label data-i18n="status_field">Status</label>
                 <select id="providerpay-status-filter" onchange="renderProviderPay()">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="">All statuses</option>
+                    <option value="Active" data-i18n="active_opt">Active</option>
+                    <option value="Inactive" data-i18n="inactive_opt">Inactive</option>
+                    <option value="" data-i18n="all_statuses">All statuses</option>
                 </select>
             </div>
             <div class="field field-wide">
-                <input type="text" id="providerpay-search" placeholder="Search name or ID..." oninput="renderProviderPay()">
+                <input type="text" id="providerpay-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderProviderPay()">
             </div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('providerpay')">✕ Clear filters</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportProviderPayExcel()">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('providerpay-import-input').click()">⬆️ Import</button>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('providerpay')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportProviderPayExcel()" data-i18n="export_btn">⬇️ Export</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('providerpay-import-input').click()" data-i18n="import_btn">⬆️ Import</button>
             <input type="file" id="providerpay-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importProviderPayExcel(event)">
         </div>
-        <div class="note-box" style="margin-top:10px;">
+        <div class="note-box" style="margin-top:10px;" data-i18n="providerpay_note">
             Enter each provider's pay for the week — a single amount, since providers aren't on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person's pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does. <strong>Linked to Bills Payable:</strong> any unpaid bill whose vendor matches a provider's name shows under that provider — tick one or more and tap “Pay selected” to mark those bills Paid and add their total to this week's amount.
         </div>
     </div>
@@ -2108,40 +2108,40 @@
 
 <div id="tab-payroll" class="tab-content">
     <div class="panel" style="margin-bottom:12px;">
-        <h2>Payroll Summary</h2>
+        <h2 data-i18n="payroll_title">Payroll Summary</h2>
         <div class="week-nav">
-            <button class="btn-small" onclick="shiftPayrollWeek(-1)">◀ Prev</button>
+            <button class="btn-small" onclick="shiftPayrollWeek(-1)" data-i18n="prev_btn">◀ Prev</button>
             <span class="wk-label" id="payroll-week-label">—</span>
-            <button class="btn-small" onclick="shiftPayrollWeek(1)">Next ▶</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayrollWeek()">This week</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()">🖨 Print All</button>
-            <button class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildPayrollSummaryReport(), 'payroll_summary.xlsx')">📊 Summary Report (Excel)</button>
-            <button class="btn-small" style="background:#0f766e;" onclick="printReport(buildPayrollSummaryReport())">📊 Summary Report (PDF)</button>
+            <button class="btn-small" onclick="shiftPayrollWeek(1)" data-i18n="next_btn">Next ▶</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayrollWeek()" data-i18n="this_week">This week</button>
+            <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()" data-i18n="print_all">🖨 Print All</button>
+            <button class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildPayrollSummaryReport(), 'payroll_summary.xlsx')" data-i18n="summary_report_excel">📊 Summary Report (Excel)</button>
+            <button class="btn-small" style="background:#0f766e;" onclick="printReport(buildPayrollSummaryReport())" data-i18n="summary_report_pdf">📊 Summary Report (PDF)</button>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
-                <label>Person type</label>
+                <label data-i18n="person_type">Person type</label>
                 <select id="payroll-type-filter" onchange="renderPayroll()">
-                    <option value="">All types</option>
-                    <option value="Contractor">Contractor</option>
-                    <option value="Employee">Employee</option>
-                    <option value="Provider">Provider</option>
-                    <option value="Staff">Staff</option>
+                    <option value="" data-i18n="all_types">All types</option>
+                    <option value="Contractor" data-i18n="contractor">Contractor</option>
+                    <option value="Employee" data-i18n="opt_employee">Employee</option>
+                    <option value="Provider" data-i18n="opt_provider">Provider</option>
+                    <option value="Staff" data-i18n="opt_staff">Staff</option>
                 </select>
             </div>
             <div class="field">
-                <label>Status</label>
+                <label data-i18n="status_field">Status</label>
                 <select id="payroll-status-filter" onchange="renderPayroll()">
-                    <option value="Active">Active only</option>
-                    <option value="">All statuses</option>
+                    <option value="Active" data-i18n="active_only">Active only</option>
+                    <option value="" data-i18n="all_statuses">All statuses</option>
                 </select>
             </div>
             <div class="field field-wide">
-                <input type="text" id="payroll-search" placeholder="Search name or ID..." oninput="renderPayroll()">
+                <input type="text" id="payroll-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderPayroll()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('payroll')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
-        <div class="note-box" style="margin-top:10px;">
+        <div class="note-box" style="margin-top:10px;" data-i18n="payroll_note">
             Net pay = base pay + route pay (drivers) + additional income − active weekly deductions (claims + charges currently being deducted). Base pay is the flat <strong>weekly salary</strong> for Weekly people, or this week's <strong>Daily Pay</strong> total for Daily-rate people. Route pay, additional income, and daily pay all use the current week.
         </div>
     </div>
@@ -2170,18 +2170,18 @@
 <!-- TAB: SAVINGS & RELEASE ELIGIBILITY REPORT -->
 <div id="tab-savingsreport" class="tab-content">
     <div class="panel">
-        <h2>Savings &amp; Release Eligibility</h2>
-        <div class="note-box">
+        <h2 data-i18n="savings_release_title">Savings &amp; Release Eligibility</h2>
+        <div class="note-box" data-i18n="savingsrelease_note">
             Checks are issued Thursdays and handed over Saturdays. Week in Deposit can't be released earlier than <strong>90 days</strong> after an employee's Last Date Worked; that same employee's last week worked pay can't be released earlier than <strong>30 days</strong> after it. "Pending/outstanding" includes any claim or charge — any status — with a real balance, or (claims only) a leftover absorbed amount.
         </div>
         <div class="stat-grid" id="savingsreport-stats-grid" style="margin-top:8px;"></div>
     </div>
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="savingsreport-search" placeholder="Search employee..." oninput="renderSavingsReleaseReport()"></div>
-            <div class="field"><select id="savingsreport-kind-filter" onchange="renderSavingsReleaseReport()"><option value="">All types</option><option value="Week in Deposit">Week in Deposit</option><option value="Last Paycheck">Last Paycheck</option></select></div>
-            <div class="field"><select id="savingsreport-ready-filter" onchange="renderSavingsReleaseReport()"><option value="">All eligibility</option><option value="ready">Ready to release now</option><option value="notyet">Not yet eligible</option></select></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('savingsreport')">✕ Clear filters</button>
+            <div class="field field-wide"><input type="text" id="savingsreport-search" placeholder="Search employee..." data-i18n-placeholder="search_employee_ph" oninput="renderSavingsReleaseReport()"></div>
+            <div class="field"><select id="savingsreport-kind-filter" onchange="renderSavingsReleaseReport()"><option value="" data-i18n="all_types">All types</option><option value="Week in Deposit" data-i18n="week_in_deposit_opt">Week in Deposit</option><option value="Last Paycheck" data-i18n="last_paycheck_opt">Last Paycheck</option></select></div>
+            <div class="field"><select id="savingsreport-ready-filter" onchange="renderSavingsReleaseReport()"><option value="" data-i18n="all_eligibility">All eligibility</option><option value="ready" data-i18n="ready_release_now">Ready to release now</option><option value="notyet" data-i18n="not_yet_eligible">Not yet eligible</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('savingsreport')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div id="savingsreport-tbody"></div>
     </div>
@@ -2190,14 +2190,14 @@
 <!-- TAB: RELEASE HISTORY -->
 <div id="tab-releasehistory" class="tab-content">
     <div class="panel">
-        <h2>Release History</h2>
-        <div class="note-box">Permanent record of every Week in Deposit and Last Paycheck release — original amount, what was deducted toward other claims/charges, and what actually reached the employee.</div>
+        <h2 data-i18n="release_history_title">Release History</h2>
+        <div class="note-box" data-i18n="releasehistory_note">Permanent record of every Week in Deposit and Last Paycheck release — original amount, what was deducted toward other claims/charges, and what actually reached the employee.</div>
         <div class="stat-grid" id="releasehistory-stats-grid" style="margin-top:8px;"></div>
         <div class="form-row" style="margin-top:10px;">
-            <div class="field field-wide"><input type="text" id="releasehistory-search" placeholder="Search employee, released by..." oninput="renderReleaseHistory()"></div>
-            <div class="field"><select id="releasehistory-type-filter" onchange="renderReleaseHistory()"><option value="">All types</option><option value="wd">Week in Deposit</option><option value="lp">Last Paycheck</option></select></div>
-            <div class="field"><select id="releasehistory-early-filter" onchange="renderReleaseHistory()"><option value="">Early &amp; on-time</option><option value="early">Early only</option><option value="ontime">On-time only</option></select></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('releasehistory')">✕ Clear filters</button>
+            <div class="field field-wide"><input type="text" id="releasehistory-search" placeholder="Search employee, released by..." data-i18n-placeholder="search_emp_releasedby_ph" oninput="renderReleaseHistory()"></div>
+            <div class="field"><select id="releasehistory-type-filter" onchange="renderReleaseHistory()"><option value="" data-i18n="all_types">All types</option><option value="wd" data-i18n="week_in_deposit_opt">Week in Deposit</option><option value="lp" data-i18n="last_paycheck_opt">Last Paycheck</option></select></div>
+            <div class="field"><select id="releasehistory-early-filter" onchange="renderReleaseHistory()"><option value="" data-i18n="early_ontime">Early &amp; on-time</option><option value="early" data-i18n="early_only">Early only</option><option value="ontime" data-i18n="ontime_only">On-time only</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('releasehistory')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
     </div>
     <div class="panel">
@@ -11129,7 +11129,31 @@
             expiring_note: 'Registration and insurance from Fleet, plus driver license, work permit, and medical card from Employees — all in one place, soonest first. Already-expired items show at the top.',
             show_within: 'Show within', days_30: '30 days', days_60: '60 days', days_90: '90 days', year_1: '1 year',
             everything_on_file: 'Everything on file', category: 'Category', all_categories: 'All categories', fleet_only: 'Fleet only',
-            emp_docs_only: 'Employee documents only', expiring_search_ph: 'Search name, truck #...'
+            emp_docs_only: 'Employee documents only', expiring_search_ph: 'Search name, truck #...',
+            // --- R3b: HR/Payroll (Statement, Daily Pay, Week Deposit, Provider Pay, Payroll, Savings & Release, Release History) ---
+            all_types: 'All types', contractor: 'Contractor', opt_employee: 'Employee', opt_provider: 'Provider', opt_staff: 'Staff',
+            active_opt: 'Active', inactive_opt: 'Inactive', all_statuses: 'All statuses', active_only: 'Active only',
+            search_name_id_ph: 'Search name or ID...', prev_btn: '◀ Prev', next_btn: 'Next ▶', this_week: 'This week',
+            print_btn: '🖨 Print', saved_flash: 'Saved ✓', select_employee_opt: '— Select employee —',
+            optional_ph: 'optional', save_changes: '💾 Save changes',
+            dailypay_title: 'Daily Pay Timesheet', import_registry: 'Import Registry',
+            dailypay_note: 'Enter each person\'s pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person\'s pay type in the Employees tab).',
+            weekdeposit_note: 'These are read from the existing <strong>Semana de Fondo</strong> charges already recorded on the Charges &amp; Income tab — a savings goal, built up week by week. This view doesn\'t create new ones; add a new deposit the same way as any other charge, using "Semana de Fondo" as the charge type.',
+            edit_deposit: 'Edit Deposit', savings_goal: 'Savings Goal ($)', weekly_saving: 'Weekly Saving ($)',
+            deducting_opt: 'Deducting', paid_opt: 'Paid', absorbed_opt: 'Absorbed',
+            summary_report_excel: '📊 Summary Report (Excel)', summary_report_pdf: '📊 Summary Report (PDF)',
+            providerpay_title: 'Provider Pay',
+            providerpay_note: 'Enter each provider\'s pay for the week — a single amount, since providers aren\'t on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person\'s pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does. <strong>Linked to Bills Payable:</strong> any unpaid bill whose vendor matches a provider\'s name shows under that provider — tick one or more and tap “Pay selected” to mark those bills Paid and add their total to this week\'s amount.',
+            payroll_title: 'Payroll Summary', print_all: '🖨 Print All',
+            payroll_note: 'Net pay = base pay + route pay (drivers) + additional income − active weekly deductions (claims + charges currently being deducted). Base pay is the flat <strong>weekly salary</strong> for Weekly people, or this week\'s <strong>Daily Pay</strong> total for Daily-rate people. Route pay, additional income, and daily pay all use the current week.',
+            savings_release_title: 'Savings & Release Eligibility',
+            savingsrelease_note: 'Checks are issued Thursdays and handed over Saturdays. Week in Deposit can\'t be released earlier than <strong>90 days</strong> after an employee\'s Last Date Worked; that same employee\'s last week worked pay can\'t be released earlier than <strong>30 days</strong> after it. "Pending/outstanding" includes any claim or charge — any status — with a real balance, or (claims only) a leftover absorbed amount.',
+            search_employee_ph: 'Search employee...', week_in_deposit_opt: 'Week in Deposit', last_paycheck_opt: 'Last Paycheck',
+            all_eligibility: 'All eligibility', ready_release_now: 'Ready to release now', not_yet_eligible: 'Not yet eligible',
+            release_history_title: 'Release History',
+            releasehistory_note: 'Permanent record of every Week in Deposit and Last Paycheck release — original amount, what was deducted toward other claims/charges, and what actually reached the employee.',
+            search_emp_releasedby_ph: 'Search employee, released by...',
+            early_ontime: 'Early & on-time', early_only: 'Early only', ontime_only: 'On-time only'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11248,7 +11272,31 @@
             expiring_note: 'Registro y seguro de la Flota, más licencia de conducir, permiso de trabajo y tarjeta médica de Empleados — todo en un solo lugar, lo más próximo primero. Los ya vencidos aparecen arriba.',
             show_within: 'Mostrar dentro de', days_30: '30 días', days_60: '60 días', days_90: '90 días', year_1: '1 año',
             everything_on_file: 'Todo en el archivo', category: 'Categoría', all_categories: 'Todas las categorías', fleet_only: 'Solo Flota',
-            emp_docs_only: 'Solo documentos de empleados', expiring_search_ph: 'Buscar nombre, n.º de camión...'
+            emp_docs_only: 'Solo documentos de empleados', expiring_search_ph: 'Buscar nombre, n.º de camión...',
+            // --- R3b: HR/Payroll ---
+            all_types: 'Todos los tipos', contractor: 'Contratista', opt_employee: 'Empleado', opt_provider: 'Proveedor', opt_staff: 'Personal',
+            active_opt: 'Activo', inactive_opt: 'Inactivo', all_statuses: 'Todos los estados', active_only: 'Solo activos',
+            search_name_id_ph: 'Buscar nombre o ID...', prev_btn: '◀ Ant.', next_btn: 'Sig. ▶', this_week: 'Esta semana',
+            print_btn: '🖨 Imprimir', saved_flash: 'Guardado ✓', select_employee_opt: '— Seleccionar empleado —',
+            optional_ph: 'opcional', save_changes: '💾 Guardar cambios',
+            dailypay_title: 'Hoja de pago diario', import_registry: 'Importar registro',
+            dailypay_note: 'Ingrese el pago de cada persona por los días que trabajó (dom–sáb). Toque <strong>OFF</strong> para los días libres — esos se omiten del total semanal. Las entradas se guardan automáticamente y se conservan por semana, así que puede consultar cualquier semana pasada con las flechas. Aquí solo aparecen las personas con <strong>Tarifa diaria</strong> (cambie el tipo de pago de una persona en la pestaña Empleados).',
+            weekdeposit_note: 'Estos se leen de los cargos de <strong>Semana de Fondo</strong> ya registrados en la pestaña Cargos e Ingresos — una meta de ahorro, acumulada semana a semana. Esta vista no crea nuevos; agregue un nuevo depósito igual que cualquier otro cargo, usando "Semana de Fondo" como tipo de cargo.',
+            edit_deposit: 'Editar depósito', savings_goal: 'Meta de ahorro ($)', weekly_saving: 'Ahorro semanal ($)',
+            deducting_opt: 'Deduciendo', paid_opt: 'Pagado', absorbed_opt: 'Absorbido',
+            summary_report_excel: '📊 Reporte resumen (Excel)', summary_report_pdf: '📊 Reporte resumen (PDF)',
+            providerpay_title: 'Pago a proveedores',
+            providerpay_note: 'Ingrese el pago de cada proveedor por la semana — un solo monto, ya que los proveedores no tienen tarifa fija. Se guarda automáticamente y se conserva por semana, así que puede consultar cualquier semana pasada con las flechas. Aquí solo aparecen las personas con tipo de pago <strong>Proveedor</strong> (cambie el tipo de pago de una persona en la pestaña Empleados). Alimenta la Nómina igual que el Pago diario. <strong>Vinculado a Cuentas por pagar:</strong> cualquier factura sin pagar cuyo proveedor coincida con el nombre de un proveedor aparece bajo ese proveedor — marque una o más y toque “Pagar seleccionadas” para marcar esas facturas como Pagadas y sumar su total al monto de esta semana.',
+            payroll_title: 'Resumen de nómina', print_all: '🖨 Imprimir todo',
+            payroll_note: 'Pago neto = pago base + pago por rutas (conductores) + ingreso adicional − deducciones semanales activas (reclamos + cargos que se están deduciendo actualmente). El pago base es el <strong>salario semanal</strong> fijo para las personas Semanales, o el total del <strong>Pago diario</strong> de esta semana para las personas con tarifa diaria. El pago por rutas, el ingreso adicional y el pago diario usan la semana actual.',
+            savings_release_title: 'Ahorros y elegibilidad de liberación',
+            savingsrelease_note: 'Los cheques se emiten los jueves y se entregan los sábados. La Semana de Fondo no puede liberarse antes de <strong>90 días</strong> después de la última fecha trabajada de un empleado; el pago de la última semana trabajada de ese mismo empleado no puede liberarse antes de <strong>30 días</strong> después de esa fecha. "Pendiente" incluye cualquier reclamo o cargo — de cualquier estado — con saldo real, o (solo reclamos) un monto absorbido restante.',
+            search_employee_ph: 'Buscar empleado...', week_in_deposit_opt: 'Semana de Fondo', last_paycheck_opt: 'Último cheque',
+            all_eligibility: 'Toda elegibilidad', ready_release_now: 'Listo para liberar ahora', not_yet_eligible: 'Aún no elegible',
+            release_history_title: 'Historial de liberaciones',
+            releasehistory_note: 'Registro permanente de cada liberación de Semana de Fondo y Último Cheque — monto original, lo que se dedujo hacia otros reclamos/cargos, y lo que realmente recibió el empleado.',
+            search_emp_releasedby_ph: 'Buscar empleado, liberado por...',
+            early_ontime: 'Anticipadas y a tiempo', early_only: 'Solo anticipadas', ontime_only: 'Solo a tiempo'
         }
     };
 
