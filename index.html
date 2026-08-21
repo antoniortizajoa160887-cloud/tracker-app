@@ -5406,11 +5406,11 @@
         const expiredCount = groups.filter(g => g.minDays < 0).length;
         const soonCount = groups.filter(g => g.minDays >= 0 && g.minDays <= 14).length;
         if (grid) grid.innerHTML = `
-            <div class="stat-card"><div class="stat-label">Already expired</div><div class="stat-value" style="color:#dc2626;">${expiredCount}</div></div>
-            <div class="stat-card"><div class="stat-label">Within 14 days</div><div class="stat-value" style="color:#d97706;">${soonCount}</div></div>
-            <div class="stat-card"><div class="stat-label">Total shown</div><div class="stat-value">${groups.length}</div></div>`;
+            <div class="stat-card"><div class="stat-label" data-i18n="d_already_expired">Already expired</div><div class="stat-value" style="color:#dc2626;">${expiredCount}</div></div>
+            <div class="stat-card"><div class="stat-label" data-i18n="d_within_14">Within 14 days</div><div class="stat-value" style="color:#d97706;">${soonCount}</div></div>
+            <div class="stat-card"><div class="stat-label" data-i18n="d_total_shown">Total shown</div><div class="stat-value">${groups.length}</div></div>`;
 
-        if (!groups.length) { body.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Nothing expiring in this window.</div>'; return; }
+        if (!groups.length) { body.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px;">${t('d_nothing_expiring')}</div>`; applyTranslations(); return; }
 
         const pillFor = days => days < 0
             ? `<span class="exp-pill exp-over">expired ${Math.abs(days)}d ago</span>`
@@ -5443,10 +5443,11 @@
                             return `<div><div class="k">${escHtml(d.doc)}</div><div class="v">${d.date} ${pillFor(d.days)}</div>${slot ? `<div style="margin-top:4px;">${attachSlotHtml(et, g.id, slot)}</div>` : ''}</div>`;
                         }).join('')}
                     </div>
-                    <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); goToSearchResult('${g.kind}','${g.id}')">✎ Edit ${g.kind === 'vehicles' ? 'vehicle' : 'employee'} record</button>
+                    <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); goToSearchResult('${g.kind}','${g.id}')">${g.kind === 'vehicles' ? t('d_edit_vehicle_record') : t('d_edit_employee_record')}</button>
                 </div>
             </div>`).join('');
         body.innerHTML = rows;
+        applyTranslations();
     }
 
     // Shared block of extra fields shown once an employee is expanded —
@@ -5460,23 +5461,23 @@
         const med = (d.medical_card === 'Yes') ? 'Yes' : '<span style="color:var(--text-muted);">No</span>';
         const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
         return `<div class="rec-detail-grid">
-                <div><div class="k">Phone</div><div class="v">${d.phone ? escHtml(d.phone) : '-'}</div></div>
-                <div><div class="k">Email</div><div class="v">${d.email ? escHtml(d.email) : '-'}</div></div>
-                <div><div class="k">SSN / ITIN (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
-                <div><div class="k">Driver License / State ID</div><div class="v">${dl}</div></div>
-                <div><div class="k">DL Expiration</div><div class="v">${dlExp}</div></div>
-                <div><div class="k">Work Permit #</div><div class="v">${wp}</div></div>
-                <div><div class="k">Work Permit Expiration</div><div class="v">${wpExp}</div></div>
-                <div><div class="k">Medical Card</div><div class="v">${med}</div></div>
-                <div><div class="k">Medical Card Expiration</div><div class="v">${medExp}</div></div>
-                ${emp.role_title ? `<div><div class="k">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
-                ${d.notes ? `<div><div class="k">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
+                <div><div class="k" data-i18n="d_phone">Phone</div><div class="v">${d.phone ? escHtml(d.phone) : '-'}</div></div>
+                <div><div class="k" data-i18n="d_email">Email</div><div class="v">${d.email ? escHtml(d.email) : '-'}</div></div>
+                <div><div class="k"><span data-i18n="d_ssn_itin">SSN / ITIN</span> (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
+                <div><div class="k" data-i18n="d_dl_stateid">Driver License / State ID</div><div class="v">${dl}</div></div>
+                <div><div class="k" data-i18n="d_dl_exp">DL Expiration</div><div class="v">${dlExp}</div></div>
+                <div><div class="k" data-i18n="d_wp_num">Work Permit #</div><div class="v">${wp}</div></div>
+                <div><div class="k" data-i18n="d_wp_exp">Work Permit Expiration</div><div class="v">${wpExp}</div></div>
+                <div><div class="k" data-i18n="d_medcard">Medical Card</div><div class="v">${med}</div></div>
+                <div><div class="k" data-i18n="d_medcard_exp">Medical Card Expiration</div><div class="v">${medExp}</div></div>
+                ${emp.role_title ? `<div><div class="k" data-i18n="d_role_title">Role / Title</div><div class="v">${escHtml(emp.role_title)}</div></div>` : ''}
+                ${d.notes ? `<div><div class="k" data-i18n="d_notes">Notes</div><div class="v">${escHtml(d.notes)}</div></div>` : ''}
             </div>
             ${docSlotsHtml('employee', emp.id, ['driver_license', 'work_permit', 'medical_card'])}
             <div class="rec-actions" style="margin-top:10px;">
                 ${attachBtnHtml('employee', emp.id)}
-                <button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); loadEmployeeStatusHistory('${emp.id}')">Status history</button>
-                ${(canEdit() && !employeeUserIds.has(emp.id)) ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); generateEmployeeUser('${emp.id}')">Generate User</button>` : ''}
+                <button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); loadEmployeeStatusHistory('${emp.id}')" data-i18n="d_status_history">Status history</button>
+                ${(canEdit() && !employeeUserIds.has(emp.id)) ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="event.stopPropagation(); generateEmployeeUser('${emp.id}')" data-i18n="d_generate_user">Generate User</button>` : ''}
             </div>
             <div id="stathist-${emp.id}" style="margin-top:6px;font-size:12px;"></div>`;
     }
@@ -5484,13 +5485,13 @@
     async function loadEmployeeStatusHistory(empId) {
         const box = document.getElementById(`stathist-${empId}`);
         if (!box) return;
-        box.innerHTML = '<span style="color:var(--text-muted);">Loading…</span>';
+        box.innerHTML = `<span style="color:var(--text-muted);">${t('d_loading')}</span>`;
         const { data, error } = await supabaseClient.rpc('list_employee_status_history', {
             p_actor: currentUsername, p_company: currentCompany, p_employee_id: empId, p_limit: 50
         });
         if (error) { box.innerHTML = `<span style="color:#dc2626;">Error: ${error.message}</span>`; return; }
-        if (!data || !data.length) { box.innerHTML = '<span style="color:var(--text-muted);">No status changes recorded yet.</span>'; return; }
-        box.innerHTML = `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">Date</th><th style="text-align:left;">Change</th><th style="text-align:left;">By</th></tr></thead><tbody>${
+        if (!data || !data.length) { box.innerHTML = `<span style="color:var(--text-muted);">${t('d_no_status_changes')}</span>`; return; }
+        box.innerHTML = `<table style="width:100%;font-size:12px;"><thead><tr><th style="text-align:left;">${t('d_th_date')}</th><th style="text-align:left;">${t('d_th_change')}</th><th style="text-align:left;">${t('d_th_by')}</th></tr></thead><tbody>${
             data.map(h => `<tr><td>${new Date(h.changed_at).toLocaleString()}</td><td>${h.old_status || '—'} → ${h.new_status}</td><td>${escHtml(h.changed_by || '—')}</td></tr>`).join('')
         }</tbody></table>`;
     }
@@ -5594,7 +5595,7 @@
 
         if (isDesktopView()) {
             container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No employees found.</div>'; return; }
+            if (!list.length) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_employees')}</div>`; return; }
             let rows = '';
             list.forEach(emp => {
                 const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
@@ -5616,7 +5617,7 @@
                     <td>${emp.start_date || '-'}</td>
                     <td>${pt}${payToggle}</td>
                     <td>${statusCell}</td>
-                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
+                    <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation();">${editable ? `<button class="btn-small" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin:0 3px 0 0;background:var(--navy);" onclick="editEmployee('${emp.id}')" data-i18n="d_edit">Edit</button><button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕</button>` : ''}</td>
                 </tr>
                 <tr class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}" style="display:${open ? 'table-row' : 'none'};">
                     <td colspan="8" style="padding:12px; background:var(--surface-2);">${employeeDetailHtml(emp, d, ssn)}</td>
@@ -5630,7 +5631,7 @@
         }
 
         container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No employees found.</div>';
+        container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_employees')}</div>`;
         list.forEach(emp => {
             const ssn = emp.ssn_display ? emp.ssn_display : '<span style="color:#cbd5e1;">— hidden —</span>';
             const d = getEmpDetail(emp.id);
@@ -5654,19 +5655,19 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k">Type</div><div class="v">${emp.person_type}</div></div>
-                            <div><div class="k">Department</div><div class="v">${escHtml(emp.department) || '-'}</div></div>
-                            <div><div class="k">Start date</div><div class="v">${emp.start_date || '-'}</div></div>
+                            <div><div class="k" data-i18n="d_type">Type</div><div class="v">${emp.person_type}</div></div>
+                            <div><div class="k" data-i18n="d_department">Department</div><div class="v">${escHtml(emp.department) || '-'}</div></div>
+                            <div><div class="k" data-i18n="d_start_date">Start date</div><div class="v">${emp.start_date || '-'}</div></div>
                         </div>
                         ${employeeDetailHtml(emp, d, ssn)}
                         ${editable ? `
                         <div class="rec-actions">
-                            <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editEmployee('${emp.id}')">Edit</button>
-                            <button class="del-btn" onclick="deleteEmployee('${emp.id}')">✕ Delete</button>
+                            <button class="btn-small" style="background:var(--navy);margin:0;" onclick="editEmployee('${emp.id}')" data-i18n="d_edit">Edit</button>
+                            <button class="del-btn" onclick="deleteEmployee('${emp.id}')" data-i18n="d_delete">✕ Delete</button>
                         </div>
                         <div class="rec-quick-settings">
-                            <span class="rec-qs-item"><span class="rec-qs-label">Pay</span> ${pt}${payToggle}</span>
-                            <span class="rec-qs-item"><span class="rec-qs-label">Status</span> ${statusCell}</span>
+                            <span class="rec-qs-item"><span class="rec-qs-label" data-i18n="d_pay">Pay</span> ${pt}${payToggle}</span>
+                            <span class="rec-qs-item"><span class="rec-qs-label" data-i18n="d_status">Status</span> ${statusCell}</span>
                         </div>` : ''}
                     </div>
                 </div>`);
@@ -11207,7 +11208,24 @@
             sort_kind: 'Kind', sort_start_ded: 'Start ded.', sort_start: 'Start', sort_base: 'Base (wk)',
             sort_gross: 'Gross', sort_net: 'Net', sort_bill_num: 'Bill #', sort_employee_id: 'Employee ID',
             sort_created: 'Created', sort_code: 'Code', sort_requested: 'Requested', sort_requested_by: 'Requested by',
-            sort_table: 'Table', sort_field: 'Field', sort_when: 'When', sort_who: 'Who'
+            sort_table: 'Table', sort_field: 'Field', sort_when: 'When', sort_who: 'Who',
+            // --- R5a: dynamic card chrome — Employees & Fleet ---
+            d_type: 'Type', d_department: 'Department', d_start_date: 'Start date', d_pay: 'Pay', d_status: 'Status',
+            d_edit: 'Edit', d_delete: '✕ Delete', d_phone: 'Phone', d_email: 'Email', d_ssn_itin: 'SSN / ITIN',
+            d_dl_stateid: 'Driver License / State ID', d_dl_exp: 'DL Expiration', d_wp_num: 'Work Permit #', d_wp_exp: 'Work Permit Expiration',
+            d_medcard: 'Medical Card', d_medcard_exp: 'Medical Card Expiration', d_role_title: 'Role / Title', d_notes: 'Notes',
+            d_status_history: 'Status history', d_generate_user: 'Generate User', d_loading: 'Loading…',
+            d_no_status_changes: 'No status changes recorded yet.', d_th_date: 'Date', d_th_change: 'Change', d_th_by: 'By',
+            d_no_employees: 'No employees found.', d_no_vehicles: 'No vehicles yet.', d_nothing_expiring: 'Nothing expiring in this window.',
+            d_no_upcoming_maint: 'No upcoming maintenance scheduled.', d_no_service_records: 'No service records yet.',
+            d_already_expired: 'Already expired', d_within_14: 'Within 14 days', d_total_shown: 'Total shown',
+            d_edit_vehicle_record: '✎ Edit vehicle record', d_edit_employee_record: '✎ Edit employee record',
+            d_stat_fleet: 'Fleet', d_stat_reg_exp: 'Reg. expiring/expired', d_stat_ins_exp: 'Insurance expiring/expired',
+            d_th_id: 'ID', d_th_truck: 'Truck #', d_th_vehicle: 'Vehicle', d_th_plate: 'Plate', d_th_reg_exp: 'Reg. Expiry',
+            d_th_ins_co: 'Insurance Co.', d_th_ins_exp: 'Insurance Expiry',
+            d_reg_expiry: 'Registration expiry', d_insurance_company: 'Insurance company', d_policy_num: 'Policy #', d_insurance_expiry: 'Insurance expiry',
+            d_license_plate: 'License plate', d_vin: 'VIN', d_service_log: 'Service Log', d_mileage_at_service: 'Mileage at service',
+            d_next_service_due: 'Next service due at', d_add: '+ Add', d_service_desc_ph: 'e.g. Oil Change, Tire Rotation'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11404,7 +11422,24 @@
             sort_kind: 'Clase', sort_start_ded: 'Inicio ded.', sort_start: 'Inicio', sort_base: 'Base (sem)',
             sort_gross: 'Bruto', sort_net: 'Neto', sort_bill_num: 'Cuenta n.º', sort_employee_id: 'ID de empleado',
             sort_created: 'Creado', sort_code: 'Código', sort_requested: 'Solicitado', sort_requested_by: 'Solicitado por',
-            sort_table: 'Tabla', sort_field: 'Campo', sort_when: 'Cuándo', sort_who: 'Quién'
+            sort_table: 'Tabla', sort_field: 'Campo', sort_when: 'Cuándo', sort_who: 'Quién',
+            // --- R5a: dynamic card chrome — Employees & Fleet ---
+            d_type: 'Tipo', d_department: 'Departamento', d_start_date: 'Fecha de inicio', d_pay: 'Pago', d_status: 'Estado',
+            d_edit: 'Editar', d_delete: '✕ Eliminar', d_phone: 'Teléfono', d_email: 'Correo', d_ssn_itin: 'SSN / ITIN',
+            d_dl_stateid: 'Licencia de conducir / ID estatal', d_dl_exp: 'Vencimiento de licencia', d_wp_num: 'Permiso de trabajo n.º', d_wp_exp: 'Vencimiento del permiso de trabajo',
+            d_medcard: 'Tarjeta médica', d_medcard_exp: 'Vencimiento de tarjeta médica', d_role_title: 'Rol / Cargo', d_notes: 'Notas',
+            d_status_history: 'Historial de estado', d_generate_user: 'Generar usuario', d_loading: 'Cargando…',
+            d_no_status_changes: 'Aún no hay cambios de estado registrados.', d_th_date: 'Fecha', d_th_change: 'Cambio', d_th_by: 'Por',
+            d_no_employees: 'No se encontraron empleados.', d_no_vehicles: 'Aún no hay vehículos.', d_nothing_expiring: 'Nada por vencer en este período.',
+            d_no_upcoming_maint: 'No hay mantenimiento programado próximo.', d_no_service_records: 'Aún no hay registros de servicio.',
+            d_already_expired: 'Ya vencidos', d_within_14: 'Dentro de 14 días', d_total_shown: 'Total mostrado',
+            d_edit_vehicle_record: '✎ Editar registro de vehículo', d_edit_employee_record: '✎ Editar registro de empleado',
+            d_stat_fleet: 'Flota', d_stat_reg_exp: 'Registro por vencer/vencido', d_stat_ins_exp: 'Seguro por vencer/vencido',
+            d_th_id: 'ID', d_th_truck: 'Camión n.º', d_th_vehicle: 'Vehículo', d_th_plate: 'Placa', d_th_reg_exp: 'Venc. de registro',
+            d_th_ins_co: 'Cía. de seguro', d_th_ins_exp: 'Venc. del seguro',
+            d_reg_expiry: 'Vencimiento de registro', d_insurance_company: 'Compañía de seguro', d_policy_num: 'Póliza n.º', d_insurance_expiry: 'Vencimiento del seguro',
+            d_license_plate: 'Placa', d_vin: 'VIN', d_service_log: 'Registro de servicio', d_mileage_at_service: 'Millaje al servicio',
+            d_next_service_due: 'Próximo servicio a las', d_add: '+ Agregar', d_service_desc_ph: 'p. ej. Cambio de aceite, Rotación de llantas'
         }
     };
 
@@ -12925,7 +12960,7 @@
         });
         rows.sort((a, b) => String(a.service_date).localeCompare(String(b.service_date)));
         if (!rows.length) {
-            container.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:6px 0;">No upcoming maintenance scheduled.</div>';
+            container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; padding:6px 0;">${t('d_no_upcoming_maint')}</div>`;
             return;
         }
         container.innerHTML = rows.map(r => `
@@ -12945,29 +12980,29 @@
                     <span><strong>${s.service_date}</strong> — ${escHtml(s.description)} <span class="status-badge ${s.type === 'Performed' ? 'status-active' : ''}" style="margin-left:6px;">${s.type}</span>${s.mileage_at_service ? ` · ${Number(s.mileage_at_service).toLocaleString()} mi` : ''}${s.next_service_mileage ? ` <span style="color:var(--text-muted);">(next at ${Number(s.next_service_mileage).toLocaleString()} mi)</span>` : ''}</span>
                     ${editable ? `<span class="del-btn" onclick="deleteVehicleService(${s.id}, '${escJsAttr(v.id)}')">✕</span>` : ''}
                 </div>`).join('')
-            : '<div style="color:var(--text-muted); font-size:12px;">No service records yet.</div>';
+            : `<div style="color:var(--text-muted); font-size:12px;" data-i18n="d_no_service_records">No service records yet.</div>`;
         return `
             <div class="rec-detail-grid">
-                <div><div class="k">License plate</div><div class="v">${v.plate ? escHtml(v.plate) : '-'}</div></div>
-                <div><div class="k">VIN</div><div class="v">${v.vin ? escHtml(v.vin) : '-'}</div></div>
-                <div><div class="k">Notes</div><div class="v">${v.notes ? escHtml(v.notes) : '-'}</div></div>
+                <div><div class="k" data-i18n="d_license_plate">License plate</div><div class="v">${v.plate ? escHtml(v.plate) : '-'}</div></div>
+                <div><div class="k" data-i18n="d_vin">VIN</div><div class="v">${v.vin ? escHtml(v.vin) : '-'}</div></div>
+                <div><div class="k" data-i18n="d_notes">Notes</div><div class="v">${v.notes ? escHtml(v.notes) : '-'}</div></div>
             </div>
             ${docSlotsHtml('vehicle', v.id, ['registration', 'insurance'])}
-            <div class="detail-subhead" style="margin-top:10px;">Service Log</div>
+            <div class="detail-subhead" style="margin-top:10px;" data-i18n="d_service_log">Service Log</div>
             ${editable ? `
             <div class="form-row" style="margin:6px 0;">
                 <div class="field"><input type="date" id="vs-date-${v.id}"></div>
-                <div class="field field-wide"><input type="text" id="vs-desc-${v.id}" placeholder="e.g. Oil Change, Tire Rotation"></div>
+                <div class="field field-wide"><input type="text" id="vs-desc-${v.id}" placeholder="e.g. Oil Change, Tire Rotation" data-i18n-placeholder="d_service_desc_ph"></div>
                 <div class="field"><select id="vs-type-${v.id}"><option value="Performed">Performed</option><option value="Scheduled">Scheduled</option></select></div>
-                <div class="field"><label style="font-size:9px;">Mileage at service</label><input type="number" min="0" id="vs-mileage-${v.id}" placeholder="e.g. 45210"></div>
-                <div class="field"><label style="font-size:9px;">Next service due at</label><input type="number" min="0" id="vs-next-mileage-${v.id}" placeholder="e.g. 50210"></div>
-                <button type="button" class="btn-small" style="background:var(--navy);" onclick="addVehicleService('${escJsAttr(v.id)}')">+ Add</button>
+                <div class="field"><label style="font-size:9px;" data-i18n="d_mileage_at_service">Mileage at service</label><input type="number" min="0" id="vs-mileage-${v.id}" placeholder="e.g. 45210"></div>
+                <div class="field"><label style="font-size:9px;" data-i18n="d_next_service_due">Next service due at</label><input type="number" min="0" id="vs-next-mileage-${v.id}" placeholder="e.g. 50210"></div>
+                <button type="button" class="btn-small" style="background:var(--navy);" onclick="addVehicleService('${escJsAttr(v.id)}')" data-i18n="d_add">+ Add</button>
             </div>` : ''}
             <div>${rows}</div>
             <div class="rec-actions" style="margin-top:10px;">
                 ${attachBtnHtml('vehicle', v.id)}
-                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editVehicle('${escJsAttr(v.id)}')">Edit</button>
-                <button class="del-btn" onclick="deleteVehicle('${escJsAttr(v.id)}')">✕ Delete</button>` : ''}
+                ${editable ? `<button class="btn-small" style="background:var(--navy);margin:0;" onclick="editVehicle('${escJsAttr(v.id)}')" data-i18n="d_edit">Edit</button>
+                <button class="del-btn" onclick="deleteVehicle('${escJsAttr(v.id)}')" data-i18n="d_delete">✕ Delete</button>` : ''}
             </div>`;
     }
 
@@ -13098,9 +13133,9 @@
             const expiringReg = vehicles.filter(v => v.reg_expiry && expBadge(v.reg_expiry, 30)).length;
             const expiringIns = vehicles.filter(v => v.insurance_expiry && expBadge(v.insurance_expiry, 30)).length;
             grid.innerHTML = `
-                <div class="stat-card"><div class="stat-label">Fleet</div><div class="stat-value">${vehicles.length}</div></div>
-                <div class="stat-card"><div class="stat-label">Reg. expiring/expired</div><div class="stat-value">${expiringReg}</div></div>
-                <div class="stat-card"><div class="stat-label">Insurance expiring/expired</div><div class="stat-value">${expiringIns}</div></div>`;
+                <div class="stat-card"><div class="stat-label" data-i18n="d_stat_fleet">Fleet</div><div class="stat-value">${vehicles.length}</div></div>
+                <div class="stat-card"><div class="stat-label" data-i18n="d_stat_reg_exp">Reg. expiring/expired</div><div class="stat-value">${expiringReg}</div></div>
+                <div class="stat-card"><div class="stat-label" data-i18n="d_stat_ins_exp">Insurance expiring/expired</div><div class="stat-value">${expiringIns}</div></div>`;
         }
 
         const container = document.getElementById('vehicles-tbody');
@@ -13108,7 +13143,7 @@
 
         if (isDesktopView()) {
             container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No vehicles yet.</div>'; return; }
+            if (!list.length) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_vehicles')}</div>`; return; }
             let rows = '';
             list.forEach(v => {
                 const open = recExpanded.vehicles.has(v.id);
@@ -13126,14 +13161,15 @@
                 </tr>`;
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Truck #</th><th>Vehicle</th><th>Plate</th><th>Reg. Expiry</th><th>Insurance Co.</th><th>Insurance Expiry</th>
+                <th data-i18n="d_th_id">ID</th><th data-i18n="d_th_truck">Truck #</th><th data-i18n="d_th_vehicle">Vehicle</th><th data-i18n="d_th_plate">Plate</th><th data-i18n="d_th_reg_exp">Reg. Expiry</th><th data-i18n="d_th_ins_co">Insurance Co.</th><th data-i18n="d_th_ins_exp">Insurance Expiry</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             updateRecSortUI('vehicles');
+            applyTranslations();
             return;
         }
 
         container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No vehicles yet.</div>';
+        container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_vehicles')}</div>`;
         list.forEach(v => {
             const open = recExpanded.vehicles.has(v.id);
             container.insertAdjacentHTML('beforeend', `
@@ -13147,16 +13183,17 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k">Registration expiry</div><div class="v">${v.reg_expiry || '-'}${expBadge(v.reg_expiry, 30)}</div></div>
-                            <div><div class="k">Insurance company</div><div class="v">${v.insurance_company ? escHtml(v.insurance_company) : '-'}</div></div>
-                            <div><div class="k">Policy #</div><div class="v">${v.insurance_policy ? escHtml(v.insurance_policy) : '-'}</div></div>
-                            <div><div class="k">Insurance expiry</div><div class="v">${v.insurance_expiry || '-'}${expBadge(v.insurance_expiry, 30)}</div></div>
+                            <div><div class="k" data-i18n="d_reg_expiry">Registration expiry</div><div class="v">${v.reg_expiry || '-'}${expBadge(v.reg_expiry, 30)}</div></div>
+                            <div><div class="k" data-i18n="d_insurance_company">Insurance company</div><div class="v">${v.insurance_company ? escHtml(v.insurance_company) : '-'}</div></div>
+                            <div><div class="k" data-i18n="d_policy_num">Policy #</div><div class="v">${v.insurance_policy ? escHtml(v.insurance_policy) : '-'}</div></div>
+                            <div><div class="k" data-i18n="d_insurance_expiry">Insurance expiry</div><div class="v">${v.insurance_expiry || '-'}${expBadge(v.insurance_expiry, 30)}</div></div>
                         </div>
                         ${vehicleDetailHtml(v)}
                     </div>
                 </div>`);
         });
         updateRecSortUI('vehicles');
+        applyTranslations();
     }
 
     function renderDailyReport() {
