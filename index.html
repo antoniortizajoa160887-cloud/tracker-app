@@ -1222,6 +1222,7 @@
             <button type="button" class="header-theme-swatch" id="header-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
                     </div>
                     <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+                    <button type="button" onclick="signOutOtherDevices(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">📱 Sign out my other devices</button>
                     <button type="button" onclick="logout()" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:#ef4444; font-size:0.85rem; cursor:pointer; font-weight:700;" data-i18n="sign_out_btn">Sign Out</button>
                 </div>
             </div>
@@ -2353,6 +2354,39 @@
         </div>
         <div id="users-table-body" class="record-grid"></div>
     </div>
+
+    <!-- Who is currently signed in, and a way to sign them out. Sessions are
+         listed by a surrogate id; the session token itself never leaves the
+         database, so this screen cannot be used to impersonate anyone. -->
+    <div class="panel collapsed">
+        <div class="panel-head" onclick="toggleCollapse(this)">
+            <span>Active sessions <span id="sessions-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
+            <span class="caret">&#9662;</span>
+        </div>
+        <div>
+            <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadSessions()">↻ Refresh</button>
+                <span style="font-size:11px; color:var(--text-muted);">Signing a session out takes effect immediately.</span>
+            </div>
+            <div id="sessions-body" class="record-grid"></div>
+        </div>
+    </div>
+
+    <!-- Failed sign-in attempts, so an attack in progress is visible rather
+         than silently recorded. -->
+    <div class="panel collapsed">
+        <div class="panel-head" onclick="toggleCollapse(this)">
+            <span>Recent failed sign-ins <span id="login-attempts-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
+            <span class="caret">&#9662;</span>
+        </div>
+        <div>
+            <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadLoginAttempts()">↻ Refresh</button>
+                <span style="font-size:11px; color:var(--text-muted);">Last 7 days. An account locks for 5 minutes after 5 failures; a network locks for 15 minutes after 30.</span>
+            </div>
+            <div id="login-attempts-body" class="record-grid"></div>
+        </div>
+    </div>
 </div>
 
 <!-- TAB: COMPANIES -->
@@ -2519,7 +2553,7 @@
     // verify_login (see _require_actor in Supabase). This wrapper attaches the current
     // token to every RPC that carries a p_actor, so individual call sites are unchanged.
     let authToken = null;
-    const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // keep <= the server session lifetime
+    const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // keep <= the server session lifetime
     (function wrapRpcWithToken() {
         const nativeRpc = supabaseClient.rpc.bind(supabaseClient);
         supabaseClient.rpc = function(fn, params, options) {
@@ -2585,8 +2619,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.40';
+    const APP_VERSION = 'v3.41';
     const CHANGELOG = [
+        { version: 'v3.41', date: '2026-08-21', notes: 'Security improvements around signing in. (1) Sign-in attempts are now also limited per network, not just per account. Previously someone could try one password against many different usernames without ever tripping the 5-attempt account lock \u2014 that gap is closed. The network limit is deliberately generous (30 failed attempts in 15 minutes, then a 15-minute pause) so a normal office sharing one internet connection is never affected. (2) Administrators can now see every active sign-in under Users \u2192 Active sessions, and sign any of them out immediately \u2014 useful if a phone or laptop goes missing. Everyone can see their own sessions, and there is a new \u201cSign out my other devices\u201d option in the account menu. For safety the session itself is never exposed, so this screen can show and end sessions but can never be used to impersonate anyone. (3) Administrators can see recent failed sign-ins under Users \u2192 Recent failed sign-ins, so an attack in progress is visible rather than silently recorded. (4) Sessions now last 8 hours instead of 12; the 10-minute inactivity sign-out is unchanged.' },
         { version: 'v3.40', date: '2026-08-21', notes: 'Files shared in a conversation can now be renamed before they are sent, the same way they already could from a record\u2019s Files. Picking a file in a chat no longer sends it straight away: it is listed first with an editable name, pre-filled to match the rest of the app \u2014 for example \"3OFL00110D-20260821\" for a charge, with -2, -3 for more than one the same day \u2014 so a camera name like \"IMG_20260819_223344_1.jpg\" never ends up on the record. You can rename any of them, remove one you picked by mistake, then press Send. The extension is kept out of the editable box so it cannot be broken, names are cleaned up automatically, and anything staged but not sent is discarded if you switch to another conversation. Files still attach to the claim, charge or income the conversation is about, and the paperclip counts on those records update immediately.' },
         { version: 'v3.39', date: '2026-08-20', notes: 'Messaging now always talks about the right person\u2019s records, and View Only users can share files in a conversation. (1) When a conversation involves a View Only user, picking Claims, Charges or Income now always lists THAT person\u2019s records \u2014 whoever opened the conversation. Previously, if a View Only user started a chat with a manager, the list showed the manager\u2019s records instead of their own. So Sixto messaging Antonio about a claim now sees Sixto\u2019s claims, and Anahi messaging Sixto sees Sixto\u2019s claims too. Manager-to-manager conversations are unchanged. (2) View Only users can now attach photos, videos and documents inside a conversation about one of their own claims, charges or income, and the file is filed against that record automatically \u2014 so it also appears in that record\u2019s Files. They can open anything attached to their own records, including files a manager added, but still cannot delete or rename them. They cannot attach to anyone else\u2019s record, or to a truck, invoice or bill. (3) Who may start a conversation is unchanged: a View Only user can message managers, and managers can message anyone.' },
         { version: 'v3.38', date: '2026-08-20', notes: 'View Only accounts can now look after their own record, with managers kept in the loop. (1) A View Only user can open their own Status history — read only; they still cannot change their own status or edit any other field. (2) They can upload their own Driver License, Work Permit and Medical Card from their employee card. They can add and view those documents but cannot rename or delete them, so a document cannot be withdrawn once it has been submitted. They cannot upload to anyone else, to a truck, or to a claim, charge, invoice or bill. (3) As soon as a View Only user uploads one of their documents, everyone at Medium level and above gets a notification naming the person and the document, so it can be reviewed — tap the notification to jump straight to that employee. Managers uploading documents themselves create no notification, since they already know. Security note: the rule limiting a View Only user to their own record is now enforced on the server, not just hidden in the screen.' },
@@ -3483,7 +3518,7 @@
         if(tabName === 'tab-income') renderIncome();
         if(tabName === 'tab-weekdeposit') renderWeekDeposit();
         if(tabName === 'tab-report') renderDailyReport();
-        if(tabName === 'tab-users') fetchUsersList();
+        if(tabName === 'tab-users') { fetchUsersList(); loadSessions(); loadLoginAttempts(); }
         if(tabName === 'tab-statement') populateStatementDropdown();
         if(tabName === 'tab-dailypay') renderDailyPay();
         if(tabName === 'tab-providerpay') renderProviderPay();
@@ -10651,6 +10686,93 @@
         const { error } = await supabaseClient.rpc('set_user_role', { p_actor: currentUsername, p_target: username, p_new_role: newRole });
         if (error) { alert('Error: ' + error.message); fetchUsersList(); return; }
         fetchUsersList();
+    }
+
+    // ===== Sessions & sign-in attempts ====================================
+    // Who is signed in, and a way to sign them out. list_sessions returns a
+    // surrogate id per session and never the token itself, so this screen can
+    // show and revoke sessions without ever being able to impersonate anyone.
+    function fmtWhen(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso), mins = Math.round((Date.now() - d.getTime()) / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + 'm ago';
+        if (mins < 1440) return Math.round(mins / 60) + 'h ago';
+        return d.toLocaleDateString();
+    }
+
+    async function loadSessions() {
+        const body = document.getElementById('sessions-body');
+        const count = document.getElementById('sessions-count');
+        if (!body) return;
+        body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">Loading…</div>';
+        const { data, error } = await supabaseClient.rpc('list_sessions', {
+            p_actor: currentUsername, p_company: currentCompany
+        });
+        if (error) { body.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; padding:10px;">${escHtml(error.message)}</div>`; return; }
+        const rows = data || [];
+        if (count) count.textContent = `(${rows.length})`;
+        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No active sessions.</div>'; return; }
+        // Only an Administrator or SuperAdmin may sign someone else out; anyone
+        // may end their own session.
+        const canRevokeOthers = currentUserRole === 'SuperAdmin' || currentUserRole === 'Administrator';
+        body.innerHTML = rows.map(r => {
+            const mine = r.username === currentUsername;
+            const allowed = mine || canRevokeOthers;
+            return `
+            <div class="rec-card" style="padding:9px 11px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span class="rec-title">${escHtml(r.username)}</span>
+                    <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(r.role === 'User' ? 'View Only' : r.role)}</span>
+                    ${r.is_current ? '<span class="status-badge status-active">This device</span>' : ''}
+                    <span style="margin-left:auto; font-size:11px; color:var(--text-muted); font-family:var(--mono);">
+                        started ${fmtWhen(r.created_at)} · seen ${fmtWhen(r.last_seen)} · ends ${new Date(r.expires_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                    ${allowed && !r.is_current ? `<button type="button" class="btn-small del-btn" style="margin:0;" onclick="revokeSession(${r.id}, '${escJsAttr(r.username)}')">Sign out</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function revokeSession(id, who) {
+        if (!confirm(`Sign out this session for ${who}? They will need to sign in again.`)) return;
+        const { error } = await supabaseClient.rpc('revoke_session', { p_actor: currentUsername, p_id: id });
+        if (error) { alert('Error: ' + error.message); return; }
+        loadSessions();
+    }
+
+    async function signOutOtherDevices() {
+        if (!confirm('Sign out every other device signed in as you? This device stays signed in.')) return;
+        const { data, error } = await supabaseClient.rpc('revoke_my_other_sessions', { p_actor: currentUsername });
+        if (error) { alert('Error: ' + error.message); return; }
+        const n = parseInt(data, 10) || 0;
+        alert(n ? `Signed out ${n} other device${n === 1 ? '' : 's'}.` : 'No other devices were signed in.');
+        if (document.getElementById('sessions-body')) loadSessions();
+    }
+
+    async function loadLoginAttempts() {
+        const body = document.getElementById('login-attempts-body');
+        const count = document.getElementById('login-attempts-count');
+        if (!body) return;
+        body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">Loading…</div>';
+        const { data, error } = await supabaseClient.rpc('list_login_attempts', { p_actor: currentUsername });
+        if (error) { body.innerHTML = `<div style="grid-column:1/-1; color:#ef4444; padding:10px;">${escHtml(error.message)}</div>`; return; }
+        const rows = data || [];
+        if (count) count.textContent = `(${rows.length})`;
+        if (!rows.length) { body.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:10px;">No failed sign-ins in the last 7 days.</div>'; return; }
+        body.innerHTML = rows.map(r => {
+            const locked = r.locked_until && new Date(r.locked_until) > new Date();
+            return `
+            <div class="rec-card" style="padding:9px 11px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span class="type-pill" style="font-size:9px; padding:1px 6px;">${r.kind === 'network' ? 'Network' : 'Account'}</span>
+                    <span class="rec-title" style="font-family:var(--mono);">${escHtml(r.subject)}</span>
+                    <span style="font-size:12px; color:${r.fail_count >= 5 ? '#dc2626' : 'var(--text-muted)'}; font-weight:700;">${r.fail_count} failed</span>
+                    ${locked ? '<span class="exp-pill exp-over">locked</span>' : ''}
+                    <span style="margin-left:auto; font-size:11px; color:var(--text-muted); font-family:var(--mono);">${fmtWhen(r.last_fail_at)}</span>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     async function fetchUsersList() {
