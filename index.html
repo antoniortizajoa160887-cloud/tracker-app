@@ -1061,11 +1061,11 @@
     </div>
     <!-- Second login step: appears only when the account has 2FA enabled. -->
     <div id="login-2fa-step" style="display:none; text-align:left;">
-        <div style="font-weight:800; color:#f1f5f9; margin-bottom:4px;">Two-step verification</div>
-        <p style="font-size:0.78rem; color:#8b98a5; margin:0 0 0.9rem;">Enter the 6-digit code from your authenticator app. You can also use one of your recovery codes.</p>
+        <div style="font-weight:800; color:#f1f5f9; margin-bottom:4px;" data-i18n="two_step_title">Two-step verification</div>
+        <p style="font-size:0.78rem; color:#8b98a5; margin:0 0 0.9rem;" data-i18n="two_step_help">Enter the 6-digit code from your authenticator app. You can also use one of your recovery codes.</p>
         <input type="text" id="login-2fa-code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="20" style="letter-spacing:0.18em; text-align:center; font-size:1.1rem;" onkeydown="if(event.key==='Enter'){event.preventDefault(); submitLoginCode();}">
-        <button type="button" class="btn" style="width:100%; margin-top:0.85rem;" id="login-2fa-btn" onclick="submitLoginCode()">Verify</button>
-        <button type="button" style="width:100%; margin-top:0.6rem; background:transparent; border:none; color:var(--text-muted); font-size:0.82rem; cursor:pointer; padding:6px;" onclick="cancelLogin2fa()">← Back to sign in</button>
+        <button type="button" class="btn" style="width:100%; margin-top:0.85rem;" id="login-2fa-btn" onclick="submitLoginCode()" data-i18n="verify_btn">Verify</button>
+        <button type="button" style="width:100%; margin-top:0.6rem; background:transparent; border:none; color:var(--text-muted); font-size:0.82rem; cursor:pointer; padding:6px;" onclick="cancelLogin2fa()" data-i18n="back_to_signin">← Back to sign in</button>
     </div>
     <p id="login-error" style="color: #f87171; font-size: 0.85rem; margin-top: 1rem;"></p>
     <p id="login-timeout-notice" data-i18n="timeout_notice" style="color: #fbbf24; font-size: 0.85rem; margin-top: 0.5rem; display:none;">You were signed out after 10 minutes of inactivity.</p>
@@ -1095,41 +1095,41 @@
      enrollment at sign-in (Medium+ roles) and optional opt-in from the menu. -->
 <div id="twofa-enroll-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:10000; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
     <div class="card" style="max-width:460px; width:100%; margin:auto;">
-        <h2 style="margin-top:0;">Set up two-factor authentication</h2>
+        <h2 style="margin-top:0;" data-i18n="twofa_setup_title">Set up two-factor authentication</h2>
         <p id="twofa-enroll-intro" style="font-size:0.85rem; color:var(--text-muted); margin-top:0;"></p>
 
         <div id="twofa-enroll-step1">
-            <div style="font-weight:700; font-size:0.9rem; margin-bottom:6px;">1. Add this account to an authenticator app</div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Use Google Authenticator, Microsoft Authenticator, Authy, 1Password, or any TOTP app.</div>
-            <a id="twofa-otpauth-link" href="#" class="btn-small" style="display:inline-block; background:var(--navy); text-decoration:none; margin:0 0 10px;">📲 Open in authenticator app</a>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">Or enter this key manually:</div>
+            <div style="font-weight:700; font-size:0.9rem; margin-bottom:6px;" data-i18n="twofa_step1">1. Add this account to an authenticator app</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;" data-i18n="twofa_apps_note">Use Google Authenticator, Microsoft Authenticator, Authy, 1Password, or any TOTP app.</div>
+            <a id="twofa-otpauth-link" href="#" class="btn-small" style="display:inline-block; background:var(--navy); text-decoration:none; margin:0 0 10px;" data-i18n="twofa_open_app">📲 Open in authenticator app</a>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;" data-i18n="twofa_manual_key">Or enter this key manually:</div>
             <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
                 <code id="twofa-secret-key" style="background:var(--surface-2); padding:8px 10px; border-radius:6px; font-size:0.95rem; letter-spacing:0.08em; word-break:break-all;"></code>
-                <button type="button" class="btn-small" style="margin:0;" onclick="copy2faKey()">Copy</button>
+                <button type="button" class="btn-small" style="margin:0;" onclick="copy2faKey()" data-i18n="copy_btn">Copy</button>
             </div>
-            <div style="font-weight:700; font-size:0.9rem; margin-bottom:6px;">2. Enter the 6-digit code it shows</div>
+            <div style="font-weight:700; font-size:0.9rem; margin-bottom:6px;" data-i18n="twofa_step2_label">2. Enter the 6-digit code it shows</div>
             <input type="text" id="twofa-confirm-code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6" style="letter-spacing:0.18em; text-align:center; font-size:1.1rem;" onkeydown="if(event.key==='Enter'){event.preventDefault(); confirm2faEnrollment();}">
             <p id="twofa-enroll-error" style="color:#ef4444; font-size:0.85rem; margin:0.5rem 0 0;"></p>
             <div style="margin-top:0.85rem; display:flex; gap:8px; flex-wrap:wrap;">
-                <button type="button" class="btn-small" id="twofa-enroll-verify-btn" style="margin:0; background:var(--navy);" onclick="confirm2faEnrollment()">Verify &amp; turn on</button>
-                <button type="button" class="btn-small" id="twofa-enroll-retry-btn" style="margin:0; display:none;" onclick="startTwofaEnroll(enroll2faState && enroll2faState.mandatory)">Try again</button>
-                <button type="button" class="btn-small" id="twofa-enroll-cancel-btn" style="margin:0;" onclick="closeTwofaEnroll()">Cancel</button>
-                <button type="button" class="btn-small" id="twofa-enroll-skip-btn" style="margin:0; display:none;" onclick="skipTwofaEnroll()">Skip for now</button>
-                <button type="button" class="btn-small" id="twofa-enroll-signout-btn" style="margin:0; display:none; background:#b91c1c; color:#fff;" onclick="logout()">Sign out</button>
+                <button type="button" class="btn-small" id="twofa-enroll-verify-btn" style="margin:0; background:var(--navy);" onclick="confirm2faEnrollment()" data-i18n="twofa_verify_on">Verify &amp; turn on</button>
+                <button type="button" class="btn-small" id="twofa-enroll-retry-btn" style="margin:0; display:none;" onclick="startTwofaEnroll(enroll2faState && enroll2faState.mandatory)" data-i18n="try_again_btn">Try again</button>
+                <button type="button" class="btn-small" id="twofa-enroll-cancel-btn" style="margin:0;" onclick="closeTwofaEnroll()" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn-small" id="twofa-enroll-skip-btn" style="margin:0; display:none;" onclick="skipTwofaEnroll()" data-i18n="skip_for_now">Skip for now</button>
+                <button type="button" class="btn-small" id="twofa-enroll-signout-btn" style="margin:0; display:none; background:#b91c1c; color:#fff;" onclick="logout()" data-i18n="sign_out_btn">Sign out</button>
             </div>
         </div>
 
         <div id="twofa-enroll-step2" style="display:none;">
-            <div style="font-weight:700; color:var(--secondary); margin-bottom:4px;">✅ Two-factor authentication is on</div>
-            <div style="font-weight:700; font-size:0.9rem; margin:10px 0 4px;">Save your recovery codes</div>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin:0 0 8px;">Each code works once. If you ever lose your phone, a recovery code lets you sign in. Keep them somewhere safe — they are shown only now.</p>
+            <div style="font-weight:700; color:var(--secondary); margin-bottom:4px;" data-i18n="twofa_is_on">✅ Two-factor authentication is on</div>
+            <div style="font-weight:700; font-size:0.9rem; margin:10px 0 4px;" data-i18n="twofa_save_recovery">Save your recovery codes</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin:0 0 8px;" data-i18n="twofa_recovery_help">Each code works once. If you ever lose your phone, a recovery code lets you sign in. Keep them somewhere safe — they are shown only now.</p>
             <div id="twofa-recovery-codes" style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-family:monospace; font-size:0.95rem; background:var(--surface-2); padding:10px; border-radius:6px; margin-bottom:8px;"></div>
-            <button type="button" class="btn-small" style="margin:0 0 12px;" onclick="copyRecoveryCodes()">Copy codes</button>
+            <button type="button" class="btn-small" style="margin:0 0 12px;" onclick="copyRecoveryCodes()" data-i18n="twofa_copy_codes">Copy codes</button>
             <label style="display:flex; gap:8px; align-items:center; font-size:0.83rem; color:var(--text); margin-bottom:10px; cursor:pointer;">
                 <input type="checkbox" id="twofa-recovery-ack" style="width:auto; min-height:0;" onchange="document.getElementById('twofa-done-btn').disabled = !this.checked;">
-                I have saved these recovery codes
+                <span data-i18n="twofa_saved_ack">I have saved these recovery codes</span>
             </label>
-            <button type="button" class="btn" id="twofa-done-btn" style="width:100%;" disabled onclick="finishTwofaEnroll()">Done</button>
+            <button type="button" class="btn" id="twofa-done-btn" style="width:100%;" disabled onclick="finishTwofaEnroll()" data-i18n="done_btn">Done</button>
         </div>
     </div>
 </div>
@@ -1141,7 +1141,7 @@
     <div class="card" style="max-width:420px; width:100%;">
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
             <span style="font-size:22px;">⚠️</span>
-            <h2 style="margin:0; color:var(--secondary);">Unusual sign-in activity</h2>
+            <h2 style="margin:0; color:var(--secondary);" data-i18n="unusual_activity_title">Unusual sign-in activity</h2>
         </div>
         <div id="security-alert-body" style="font-size:0.88rem; color:var(--text); line-height:1.5;"></div>
         <div id="security-alert-actions" style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;"></div>
@@ -1152,30 +1152,30 @@
      (users keep working and can save); the ticker signs everyone out at zero. -->
 <div id="global-signout-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9998; padding:10px 16px; text-align:center; font-size:0.9rem; font-weight:700; color:#fff; box-shadow:0 2px 12px rgba(0,0,0,0.3);">
     <span id="gso-banner-text"></span>
-    <button type="button" id="gso-banner-cancel" style="display:none; margin-left:10px; background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.5); border-radius:6px; padding:2px 10px; font-size:0.8rem; cursor:pointer;" onclick="adminCancelGlobalSignout()">Cancel (admin)</button>
+    <button type="button" id="gso-banner-cancel" style="display:none; margin-left:10px; background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.5); border-radius:6px; padding:2px 10px; font-size:0.8rem; cursor:pointer;" onclick="adminCancelGlobalSignout()" data-i18n="gso_cancel_admin">Cancel (admin)</button>
 </div>
 
 <!-- Initiator confirmation for Sign Out All Users -->
 <div id="global-signout-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:10002; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
     <div class="card" style="max-width:460px; width:100%; margin:auto;">
-        <h2 style="margin-top:0; color:#b91c1c;">🚪 Sign Out All Users</h2>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Everyone <span id="gso-scope-label"></span> will get a countdown warning and then be signed out of all devices. Their unsaved work will be lost.</p>
-        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;">Grace period</label>
+        <h2 style="margin-top:0; color:#b91c1c;" data-i18n="gso_title">🚪 Sign Out All Users</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted);"><span data-i18n="gso_everyone_pre">Everyone</span> <span id="gso-scope-label"></span> <span data-i18n="gso_everyone_post">will get a countdown warning and then be signed out of all devices. Their unsaved work will be lost.</span></p>
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;" data-i18n="gso_grace_period">Grace period</label>
         <select id="gso-grace" style="margin-bottom:8px;">
-            <option value="300" selected>5 minutes</option>
-            <option value="600">10 minutes</option>
-            <option value="900">15 minutes</option>
-            <option value="120">2 minutes</option>
-            <option value="60">1 minute</option>
+            <option value="300" selected data-i18n="mins_5">5 minutes</option>
+            <option value="600" data-i18n="mins_10">10 minutes</option>
+            <option value="900" data-i18n="mins_15">15 minutes</option>
+            <option value="120" data-i18n="mins_2">2 minutes</option>
+            <option value="60" data-i18n="mins_1">1 minute</option>
         </select>
-        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;">Reason (optional — shown to everyone)</label>
-        <input type="text" id="gso-reason" maxlength="200" placeholder="e.g. system maintenance" style="margin-bottom:8px;">
-        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;">Type <span style="font-family:var(--mono); color:#b91c1c;">SIGN OUT ALL</span> to confirm</label>
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;" data-i18n="gso_reason_label">Reason (optional — shown to everyone)</label>
+        <input type="text" id="gso-reason" maxlength="200" placeholder="e.g. system maintenance" data-i18n-placeholder="gso_reason_ph" style="margin-bottom:8px;">
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:2px;"><span data-i18n="gso_type_pre">Type</span> <span style="font-family:var(--mono); color:#b91c1c;">SIGN OUT ALL</span> <span data-i18n="gso_type_post">to confirm</span></label>
         <input type="text" id="gso-confirm" placeholder="SIGN OUT ALL" autocapitalize="characters" style="margin-bottom:4px;">
         <p id="gso-modal-error" style="color:#ef4444; font-size:0.83rem; margin:0.3rem 0;"></p>
         <div style="display:flex; gap:8px; margin-top:6px;">
-            <button type="button" class="btn-small" id="gso-submit-btn" style="margin:0; background:#b91c1c; color:#fff;" onclick="submitGlobalSignout()">Start sign-out</button>
-            <button type="button" class="btn-small" style="margin:0;" onclick="closeGlobalSignoutModal()">Cancel</button>
+            <button type="button" class="btn-small" id="gso-submit-btn" style="margin:0; background:#b91c1c; color:#fff;" onclick="submitGlobalSignout()" data-i18n="gso_start">Start sign-out</button>
+            <button type="button" class="btn-small" style="margin:0;" onclick="closeGlobalSignoutModal()" data-i18n="cancel">Cancel</button>
         </div>
     </div>
 </div>
@@ -1183,11 +1183,11 @@
 <!-- Inactivity warning — shown 30s before an idle auto-logout -->
 <div id="idle-warning-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;">
     <div style="background:var(--surface); border-radius:10px; padding:22px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
-        <div style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:8px;">Still there?</div>
+        <div style="font-size:15px; font-weight:700; color:var(--secondary); margin-bottom:8px;" data-i18n="idle_title">Still there?</div>
         <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
-            You'll be signed out in <span id="idle-countdown" style="font-weight:700; color:#b45309;">30</span>s due to inactivity. Any unsaved changes could be lost.
+            <span data-i18n="idle_pre">You'll be signed out in</span> <span id="idle-countdown" style="font-weight:700; color:#b45309;">30</span><span data-i18n="idle_post">s due to inactivity. Any unsaved changes could be lost.</span>
         </div>
-        <button type="button" class="btn" style="width:100%;" onclick="staySignedIn()">Stay signed in</button>
+        <button type="button" class="btn" style="width:100%;" onclick="staySignedIn()" data-i18n="idle_stay">Stay signed in</button>
     </div>
 </div>
 
@@ -1322,8 +1322,8 @@
             <button type="button" class="header-theme-swatch" id="header-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
                     </div>
                     <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-                    <button type="button" onclick="openTwofaManage(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🔐 Two-Factor Authentication</button>
-                    <button type="button" onclick="signOutOtherDevices(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">📱 Sign out my other devices</button>
+                    <button type="button" onclick="openTwofaManage(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
+                    <button type="button" onclick="signOutOtherDevices(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
                     <button type="button" onclick="logout()" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:#ef4444; font-size:0.85rem; cursor:pointer; font-weight:700;" data-i18n="sign_out_btn">Sign Out</button>
                 </div>
             </div>
@@ -1345,7 +1345,7 @@
 
     <!-- Two-Factor Authentication: management card (from the account menu) -->
     <div class="card" id="twofa-manage-card" style="display:none; max-width:440px;">
-        <h2>Two-Factor Authentication</h2>
+        <h2 data-i18n="twofa_menu">Two-Factor Authentication</h2>
         <div id="twofa-manage-body" style="font-size:0.9rem; color:var(--text-muted);">Checking…</div>
         <div style="margin-top:0.75rem;">
             <button class="btn-small" onclick="closeTwofaManage()">Close</button>
@@ -1437,8 +1437,8 @@
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
         </div>
         <button type="button" class="sidebar-account-btn" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-        <button type="button" class="sidebar-account-btn" onclick="openTwofaManage()">🔐 Two-Factor Authentication</button>
-        <button type="button" class="sidebar-account-btn" onclick="signOutOtherDevices()">📱 Sign out my other devices</button>
+        <button type="button" class="sidebar-account-btn" onclick="openTwofaManage()">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
+        <button type="button" class="sidebar-account-btn" onclick="signOutOtherDevices()">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
         <button type="button" class="sidebar-account-btn" id="sidebar-account-btn-signout" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
     </div>
 </div>
@@ -4034,7 +4034,7 @@
 
     function openGlobalSignoutModal() {
         document.getElementById('gso-scope-label').textContent =
-            (currentUserRole === 'SuperAdmin') ? 'in every company' : 'in your company';
+            (currentUserRole === 'SuperAdmin') ? t('gso_scope_all') : t('gso_scope_company');
         document.getElementById('gso-reason').value = '';
         document.getElementById('gso-confirm').value = '';
         document.getElementById('gso-modal-error').textContent = '';
@@ -4196,8 +4196,8 @@
         document.getElementById('twofa-done-btn').disabled = true;
         document.getElementById('twofa-secret-key').textContent = '…';
         document.getElementById('twofa-enroll-intro').textContent = mandatory
-            ? 'Your role recommends two-factor authentication. Set it up now, or skip — we’ll remind you again in 15 days.'
-            : 'Add a second step at sign-in for extra security.';
+            ? t('twofa_intro_mandatory')
+            : t('twofa_intro_optional');
         // Mandatory: always offer a way out (Skip / Sign out) so a network glitch
         // can never trap the account. Optional: a plain Cancel.
         document.getElementById('twofa-enroll-cancel-btn').style.display = mandatory ? 'none' : 'inline-block';
@@ -11067,7 +11067,32 @@
             total_amount: 'Total amount', weekly_amount: 'Weekly amount', end_date: 'End date',
             income_note: 'Additional income is <strong>added</strong> to the employee\'s pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.',
             save_income: '+ Save Income', search_income_ph: 'Search income ID, employee, type, status...',
-            th_charge_id: 'Charge ID', th_income_id: 'Income ID', th_type: 'Type', th_weekly: 'Weekly', th_remaining: 'Remaining'
+            th_charge_id: 'Charge ID', th_income_id: 'Income ID', th_type: 'Type', th_weekly: 'Weekly', th_remaining: 'Remaining',
+            // --- R1: shell, login 2FA step, overlays ---
+            twofa_menu: 'Two-Factor Authentication', signout_other_devices: 'Sign out my other devices',
+            two_step_title: 'Two-step verification',
+            two_step_help: 'Enter the 6-digit code from your authenticator app. You can also use one of your recovery codes.',
+            verify_btn: 'Verify', back_to_signin: '← Back to sign in',
+            twofa_setup_title: 'Set up two-factor authentication',
+            twofa_step1: '1. Add this account to an authenticator app',
+            twofa_apps_note: 'Use Google Authenticator, Microsoft Authenticator, Authy, 1Password, or any TOTP app.',
+            twofa_open_app: '📲 Open in authenticator app', twofa_manual_key: 'Or enter this key manually:',
+            copy_btn: 'Copy', twofa_step2_label: '2. Enter the 6-digit code it shows',
+            twofa_verify_on: 'Verify & turn on', try_again_btn: 'Try again', skip_for_now: 'Skip for now',
+            twofa_is_on: '✅ Two-factor authentication is on', twofa_save_recovery: 'Save your recovery codes',
+            twofa_recovery_help: 'Each code works once. If you ever lose your phone, a recovery code lets you sign in. Keep them somewhere safe — they are shown only now.',
+            twofa_copy_codes: 'Copy codes', twofa_saved_ack: 'I have saved these recovery codes', done_btn: 'Done',
+            twofa_intro_mandatory: 'Your role recommends two-factor authentication. Set it up now, or skip — we’ll remind you again in 15 days.',
+            twofa_intro_optional: 'Add a second step at sign-in for extra security.',
+            unusual_activity_title: 'Unusual sign-in activity', gso_cancel_admin: 'Cancel (admin)',
+            gso_title: '🚪 Sign Out All Users', gso_everyone_pre: 'Everyone',
+            gso_everyone_post: 'will get a countdown warning and then be signed out of all devices. Their unsaved work will be lost.',
+            gso_grace_period: 'Grace period', mins_5: '5 minutes', mins_10: '10 minutes', mins_15: '15 minutes',
+            mins_2: '2 minutes', mins_1: '1 minute', gso_reason_label: 'Reason (optional — shown to everyone)',
+            gso_reason_ph: 'e.g. system maintenance', gso_type_pre: 'Type', gso_type_post: 'to confirm',
+            gso_start: 'Start sign-out', gso_scope_all: 'in every company', gso_scope_company: 'in your company',
+            idle_title: 'Still there?', idle_pre: 'You’ll be signed out in',
+            idle_post: 's due to inactivity. Any unsaved changes could be lost.', idle_stay: 'Stay signed in'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11124,7 +11149,32 @@
             total_amount: 'Monto total', weekly_amount: 'Monto semanal', end_date: 'Fecha de fin',
             income_note: 'El ingreso adicional se <strong>suma</strong> al pago del empleado cada semana (lo opuesto a un cargo) — el monto semanal se paga hasta alcanzar el total, y luego se detiene automáticamente.',
             save_income: '+ Guardar Ingreso', search_income_ph: 'Buscar ID de ingreso, empleado, tipo, estado...',
-            th_charge_id: 'ID de Cargo', th_income_id: 'ID de Ingreso', th_type: 'Tipo', th_weekly: 'Semanal', th_remaining: 'Restante'
+            th_charge_id: 'ID de Cargo', th_income_id: 'ID de Ingreso', th_type: 'Tipo', th_weekly: 'Semanal', th_remaining: 'Restante',
+            // --- R1: shell, login 2FA step, overlays ---
+            twofa_menu: 'Autenticación de Dos Factores', signout_other_devices: 'Cerrar sesión en mis otros dispositivos',
+            two_step_title: 'Verificación en dos pasos',
+            two_step_help: 'Ingrese el código de 6 dígitos de su app de autenticación. También puede usar uno de sus códigos de recuperación.',
+            verify_btn: 'Verificar', back_to_signin: '← Volver a iniciar sesión',
+            twofa_setup_title: 'Configurar la autenticación de dos factores',
+            twofa_step1: '1. Agregue esta cuenta a una app de autenticación',
+            twofa_apps_note: 'Use Google Authenticator, Microsoft Authenticator, Authy, 1Password o cualquier app TOTP.',
+            twofa_open_app: '📲 Abrir en la app de autenticación', twofa_manual_key: 'O ingrese esta clave manualmente:',
+            copy_btn: 'Copiar', twofa_step2_label: '2. Ingrese el código de 6 dígitos que muestra',
+            twofa_verify_on: 'Verificar y activar', try_again_btn: 'Intentar de nuevo', skip_for_now: 'Omitir por ahora',
+            twofa_is_on: '✅ La autenticación de dos factores está activada', twofa_save_recovery: 'Guarde sus códigos de recuperación',
+            twofa_recovery_help: 'Cada código funciona una sola vez. Si pierde su teléfono, un código de recuperación le permite iniciar sesión. Guárdelos en un lugar seguro: solo se muestran ahora.',
+            twofa_copy_codes: 'Copiar códigos', twofa_saved_ack: 'He guardado estos códigos de recuperación', done_btn: 'Listo',
+            twofa_intro_mandatory: 'Su rol recomienda la autenticación de dos factores. Configúrela ahora u omítala: le recordaremos de nuevo en 15 días.',
+            twofa_intro_optional: 'Agregue un segundo paso al iniciar sesión para mayor seguridad.',
+            unusual_activity_title: 'Actividad de inicio de sesión inusual', gso_cancel_admin: 'Cancelar (admin)',
+            gso_title: '🚪 Cerrar sesión a todos los usuarios', gso_everyone_pre: 'Todos',
+            gso_everyone_post: 'recibirán un aviso con cuenta regresiva y luego se cerrará su sesión en todos los dispositivos. Su trabajo sin guardar se perderá.',
+            gso_grace_period: 'Período de gracia', mins_5: '5 minutos', mins_10: '10 minutos', mins_15: '15 minutos',
+            mins_2: '2 minutos', mins_1: '1 minuto', gso_reason_label: 'Motivo (opcional — visible para todos)',
+            gso_reason_ph: 'p. ej. mantenimiento del sistema', gso_type_pre: 'Escriba', gso_type_post: 'para confirmar',
+            gso_start: 'Iniciar cierre de sesión', gso_scope_all: 'en todas las compañías', gso_scope_company: 'en su compañía',
+            idle_title: '¿Sigue ahí?', idle_pre: 'Se cerrará su sesión en',
+            idle_post: 's por inactividad. Cualquier cambio sin guardar podría perderse.', idle_stay: 'Seguir conectado'
         }
     };
 
