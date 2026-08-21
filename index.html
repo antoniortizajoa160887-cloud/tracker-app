@@ -2210,16 +2210,16 @@
     <div class="msg-shell">
         <div class="msg-list-pane">
             <div class="msg-list-search" style="display:flex; gap:6px; align-items:center;">
-                <input type="text" id="dm-search" placeholder="Search conversations..." oninput="renderDmThreads()" style="flex:1; margin:0;">
+                <input type="text" id="dm-search" placeholder="Search conversations..." data-i18n-placeholder="dm_search_ph" oninput="renderDmThreads()" style="flex:1; margin:0;">
                 <button type="button" class="btn-small" style="margin:0; min-height:40px; background:var(--navy);" onclick="startNewDmConversation()" title="New conversation">+</button>
             </div>
             <div class="msg-cat-pills" id="dm-topic-pills">
-                <button type="button" class="msg-pill active" data-topic="" onclick="setDmTopicFilter('')">All</button>
-                <button type="button" class="msg-pill" data-topic="General" onclick="setDmTopicFilter('General')">General</button>
-                <button type="button" class="msg-pill" data-topic="Missing Day" onclick="setDmTopicFilter('Missing Day')">Missing Day</button>
-                <button type="button" class="msg-pill" data-topic="Claims" onclick="setDmTopicFilter('Claims')">Claims</button>
-                <button type="button" class="msg-pill" data-topic="Charges" onclick="setDmTopicFilter('Charges')">Charges</button>
-                <button type="button" class="msg-pill" data-topic="Income" onclick="setDmTopicFilter('Income')">Income</button>
+                <button type="button" class="msg-pill active" data-topic="" onclick="setDmTopicFilter('')" data-i18n="pill_all">All</button>
+                <button type="button" class="msg-pill" data-topic="General" onclick="setDmTopicFilter('General')" data-i18n="pill_general">General</button>
+                <button type="button" class="msg-pill" data-topic="Missing Day" onclick="setDmTopicFilter('Missing Day')" data-i18n="pill_missing_day">Missing Day</button>
+                <button type="button" class="msg-pill" data-topic="Claims" onclick="setDmTopicFilter('Claims')" data-i18n="pill_claims">Claims</button>
+                <button type="button" class="msg-pill" data-topic="Charges" onclick="setDmTopicFilter('Charges')" data-i18n="pill_charges">Charges</button>
+                <button type="button" class="msg-pill" data-topic="Income" onclick="setDmTopicFilter('Income')" data-i18n="pill_income">Income</button>
             </div>
             <div id="dm-thread-list"></div>
         </div>
@@ -2233,11 +2233,11 @@
                     <button type="button" class="btn-small" title="Emoji" onclick="toggleDmEmojiPanel()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">😊</button>
                     <button type="button" class="btn-small" id="dm-attach-btn" title="Attach a photo, video or document" onclick="document.getElementById('dm-file-input').click()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">📎</button>
                     <input type="file" id="dm-file-input" style="display:none;" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="stageChatFiles(this.files)">
-                    <input type="text" id="dm-compose-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter'){sendDirectMessage();}">
+                    <input type="text" id="dm-compose-text" placeholder="Type a message..." data-i18n-placeholder="dm_compose_ph" onkeydown="if(event.key==='Enter'){sendDirectMessage();}">
                     <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="sendDirectMessage()">➤</button>
                 </div>
             </div>
-            <div id="dm-empty-state" class="msg-empty-state">Select a person on the left to start a conversation.</div>
+            <div id="dm-empty-state" class="msg-empty-state" data-i18n="dm_empty_state">Select a person on the left to start a conversation.</div>
         </div>
     </div>
 </div>
@@ -2348,35 +2348,35 @@
 <!-- TAB: INVOICES -->
 <div id="tab-invoices" class="tab-content">
     <div class="panel" id="invoice-form-panel">
-        <h2 id="invoice-form-title">New Invoice</h2>
+        <h2 id="invoice-form-title" data-i18n="new_invoice_title">New Invoice</h2>
         <div class="form-row">
-            <div class="field"><label>Invoice #</label><input type="text" id="inv-number" placeholder="e.g. 0169"></div>
-            <div class="field"><label>Customer</label><input type="text" id="inv-customer" placeholder="e.g. Tramo"></div>
-            <div class="field"><label>Invoice Date</label><input type="date" id="inv-date"></div>
-            <div class="field"><label>Due Date</label><input type="date" id="inv-due-date"></div>
-            <div class="field"><label>Status</label><select id="inv-status"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
+            <div class="field"><label data-i18n="inv_number">Invoice #</label><input type="text" id="inv-number" placeholder="e.g. 0169" data-i18n-placeholder="inv_number_ph"></div>
+            <div class="field"><label data-i18n="inv_customer">Customer</label><input type="text" id="inv-customer" placeholder="e.g. Tramo" data-i18n-placeholder="inv_customer_ph"></div>
+            <div class="field"><label data-i18n="inv_date">Invoice Date</label><input type="date" id="inv-date"></div>
+            <div class="field"><label data-i18n="due_date">Due Date</label><input type="date" id="inv-due-date"></div>
+            <div class="field"><label data-i18n="status_field">Status</label><select id="inv-status"><option value="Unpaid" data-i18n="unpaid_opt">Unpaid</option><option value="Paid" data-i18n="paid_opt">Paid</option><option value="Void" data-i18n="void_opt">Void</option></select></div>
         </div>
         <div class="form-row">
-            <div class="field field-wide"><label>Bill To</label><textarea id="inv-bill-to" rows="3" placeholder="Company, address, contact — as it appears on the invoice"></textarea></div>
-            <div class="field field-wide"><label>Notes</label><textarea id="inv-notes" rows="3"></textarea></div>
+            <div class="field field-wide"><label data-i18n="bill_to">Bill To</label><textarea id="inv-bill-to" rows="3" placeholder="Company, address, contact — as it appears on the invoice" data-i18n-placeholder="inv_billto_ph"></textarea></div>
+            <div class="field field-wide"><label data-i18n="notes">Notes</label><textarea id="inv-notes" rows="3"></textarea></div>
         </div>
-        <div class="detail-subhead" style="margin-top:6px;">Line Items</div>
+        <div class="detail-subhead" style="margin-top:6px;" data-i18n="line_items">Line Items</div>
         <div id="inv-line-items-editor"></div>
-        <button type="button" class="btn-small" style="background:var(--navy);" onclick="addInvoiceLineItemRow()">+ Add Line</button>
+        <button type="button" class="btn-small" style="background:var(--navy);" onclick="addInvoiceLineItemRow()" data-i18n="add_line">+ Add Line</button>
         <div style="text-align:right; font-weight:700; margin-top:8px; font-family:var(--mono);" id="inv-line-items-total">Total: $ 0.00</div>
         <div style="margin-top:10px;">
-            <button type="button" class="btn" id="invoice-save-btn" onclick="saveInvoice()">+ Save Invoice</button>
-            <button type="button" class="btn-small" id="invoice-cancel-btn" style="display:none;background:#64748b;" onclick="cancelInvoiceEdit()">Cancel edit</button>
+            <button type="button" class="btn" id="invoice-save-btn" onclick="saveInvoice()" data-i18n="save_invoice_btn">+ Save Invoice</button>
+            <button type="button" class="btn-small" id="invoice-cancel-btn" style="display:none;background:#64748b;" onclick="cancelInvoiceEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </div>
     </div>
 
     <div class="panel">
         <div class="stat-grid" id="invoice-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="invoice-search" placeholder="Search invoice #, customer, notes..." oninput="renderInvoices()"></div>
-            <div class="field"><select id="invoice-status-filter" onchange="renderInvoices()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
-            <div class="field"><select id="invoice-customer-filter" onchange="renderInvoices()"><option value="">All customers</option></select></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('invoices')">✕ Clear filters</button>
+            <div class="field field-wide"><input type="text" id="invoice-search" placeholder="Search invoice #, customer, notes..." data-i18n-placeholder="invoice_search_ph" oninput="renderInvoices()"></div>
+            <div class="field"><select id="invoice-status-filter" onchange="renderInvoices()"><option value="" data-i18n="all_statuses">All statuses</option><option value="Unpaid" data-i18n="unpaid_opt">Unpaid</option><option value="Paid" data-i18n="paid_opt">Paid</option><option value="Void" data-i18n="void_opt">Void</option></select></div>
+            <div class="field"><select id="invoice-customer-filter" onchange="renderInvoices()"><option value="" data-i18n="all_customers">All customers</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('invoices')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
@@ -2397,27 +2397,27 @@
 <!-- TAB: BILLS PAYABLE -->
 <div id="tab-bills" class="tab-content">
     <div class="panel" id="bill-form-panel">
-        <h2 id="bill-form-title">New Bill</h2>
+        <h2 id="bill-form-title" data-i18n="new_bill_title">New Bill</h2>
         <div class="form-row">
-            <div class="field"><label>Vendor</label><input type="text" id="bill-vendor" list="bill-vendor-providers" placeholder="e.g. ABC Fuel Co, or pick a provider"><datalist id="bill-vendor-providers"></datalist></div>
-            <div class="field"><label>Vendor's Bill #</label><input type="text" id="bill-number" placeholder="e.g. INV-9001"></div>
-            <div class="field"><label>Bill Date</label><input type="date" id="bill-date"></div>
-            <div class="field"><label>Due Date</label><input type="date" id="bill-due-date"></div>
-            <div class="field"><label>Amount</label><input type="number" step="0.01" min="0" id="bill-amount"></div>
-            <div class="field"><label>Status</label><select id="bill-status"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
+            <div class="field"><label data-i18n="vendor">Vendor</label><input type="text" id="bill-vendor" list="bill-vendor-providers" placeholder="e.g. ABC Fuel Co, or pick a provider" data-i18n-placeholder="bill_vendor_ph"><datalist id="bill-vendor-providers"></datalist></div>
+            <div class="field"><label data-i18n="vendor_bill_num">Vendor's Bill #</label><input type="text" id="bill-number" placeholder="e.g. INV-9001" data-i18n-placeholder="bill_number_ph"></div>
+            <div class="field"><label data-i18n="bill_date">Bill Date</label><input type="date" id="bill-date"></div>
+            <div class="field"><label data-i18n="due_date">Due Date</label><input type="date" id="bill-due-date"></div>
+            <div class="field"><label data-i18n="amount_label">Amount</label><input type="number" step="0.01" min="0" id="bill-amount"></div>
+            <div class="field"><label data-i18n="status_field">Status</label><select id="bill-status"><option value="Unpaid" data-i18n="unpaid_opt">Unpaid</option><option value="Paid" data-i18n="paid_opt">Paid</option><option value="Void" data-i18n="void_opt">Void</option></select></div>
         </div>
-        <div class="form-row"><div class="field field-wide"><label>Notes</label><input type="text" id="bill-notes"></div></div>
-        <button type="submit" class="btn" id="bill-save-btn" onclick="saveBill()">+ Save Bill</button>
-        <button type="button" class="btn-small" id="bill-cancel-btn" style="display:none;background:#64748b;" onclick="cancelBillEdit()">Cancel edit</button>
+        <div class="form-row"><div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="bill-notes"></div></div>
+        <button type="submit" class="btn" id="bill-save-btn" onclick="saveBill()" data-i18n="save_bill_btn">+ Save Bill</button>
+        <button type="button" class="btn-small" id="bill-cancel-btn" style="display:none;background:#64748b;" onclick="cancelBillEdit()" data-i18n="cancel_edit">Cancel edit</button>
     </div>
 
     <div class="panel">
         <div class="stat-grid" id="bill-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
-            <div class="field field-wide"><input type="text" id="bill-search" placeholder="Search vendor, bill #, notes..." oninput="renderBills()"></div>
-            <div class="field"><select id="bill-status-filter" onchange="renderBills()"><option value="">All statuses</option><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Void">Void</option></select></div>
-            <div class="field"><select id="bill-vendor-filter" onchange="renderBills()"><option value="">All vendors</option></select></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('bills')">✕ Clear filters</button>
+            <div class="field field-wide"><input type="text" id="bill-search" placeholder="Search vendor, bill #, notes..." data-i18n-placeholder="bill_search_ph" oninput="renderBills()"></div>
+            <div class="field"><select id="bill-status-filter" onchange="renderBills()"><option value="" data-i18n="all_statuses">All statuses</option><option value="Unpaid" data-i18n="unpaid_opt">Unpaid</option><option value="Paid" data-i18n="paid_opt">Paid</option><option value="Void" data-i18n="void_opt">Void</option></select></div>
+            <div class="field"><select id="bill-vendor-filter" onchange="renderBills()"><option value="" data-i18n="all_vendors">All vendors</option></select></div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('bills')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
@@ -2438,22 +2438,22 @@
 <!-- TAB 8: USERS -->
 <div id="tab-users" class="tab-content">
     <div class="panel">
-        <h2>Create New User Profile</h2>
+        <h2 data-i18n="create_user_title">Create New User Profile</h2>
         <form id="create-user-form">
             <div class="grid-form">
-                <div class="field"><label>Username</label><input type="text" id="new-username" required></div>
-                <div class="field"><label>Password</label><input type="password" id="new-user-pass" minlength="8" required></div>
+                <div class="field"><label data-i18n="username_label">Username</label><input type="text" id="new-username" required></div>
+                <div class="field"><label data-i18n="password_label">Password</label><input type="password" id="new-user-pass" minlength="8" required></div>
                 <div class="field">
-                    <label>Role</label>
+                    <label data-i18n="role_field">Role</label>
                     <select id="new-user-role"></select>
                 </div>
-                <div class="field"><label>Assign to Employee</label><select id="new-user-employee" required><option value="">— Select employee —</option></select></div>
+                <div class="field"><label data-i18n="assign_employee">Assign to Employee</label><select id="new-user-employee" required><option value="" data-i18n="select_employee_opt">— Select employee —</option></select></div>
             </div>
-            <button type="submit" class="btn" style="margin-top:0.5rem;">+ Create User</button>
+            <button type="submit" class="btn" style="margin-top:0.5rem;" data-i18n="create_user_btn">+ Create User</button>
         </form>
     </div>
     <div class="panel collapsed">
-        <h2 class="panel-head" onclick="toggleCollapse(this)"><span>System Users</span> <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)"><span data-i18n="system_users">System Users</span> <span class="caret">&#9662;</span></h2>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-users" onchange="setSortField('users', this.value)">
@@ -2472,13 +2472,13 @@
          database, so this screen cannot be used to impersonate anyone. -->
     <div class="panel collapsed">
         <div class="panel-head" onclick="toggleCollapse(this)">
-            <span>Active sessions <span id="sessions-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
+            <span data-i18n="active_sessions">Active sessions <span id="sessions-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
             <span class="caret">&#9662;</span>
         </div>
         <div>
             <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadSessions()">↻ Refresh</button>
-                <span style="font-size:11px; color:var(--text-muted);">Signing a session out takes effect immediately.</span>
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadSessions()" data-i18n="refresh_btn">↻ Refresh</button>
+                <span style="font-size:11px; color:var(--text-muted);" data-i18n="session_signout_note">Signing a session out takes effect immediately.</span>
             </div>
             <div id="sessions-body" class="record-grid"></div>
         </div>
@@ -2488,13 +2488,13 @@
          than silently recorded. -->
     <div class="panel collapsed">
         <div class="panel-head" onclick="toggleCollapse(this)">
-            <span>Recent failed sign-ins <span id="login-attempts-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
+            <span data-i18n="failed_signins">Recent failed sign-ins <span id="login-attempts-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
             <span class="caret">&#9662;</span>
         </div>
         <div>
             <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadLoginAttempts()">↻ Refresh</button>
-                <span style="font-size:11px; color:var(--text-muted);">Last 7 days. An account locks for 5 minutes after 5 failures; a network locks for 15 minutes after 30.</span>
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadLoginAttempts()" data-i18n="refresh_btn">↻ Refresh</button>
+                <span style="font-size:11px; color:var(--text-muted);" data-i18n="failed_signins_note">Last 7 days. An account locks for 5 minutes after 5 failures; a network locks for 15 minutes after 30.</span>
             </div>
             <div id="login-attempts-body" class="record-grid"></div>
         </div>
@@ -2503,13 +2503,13 @@
     <!-- Audit trail of "Sign Out All Users" actions. -->
     <div class="panel collapsed">
         <div class="panel-head" onclick="toggleCollapse(this)">
-            <span>Global sign-out history <span id="gso-history-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
+            <span data-i18n="gso_history">Global sign-out history <span id="gso-history-count" style="color:var(--text-muted); font-weight:400; font-size:0.8rem;"></span></span>
             <span class="caret">&#9662;</span>
         </div>
         <div>
             <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadGlobalSignoutHistory()">↻ Refresh</button>
-                <span style="font-size:11px; color:var(--text-muted);">Every 'Sign Out All Users' action: who started it, when, why, and how many were affected.</span>
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadGlobalSignoutHistory()" data-i18n="refresh_btn">↻ Refresh</button>
+                <span style="font-size:11px; color:var(--text-muted);" data-i18n="gso_history_note">Every 'Sign Out All Users' action: who started it, when, why, and how many were affected.</span>
             </div>
             <div id="gso-history-body" class="record-grid"></div>
         </div>
@@ -2519,25 +2519,25 @@
 <!-- TAB: COMPANIES -->
 <div id="tab-companies" class="tab-content">
     <div class="panel" id="company-form-panel" style="margin-bottom:12px;">
-        <h2 id="company-form-titletext">Add Company</h2>
-        <div class="form-section-label">Company</div>
+        <h2 id="company-form-titletext" data-i18n="add_company_title">Add Company</h2>
+        <div class="form-section-label" data-i18n="company_section">Company</div>
         <div class="grid-form">
-            <div class="field"><label>Company Code (3–4 chars)</label><input type="text" id="new-company-code" maxlength="4" placeholder="e.g. 3FL" style="text-transform:uppercase;"></div>
-            <div class="field field-wide"><label>Company Name</label><input type="text" id="new-company-name" placeholder="e.g. 3 Of Life LLC"></div>
+            <div class="field"><label data-i18n="company_code">Company Code (3–4 chars)</label><input type="text" id="new-company-code" maxlength="4" placeholder="e.g. 3FL" data-i18n-placeholder="company_code_ph" style="text-transform:uppercase;"></div>
+            <div class="field field-wide"><label data-i18n="company_name">Company Name</label><input type="text" id="new-company-name" placeholder="e.g. 3 Of Life LLC" data-i18n-placeholder="company_name_ph"></div>
         </div>
-        <div class="form-section-label" style="margin-top:10px;">Ownership &amp; contact</div>
+        <div class="form-section-label" style="margin-top:10px;" data-i18n="ownership_contact">Ownership &amp; contact</div>
         <div class="grid-form">
-            <div class="field"><label>Owner</label><input type="text" id="new-company-owner" placeholder="Owner name"></div>
-            <div class="field"><label>Phone #</label><input type="tel" id="new-company-phone" placeholder="(555) 555-5555"></div>
-            <div class="field"><label>Email</label><input type="email" id="new-company-email" placeholder="name@example.com"></div>
-            <div class="field"><label>Manager</label><input type="text" id="new-company-manager" placeholder="Manager name"></div>
-            <div class="field"><label>Manager Phone #</label><input type="tel" id="new-company-manager-phone" placeholder="(555) 555-5555"></div>
+            <div class="field"><label data-i18n="owner_label">Owner</label><input type="text" id="new-company-owner" placeholder="Owner name" data-i18n-placeholder="owner_ph"></div>
+            <div class="field"><label data-i18n="phone">Phone #</label><input type="tel" id="new-company-phone" placeholder="(555) 555-5555" data-i18n-placeholder="phone_ph"></div>
+            <div class="field"><label data-i18n="email">Email</label><input type="email" id="new-company-email" placeholder="name@example.com" data-i18n-placeholder="email_ph"></div>
+            <div class="field"><label data-i18n="manager_label">Manager</label><input type="text" id="new-company-manager" placeholder="Manager name" data-i18n-placeholder="manager_ph"></div>
+            <div class="field"><label data-i18n="manager_phone">Manager Phone #</label><input type="tel" id="new-company-manager-phone" placeholder="(555) 555-5555" data-i18n-placeholder="phone_ph"></div>
         </div>
-        <button class="btn" style="margin-top:0.75rem;" id="company-save-btn" onclick="createCompany()">+ Add Company</button>
-        <button type="button" class="btn-small" id="company-cancel-btn" style="display:none;background:#64748b;margin-top:0.75rem;" onclick="cancelCompanyEdit()">Cancel</button>
+        <button class="btn" style="margin-top:0.75rem;" id="company-save-btn" onclick="createCompany()" data-i18n="add_company_btn">+ Add Company</button>
+        <button type="button" class="btn-small" id="company-cancel-btn" style="display:none;background:#64748b;margin-top:0.75rem;" onclick="cancelCompanyEdit()" data-i18n="cancel">Cancel</button>
     </div>
     <div class="panel">
-        <h2>Companies</h2>
+        <h2 data-i18n="companies_title">Companies</h2>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-companies" onchange="setSortField('companies', this.value)">
@@ -2556,8 +2556,8 @@
 <!-- TAB: APPROVALS -->
 <div id="tab-approvals" class="tab-content">
     <div class="panel">
-        <h2>Pending Approvals</h2>
-        <div class="note-box">Locked financial changes (base pay rate, claim amount, weekly deduction) requested by Medium users appear here for Administrator approval.</div>
+        <h2 data-i18n="pending_approvals">Pending Approvals</h2>
+        <div class="note-box" data-i18n="approvals_note">Locked financial changes (base pay rate, claim amount, weekly deduction) requested by Medium users appear here for Administrator approval.</div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-approvals" onchange="setSortField('approvals', this.value)">
@@ -2571,8 +2571,8 @@
         <div id="approvals-tbody" class="record-grid"></div>
     </div>
     <div class="panel">
-        <h2>Pending Release Requests</h2>
-        <div class="note-box">A Medium user's Week in Deposit or Last Paycheck release — normal or early — always lands here first. Nothing is released until an Administrator approves it.</div>
+        <h2 data-i18n="pending_release_requests">Pending Release Requests</h2>
+        <div class="note-box" data-i18n="release_requests_note">A Medium user's Week in Deposit or Last Paycheck release — normal or early — always lands here first. Nothing is released until an Administrator approves it.</div>
         <div id="release-requests-tbody" class="record-grid"></div>
     </div>
 </div>
@@ -2580,8 +2580,8 @@
 <!-- TAB: LOG -->
 <div id="tab-log" class="tab-content">
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Change Log <span class="caret">&#9662;</span></h2>
-        <div class="note-box">Every applied change to employees, claims, charges, and routes is recorded here.</div>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="change_log_title">Change Log <span class="caret">&#9662;</span></h2>
+        <div class="note-box" data-i18n="log_note">Every applied change to employees, claims, charges, and routes is recorded here.</div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-log" onchange="setSortField('log', this.value)">
@@ -2599,21 +2599,21 @@
 <!-- TAB 9: DATA SYNC -->
 <div id="tab-data" class="tab-content">
     <div class="panel">
-        <h2>Export Data</h2>
-        <button class="btn" style="background:#2563eb;" onclick="exportExcel()">⬇️ Download Excel Backup (Route Tracker only)</button>
-        <button class="btn" style="background:#0f766e; margin-top:8px;" onclick="exportAllData(event)">⬇️ Export All Data (single file)</button>
-        <div class="note-box" style="margin-top:8px;">One .xlsx file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything you have access to, in one download. Employee SSN/ITIN is never included in any export.</div>
+        <h2 data-i18n="export_data_title">Export Data</h2>
+        <button class="btn" style="background:#2563eb;" onclick="exportExcel()" data-i18n="download_excel_backup">⬇️ Download Excel Backup (Route Tracker only)</button>
+        <button class="btn" style="background:#0f766e; margin-top:8px;" onclick="exportAllData(event)" data-i18n="export_all_data">⬇️ Export All Data (single file)</button>
+        <div class="note-box" style="margin-top:8px;" data-i18n="export_all_note">One .xlsx file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything you have access to, in one download. Employee SSN/ITIN is never included in any export.</div>
     </div>
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Import All Data (single file) <span class="caret">&#9662;</span></h2>
-        <div class="note-box">Upload a file exported from <strong>Export All Data</strong> above (or hand-edited to match its column layout) to restore Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay in one pass — matched to existing employees by Employee ID. Doesn't touch Employees themselves; use Import CSV on the Employees tab for that.</div>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="import_all_title">Import All Data (single file) <span class="caret">&#9662;</span></h2>
+        <div class="note-box" data-i18n="import_all_note">Upload a file exported from <strong>Export All Data</strong> above (or hand-edited to match its column layout) to restore Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay in one pass — matched to existing employees by Employee ID. Doesn't touch Employees themselves; use Import CSV on the Employees tab for that.</div>
         <div style="border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 6px; background: var(--surface-2); margin-top:8px;">
             <input type="file" id="import-all-input" accept=".xlsx,.xls,.csv" onchange="importAllData(event)">
         </div>
         <div id="import-all-status" style="margin-top:8px; font-size:0.85rem;"></div>
     </div>
     <div class="panel">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Import & Sync Routes from Excel (Tab: Tracker) <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="import_sync_routes_title">Import & Sync Routes from Excel (Tab: Tracker) <span class="caret">&#9662;</span></h2>
         <div style="border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 6px; background: var(--surface-2);">
             <input type="file" id="file-upload" accept=".xlsx, .xls, .csv">
         </div>
@@ -2621,32 +2621,32 @@
 
     <!-- RESTRICTED ADMINISTRATOR DANGER ZONE -->
     <div class="panel" id="admin-danger-zone" style="border-color: #ef4444; display: none;">
-        <h2 style="color: #ef4444; border-bottom-color: #fca5a5;">Administrator Management & Reset Zone</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">These actions are restricted to <strong>Administrator</strong> users only.</p>
+        <h2 style="color: #ef4444; border-bottom-color: #fca5a5;" data-i18n="admin_danger_title">Administrator Management & Reset Zone</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="admin_danger_note">These actions are restricted to <strong>Administrator</strong> users only.</p>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem;">
-            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllRoutes()">🗑️ Delete All Routes</button>
-            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllClaims()">🗑️ Delete All Claims</button>
-            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllCharges()">🗑️ Delete All Charges</button>
-            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllUsers()">🗑️ Delete All Users</button>
-            <button class="btn" style="background: #991b1b;" onclick="adminResetAllDataExceptUsers()">⚠️ Reset All Data (Except Users)</button>
+            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllRoutes()" data-i18n="del_all_routes">🗑️ Delete All Routes</button>
+            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllClaims()" data-i18n="del_all_claims">🗑️ Delete All Claims</button>
+            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllCharges()" data-i18n="del_all_charges">🗑️ Delete All Charges</button>
+            <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllUsers()" data-i18n="del_all_users">🗑️ Delete All Users</button>
+            <button class="btn" style="background: #991b1b;" onclick="adminResetAllDataExceptUsers()" data-i18n="reset_all_except_users">⚠️ Reset All Data (Except Users)</button>
         </div>
         <div style="margin-top:14px; padding-top:12px; border-top:1px dashed #fca5a5;">
-            <button class="btn" style="background: #7f1d1d;" onclick="openGlobalSignoutModal()">🚪 Sign Out All Users</button>
-            <p style="font-size:0.78rem; color:var(--text-muted); margin:6px 0 0;">Gives everyone a countdown warning, then signs them out of all devices. Administrators affect their own company; Super Admin affects everyone.</p>
+            <button class="btn" style="background: #7f1d1d;" onclick="openGlobalSignoutModal()" data-i18n="gso_title">🚪 Sign Out All Users</button>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin:6px 0 0;" data-i18n="gso_signout_note">Gives everyone a countdown warning, then signs them out of all devices. Administrators affect their own company; Super Admin affects everyone.</p>
         </div>
     </div>
     <div class="panel" id="superadmin-danger-zone" style="border-color: #7f1d1d; display: none; background: rgba(127,29,29,0.04);">
-        <h2 style="color: #7f1d1d; border-bottom-color: #7f1d1d;">System Reset — Super Admin Only</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Removes every user account except Super Admins, and clears the audit Log and pending Approvals. Companies and everything that belongs to them — employees, claims, charges, routes, income — are <strong>not</strong> touched. Cannot be undone.</p>
-        <button class="btn" style="background: #7f1d1d; margin-top: 0.75rem;" onclick="superAdminResetSystem()">☢️ Reset System (Keep Companies & Super Admin)</button>
+        <h2 style="color: #7f1d1d; border-bottom-color: #7f1d1d;" data-i18n="sysreset_title">System Reset — Super Admin Only</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="sysreset_note">Removes every user account except Super Admins, and clears the audit Log and pending Approvals. Companies and everything that belongs to them — employees, claims, charges, routes, income — are <strong>not</strong> touched. Cannot be undone.</p>
+        <button class="btn" style="background: #7f1d1d; margin-top: 0.75rem;" onclick="superAdminResetSystem()" data-i18n="reset_system_btn">☢️ Reset System (Keep Companies & Super Admin)</button>
     </div>
 </div>
 
 <!-- TAB: CHANGELOG (SuperAdmin + Administrator only) -->
 <div id="tab-changelog" class="tab-content">
     <div class="panel">
-        <h2>Changelog</h2>
-        <div class="note-box">Every change delivered to this app, newest first — stored server-side so this history survives even across app file changes. Only visible to Super Admin.</div>
+        <h2 data-i18n="changelog_title">Changelog</h2>
+        <div class="note-box" data-i18n="changelog_note">Every change delivered to this app, newest first — stored server-side so this history survives even across app file changes. Only visible to Super Admin.</div>
         <div id="changelog-tbody" class="record-grid"></div>
     </div>
 </div>
@@ -2656,7 +2656,7 @@
      directly via runGlobalSearch() and closed by navigating to any tab. -->
 <div id="tab-search-results" class="tab-content">
     <div class="panel" style="padding-bottom:6px;">
-        <h2 id="global-search-title" style="margin:0;">Search results</h2>
+        <h2 id="global-search-title" style="margin:0;" data-i18n="search_results_title">Search results</h2>
     </div>
     <div id="global-search-results"></div>
 </div>
@@ -4780,8 +4780,8 @@
         document.getElementById('new-company-email').value = c.email || '';
         document.getElementById('new-company-manager').value = c.manager || '';
         document.getElementById('new-company-manager-phone').value = c.manager_phone || '';
-        document.getElementById('company-form-titletext').textContent = `Editing ${c.name} — ${c.code}`;
-        document.getElementById('company-save-btn').textContent = 'Save changes';
+        document.getElementById('company-form-titletext').textContent = `${t('editing_prefix')} ${c.name} — ${c.code}`;
+        document.getElementById('company-save-btn').textContent = t('save_changes_plain');
         document.getElementById('company-cancel-btn').style.display = 'inline-block';
         document.getElementById('tab-companies').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -4793,8 +4793,8 @@
         });
         document.getElementById('new-company-code').disabled = false;
         document.getElementById('new-company-name').disabled = false;
-        document.getElementById('company-form-titletext').textContent = 'Add Company';
-        document.getElementById('company-save-btn').textContent = '+ Add Company';
+        document.getElementById('company-form-titletext').textContent = t('add_company_title');
+        document.getElementById('company-save-btn').textContent = t('add_company_btn');
         document.getElementById('company-cancel-btn').style.display = 'none';
         if (currentUserRole !== 'SuperAdmin') document.getElementById('company-form-panel').style.display = 'none';
     }
@@ -11153,7 +11153,56 @@
             release_history_title: 'Release History',
             releasehistory_note: 'Permanent record of every Week in Deposit and Last Paycheck release — original amount, what was deducted toward other claims/charges, and what actually reached the employee.',
             search_emp_releasedby_ph: 'Search employee, released by...',
-            early_ontime: 'Early & on-time', early_only: 'Early only', ontime_only: 'On-time only'
+            early_ontime: 'Early & on-time', early_only: 'Early only', ontime_only: 'On-time only',
+            // --- R4: Messages, Invoices, Bills, Users, Companies, Approvals, Log, Data Sync, Changelog ---
+            dm_search_ph: 'Search conversations...', pill_all: 'All', pill_general: 'General', pill_missing_day: 'Missing Day',
+            pill_claims: 'Claims', pill_charges: 'Charges', pill_income: 'Income', dm_compose_ph: 'Type a message...',
+            dm_empty_state: 'Select a person on the left to start a conversation.',
+            new_invoice_title: 'New Invoice', edit_invoice_title: 'Edit Invoice', save_invoice_btn: '+ Save Invoice', update_invoice_btn: '✎ Update Invoice',
+            inv_number: 'Invoice #', inv_customer: 'Customer', inv_date: 'Invoice Date', due_date: 'Due Date', bill_to: 'Bill To',
+            unpaid_opt: 'Unpaid', void_opt: 'Void',
+            inv_number_ph: 'e.g. 0169', inv_customer_ph: 'e.g. Tramo', inv_billto_ph: 'Company, address, contact — as it appears on the invoice',
+            line_items: 'Line Items', add_line: '+ Add Line',
+            invoice_search_ph: 'Search invoice #, customer, notes...', all_customers: 'All customers',
+            new_bill_title: 'New Bill', edit_bill_title: 'Edit Bill', save_bill_btn: '+ Save Bill', update_bill_btn: '✎ Update Bill',
+            vendor: 'Vendor', vendor_bill_num: 'Vendor\'s Bill #', bill_date: 'Bill Date', amount_label: 'Amount',
+            bill_vendor_ph: 'e.g. ABC Fuel Co, or pick a provider', bill_number_ph: 'e.g. INV-9001',
+            bill_search_ph: 'Search vendor, bill #, notes...', all_vendors: 'All vendors',
+            create_user_title: 'Create New User Profile', role_field: 'Role', assign_employee: 'Assign to Employee',
+            create_user_btn: '+ Create User', system_users: 'System Users', refresh_btn: '↻ Refresh',
+            active_sessions: 'Active sessions', session_signout_note: 'Signing a session out takes effect immediately.',
+            failed_signins: 'Recent failed sign-ins',
+            failed_signins_note: 'Last 7 days. An account locks for 5 minutes after 5 failures; a network locks for 15 minutes after 30.',
+            gso_history: 'Global sign-out history',
+            gso_history_note: 'Every \'Sign Out All Users\' action: who started it, when, why, and how many were affected.',
+            add_company_title: 'Add Company', add_company_btn: '+ Add Company', save_changes_plain: 'Save changes', editing_prefix: 'Editing',
+            company_section: 'Company', company_code: 'Company Code (3–4 chars)', company_name: 'Company Name',
+            ownership_contact: 'Ownership & contact', owner_label: 'Owner', manager_label: 'Manager', manager_phone: 'Manager Phone #',
+            company_code_ph: 'e.g. 3FL', company_name_ph: 'e.g. 3 Of Life LLC', owner_ph: 'Owner name', phone_ph: '(555) 555-5555',
+            email_ph: 'name@example.com', manager_ph: 'Manager name', companies_title: 'Companies',
+            pending_approvals: 'Pending Approvals',
+            approvals_note: 'Locked financial changes (base pay rate, claim amount, weekly deduction) requested by Medium users appear here for Administrator approval.',
+            pending_release_requests: 'Pending Release Requests',
+            release_requests_note: 'A Medium user\'s Week in Deposit or Last Paycheck release — normal or early — always lands here first. Nothing is released until an Administrator approves it.',
+            change_log_title: 'Change Log',
+            log_note: 'Every applied change to employees, claims, charges, and routes is recorded here.',
+            export_data_title: 'Export Data', download_excel_backup: '⬇️ Download Excel Backup (Route Tracker only)',
+            export_all_data: '⬇️ Export All Data (single file)',
+            export_all_note: 'One .xlsx file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything you have access to, in one download. Employee SSN/ITIN is never included in any export.',
+            import_all_title: 'Import All Data (single file)',
+            import_all_note: 'Upload a file exported from <strong>Export All Data</strong> above (or hand-edited to match its column layout) to restore Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay in one pass — matched to existing employees by Employee ID. Doesn\'t touch Employees themselves; use Import CSV on the Employees tab for that.',
+            import_sync_routes_title: 'Import & Sync Routes from Excel (Tab: Tracker)',
+            admin_danger_title: 'Administrator Management & Reset Zone',
+            admin_danger_note: 'These actions are restricted to <strong>Administrator</strong> users only.',
+            del_all_routes: '🗑️ Delete All Routes', del_all_claims: '🗑️ Delete All Claims', del_all_charges: '🗑️ Delete All Charges',
+            del_all_users: '🗑️ Delete All Users', reset_all_except_users: '⚠️ Reset All Data (Except Users)',
+            gso_signout_note: 'Gives everyone a countdown warning, then signs them out of all devices. Administrators affect their own company; Super Admin affects everyone.',
+            sysreset_title: 'System Reset — Super Admin Only',
+            sysreset_note: 'Removes every user account except Super Admins, and clears the audit Log and pending Approvals. Companies and everything that belongs to them — employees, claims, charges, routes, income — are <strong>not</strong> touched. Cannot be undone.',
+            reset_system_btn: '☢️ Reset System (Keep Companies & Super Admin)',
+            changelog_title: 'Changelog',
+            changelog_note: 'Every change delivered to this app, newest first — stored server-side so this history survives even across app file changes. Only visible to Super Admin.',
+            search_results_title: 'Search results'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11296,7 +11345,56 @@
             release_history_title: 'Historial de liberaciones',
             releasehistory_note: 'Registro permanente de cada liberación de Semana de Fondo y Último Cheque — monto original, lo que se dedujo hacia otros reclamos/cargos, y lo que realmente recibió el empleado.',
             search_emp_releasedby_ph: 'Buscar empleado, liberado por...',
-            early_ontime: 'Anticipadas y a tiempo', early_only: 'Solo anticipadas', ontime_only: 'Solo a tiempo'
+            early_ontime: 'Anticipadas y a tiempo', early_only: 'Solo anticipadas', ontime_only: 'Solo a tiempo',
+            // --- R4: Messages, Invoices, Bills, Users, Companies, Approvals, Log, Data Sync, Changelog ---
+            dm_search_ph: 'Buscar conversaciones...', pill_all: 'Todas', pill_general: 'General', pill_missing_day: 'Día faltante',
+            pill_claims: 'Reclamos', pill_charges: 'Cargos', pill_income: 'Ingresos', dm_compose_ph: 'Escriba un mensaje...',
+            dm_empty_state: 'Seleccione una persona a la izquierda para iniciar una conversación.',
+            new_invoice_title: 'Nueva factura', edit_invoice_title: 'Editar factura', save_invoice_btn: '+ Guardar factura', update_invoice_btn: '✎ Actualizar factura',
+            inv_number: 'Factura n.º', inv_customer: 'Cliente', inv_date: 'Fecha de factura', due_date: 'Fecha de vencimiento', bill_to: 'Facturar a',
+            unpaid_opt: 'Sin pagar', void_opt: 'Anulada',
+            inv_number_ph: 'p. ej. 0169', inv_customer_ph: 'p. ej. Tramo', inv_billto_ph: 'Compañía, dirección, contacto — como aparece en la factura',
+            line_items: 'Conceptos', add_line: '+ Agregar línea',
+            invoice_search_ph: 'Buscar factura n.º, cliente, notas...', all_customers: 'Todos los clientes',
+            new_bill_title: 'Nueva cuenta', edit_bill_title: 'Editar cuenta', save_bill_btn: '+ Guardar cuenta', update_bill_btn: '✎ Actualizar cuenta',
+            vendor: 'Proveedor', vendor_bill_num: 'N.º de cuenta del proveedor', bill_date: 'Fecha de la cuenta', amount_label: 'Monto',
+            bill_vendor_ph: 'p. ej. ABC Fuel Co, o elija un proveedor', bill_number_ph: 'p. ej. INV-9001',
+            bill_search_ph: 'Buscar proveedor, cuenta n.º, notas...', all_vendors: 'Todos los proveedores',
+            create_user_title: 'Crear nuevo perfil de usuario', role_field: 'Rol', assign_employee: 'Asignar a empleado',
+            create_user_btn: '+ Crear usuario', system_users: 'Usuarios del sistema', refresh_btn: '↻ Actualizar',
+            active_sessions: 'Sesiones activas', session_signout_note: 'Cerrar una sesión surte efecto de inmediato.',
+            failed_signins: 'Inicios de sesión fallidos recientes',
+            failed_signins_note: 'Últimos 7 días. Una cuenta se bloquea 5 minutos tras 5 fallos; una red se bloquea 15 minutos tras 30.',
+            gso_history: 'Historial de cierre de sesión global',
+            gso_history_note: 'Cada acción de \'Cerrar sesión de todos\': quién la inició, cuándo, por qué y a cuántos afectó.',
+            add_company_title: 'Agregar compañía', add_company_btn: '+ Agregar compañía', save_changes_plain: 'Guardar cambios', editing_prefix: 'Editando',
+            company_section: 'Compañía', company_code: 'Código de compañía (3–4 caracteres)', company_name: 'Nombre de la compañía',
+            ownership_contact: 'Propiedad y contacto', owner_label: 'Propietario', manager_label: 'Gerente', manager_phone: 'Teléfono del gerente',
+            company_code_ph: 'p. ej. 3FL', company_name_ph: 'p. ej. 3 Of Life LLC', owner_ph: 'Nombre del propietario', phone_ph: '(555) 555-5555',
+            email_ph: 'nombre@ejemplo.com', manager_ph: 'Nombre del gerente', companies_title: 'Compañías',
+            pending_approvals: 'Aprobaciones pendientes',
+            approvals_note: 'Los cambios financieros bloqueados (tarifa de pago base, monto del reclamo, deducción semanal) solicitados por usuarios Medium aparecen aquí para la aprobación del Administrador.',
+            pending_release_requests: 'Solicitudes de liberación pendientes',
+            release_requests_note: 'La liberación de Semana de Fondo o Último Cheque de un usuario Medium — normal o anticipada — siempre llega aquí primero. Nada se libera hasta que un Administrador lo apruebe.',
+            change_log_title: 'Registro de cambios',
+            log_note: 'Cada cambio aplicado a empleados, reclamos, cargos y rutas se registra aquí.',
+            export_data_title: 'Exportar datos', download_excel_backup: '⬇️ Descargar respaldo Excel (solo Rastreador de rutas)',
+            export_all_data: '⬇️ Exportar todos los datos (un solo archivo)',
+            export_all_note: 'Un archivo .xlsx con una hoja separada para Empleados, Reclamos, Cargos, Ingresos adicionales, Vehículos, Rutas, Pago diario y Pago a proveedores — todo a lo que tiene acceso, en una sola descarga. El SSN/ITIN del empleado nunca se incluye en ninguna exportación.',
+            import_all_title: 'Importar todos los datos (un solo archivo)',
+            import_all_note: 'Suba un archivo exportado desde <strong>Exportar todos los datos</strong> arriba (o editado a mano para coincidir con su diseño de columnas) para restaurar Reclamos, Cargos, Ingresos adicionales, Vehículos, Rutas, Pago diario y Pago a proveedores en un solo paso — vinculados a los empleados existentes por ID de empleado. No toca a los Empleados en sí; use Importar CSV en la pestaña Empleados para eso.',
+            import_sync_routes_title: 'Importar y sincronizar rutas desde Excel (Pestaña: Rastreador)',
+            admin_danger_title: 'Zona de gestión y restablecimiento del Administrador',
+            admin_danger_note: 'Estas acciones están restringidas solo a usuarios <strong>Administrador</strong>.',
+            del_all_routes: '🗑️ Eliminar todas las rutas', del_all_claims: '🗑️ Eliminar todos los reclamos', del_all_charges: '🗑️ Eliminar todos los cargos',
+            del_all_users: '🗑️ Eliminar todos los usuarios', reset_all_except_users: '⚠️ Restablecer todos los datos (excepto usuarios)',
+            gso_signout_note: 'Da a todos una advertencia con cuenta regresiva y luego los cierra en todos los dispositivos. Los Administradores afectan su propia compañía; el Súper Admin afecta a todos.',
+            sysreset_title: 'Restablecimiento del sistema — Solo Súper Admin',
+            sysreset_note: 'Elimina todas las cuentas de usuario excepto los Súper Admin, y borra el Registro de auditoría y las Aprobaciones pendientes. Las compañías y todo lo que les pertenece — empleados, reclamos, cargos, rutas, ingresos — <strong>no</strong> se tocan. No se puede deshacer.',
+            reset_system_btn: '☢️ Restablecer sistema (conservar compañías y Súper Admin)',
+            changelog_title: 'Registro de cambios',
+            changelog_note: 'Cada cambio entregado a esta app, más reciente primero — almacenado en el servidor para que este historial sobreviva incluso a cambios del archivo de la app. Solo visible para el Súper Admin.',
+            search_results_title: 'Resultados de búsqueda'
         }
     };
 
@@ -12299,8 +12397,8 @@
         // deliberately left empty on edit rather than reloading its lines.
         invoiceDraftLines = [];
         renderInvoiceLineItemEditor();
-        document.getElementById('invoice-form-title').textContent = 'Edit Invoice';
-        document.getElementById('invoice-save-btn').textContent = '✎ Update Invoice';
+        document.getElementById('invoice-form-title').textContent = t('edit_invoice_title');
+        document.getElementById('invoice-save-btn').textContent = t('update_invoice_btn');
         document.getElementById('invoice-cancel-btn').style.display = 'inline-block';
         document.getElementById('invoice-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -12311,8 +12409,8 @@
         document.getElementById('inv-status').value = 'Unpaid';
         invoiceDraftLines = [];
         renderInvoiceLineItemEditor();
-        document.getElementById('invoice-form-title').textContent = 'New Invoice';
-        document.getElementById('invoice-save-btn').textContent = '+ Save Invoice';
+        document.getElementById('invoice-form-title').textContent = t('new_invoice_title');
+        document.getElementById('invoice-save-btn').textContent = t('save_invoice_btn');
         document.getElementById('invoice-cancel-btn').style.display = 'none';
     }
 
@@ -12525,8 +12623,8 @@
         document.getElementById('bill-amount').value = b.amount || '';
         document.getElementById('bill-status').value = b.status || 'Unpaid';
         document.getElementById('bill-notes').value = b.notes || '';
-        document.getElementById('bill-form-title').textContent = 'Edit Bill';
-        document.getElementById('bill-save-btn').textContent = '✎ Update Bill';
+        document.getElementById('bill-form-title').textContent = t('edit_bill_title');
+        document.getElementById('bill-save-btn').textContent = t('update_bill_btn');
         document.getElementById('bill-cancel-btn').style.display = 'inline-block';
         document.getElementById('bill-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -12535,8 +12633,8 @@
         editingBillId = null;
         ['bill-vendor', 'bill-number', 'bill-date', 'bill-due-date', 'bill-amount', 'bill-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         document.getElementById('bill-status').value = 'Unpaid';
-        document.getElementById('bill-form-title').textContent = 'New Bill';
-        document.getElementById('bill-save-btn').textContent = '+ Save Bill';
+        document.getElementById('bill-form-title').textContent = t('new_bill_title');
+        document.getElementById('bill-save-btn').textContent = t('save_bill_btn');
         document.getElementById('bill-cancel-btn').style.display = 'none';
     }
 
