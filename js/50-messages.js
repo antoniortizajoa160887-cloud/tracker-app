@@ -267,7 +267,7 @@
             html += `
                 <div class="msg-bubble-row ${m.mine ? 'mine' : 'theirs'}">
                     <div class="msg-bubble-meta">${m.mine ? 'You' : escHtml(label)} · ${time}${readTag}</div>
-                    <div class="msg-bubble">${m.body ? escHtml(m.body) : ''}${m.attach_path ? `${m.body ? '<br>' : ''}${dmFileChip(m)}` : ''}</div>
+                    <div class="msg-bubble">${m.body ? escHtml(m.body) : ''}${m.attach_path ? `${m.body ? '<br>' : ''}${dmFileChip(m, label)}` : ''}</div>
                     ${m.mine ? `<span class="msg-bubble-del" onclick="deleteDirectMessage(${m.id})">✕ Delete</span>` : ''}
                 </div>`;
         });
@@ -328,10 +328,14 @@
     function dmTopicEntityType(topic) {
         return topic === 'Claims' ? 'claim' : topic === 'Charges' ? 'charge' : topic === 'Income' ? 'income' : null;
     }
-    function dmFileChip(m) {
+    function dmFileChip(m, label) {
         const icon = m.attach_kind === 'photo' ? '📷' : m.attach_kind === 'video' ? '🎬' : '📄';
         const size = m.attach_size ? ' · ' + formatBytes(m.attach_size) : '';
-        return `<button type="button" class="btn-small" style="margin:2px 0 0; background:var(--excel-blue);" onclick="viewAttachment('${escJsAttr(m.attach_path)}')">${icon} ${escHtml(m.attach_name || 'file')}${size}</button>`;
+        // Attribution for the viewer: the message sender uploaded this file, at
+        // the message's time. mime is left blank so the file-name extension
+        // drives the render mode (chat files always keep their extension).
+        const who = m.mine ? (currentUsername || '') : (label || '');
+        return `<button type="button" class="btn-small" style="margin:2px 0 0; background:var(--excel-blue);" onclick="viewAttachment('${escJsAttr(m.attach_path)}','${escJsAttr(m.attach_name || '')}','','${escJsAttr(who)}','${escJsAttr(m.created_at || '')}')">${icon} ${escHtml(m.attach_name || 'file')}${size}</button>`;
     }
     // Chat uploads are staged with an editable, pre-filled name first — the same
     // two-step flow and naming convention as the Files modal — so a camera name
