@@ -1450,7 +1450,7 @@
     <div id="release-decision-reminder" style="display:none; margin-bottom:12px;"></div>
     <div class="panel">
         <h2 id="home-welcome" style="margin-bottom:2px;">Welcome</h2>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Here's where things stand right now.</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;" data-i18n="home_subtitle">Here's where things stand right now.</div>
         <div class="stat-grid" id="home-stats-grid"></div>
     </div>
 </div>
@@ -1596,30 +1596,30 @@
 <!-- TAB: NOTIFICATIONS -->
 <div id="tab-notifications" class="tab-content">
     <div class="panel">
-        <h2>Notifications</h2>
-        <div class="note-box">New claims, charges, and additional income you've been assigned show up here. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company's, same as the rest of the app.</div>
+        <h2 data-i18n="tab_notifications">Notifications</h2>
+        <div class="note-box" data-i18n="notif_note">New claims, charges, and additional income you've been assigned show up here. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company's, same as the rest of the app.</div>
         <div class="form-row" style="margin-bottom:10px; align-items:flex-end;">
             <div class="field">
-                <label>Date range</label>
+                <label data-i18n="date_range">Date range</label>
                 <select id="notif-range" onchange="renderNotifications()">
-                    <option value="">All time</option>
-                    <option value="30">Last 30 days</option>
-                    <option value="60">Last 60 days</option>
-                    <option value="90">Last 90 days</option>
-                    <option value="365">Last year</option>
+                    <option value="" data-i18n="range_all">All time</option>
+                    <option value="30" data-i18n="range_30">Last 30 days</option>
+                    <option value="60" data-i18n="range_60">Last 60 days</option>
+                    <option value="90" data-i18n="range_90">Last 90 days</option>
+                    <option value="365" data-i18n="range_365">Last year</option>
                 </select>
             </div>
             <div class="field">
-                <label>Sort</label>
+                <label data-i18n="sort_short">Sort</label>
                 <div style="display:flex; gap:6px;">
                     <select id="notif-sort" onchange="renderNotifications()">
-                        <option value="date">Date</option>
+                        <option value="date" data-i18n="opt_date">Date</option>
                     </select>
                     <button type="button" class="btn-small rec-dir-btn" id="notif-dir-btn" onclick="flipNotifDir()">▼</button>
                 </div>
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('notifications')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="markAllNotificationsRead()">Mark all as read</button>
+            <button type="button" class="btn-small" style="background:var(--navy);" onclick="markAllNotificationsRead()" data-i18n="mark_all_read">Mark all as read</button>
         </div>
         <div id="notifications-tbody" class="record-grid"></div>
     </div>
@@ -2255,28 +2255,28 @@
         </div>
     </div>
     <div class="panel collapsed">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">ID Configuration <span class="caret">&#9662;</span></h2>
-        <div class="note-box">Changes here only affect <strong>new</strong> IDs going forward — Employee, Claim, and Charge IDs already assigned won't change. The ID <strong>prefix is the company code</strong> (set when a company is added), so switch companies up top to control it.</div>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="id_config">ID Configuration <span class="caret">&#9662;</span></h2>
+        <div class="note-box" data-i18n="id_config_note">Changes here only affect <strong>new</strong> IDs going forward — Employee, Claim, and Charge IDs already assigned won't change. The ID <strong>prefix is the company code</strong> (set when a company is added), so switch companies up top to control it.</div>
         <form id="id-config-form">
             <div class="form-row">
-                <div class="field field-narrow"><label>Employee ID digits</label><input type="number" id="set-emp-digits" value="4" min="1" max="8"></div>
-                <div class="field field-narrow"><label>Claim ID digits</label><input type="number" id="set-claim-digits" value="5" min="1" max="8"></div>
-                <div class="field field-narrow"><label>Charge ID digits</label><input type="number" id="set-charge-digits" value="5" min="1" max="8"></div>
-                <div class="field field-narrow"><label>Charge ID suffix</label><input type="text" id="set-charge-suffix" value="D"></div>
+                <div class="field field-narrow"><label data-i18n="emp_id_digits">Employee ID digits</label><input type="number" id="set-emp-digits" value="4" min="1" max="8"></div>
+                <div class="field field-narrow"><label data-i18n="claim_id_digits">Claim ID digits</label><input type="number" id="set-claim-digits" value="5" min="1" max="8"></div>
+                <div class="field field-narrow"><label data-i18n="charge_id_digits">Charge ID digits</label><input type="number" id="set-charge-digits" value="5" min="1" max="8"></div>
+                <div class="field field-narrow"><label data-i18n="charge_id_suffix">Charge ID suffix</label><input type="text" id="set-charge-suffix" value="D"></div>
             </div>
-            <button type="submit" class="btn-small">Save ID format</button>
+            <button type="submit" class="btn-small" data-i18n="save_id_format">Save ID format</button>
         </form>
     </div>
 
     <div class="panel collapsed">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Type of Damage (Claims) <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="damage_type_panel">Type of Damage (Claims) <span class="caret">&#9662;</span></h2>
         <form id="add-damage-form" class="form-row" style="margin-bottom:10px;">
-            <div class="field"><label>Add a new damage type</label><input type="text" id="new-damage-input" placeholder="e.g. Water damage"></div>
-            <div class="field field-narrow" style="align-self:flex-end;"><button type="submit" class="btn-small" style="width:100%;">Add</button></div>
+            <div class="field"><label data-i18n="add_damage_type">Add a new damage type</label><input type="text" id="new-damage-input" placeholder="e.g. Water damage" data-i18n-placeholder="damage_type_ph"></div>
+            <div class="field field-narrow" style="align-self:flex-end;"><button type="submit" class="btn-small" style="width:100%;" data-i18n="add_btn">Add</button></div>
         </form>
         <div class="table-wrapper">
             <table>
-                <thead><tr><th>Damage Type</th><th>Action</th></tr></thead>
+                <thead><tr><th data-i18n="th_damage_type">Damage Type</th><th data-i18n="th_action">Action</th></tr></thead>
                 <tbody id="damage-types-tbody"></tbody>
             </table>
         </div>
@@ -2284,28 +2284,28 @@
     </div>
 
     <div class="panel collapsed">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Charge Type (Charges) <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="charge_type_panel">Charge Type (Charges) <span class="caret">&#9662;</span></h2>
         <form id="add-charge-type-form" class="form-row" style="margin-bottom:10px;">
-            <div class="field"><label>Add a new charge type</label><input type="text" id="new-charge-type-input" placeholder="e.g. Advance"></div>
-            <div class="field field-narrow" style="align-self:flex-end;"><button type="submit" class="btn-small" style="width:100%;">Add</button></div>
+            <div class="field"><label data-i18n="add_charge_type">Add a new charge type</label><input type="text" id="new-charge-type-input" placeholder="e.g. Advance" data-i18n-placeholder="charge_type_ph"></div>
+            <div class="field field-narrow" style="align-self:flex-end;"><button type="submit" class="btn-small" style="width:100%;" data-i18n="add_btn">Add</button></div>
         </form>
         <div class="table-wrapper">
             <table>
-                <thead><tr><th>Charge Type</th><th>Action</th></tr></thead>
+                <thead><tr><th data-i18n="th_charge_type">Charge Type</th><th data-i18n="th_action">Action</th></tr></thead>
                 <tbody id="charge-types-tbody"></tbody>
             </table>
         </div>
     </div>
 
     <div class="panel collapsed">
-        <h2 class="panel-head" onclick="toggleCollapse(this)">Additional Income Type <span class="caret">&#9662;</span></h2>
+        <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="income_type_panel">Additional Income Type <span class="caret">&#9662;</span></h2>
         <form id="add-income-type-form" class="form-row" style="margin-bottom:10px;">
-            <div class="field"><label>Add a new income type</label><input type="text" id="new-income-type-input" placeholder="e.g. Bonus"></div>
-            <div class="field field-narrow" style="align-self:flex-end;"><button type="submit" class="btn-small" style="width:100%;">Add</button></div>
+            <div class="field"><label data-i18n="add_income_type">Add a new income type</label><input type="text" id="new-income-type-input" placeholder="e.g. Bonus" data-i18n-placeholder="income_type_ph"></div>
+            <div class="field field-narrow" style="align-self:flex-end;"><button type="submit" class="btn-small" style="width:100%;" data-i18n="add_btn">Add</button></div>
         </form>
         <div class="table-wrapper">
             <table>
-                <thead><tr><th>Income Type</th><th>Action</th></tr></thead>
+                <thead><tr><th data-i18n="th_income_type">Income Type</th><th data-i18n="th_action">Action</th></tr></thead>
                 <tbody id="income-types-tbody"></tbody>
             </table>
         </div>
@@ -11092,7 +11092,20 @@
             gso_reason_ph: 'e.g. system maintenance', gso_type_pre: 'Type', gso_type_post: 'to confirm',
             gso_start: 'Start sign-out', gso_scope_all: 'in every company', gso_scope_company: 'in your company',
             idle_title: 'Still there?', idle_pre: 'You’ll be signed out in',
-            idle_post: 's due to inactivity. Any unsaved changes could be lost.', idle_stay: 'Stay signed in'
+            idle_post: 's due to inactivity. Any unsaved changes could be lost.', idle_stay: 'Stay signed in',
+            // --- R2: Settings, Home, Notifications ---
+            id_config: 'ID Configuration',
+            id_config_note: 'Changes here only affect <strong>new</strong> IDs going forward — Employee, Claim, and Charge IDs already assigned won\'t change. The ID <strong>prefix is the company code</strong> (set when a company is added), so switch companies up top to control it.',
+            emp_id_digits: 'Employee ID digits', claim_id_digits: 'Claim ID digits', charge_id_digits: 'Charge ID digits',
+            charge_id_suffix: 'Charge ID suffix', save_id_format: 'Save ID format',
+            damage_type_panel: 'Type of Damage (Claims)', add_damage_type: 'Add a new damage type', damage_type_ph: 'e.g. Water damage',
+            add_btn: 'Add', charge_type_panel: 'Charge Type (Charges)', add_charge_type: 'Add a new charge type', charge_type_ph: 'e.g. Advance',
+            th_charge_type: 'Charge Type', income_type_panel: 'Additional Income Type', add_income_type: 'Add a new income type',
+            income_type_ph: 'e.g. Bonus', th_income_type: 'Income Type',
+            home_subtitle: 'Here\'s where things stand right now.',
+            notif_note: 'New claims, charges, and additional income you\'ve been assigned show up here. Tap one to jump straight to it. View Only accounts only ever see their own — everyone else sees their whole company\'s, same as the rest of the app.',
+            date_range: 'Date range', range_all: 'All time', range_30: 'Last 30 days', range_60: 'Last 60 days',
+            range_90: 'Last 90 days', range_365: 'Last year', sort_short: 'Sort', opt_date: 'Date', mark_all_read: 'Mark all as read'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11174,7 +11187,20 @@
             gso_reason_ph: 'p. ej. mantenimiento del sistema', gso_type_pre: 'Escriba', gso_type_post: 'para confirmar',
             gso_start: 'Iniciar cierre de sesión', gso_scope_all: 'en todas las compañías', gso_scope_company: 'en su compañía',
             idle_title: '¿Sigue ahí?', idle_pre: 'Se cerrará su sesión en',
-            idle_post: 's por inactividad. Cualquier cambio sin guardar podría perderse.', idle_stay: 'Seguir conectado'
+            idle_post: 's por inactividad. Cualquier cambio sin guardar podría perderse.', idle_stay: 'Seguir conectado',
+            // --- R2: Settings, Home, Notifications ---
+            id_config: 'Configuración de ID',
+            id_config_note: 'Los cambios aquí solo afectan a los <strong>nuevos</strong> ID en adelante — los ID de empleado, reclamo y cargo ya asignados no cambiarán. El <strong>prefijo del ID es el código de la compañía</strong> (definido al agregar una compañía), así que cambie de compañía arriba para controlarlo.',
+            emp_id_digits: 'Dígitos del ID de empleado', claim_id_digits: 'Dígitos del ID de reclamo', charge_id_digits: 'Dígitos del ID de cargo',
+            charge_id_suffix: 'Sufijo del ID de cargo', save_id_format: 'Guardar formato de ID',
+            damage_type_panel: 'Tipo de daño (Reclamos)', add_damage_type: 'Agregar un nuevo tipo de daño', damage_type_ph: 'p. ej. Daño por agua',
+            add_btn: 'Agregar', charge_type_panel: 'Tipo de cargo (Cargos)', add_charge_type: 'Agregar un nuevo tipo de cargo', charge_type_ph: 'p. ej. Adelanto',
+            th_charge_type: 'Tipo de cargo', income_type_panel: 'Tipo de ingreso adicional', add_income_type: 'Agregar un nuevo tipo de ingreso',
+            income_type_ph: 'p. ej. Bono', th_income_type: 'Tipo de ingreso',
+            home_subtitle: 'Así están las cosas ahora mismo.',
+            notif_note: 'Los reclamos, cargos e ingresos adicionales que se le asignen aparecen aquí. Toque uno para ir directo a él. Las cuentas de Solo Lectura solo ven los suyos; los demás ven los de toda su compañía, igual que en el resto de la app.',
+            date_range: 'Rango de fechas', range_all: 'Todo el tiempo', range_30: 'Últimos 30 días', range_60: 'Últimos 60 días',
+            range_90: 'Últimos 90 días', range_365: 'Último año', sort_short: 'Ordenar', opt_date: 'Fecha', mark_all_read: 'Marcar todo como leído'
         }
     };
 
