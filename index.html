@@ -156,8 +156,8 @@
         <div id="login-language-picker-block">
             <div data-i18n="language_label" style="font-size:0.7rem; color:#8b98a5; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:6px;">Language</div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:0.85rem;">
-                <button type="button" class="btn-small" id="login-lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
-                <button type="button" class="btn-small" id="login-lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
+                <button type="button" class="btn-small" id="login-lang-btn-en" onclick="setLanguage('en')" style="margin:0;"><svg viewBox="0 0 19 13" width="18" height="13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px;margin-right:6px;flex:none;"><rect width="19" height="13" fill="#b22234"/><g fill="#fff"><rect y="1" width="19" height="1"/><rect y="3" width="19" height="1"/><rect y="5" width="19" height="1"/><rect y="7" width="19" height="1"/><rect y="9" width="19" height="1"/><rect y="11" width="19" height="1"/></g><rect width="8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.5" cy="1.5" r=".6"/><circle cx="4" cy="1.5" r=".6"/><circle cx="6.5" cy="1.5" r=".6"/><circle cx="2.7" cy="3.5" r=".6"/><circle cx="5.2" cy="3.5" r=".6"/><circle cx="1.5" cy="5.3" r=".6"/><circle cx="4" cy="5.3" r=".6"/><circle cx="6.5" cy="5.3" r=".6"/></g></svg>English</button>
+                <button type="button" class="btn-small" id="login-lang-btn-es" onclick="setLanguage('es')" style="margin:0;"><svg viewBox="0 0 19 13" width="18" height="13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px;margin-right:6px;flex:none;"><rect width="6.33" height="13" fill="#006847"/><rect x="6.33" width="6.34" height="13" fill="#fff"/><rect x="12.67" width="6.33" height="13" fill="#ce1126"/><circle cx="9.5" cy="6.5" r="1.7" fill="none" stroke="#8a5a2b" stroke-width=".6"/><circle cx="9.5" cy="6.5" r=".7" fill="#5c7a3f"/></svg>Español</button>
             </div>
         </div>
         <div data-i18n="appearance_label" style="font-size:0.68rem; color:#8b98a5; text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-bottom:10px;">Interface Theme</div>
@@ -802,8 +802,8 @@
             <div class="field field-wide"><input type="text" id="employee-search" placeholder="Search name, ID, department, type..." oninput="renderEmployees()" data-i18n-placeholder="search_employees_ph"></div>
             <div class="field">
                 <select id="employee-status-filter" onchange="renderEmployees()">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="Active" data-i18n="ev_active">Active</option>
+                    <option value="Inactive" data-i18n="ev_inactive">Inactive</option>
                     <option value="">All statuses</option>
                 </select>
             </div>
@@ -858,7 +858,7 @@
                 <div class="field field-narrow"><label data-i18n="weekly_deduction">Weekly deduction</label><input type="number" id="cWeekly" min="0" step="0.01" required></div>
                 <div class="field field-narrow"><label data-i18n="start_deduction_date">Start deduction date</label><input type="date" id="cStartDate"></div>
                 <div class="field field-narrow"><label data-i18n="end_deduction_date">End deduction date</label><input type="date" id="cEndDate"></div>
-                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="cStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Paid">Paid</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
+                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="cStatus"><option value="Queued" data-i18n="ev_queued">Queued</option><option value="Deducting" data-i18n="ev_deducting">Deducting</option><option value="Paid" data-i18n="ev_paid">Paid</option><option value="Absorbed" data-i18n="ev_absorbed">Absorbed</option><option value="Tk from check" data-i18n="ev_tk_from_check">Tk from check</option></select></div>
                 <div class="field field-narrow"><label data-i18n="absorbed_amount">Absorbed amount</label><input type="number" id="cAbsorbed" min="0" step="0.01" placeholder="If written off"></div>
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="cNotes"></div>
             </div>
@@ -916,7 +916,7 @@
                 <div class="field field-narrow"><label data-i18n="weekly_deduction">Weekly deduction</label><input type="number" id="gWeekly" min="0" step="0.01" required></div>
                 <div class="field field-narrow"><label data-i18n="start_deduction_date">Start deduction date</label><input type="date" id="gStartDate"></div>
                 <div class="field field-narrow"><label data-i18n="end_deduction_date">End deduction date</label><input type="date" id="gEndDate"></div>
-                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="gStatus"><option value="Queued">Queued</option><option value="Deducting">Deducting</option><option value="Paid">Paid</option><option value="Absorbed">Absorbed</option><option value="Tk from check">Tk from check</option></select></div>
+                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="gStatus"><option value="Queued" data-i18n="ev_queued">Queued</option><option value="Deducting" data-i18n="ev_deducting">Deducting</option><option value="Paid" data-i18n="ev_paid">Paid</option><option value="Absorbed" data-i18n="ev_absorbed">Absorbed</option><option value="Tk from check" data-i18n="ev_tk_from_check">Tk from check</option></select></div>
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="gNotes"></div>
             </div>
             <button type="submit" class="btn" id="charge-save-btn" data-i18n="save_charge">+ Save Charge</button>
@@ -1016,7 +1016,7 @@
                 <div class="field field-narrow"><label data-i18n="weekly_amount">Weekly amount</label><input type="number" id="iWeekly" min="0" step="0.01" required></div>
                 <div class="field field-narrow"><label data-i18n="start_date">Start date</label><input type="date" id="iStartDate"></div>
                 <div class="field field-narrow"><label data-i18n="end_date">End date</label><input type="date" id="iEndDate"></div>
-                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="iStatus"><option value="Queued">Queued</option><option value="Paying">Paying</option><option value="Paid">Paid</option><option value="Stopped">Stopped</option></select></div>
+                <div class="field field-narrow"><label data-i18n="status_field">Status</label><select id="iStatus"><option value="Queued" data-i18n="ev_queued">Queued</option><option value="Paying" data-i18n="ev_paying">Paying</option><option value="Paid" data-i18n="ev_paid">Paid</option><option value="Stopped" data-i18n="ev_stopped">Stopped</option></select></div>
                 <div class="field field-wide"><label data-i18n="notes">Notes</label><input type="text" id="iNotes"></div>
             </div>
             <div class="note-box" data-i18n="income_note">Additional income is <strong>added</strong> to the employee's pay each week (the opposite of a charge) — the weekly amount is paid out until the total is reached, then it stops automatically.</div>
@@ -1365,8 +1365,8 @@
         <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="language_label">Language <span class="caret">&#9662;</span></h2>
         <div class="note-box" data-i18n="language_note">Choose your language. This is saved on this device only, so other people signed in elsewhere keep their own preference. (Also available on the login screen.)</div>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <button type="button" class="btn-small" id="lang-btn-en" onclick="setLanguage('en')" style="margin:0;">🇺🇸 English</button>
-            <button type="button" class="btn-small" id="lang-btn-es" onclick="setLanguage('es')" style="margin:0;">🇲🇽 Español</button>
+            <button type="button" class="btn-small" id="lang-btn-en" onclick="setLanguage('en')" style="margin:0;"><svg viewBox="0 0 19 13" width="18" height="13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px;margin-right:6px;flex:none;"><rect width="19" height="13" fill="#b22234"/><g fill="#fff"><rect y="1" width="19" height="1"/><rect y="3" width="19" height="1"/><rect y="5" width="19" height="1"/><rect y="7" width="19" height="1"/><rect y="9" width="19" height="1"/><rect y="11" width="19" height="1"/></g><rect width="8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.5" cy="1.5" r=".6"/><circle cx="4" cy="1.5" r=".6"/><circle cx="6.5" cy="1.5" r=".6"/><circle cx="2.7" cy="3.5" r=".6"/><circle cx="5.2" cy="3.5" r=".6"/><circle cx="1.5" cy="5.3" r=".6"/><circle cx="4" cy="5.3" r=".6"/><circle cx="6.5" cy="5.3" r=".6"/></g></svg>English</button>
+            <button type="button" class="btn-small" id="lang-btn-es" onclick="setLanguage('es')" style="margin:0;"><svg viewBox="0 0 19 13" width="18" height="13" aria-hidden="true" style="vertical-align:-2px;border-radius:2px;margin-right:6px;flex:none;"><rect width="6.33" height="13" fill="#006847"/><rect x="6.33" width="6.34" height="13" fill="#fff"/><rect x="12.67" width="6.33" height="13" fill="#ce1126"/><circle cx="9.5" cy="6.5" r="1.7" fill="none" stroke="#8a5a2b" stroke-width=".6"/><circle cx="9.5" cy="6.5" r=".7" fill="#5c7a3f"/></svg>Español</button>
         </div>
     </div>
     <div class="panel collapsed">

@@ -553,7 +553,7 @@
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('payroll','${emp.id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="payroll-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id}</td>
                     <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
-                    <td>${emp.person_type}</td>
+                    <td>${enumLabel(emp.person_type)}</td>
                     <td>${formatMoney(base)}${payPill}</td>
                     <td>${formatMoney(routePay)}</td>
                     <td>${formatMoney(income)}</td>
@@ -592,7 +592,7 @@
                     </div>
                     <div class="rec-card-body">
                         <div class="rec-detail-grid">
-                            <div><div class="k" data-i18n="d_type">Type</div><div class="v">${emp.person_type}</div></div>
+                            <div><div class="k" data-i18n="d_type">Type</div><div class="v">${enumLabel(emp.person_type)}</div></div>
                             <div><div class="k" data-i18n="d_base_pay_wk">Base pay (wk)</div><div class="v">${formatMoney(base)}${payPill}</div></div>
                             <div><div class="k" data-i18n="d_route_pay_wk">Route pay (wk)</div><div class="v">${formatMoney(routePay)}</div></div>
                             <div><div class="k" data-i18n="d_gross">Gross</div><div class="v">${formatMoney(gross)}</div></div>
