@@ -204,7 +204,7 @@
                 <span style="font-size:16px;">${icon[a.kind] || '📄'}</span>
                 <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(a.file_name)}">${escHtml(a.file_name)}${(!attachCtx.docLabel && a.doc_label) ? ` <span class="type-pill" style="font-size:9px; padding:1px 6px;">${escHtml(DOC_LABELS[a.doc_label] || a.doc_label)}</span>` : ''}</span>
                 <span style="color:var(--text-muted); white-space:nowrap;">${formatBytes(a.size_bytes)}</span>
-                <button type="button" class="btn-small" style="margin:0; padding:3px 9px;" onclick="viewAttachment('${escJsAttr(a.storage_path)}')">View</button>
+                <button type="button" class="btn-small" style="margin:0; padding:3px 9px;" onclick="viewAttachment('${escJsAttr(a.storage_path)}','${escJsAttr(a.file_name || '')}','${escJsAttr(a.mime_type || '')}','${escJsAttr(a.uploaded_by || '')}','${escJsAttr(a.uploaded_at || '')}')">View</button>
                 ${canEdit() ? `<button type="button" class="btn-small" style="margin:0; padding:3px 8px; background:var(--navy);" title="Rename this file" onclick="renameAttachmentUi(${a.id}, '${escJsAttr(a.file_name)}')">✎</button>` : ''}
                 ${canEdit() ? `<span class="del-btn" style="cursor:pointer;" onclick="deleteAttachmentUi(${a.id}, '${escJsAttr(a.storage_path)}')">✕</span>` : ''}
             </div>`).join('');
@@ -377,12 +377,164 @@
         loadAttachmentsList();
     }
 
-    async function viewAttachment(path) {
+    // ---- In-app file viewer ----------------------------------------------
+    // Opening a file never leaves the app and never opens a new browser tab.
+    // We fetch the signed URL as an in-memory blob (connect-src already allows
+    // the Supabase host) and render it from a blob: URL inside the
+    // #file-viewer-overlay modal. currentViewer holds the live blob URL so the
+    // Download button can reuse it and closeFileViewer can revoke it (no leaks).
+    let currentViewer = null;   // { url, blob, name }
+    let fvZoom = 1;             // image zoom scale (1 = fit)
+
+    // Best-effort MIME so we can pick a render mode even for old rows that were
+    // stored without one — fall back to the file-name extension.
+    function fvGuessMime(name, mime) {
+        if (mime) return mime;
+        const ext = (splitExt(name).ext || '').toLowerCase();
+        const map = {
+            jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml', heic: 'image/heic', heif: 'image/heif',
+            mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', mov: 'video/quicktime', m4v: 'video/x-m4v',
+            mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4', aac: 'audio/aac', oga: 'audio/ogg',
+            pdf: 'application/pdf'
+        };
+        return map[ext] || '';
+    }
+
+    async function viewAttachment(path, fileName, mime, uploadedBy, uploadedAt) {
+        const overlay = document.getElementById('file-viewer-overlay');
+        const body = document.getElementById('file-viewer-body');
+        const titleEl = document.getElementById('file-viewer-title');
+        const metaEl = document.getElementById('file-viewer-meta');
+        const zoomBar = document.getElementById('file-viewer-zoom');
+        if (!overlay || !body) return;
+        fvReset();          // revoke any previous blob, clear old media
+        fvZoom = 1;
+        const name = fileName || (path ? String(path).split('/').pop() : 'file');
+        titleEl.textContent = name;
+        // Attribution — who uploaded + the exact date/time (both guarded).
+        let when = '';
+        if (uploadedAt) { const d = new Date(uploadedAt); if (!isNaN(d.getTime())) when = d.toLocaleString(); }
+        const who = (uploadedBy && String(uploadedBy).trim()) ? String(uploadedBy) : '—';
+        metaEl.innerHTML = `${escHtml(t('fv_uploaded_by'))} <strong>${escHtml(who)}</strong>${when ? ' · ' + escHtml(when) : ''}`;
+        zoomBar.style.display = 'none';
+        body.style.alignItems = 'center'; body.style.justifyContent = 'center';
+        body.innerHTML = `<div style="color:#cbd5e1; font-size:13px; padding:24px;">${escHtml(t('fv_loading'))}</div>`;
+        overlay.style.display = 'flex';
         try {
             const r = await efAttach({ action: 'sign-download', path });
-            window.open(r.signedUrl, '_blank');
-        } catch (e) { alert('Could not open file: ' + (e && e.message ? e.message : e)); }
+            const resp = await fetch(r.signedUrl);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            currentViewer = { url, blob, name };
+            const kind = fvGuessMime(name, mime);
+            if (kind.indexOf('image/') === 0) {
+                body.innerHTML = `<img id="file-viewer-img" src="${url}" alt="${escHtml(name)}" style="max-width:100%; max-height:82vh; display:block; transform-origin:top left; transition:transform 0.05s linear;">`;
+                zoomBar.style.display = 'inline-flex';
+                fvLabelZoomButtons();
+                fvApplyZoom();
+            } else if (kind.indexOf('video/') === 0) {
+                body.innerHTML = `<video src="${url}" controls playsinline style="max-width:100%; max-height:82vh; outline:none;"></video>`;
+            } else if (kind.indexOf('audio/') === 0) {
+                body.innerHTML = `<div style="padding:28px; width:100%; box-sizing:border-box;"><audio src="${url}" controls style="width:100%;"></audio></div>`;
+            } else if (kind === 'application/pdf') {
+                body.style.alignItems = 'stretch';
+                body.innerHTML = `<iframe src="${url}" title="${escHtml(name)}" style="width:100%; height:82vh; border:0; background:#fff;"></iframe>`;
+            } else {
+                // Info + Download for types the browser can't render inline.
+                const sz = (currentViewer.blob && currentViewer.blob.size) ? formatBytes(currentViewer.blob.size) : '';
+                const typeLabel = kind || (splitExt(name).ext ? splitExt(name).ext.toUpperCase() : '');
+                body.innerHTML = `<div style="text-align:center; color:#e2e8f0; padding:40px 22px;">
+                    <div style="font-size:54px; line-height:1;">📄</div>
+                    <div style="margin-top:12px; font-weight:600; word-break:break-word;">${escHtml(name)}</div>
+                    <div style="margin-top:4px; font-size:12px; color:#94a3b8;">${escHtml(typeLabel)}${sz ? ' · ' + escHtml(sz) : ''}</div>
+                    <div style="margin-top:14px; font-size:12.5px; color:#cbd5e1; max-width:340px; margin-left:auto; margin-right:auto;">${escHtml(t('fv_no_preview'))}</div>
+                </div>`;
+            }
+        } catch (e) {
+            console.error('file viewer:', e);
+            body.innerHTML = `<div style="color:#fca5a5; font-size:13px; padding:28px; text-align:center;">${escHtml(t('fv_error'))}<br><span style="color:#94a3b8; font-size:11px;">${escHtml(e && e.message ? e.message : String(e))}</span></div>`;
+        }
     }
+
+    // Localize the zoom buttons' tooltips/labels (applyTranslations only covers
+    // text + placeholders, not title/aria-label, so set them here at open time).
+    function fvLabelZoomButtons() {
+        const bar = document.getElementById('file-viewer-zoom');
+        if (!bar) return;
+        const btns = bar.querySelectorAll('button');
+        const labels = [t('fv_zoom_out'), t('fv_zoom_reset'), t('fv_zoom_in')]; // order: −, ⟳, +
+        btns.forEach((b, i) => { if (labels[i]) { b.title = labels[i]; b.setAttribute('aria-label', labels[i]); } });
+    }
+
+    function fvApplyZoom() {
+        const img = document.getElementById('file-viewer-img');
+        const body = document.getElementById('file-viewer-body');
+        if (!img) return;
+        img.style.transform = 'scale(' + fvZoom + ')';
+        // When zoomed past fit, anchor top-left so the overflow is reachable by
+        // scrolling; otherwise keep the image centered.
+        if (body) {
+            const zoomed = fvZoom > 1;
+            body.style.alignItems = zoomed ? 'flex-start' : 'center';
+            body.style.justifyContent = zoomed ? 'flex-start' : 'center';
+        }
+    }
+
+    // dir: +1 zoom in, -1 zoom out, 0 reset to fit. Clamped 0.25×–5×.
+    function fileViewerZoom(dir) {
+        if (dir === 0) fvZoom = 1;
+        else fvZoom = Math.min(5, Math.max(0.25, +(fvZoom + dir * 0.25).toFixed(2)));
+        fvApplyZoom();
+    }
+
+    // Ctrl/⌘ + wheel zooms the image, matching the buttons.
+    function fvWheelZoom(e) {
+        const ov = document.getElementById('file-viewer-overlay');
+        if (!ov || ov.style.display === 'none') return;
+        if (!document.getElementById('file-viewer-img')) return;
+        if (!(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        fileViewerZoom(e.deltaY < 0 ? 1 : -1);
+    }
+
+    // Save the currently-open file — reuses the same in-memory blob (no
+    // re-fetch), triggers a normal download, stays entirely in-app.
+    function downloadCurrentFile() {
+        if (!currentViewer) return;
+        const a = document.createElement('a');
+        a.href = currentViewer.url;
+        a.download = currentViewer.name || 'file';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+
+    function fvReset() {
+        const body = document.getElementById('file-viewer-body');
+        if (body) {
+            const v = body.querySelector('video, audio');
+            if (v) { try { v.pause(); } catch (e) {} }
+            body.innerHTML = '';
+        }
+        if (currentViewer && currentViewer.url) { try { URL.revokeObjectURL(currentViewer.url); } catch (e) {} }
+        currentViewer = null;
+    }
+
+    function closeFileViewer() {
+        const ov = document.getElementById('file-viewer-overlay');
+        if (ov) ov.style.display = 'none';
+        fvReset();
+    }
+
+    // Esc closes the viewer; Ctrl/⌘+wheel zooms. Attached once at load.
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const ov = document.getElementById('file-viewer-overlay');
+            if (ov && ov.style.display !== 'none') closeFileViewer();
+        }
+    });
+    document.addEventListener('wheel', fvWheelZoom, { passive: false });
 
     async function deleteAttachmentUi(id, path) {
         if (!canEdit()) return;

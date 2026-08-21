@@ -288,7 +288,8 @@
             d_no_sessions: 'No active sessions.', d_th_user: 'User', d_th_started: 'Started', d_th_last_seen: 'Last seen', d_th_ends: 'Ends', d_sign_out_btn: 'Sign out', d_this_device: 'This device',
             d_no_failed: 'No failed sign-ins in the last 7 days.', d_th_type: 'Type', d_th_who: 'Who', d_th_failed: 'Failed', d_th_last_attempt: 'Last attempt',
             d_no_users: 'No users found.', d_restricted: 'Restricted', d_id_btn: '🪪 ID', d_reset_pw: '🔑 Reset', d_reset_2fa: '🔐 Reset 2FA',
-            d_no_gso: 'No global sign-outs yet.', d_th_initiator: 'Initiator', d_th_scope: 'Scope', d_th_grace: 'Grace', d_th_affected: 'Affected', d_th_reason: 'Reason', d_all_companies: 'All companies'
+            d_no_gso: 'No global sign-outs yet.', d_th_initiator: 'Initiator', d_th_scope: 'Scope', d_th_grace: 'Grace', d_th_affected: 'Affected', d_th_reason: 'Reason', d_all_companies: 'All companies',
+            fv_close: 'Close', fv_download: 'Download', fv_uploaded_by: 'Uploaded by', fv_loading: 'Loading…', fv_no_preview: 'Preview not available for this file type — download to view.', fv_error: 'Could not open this file.', fv_zoom_in: 'Zoom in', fv_zoom_out: 'Zoom out', fv_zoom_reset: 'Reset zoom'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -568,7 +569,8 @@
             d_no_sessions: 'No hay sesiones activas.', d_th_user: 'Usuario', d_th_started: 'Iniciada', d_th_last_seen: 'Última actividad', d_th_ends: 'Termina', d_sign_out_btn: 'Cerrar sesión', d_this_device: 'Este dispositivo',
             d_no_failed: 'No hay inicios de sesión fallidos en los últimos 7 días.', d_th_type: 'Tipo', d_th_who: 'Quién', d_th_failed: 'Fallidos', d_th_last_attempt: 'Último intento',
             d_no_users: 'No se encontraron usuarios.', d_restricted: 'Restringido', d_id_btn: '🪪 ID', d_reset_pw: '🔑 Restablecer', d_reset_2fa: '🔐 Restablecer 2FA',
-            d_no_gso: 'Aún no hay cierres de sesión globales.', d_th_initiator: 'Iniciador', d_th_scope: 'Alcance', d_th_grace: 'Gracia', d_th_affected: 'Afectados', d_th_reason: 'Motivo', d_all_companies: 'Todas las compañías'
+            d_no_gso: 'Aún no hay cierres de sesión globales.', d_th_initiator: 'Iniciador', d_th_scope: 'Alcance', d_th_grace: 'Gracia', d_th_affected: 'Afectados', d_th_reason: 'Motivo', d_all_companies: 'Todas las compañías',
+            fv_close: 'Cerrar', fv_download: 'Descargar', fv_uploaded_by: 'Subido por', fv_loading: 'Cargando…', fv_no_preview: 'Vista previa no disponible para este tipo de archivo — descárguelo para verlo.', fv_error: 'No se pudo abrir este archivo.', fv_zoom_in: 'Acercar', fv_zoom_out: 'Alejar', fv_zoom_reset: 'Restablecer zoom'
         }
     };
 
