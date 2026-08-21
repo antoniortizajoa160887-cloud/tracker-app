@@ -3586,13 +3586,13 @@
 
         const rc = (cfg.rc()[cfg.idOf(rec)] || []).slice().sort((a, b) => String(a.effective_date).localeCompare(String(b.effective_date)));
         document.getElementById(cfg.dom.rhist).innerHTML = rc.length
-            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Effective</th><th style="text-align:left;">Weekly</th><th></th></tr></thead><tbody>${rc.map(r => `<tr><td>${r.effective_date}</td><td>${formatMoney(r.weekly_amount)}</td><td style="text-align:right;"><span class="del-btn" onclick="${cfg.onDelRate}(${r.id})">✕</span></td></tr>`).join('')}</tbody></table>`
-            : '<div style="font-size:12px;color:var(--text-muted);">No rate changes — using the base weekly amount.</div>';
+            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">${t('d_th_effective')}</th><th style="text-align:left;">${t('d_th_weekly')}</th><th></th></tr></thead><tbody>${rc.map(r => `<tr><td>${r.effective_date}</td><td>${formatMoney(r.weekly_amount)}</td><td style="text-align:right;"><span class="del-btn" onclick="${cfg.onDelRate}(${r.id})">✕</span></td></tr>`).join('')}</tbody></table>`
+            : `<div style="font-size:12px;color:var(--text-muted);">${t('d_no_rate_changes')}</div>`;
 
         const ph = (cfg.ps()[cfg.idOf(rec)] || []).slice().sort((a, b) => String(a.paused_date).localeCompare(String(b.paused_date)));
         document.getElementById(cfg.dom.phist).innerHTML = ph.length
-            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">Paused</th><th style="text-align:left;">Resume</th><th></th></tr></thead><tbody>${ph.map(p => `<tr><td>${p.paused_date}</td><td>${p.resume_date || '—'}</td><td style="text-align:right;"><span class="del-btn" onclick="${cfg.onDelPause}(${p.id})">✕</span></td></tr>`).join('')}</tbody></table>`
-            : '<div style="font-size:12px;color:var(--text-muted);">No pauses recorded yet.</div>';
+            ? `<table style="width:100%; font-size:12px;"><thead><tr><th style="text-align:left;">${t('d_th_paused')}</th><th style="text-align:left;">${t('d_th_resume')}</th><th></th></tr></thead><tbody>${ph.map(p => `<tr><td>${p.paused_date}</td><td>${p.resume_date || '—'}</td><td style="text-align:right;"><span class="del-btn" onclick="${cfg.onDelPause}(${p.id})">✕</span></td></tr>`).join('')}</tbody></table>`
+            : `<div style="font-size:12px;color:var(--text-muted);">${t('d_no_pauses')}</div>`;
     }
     function _dedHistCompany(cfg) {
         const rec = cfg.find(cfg.editingId());
@@ -6150,7 +6150,7 @@
 
         if (isDesktopView()) {
             container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No claims or charges found.</div>'; return; }
+            if (!list.length) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_cc')}</div>`; return; }
             let rows = '';
             groupByStatus(list).forEach(({ status, items }) => {
                 const collapsed = collapsedStatusGroups.cc.has(status);
@@ -6190,14 +6190,14 @@
                 });
             });
             container.innerHTML = `<div class="table-wrapper"><table><thead><tr>
-                <th>ID</th><th>Kind</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
+                <th data-i18n="d_th_id">ID</th><th data-i18n="d_th_kind">Kind</th><th data-i18n="th_employee">Employee</th><th data-i18n="th_emp_id">Emp. ID</th><th data-i18n="th_type">Type</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_weekly">Weekly</th><th data-i18n="th_weeks">Weeks</th><th data-i18n="th_balance">Balance</th><th data-i18n="th_start">Start</th><th data-i18n="th_ends">Ends</th><th data-i18n="th_status">Status</th><th data-i18n="th_action">Action</th>
             </tr></thead><tbody>${rows}</tbody></table></div>`;
             applyTranslations();
             return;
         }
 
         container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No claims or charges found.</div>';
+        container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_cc')}</div>`;
         groupByStatus(list).forEach(({ status, items }) => {
             const collapsed = collapsedStatusGroups.cc.has(status);
             container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('cc','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
@@ -6719,25 +6719,25 @@
         return `
             ${progressBarHtml(pct)}
             <div class="rec-detail-grid">
-                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
-                <div><div class="k">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
-                <div><div class="k">Claimant acct</div><div class="v">${escHtml(c.claimant_account || '-')}</div></div>
-                <div><div class="k">Company</div><div class="v">${escHtml(c.company_name || '-')}</div></div>
-                <div><div class="k">Carrier claim #</div><div class="v">${escHtml(c.carrier_claim_number || '-')}</div></div>
-                <div><div class="k">Customer claim #</div><div class="v">${escHtml(c.customer_claim_number || '-')}</div></div>
-                <div><div class="k">Type of damage</div><div class="v">${escHtml(c.damage_type)}</div></div>
-                <div><div class="k">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
-                <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
-                <div><div class="k">Balance</div><div class="v">${formatMoney(bal)}</div></div>
-                <div><div class="k">Absorbed</div><div class="v">${formatMoney(c.absorbed_amount)}</div></div>
-                <div><div class="k">Start ded.</div><div class="v">${c.start_date || '-'}</div></div>
-                <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
+                <div><div class="k" data-i18n="d_employee">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k" data-i18n="d_employee_id">Employee ID</div><div class="v id-cell">${c.employee_id}</div></div>
+                <div><div class="k" data-i18n="d_claimant_acct">Claimant acct</div><div class="v">${escHtml(c.claimant_account || '-')}</div></div>
+                <div><div class="k" data-i18n="d_company">Company</div><div class="v">${escHtml(c.company_name || '-')}</div></div>
+                <div><div class="k" data-i18n="d_carrier_claim">Carrier claim #</div><div class="v">${escHtml(c.carrier_claim_number || '-')}</div></div>
+                <div><div class="k" data-i18n="d_customer_claim">Customer claim #</div><div class="v">${escHtml(c.customer_claim_number || '-')}</div></div>
+                <div><div class="k" data-i18n="d_type_damage">Type of damage</div><div class="v">${escHtml(c.damage_type)}</div></div>
+                <div><div class="k" data-i18n="d_claim_amount">Claim amount</div><div class="v">${formatMoney(c.claim_amount)}</div></div>
+                <div><div class="k" data-i18n="d_weeks">Weeks</div><div class="v">${weeks}</div></div>
+                <div><div class="k" data-i18n="d_balance">Balance</div><div class="v">${formatMoney(bal)}</div></div>
+                <div><div class="k" data-i18n="d_absorbed">Absorbed</div><div class="v">${formatMoney(c.absorbed_amount)}</div></div>
+                <div><div class="k" data-i18n="d_start_ded">Start ded.</div><div class="v">${c.start_date || '-'}</div></div>
+                <div><div class="k" data-i18n="d_end_ded">End ded.</div><div class="v">${endDate}</div></div>
             </div>
-            ${c.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(c.notes)}</div>` : ''}
+            ${c.notes ? `<div class="detail-subhead" style="margin-top:8px;" data-i18n="d_notes">Notes</div><div class="note-box" style="margin:0;">${escHtml(c.notes)}</div>` : ''}
             <div class="rec-actions">
                 ${attachBtnHtml('claim', c.claim_id)}
-                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')">✎ Edit</button>
-                <button class="del-btn" onclick="deleteClaim('${c.claim_id}')">✕ Delete</button>` : ''}
+                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editClaim('${c.claim_id}')" data-i18n="d_edit_full">✎ Edit</button>
+                <button class="del-btn" onclick="deleteClaim('${c.claim_id}')" data-i18n="d_delete">✕ Delete</button>` : ''}
             </div>`;
     }
 
@@ -7672,20 +7672,20 @@
         return `
             ${progressBarHtml(pct)}
             <div class="rec-detail-grid">
-                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
-                <div><div class="k">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
-                <div><div class="k">Charge type</div><div class="v">${escHtml(ch.charge_type)}</div></div>
-                <div><div class="k">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
-                <div><div class="k">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
-                <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
-                <div><div class="k">Start ded.</div><div class="v">${ch.start_date || '-'}</div></div>
-                <div><div class="k">End ded.</div><div class="v">${endDate}</div></div>
+                <div><div class="k" data-i18n="d_employee">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k" data-i18n="d_employee_id">Employee ID</div><div class="v id-cell">${ch.employee_id}</div></div>
+                <div><div class="k" data-i18n="d_charge_type">Charge type</div><div class="v">${escHtml(ch.charge_type)}</div></div>
+                <div><div class="k" data-i18n="d_amount">Amount</div><div class="v">${formatMoney(ch.amount)}</div></div>
+                <div><div class="k" data-i18n="d_weekly_deduction">Weekly deduction</div><div class="v">${formatMoney(ch.weekly_deduction)}</div></div>
+                <div><div class="k" data-i18n="d_weeks">Weeks</div><div class="v">${weeks}</div></div>
+                <div><div class="k" data-i18n="d_start_ded">Start ded.</div><div class="v">${ch.start_date || '-'}</div></div>
+                <div><div class="k" data-i18n="d_end_ded">End ded.</div><div class="v">${endDate}</div></div>
             </div>
-            ${ch.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(ch.notes)}</div>` : ''}
+            ${ch.notes ? `<div class="detail-subhead" style="margin-top:8px;" data-i18n="d_notes">Notes</div><div class="note-box" style="margin:0;">${escHtml(ch.notes)}</div>` : ''}
             <div class="rec-actions">
                 ${attachBtnHtml('charge', ch.charge_id)}
-                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')">✎ Edit</button>
-                <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')">✕ Delete</button>` : ''}
+                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editCharge('${ch.charge_id}')" data-i18n="d_edit_full">✎ Edit</button>
+                <button class="del-btn" onclick="deleteCharge('${ch.charge_id}')" data-i18n="d_delete">✕ Delete</button>` : ''}
             </div>`;
     }
 
@@ -8716,20 +8716,20 @@
         return `
             ${progressBarHtml(pct)}
             <div class="rec-detail-grid">
-                <div><div class="k">Employee</div><div class="v">${escHtml(empName)}</div></div>
-                <div><div class="k">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
-                <div><div class="k">Income type</div><div class="v">${escHtml(i.income_type)}</div></div>
-                <div><div class="k">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
-                <div><div class="k">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
-                <div><div class="k">Weeks</div><div class="v">${weeks}</div></div>
-                <div><div class="k">Start</div><div class="v">${i.start_date || '-'}</div></div>
-                <div><div class="k">Ends</div><div class="v">${endDate}</div></div>
+                <div><div class="k" data-i18n="d_employee">Employee</div><div class="v">${escHtml(empName)}</div></div>
+                <div><div class="k" data-i18n="d_employee_id">Employee ID</div><div class="v id-cell">${i.employee_id}</div></div>
+                <div><div class="k" data-i18n="d_income_type">Income type</div><div class="v">${escHtml(i.income_type)}</div></div>
+                <div><div class="k" data-i18n="d_amount">Amount</div><div class="v">${formatMoney(i.amount)}</div></div>
+                <div><div class="k" data-i18n="d_weekly_amount">Weekly amount</div><div class="v">${formatMoney(i.weekly_amount)}</div></div>
+                <div><div class="k" data-i18n="d_weeks">Weeks</div><div class="v">${weeks}</div></div>
+                <div><div class="k" data-i18n="d_start">Start</div><div class="v">${i.start_date || '-'}</div></div>
+                <div><div class="k" data-i18n="d_ends">Ends</div><div class="v">${endDate}</div></div>
             </div>
-            ${i.notes ? `<div class="detail-subhead" style="margin-top:8px;">Notes</div><div class="note-box" style="margin:0;">${escHtml(i.notes)}</div>` : ''}
+            ${i.notes ? `<div class="detail-subhead" style="margin-top:8px;" data-i18n="d_notes">Notes</div><div class="note-box" style="margin:0;">${escHtml(i.notes)}</div>` : ''}
             <div class="rec-actions">
                 ${attachBtnHtml('income', i.income_id)}
-                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')">✎ Edit</button>
-                <button class="del-btn" onclick="deleteIncome('${i.income_id}')">✕ Delete</button>` : ''}
+                ${editable ? `<button class="btn-small" style="margin:0;" onclick="editIncome('${i.income_id}')" data-i18n="d_edit_full">✎ Edit</button>
+                <button class="del-btn" onclick="deleteIncome('${i.income_id}')" data-i18n="d_delete">✕ Delete</button>` : ''}
             </div>`;
     }
 
@@ -8754,12 +8754,12 @@
         });
         const container = document.getElementById('income-tbody');
         if (!container) return;
-        if (incomeTableMissing) { container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#b45309; padding:1rem;">Run the income setup SQL (the <strong>additional_income</strong> table) to start logging additional income.</div>'; return; }
+        if (incomeTableMissing) { container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#b45309; padding:1rem;">${t('d_income_setup_note')}</div>`; return; }
         const editable = canEdit();
 
         if (isDesktopView()) {
             container.className = '';
-            if (!list.length) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>'; return; }
+            if (!list.length) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_income')}</div>`; return; }
             let rows = '';
             groupByStatus(list).forEach(({ status, items }) => {
                 const collapsed = collapsedStatusGroups.income.has(status);
@@ -8800,7 +8800,7 @@
         }
 
         container.className = 'record-grid';
-        container.innerHTML = list.length ? '' : '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">No additional income found.</div>';
+        container.innerHTML = list.length ? '' : `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:1rem;">${t('d_no_income')}</div>`;
         groupByStatus(list).forEach(({ status, items }) => {
             const collapsed = collapsedStatusGroups.income.has(status);
             container.insertAdjacentHTML('beforeend', `<div class="rec-group-header" style="grid-column:1/-1; cursor:pointer;" onclick="toggleStatusGroup('income','${status}')"><span class="rec-caret">${collapsed ? '▸' : '▾'}</span> <span class="status-badge status-${status}">${status}</span> <span style="color:var(--text-muted); font-weight:400; font-size:0.75rem;">(${items.length})</span></div>`);
@@ -8845,8 +8845,8 @@
         document.getElementById('iEndDate').value = inc.end_date || '';
         document.getElementById('iStatus').value = inc.status || 'Queued';
         document.getElementById('iNotes').value = inc.notes || '';
-        document.getElementById('income-form-titletext').textContent = `Editing ${id}`;
-        document.getElementById('income-save-btn').textContent = 'Save changes';
+        document.getElementById('income-form-titletext').textContent = `${t('editing_prefix')} ${id}`;
+        document.getElementById('income-save-btn').textContent = t('save_changes_plain');
         document.getElementById('income-cancel-btn').style.display = '';
         const panel = document.getElementById('income-form').closest('.panel');
         if (panel) panel.classList.remove('collapsed');
@@ -8856,8 +8856,8 @@
     function cancelIncomeEdit() {
         editingIncomeId = null;
         document.getElementById('income-form').reset();
-        document.getElementById('income-form-titletext').textContent = 'New Additional Income';
-        document.getElementById('income-save-btn').textContent = '+ Save Income';
+        document.getElementById('income-form-titletext').textContent = t('new_additional_income');
+        document.getElementById('income-save-btn').textContent = t('save_income');
         document.getElementById('income-cancel-btn').style.display = 'none';
     }
 
@@ -8896,7 +8896,7 @@
             `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' })
         );
         const prev = sel.value;
-        sel.innerHTML = '<option value="">— Select employee —</option>' +
+        sel.innerHTML = `<option value="">${t('select_employee_opt')}</option>` +
             filtered.map(emp => `<option value="${emp.id}">${employeeOptionLabel(emp)}</option>`).join('');
         // Keep the current selection if it still matches the filters; otherwise
         // clear it rather than silently keep showing a now-filtered-out person's statement.
@@ -10651,8 +10651,8 @@
         document.getElementById('cStatus').value = c.status || 'Queued';
         document.getElementById('cAbsorbed').value = (c.absorbed_amount ?? '');
         document.getElementById('cNotes').value = c.notes || '';
-        document.getElementById('claim-form-titletext').textContent = `Editing ${id}`;
-        document.getElementById('claim-save-btn').textContent = 'Save changes';
+        document.getElementById('claim-form-titletext').textContent = `${t('editing_prefix')} ${id}`;
+        document.getElementById('claim-save-btn').textContent = t('save_changes_plain');
         document.getElementById('claim-cancel-btn').style.display = '';
         document.getElementById('claim-edit-extra').style.display = '';
         showCCForm('claim');
@@ -10666,8 +10666,8 @@
         editingClaimId = null;
         document.getElementById('claim-form').reset();
         document.getElementById('cEmployee').value = '';
-        document.getElementById('claim-form-titletext').textContent = 'New Claim';
-        document.getElementById('claim-save-btn').textContent = '+ Save Claim';
+        document.getElementById('claim-form-titletext').textContent = t('new_claim');
+        document.getElementById('claim-save-btn').textContent = t('save_claim');
         document.getElementById('claim-cancel-btn').style.display = 'none';
         document.getElementById('claim-edit-extra').style.display = 'none';
         refreshIdPreviews();
@@ -10695,8 +10695,8 @@
         const emp = employees.find(e => e.id === ch.employee_id);
         const empSel = document.getElementById('ci-employee');
         if (empSel) empSel.value = ch.employee_id || '';
-        document.getElementById('charge-form-titletext').textContent = `Editing ${id}`;
-        document.getElementById('charge-save-btn').textContent = 'Save changes';
+        document.getElementById('charge-form-titletext').textContent = `${t('editing_prefix')} ${id}`;
+        document.getElementById('charge-save-btn').textContent = t('save_changes_plain');
         document.getElementById('charge-cancel-btn').style.display = '';
         document.getElementById('charge-edit-extra').style.display = '';
         showCCForm('charge');
@@ -10709,8 +10709,8 @@
     function cancelChargeEdit() {
         editingChargeId = null;
         document.getElementById('charge-form').reset();
-        document.getElementById('charge-form-titletext').textContent = 'New Charge';
-        document.getElementById('charge-save-btn').textContent = '+ Save Charge';
+        document.getElementById('charge-form-titletext').textContent = t('new_charge');
+        document.getElementById('charge-save-btn').textContent = t('save_charge');
         document.getElementById('charge-cancel-btn').style.display = 'none';
         document.getElementById('charge-edit-extra').style.display = 'none';
         refreshIdPreviews();
@@ -11225,7 +11225,18 @@
             d_th_ins_co: 'Insurance Co.', d_th_ins_exp: 'Insurance Expiry',
             d_reg_expiry: 'Registration expiry', d_insurance_company: 'Insurance company', d_policy_num: 'Policy #', d_insurance_expiry: 'Insurance expiry',
             d_license_plate: 'License plate', d_vin: 'VIN', d_service_log: 'Service Log', d_mileage_at_service: 'Mileage at service',
-            d_next_service_due: 'Next service due at', d_add: '+ Add', d_service_desc_ph: 'e.g. Oil Change, Tire Rotation'
+            d_next_service_due: 'Next service due at', d_add: '+ Add', d_service_desc_ph: 'e.g. Oil Change, Tire Rotation',
+            // --- R5a: dynamic card chrome — Claims, Charges, Income ---
+            d_no_cc: 'No claims or charges found.', d_th_kind: 'Kind', d_employee: 'Employee', d_employee_id: 'Employee ID',
+            d_claimant_acct: 'Claimant acct', d_company: 'Company', d_carrier_claim: 'Carrier claim #', d_customer_claim: 'Customer claim #',
+            d_type_damage: 'Type of damage', d_claim_amount: 'Claim amount', d_weeks: 'Weeks', d_balance: 'Balance', d_absorbed: 'Absorbed',
+            d_start_ded: 'Start ded.', d_end_ded: 'End ded.', d_edit_full: '✎ Edit',
+            d_charge_type: 'Charge type', d_amount: 'Amount', d_weekly_deduction: 'Weekly deduction',
+            d_income_type: 'Income type', d_weekly_amount: 'Weekly amount', d_start: 'Start', d_ends: 'Ends',
+            d_no_income: 'No additional income found.',
+            d_income_setup_note: 'Run the income setup SQL (the <strong>additional_income</strong> table) to start logging additional income.',
+            d_th_effective: 'Effective', d_th_weekly: 'Weekly', d_no_rate_changes: 'No rate changes — using the base weekly amount.',
+            d_th_paused: 'Paused', d_th_resume: 'Resume', d_no_pauses: 'No pauses recorded yet.'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -11439,7 +11450,18 @@
             d_th_ins_co: 'Cía. de seguro', d_th_ins_exp: 'Venc. del seguro',
             d_reg_expiry: 'Vencimiento de registro', d_insurance_company: 'Compañía de seguro', d_policy_num: 'Póliza n.º', d_insurance_expiry: 'Vencimiento del seguro',
             d_license_plate: 'Placa', d_vin: 'VIN', d_service_log: 'Registro de servicio', d_mileage_at_service: 'Millaje al servicio',
-            d_next_service_due: 'Próximo servicio a las', d_add: '+ Agregar', d_service_desc_ph: 'p. ej. Cambio de aceite, Rotación de llantas'
+            d_next_service_due: 'Próximo servicio a las', d_add: '+ Agregar', d_service_desc_ph: 'p. ej. Cambio de aceite, Rotación de llantas',
+            // --- R5a: dynamic card chrome — Claims, Charges, Income ---
+            d_no_cc: 'No se encontraron reclamos ni cargos.', d_th_kind: 'Clase', d_employee: 'Empleado', d_employee_id: 'ID de empleado',
+            d_claimant_acct: 'Cuenta del reclamante', d_company: 'Compañía', d_carrier_claim: 'N.º de reclamo del transportista', d_customer_claim: 'N.º de reclamo del cliente',
+            d_type_damage: 'Tipo de daño', d_claim_amount: 'Monto del reclamo', d_weeks: 'Semanas', d_balance: 'Saldo', d_absorbed: 'Absorbido',
+            d_start_ded: 'Inicio ded.', d_end_ded: 'Fin ded.', d_edit_full: '✎ Editar',
+            d_charge_type: 'Tipo de cargo', d_amount: 'Monto', d_weekly_deduction: 'Deducción semanal',
+            d_income_type: 'Tipo de ingreso', d_weekly_amount: 'Monto semanal', d_start: 'Inicio', d_ends: 'Termina',
+            d_no_income: 'No se encontraron ingresos adicionales.',
+            d_income_setup_note: 'Ejecute el SQL de configuración de ingresos (la tabla <strong>additional_income</strong>) para empezar a registrar ingresos adicionales.',
+            d_th_effective: 'Vigente', d_th_weekly: 'Semanal', d_no_rate_changes: 'Sin cambios de tarifa — usando el monto semanal base.',
+            d_th_paused: 'Pausado', d_th_resume: 'Reanudar', d_no_pauses: 'Aún no hay pausas registradas.'
         }
     };
 
