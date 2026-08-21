@@ -347,7 +347,8 @@
             name: m.attach_name || 'file',
             mime: '',
             by: m.mine ? (currentUsername || '') : (label || ''),
-            at: m.created_at || ''
+            at: m.created_at || '',
+            size: m.attach_size
         }));
         const idx = Math.max(0, atts.findIndex(m => m.id === msgId));
         openFileGallery(items, idx);

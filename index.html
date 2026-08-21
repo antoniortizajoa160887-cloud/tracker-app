@@ -41,11 +41,13 @@
          fetch/XHR/WebSocket to a domain other than Supabase (e.g. exfiltrating
          a stolen session token to an attacker's server) -- meaningful
          defense-in-depth on top of the escHtml() XSS fixes, not a substitute
-         for them. blob: is allowed for img/media/frame so the in-app file
-         viewer can render photos, videos and PDFs from an in-memory blob URL
-         (bytes fetched from Supabase via connect-src) instead of opening a new
-         tab -- no external origin is added to those directives. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; frame-src 'self' blob:; connect-src 'self' https://ofnveuguvwsvcxyidfdr.supabase.co wss://ofnveuguvwsvcxyidfdr.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self';">
+         for them. The Supabase origin (and blob:) is allowed for img/media/frame
+         so the in-app file viewer can render photos, videos and PDFs directly
+         from their short-lived signed URLs instead of opening a new tab. Direct
+         cross-origin loading (rather than a blob: URL) is what makes the viewer
+         work on iOS, where the service worker would otherwise intercept the
+         same-origin blob request and break the image. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ofnveuguvwsvcxyidfdr.supabase.co; media-src 'self' blob: https://ofnveuguvwsvcxyidfdr.supabase.co; frame-src 'self' blob: https://ofnveuguvwsvcxyidfdr.supabase.co; connect-src 'self' https://ofnveuguvwsvcxyidfdr.supabase.co wss://ofnveuguvwsvcxyidfdr.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self';">
 
     <!-- iOS Safari doesn't reliably read display:standalone or short_name
          from the Web App Manifest the way Android/Chrome does — these are

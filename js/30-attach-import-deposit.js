@@ -451,32 +451,32 @@
         fvUpdateNav();
         const myReq = ++fvReq;   // paging fast? only the newest request may render
         try {
+            // Render straight from the signed URL. It is cross-origin (Supabase),
+            // so the service worker never touches it and iOS renders it natively
+            // — unlike a blob: URL, which has our own origin and gets intercepted
+            // by the worker (broken image on iPhone). Download fetches on demand.
             const r = await efAttach({ action: 'sign-download', path });
-            const resp = await fetch(r.signedUrl);
-            if (myReq !== fvReq) return;              // superseded before bytes arrived
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            const blob = await resp.blob();
-            const url = URL.createObjectURL(blob);
-            if (myReq !== fvReq) { try { URL.revokeObjectURL(url); } catch (e) {} return; }
-            currentViewer = { url, blob, name };
+            if (myReq !== fvReq) return;              // superseded before the URL came back
+            const src = r.signedUrl;
+            currentViewer = { signedUrl: src, name: name };
             const kind = fvGuessMime(name, it.mime);
             if (kind.indexOf('image/') === 0) {
                 // margin:auto centres the image on both axes when it fits and,
                 // crucially, lets it scroll (not clip) when it is taller/wider
                 // than the box — e.g. a portrait phone photo on a small screen.
-                body.innerHTML = `<img id="file-viewer-img" src="${url}" alt="${escHtml(name)}" style="margin:auto; max-width:100%; max-height:82vh; display:block; transform-origin:center center; transition:transform 0.08s linear;">`;
+                body.innerHTML = `<img id="file-viewer-img" src="${escHtml(src)}" alt="${escHtml(name)}" style="margin:auto; max-width:100%; max-height:82vh; display:block; transform-origin:center center; transition:transform 0.08s linear;">`;
                 zoomBar.style.display = 'inline-flex';
                 fvLabelImgTools();
                 fvApplyZoom();
             } else if (kind.indexOf('video/') === 0) {
-                body.innerHTML = `<video src="${url}" controls playsinline style="margin:auto; max-width:100%; max-height:82vh; outline:none;"></video>`;
+                body.innerHTML = `<video src="${escHtml(src)}" controls playsinline style="margin:auto; max-width:100%; max-height:82vh; outline:none;"></video>`;
             } else if (kind.indexOf('audio/') === 0) {
-                body.innerHTML = `<div style="margin:auto; padding:28px; width:100%; box-sizing:border-box;"><audio src="${url}" controls style="width:100%;"></audio></div>`;
+                body.innerHTML = `<div style="margin:auto; padding:28px; width:100%; box-sizing:border-box;"><audio src="${escHtml(src)}" controls style="width:100%;"></audio></div>`;
             } else if (kind === 'application/pdf') {
-                body.innerHTML = `<iframe src="${url}" title="${escHtml(name)}" style="width:100%; height:82vh; border:0; background:#fff;"></iframe>`;
+                body.innerHTML = `<iframe src="${escHtml(src)}" title="${escHtml(name)}" style="width:100%; height:82vh; border:0; background:#fff;"></iframe>`;
             } else {
                 // Info + Download for types the browser can't render inline.
-                const sz = (currentViewer.blob && currentViewer.blob.size) ? formatBytes(currentViewer.blob.size) : '';
+                const sz = it.size ? formatBytes(it.size) : '';
                 const typeLabel = kind || (splitExt(name).ext ? splitExt(name).ext.toUpperCase() : '');
                 body.innerHTML = `<div style="margin:auto; text-align:center; color:#e2e8f0; padding:40px 22px;">
                     <div style="font-size:54px; line-height:1;">📄</div>
@@ -532,7 +532,7 @@
     // attachListCache already holds the rendered rows, in order.
     function openFileFromList(i) {
         const items = (attachListCache || []).map(a => ({
-            path: a.storage_path, name: a.file_name, mime: a.mime_type, by: a.uploaded_by, at: a.uploaded_at
+            path: a.storage_path, name: a.file_name, mime: a.mime_type, by: a.uploaded_by, at: a.uploaded_at, size: a.size_bytes
         }));
         openFileGallery(items, i);
     }
@@ -564,16 +564,31 @@
         fileViewerZoom(e.deltaY < 0 ? 1 : -1);
     }
 
-    // Save the currently-open file — reuses the same in-memory blob (no
-    // re-fetch), triggers a normal download, stays entirely in-app.
-    function downloadCurrentFile() {
-        if (!currentViewer) return;
-        const a = document.createElement('a');
-        a.href = currentViewer.url;
-        a.download = currentViewer.name || 'file';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+    // Save the currently-open file. A cross-origin <a download> is ignored by
+    // browsers, so fetch the signed URL to a blob first, then download that —
+    // stays entirely in-app, no navigation. The fetch is cross-origin, so the
+    // service worker never touches it.
+    async function downloadCurrentFile() {
+        if (!currentViewer || !currentViewer.signedUrl) return;
+        const btn = document.getElementById('file-viewer-download');
+        try {
+            if (btn) btn.disabled = true;
+            const resp = await fetch(currentViewer.signedUrl);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const url = URL.createObjectURL(await resp.blob());
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentViewer.name || 'file';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 10000);
+        } catch (e) {
+            console.error('download:', e);
+            alert(t('fv_error'));
+        } finally {
+            if (btn) btn.disabled = false;
+        }
     }
 
     function fvReset() {
@@ -583,7 +598,6 @@
             if (v) { try { v.pause(); } catch (e) {} }
             body.innerHTML = '';
         }
-        if (currentViewer && currentViewer.url) { try { URL.revokeObjectURL(currentViewer.url); } catch (e) {} }
         currentViewer = null;
     }
 
