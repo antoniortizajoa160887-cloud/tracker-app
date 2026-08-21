@@ -1,0 +1,100 @@
+# Auto-deploy tracker-app to the Hostinger VPS (srv1913650) on every push to main.
+#
+# This mirrors what Cloudflare Pages already does: push to main -> site updates,
+# no manual step on the server.
+#
+# ONE-TIME SETUP — add these three repository secrets under
+# Settings -> Secrets and variables -> Actions -> New repository secret:
+#
+#   COOLIFY_URL       Base URL of your Coolify panel, e.g. https://coolify.example.com
+#                     (must be reachable from the public internet — see note below)
+#   COOLIFY_APP_UUID  The application's UUID. Open the app in Coolify; it is the
+#                     last path segment of the URL, and is also shown under
+#                     the app's "Webhooks" tab.
+#   COOLIFY_TOKEN     Coolify API token: Keys & Tokens -> API tokens -> Create.
+#                     Scope it to deploy permissions only, not root.
+#
+# NOTE ON REACHABILITY: GitHub's runners must be able to reach COOLIFY_URL.
+# If you lock Coolify's port 8000 down to your own IP (recommended), point
+# COOLIFY_URL at Coolify's HTTPS domain instead of the raw :8000 address,
+# so this keeps working over 443.
+
+name: Deploy to VPS (Coolify)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild without cache
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Trigger Coolify deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call Coolify deploy API
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          FORCE: ${{ inputs.force == true && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+
+          missing=0
+          for v in COOLIFY_URL COOLIFY_APP_UUID COOLIFY_TOKEN; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::Required secret $v is not set. See the setup notes at the top of this workflow file."
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+
+          base="${COOLIFY_URL%/}"
+          echo "Deploying app ${COOLIFY_APP_UUID} via ${base} (force=${FORCE})"
+
+          code=$(curl --silent --show-error --location \
+                      --max-time 60 --retry 3 --retry-delay 5 --retry-connrefused \
+                      --write-out '%{http_code}' --output response.json \
+                      --request GET \
+                      --header "Authorization: Bearer ${COOLIFY_TOKEN}" \
+                      "${base}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=${FORCE}")
+
+          echo "HTTP ${code}"
+          echo "--- response ---"
+          cat response.json || true
+          echo
+
+          case "$code" in
+            2*)
+              echo "::notice::Coolify accepted the deployment request."
+              ;;
+            401|403)
+              echo "::error::Coolify rejected the token (HTTP ${code}). Regenerate COOLIFY_TOKEN and check its scope."
+              exit 1
+              ;;
+            404)
+              echo "::error::Coolify returned 404 — COOLIFY_APP_UUID is probably wrong, or COOLIFY_URL points at the wrong host."
+              exit 1
+              ;;
+            000)
+              echo "::error::Could not reach ${base} at all. GitHub runners need public access to Coolify; see the reachability note in this file."
+              exit 1
+              ;;
+            *)
+              echo "::error::Unexpected response from Coolify (HTTP ${code})."
+              exit 1
+              ;;
+          esac
