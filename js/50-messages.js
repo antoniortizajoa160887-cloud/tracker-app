@@ -182,15 +182,15 @@
     function openNewDmConversation() {
         const person = document.getElementById('dm-new-person')?.value;
         const topic = document.getElementById('dm-new-topic')?.value;
-        if (!person) { alert('Pick a person first.'); return; }
-        if (!topic) { alert('Pick a topic first.'); return; }
+        if (!person) { alert(t('a_pick_person')); return; }
+        if (!topic) { alert(t('a_pick_topic')); return; }
         let ref = null;
         if (topic === 'Missing Day') {
             ref = document.getElementById('dm-new-ref')?.value || '';
-            if (!ref) { alert('Pick a date for the Missing Day thread.'); return; }
+            if (!ref) { alert(t('a_pick_date')); return; }
         } else if (topic === 'Claims' || topic === 'Charges' || topic === 'Income') {
             ref = document.getElementById('dm-new-ref')?.value || '';
-            if (!ref) { alert(`Pick which ${topic.toLowerCase().replace(/s$/, '')} this conversation is about.`); return; }
+            if (!ref) { alert(t('a_pick_which').replace('{kind}', topic.toLowerCase().replace(/s$/, ''))); return; }
         }
         const picker = document.getElementById('dm-new-picker'); if (picker) picker.remove();
         selectDmThread(person, topic, ref || null);
@@ -275,14 +275,14 @@
     }
 
     async function sendDirectMessage() {
-        if (!dmActiveUser || !dmActiveTopic) { alert('Pick a conversation first (tap +).'); return; }
+        if (!dmActiveUser || !dmActiveTopic) { alert(t('a_pick_convo')); return; }
         const el = document.getElementById('dm-compose-text');
         const text = (el.value || '').trim();
         if (!text) return;
         el.disabled = true;
         const { error } = await supabaseClient.rpc('dm_send', { p_actor: currentUsername, p_recipient: dmActiveUser, p_body: text, p_topic: dmActiveTopic, p_ref_id: dmActiveRef });
         el.disabled = false;
-        if (error) { alert('Error: ' + error.message); el.focus(); return; }
+        if (error) { alert(t('err_prefix') + error.message); el.focus(); return; }
         el.value = '';
         await fetchDmThread();
         renderDmThread(true);
@@ -292,9 +292,9 @@
     }
 
     async function deleteDirectMessage(id) {
-        if (!confirm('Delete this message?')) return;
+        if (!confirm(t('c_del_message'))) return;
         const { error } = await supabaseClient.rpc('dm_delete_message', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         await fetchDmThread();
         renderDmThread(true);
         await fetchDmThreads();
@@ -364,14 +364,14 @@
         const input = document.getElementById('dm-file-input');
         if (input) input.value = '';
         if (!arr.length) return;
-        if (!dmActiveUser || !dmActiveTopic) { alert('Pick a conversation first (tap +).'); return; }
+        if (!dmActiveUser || !dmActiveTopic) { alert(t('a_pick_convo')); return; }
         const entityType = dmTopicEntityType(dmActiveTopic);
         if (!entityType || !dmActiveRef) {
-            alert('To share a file, open a Claim, Charge, or Income conversation — the file attaches to that record. (General and Missing Day chats have no record to attach to.)');
+            alert(t('a_share_file_hint'));
             return;
         }
         if (!canUploadTo(entityType, dmActiveRef)) {
-            alert('You can only share files on your own claims, charges and income.');
+            alert(t('a_own_files_only'));
             return;
         }
         // Names already on this record, so the numeric suffix continues correctly
@@ -418,11 +418,11 @@
 
     async function sendStagedChatFiles() {
         if (!chatStage.length) return;
-        if (!dmActiveUser || !dmActiveTopic) { alert('Pick a conversation first (tap +).'); return; }
+        if (!dmActiveUser || !dmActiveTopic) { alert(t('a_pick_convo')); return; }
         const entityType = dmTopicEntityType(dmActiveTopic);
         if (!entityType || !dmActiveRef) return;
         if (!canUploadTo(entityType, dmActiveRef)) {
-            alert('You can only share files on your own claims, charges and income.');
+            alert(t('a_own_files_only'));
             return;
         }
         const btn = document.getElementById('dm-send-files-btn');
@@ -455,7 +455,7 @@
             } catch (e) {
                 failed++;
                 console.error('sendStagedChatFiles:', e);
-                alert('Could not send file: ' + (e && e.message ? e.message : e));
+                alert(t('err_could_not_send') + (e && e.message ? e.message : e));
             }
         }
         chatStage = [];
@@ -751,7 +751,7 @@
     // Prompt through a list of [label, key, currentValue] and collect only
     // the fields the user actually changed. Returns {} if nothing changed.
     function promptFields(title, fields) {
-        alert(title + '\nLeave a value unchanged to keep it. Press Cancel on any field to stop.');
+        alert(title + t('a_edit_prompt_hint'));
         const changed = {};
         for (const f of fields) {
             const cur = f.value === null || f.value === undefined ? '' : String(f.value);
@@ -773,7 +773,7 @@
             const raw = String(changed[k]).trim();
             if (raw === '') { changed[k] = 0; continue; }
             const n = Number(raw.replace(/[$,\s]/g, ''));
-            if (!isFinite(n)) { alert(`"${k.replace(/_/g, ' ')}" must be a number. Nothing was saved.`); return false; }
+            if (!isFinite(n)) { alert(t('a_must_be_number').replace('{field}', k.replace(/_/g, ' '))); return false; }
             changed[k] = n;
         }
         for (const k of (dateKeys || [])) {
@@ -991,14 +991,14 @@
 
     async function approveChange(id) {
         const { error } = await supabaseClient.rpc('approve_change', { p_actor: currentUsername, p_id: id });
-        if (error) alert('Error: ' + error.message);
+        if (error) alert(t('err_prefix') + error.message);
         else { renderApprovals(); fetchAllDataFromCloud(); }
     }
 
     async function rejectChange(id) {
-        if (!confirm('Reject this change request?')) return;
+        if (!confirm(t('c_reject_change'))) return;
         const { error } = await supabaseClient.rpc('reject_change', { p_actor: currentUsername, p_id: id });
-        if (error) alert('Error: ' + error.message);
+        if (error) alert(t('err_prefix') + error.message);
         else renderApprovals();
     }
 
@@ -1054,21 +1054,21 @@
     }
 
     async function approveReleaseRequest(id) {
-        if (!confirm('Approve and execute this release now?')) return;
+        if (!confirm(t('c_approve_release'))) return;
         const { error } = await supabaseClient.rpc('approve_release_request', { p_actor: currentUsername, p_request_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         renderReleaseRequests();
         await fetchChargesFromCloud();
         await fetchClaimsFromCloud();
         await loadChargeHistory();
         await loadEmployeeDetails();
-        alert('Release approved and completed.');
+        alert(t('a_release_done'));
     }
 
     async function rejectReleaseRequest(id) {
-        if (!confirm('Reject this release request?')) return;
+        if (!confirm(t('c_reject_release'))) return;
         const { error } = await supabaseClient.rpc('reject_release_request', { p_actor: currentUsername, p_request_id: id, p_reason: null });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         renderReleaseRequests();
     }
 

@@ -120,7 +120,7 @@
             if (error) {
                 errEl.textContent = error.message;
             } else {
-                alert('Password updated successfully.');
+                alert(t('a_pw_updated'));
                 toggleChangePasswordCard();
             }
         } catch (err) {
@@ -138,7 +138,7 @@
     }
     function requireWriteCompany() {
         const c = writeCompany();
-        if (!c) { alert('Select a specific company first (top-right dropdown) before adding records.'); return null; }
+        if (!c) { alert(t('a_select_company_first')); return null; }
         return c;
     }
 
@@ -299,8 +299,8 @@
         const email = document.getElementById('new-company-email').value.trim();
         const manager = document.getElementById('new-company-manager').value.trim();
         const managerPhone = document.getElementById('new-company-manager-phone').value.trim();
-        if (code.length < 3 || code.length > 4) { alert('Company code must be 3 or 4 characters.'); return; }
-        if (!name) { alert('Enter a company name.'); return; }
+        if (code.length < 3 || code.length > 4) { alert(t('a_company_code_len')); return; }
+        if (!name) { alert(t('a_enter_company_name')); return; }
 
         if (editingCompanyCode) {
             const { error } = await supabaseClient.rpc('edit_company', {
@@ -308,7 +308,7 @@
                 p_owner: owner || null, p_phone: phone || null, p_email: email || null,
                 p_manager: manager || null, p_manager_phone: managerPhone || null
             });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             cancelCompanyEdit();
             loadCompanies();
             return;
@@ -319,7 +319,7 @@
             p_owner: owner || null, p_phone: phone || null, p_email: email || null,
             p_manager: manager || null, p_manager_phone: managerPhone || null
         });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         ['new-company-code','new-company-name','new-company-owner','new-company-phone','new-company-email','new-company-manager','new-company-manager-phone'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         });
@@ -361,16 +361,16 @@
         const text = `Username: ${u}\nPassword: ${p}`;
         try {
             await navigator.clipboard.writeText(text);
-            alert('Copied to clipboard.');
+            alert(t('a_copied'));
         } catch (e) {
             alert(text); // clipboard unavailable — show it plainly so it can be copied by hand
         }
     }
 
     async function deleteCompany(code) {
-        if (!confirm(`Delete company ${code} and ALL its data (employees, routes, claims, charges, users)? This cannot be undone.`)) return;
+        if (!confirm(t('c_del_company').replace('{code}', code))) return;
         const { error } = await supabaseClient.rpc('delete_company', { p_actor: currentUsername, p_code: code });
-        if (error) alert('Error: ' + error.message);
+        if (error) alert(t('err_prefix') + error.message);
         else { if (currentCompany === code) currentCompany = null; loadCompanies(); fetchAllDataFromCloud(); }
     }
 
@@ -585,7 +585,7 @@
         // blocking normal desktop printing too.
         const isIOSStandalone = window.navigator.standalone === true;
         if (isIOSStandalone) {
-            alert('Printing doesn\'t work reliably from the installed app icon — this is a long-standing Safari limitation on iPhone/iPad, not something in Tracker itself.\n\nTo print: open this same page in Safari (not the home screen icon) and print from there.');
+            alert(t('a_print_ios'));
             return;
         }
         setTimeout(() => window.print(), 60); // let the browser paint the new content first — calling print() immediately after an innerHTML swap can show a blank preview on some mobile browsers
@@ -650,8 +650,8 @@
             });
             if (error && isMissingTable(error)) {
                 empDetailsMissing = true;
-                alert('The employee_details table is not set up yet — the extra ID fields (license, permit, medical card, notes) were not saved. Run the provided SQL setup once, then re-save.');
-            } else if (error) { console.error('saveEmployeeDetails:', error); alert('Could not save: ' + error.message); }
+                alert(t('a_emp_details_missing'));
+            } else if (error) { console.error('saveEmployeeDetails:', error); alert(t('err_could_not_save') + error.message); }
         } catch (e) { console.error('saveEmployeeDetails:', e); }
     }
 
@@ -737,7 +737,7 @@
                 p_ssn: f.ssn === '' ? null : f.ssn,   // blank = keep existing
                 p_status: null                          // status changed via the row dropdown
             });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             await saveEmployeeDetails(id, co);
             await setPayType(id, f.payType, co);
             if (data && String(data).indexOf('approval') !== -1) alert(data);
@@ -752,7 +752,7 @@
                 p_dept: f.dept, p_role_title: f.role, p_start: f.start,
                 p_pay: f.pay, p_ssn: f.ssn
             });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             await saveEmployeeDetails(id, co);
             await setPayType(id, f.payType, co);
             document.getElementById('employee-form').reset();
@@ -1180,7 +1180,7 @@
             p_start: emp.start_date || null, p_pay: parseFloat(emp.pay_rate) || 0,
             p_ssn: null, p_status: newStatus
         });
-        if (error) { alert('Error: ' + error.message); fetchEmployeesFromCloud(); return; }
+        if (error) { alert(t('err_prefix') + error.message); fetchEmployeesFromCloud(); return; }
         // First time going Inactive starts the 90/30-day release clocks —
         // locks in today as inactive_since and, if nothing's set by hand
         // already, locks in the Daily Pay-derived last-worked date too.
@@ -1247,13 +1247,13 @@
         const file = event.target.files && event.target.files[0];
         event.target.value = ''; // allow re-importing the same file
         if (!file) return;
-        if (!canEdit()) { alert('You do not have permission to import.'); return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); return; }
         const co = requireWriteCompany();
         if (!co) return;
 
         const text = await file.text();
         const rows = parseCsvText(text);
-        if (rows.length < 2) { alert('CSV appears to be empty.'); return; }
+        if (rows.length < 2) { alert(t('a_csv_empty')); return; }
 
         const header = rows[0].map(h => h.trim().toLowerCase());
         const col = (names) => { for (const n of names) { const i = header.indexOf(n); if (i > -1) return i; } return -1; };
@@ -1278,7 +1278,7 @@
             medExp:col(['medical card expiration','medical card exp']),
             notes: col(['notes'])
         };
-        if (idx.first < 0 || idx.last < 0) { alert('CSV must include at least "First Name" and "Last Name" columns.'); return; }
+        if (idx.first < 0 || idx.last < 0) { alert(t('a_csv_cols')); return; }
 
         const get = (r, i) => (i > -1 && r[i] != null) ? String(r[i]).trim() : '';
         const normType = t => {
@@ -1332,14 +1332,14 @@
             await setPayType(id, ptv, co);
             ok++;
         }
-        alert(`Import finished: ${ok} added${fail ? ', ' + fail + ' failed (see console)' : ''}.`);
+        alert(t('a_import_done').replace('{ok}', ok).replace('{fail}', fail ? t('a_import_fail_suffix').replace('{n}', fail) : ''));
         fetchEmployeesFromCloud();
     }
 
     async function deleteEmployee(id) {
-        if(confirm("Delete employee " + id + "?")) {
+        if(confirm(t('c_del_employee').replace('{id}', id))) {
             const { error } = await supabaseClient.rpc('delete_employee', { p_actor: currentUsername, p_id: id });
-            if (error) alert('Error: ' + error.message);
+            if (error) alert(t('err_prefix') + error.message);
             else fetchEmployeesFromCloud();
         }
     }
@@ -1349,11 +1349,11 @@
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
         const name = `${emp.first_name} ${emp.last_name || ''}`.trim();
-        if (!confirm(`Generate a login for ${name}?`)) return;
+        if (!confirm(t('c_gen_login').replace('{name}', name))) return;
         const { data, error } = await supabaseClient.rpc('provision_employee_account', { p_actor: currentUsername, p_employee_id: empId });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         const row = Array.isArray(data) ? data[0] : data;
-        if (!row || !row.new_username) { alert('No account was returned — check the Users tab.'); return; }
+        if (!row || !row.new_username) { alert(t('a_no_account')); return; }
         const role = (emp.person_type === 'Owner' || emp.person_type === 'Manager') ? 'Administrator' : (emp.person_type === 'Staff' ? 'Medium' : 'User');
         employeeUserIds.add(empId);
         showNewEmployeeCredentials(name, empId, role, row.new_username, row.new_password);
@@ -1387,7 +1387,7 @@
         const amount = parseFloat(document.getElementById('cAmount').value) || 0;
         const weekly = parseFloat(document.getElementById('cWeekly').value) || 0;
         const claimEmpId = document.getElementById('cEmployee').value;
-        if (!claimEmpId) { alert('Please select a valid employee from the list.'); return; }
+        if (!claimEmpId) { alert(t('a_select_valid_emp')); return; }
 
         const fields = {
             employee_id: claimEmpId,
@@ -1408,7 +1408,7 @@
         if (editingClaimId) {
             // ----- EDIT (through the type-safe edit_claim RPC; Medium locked-field changes route to approval) -----
             const { data, error } = await supabaseClient.rpc('edit_claim', { p_actor: currentUsername, p_id: editingClaimId, p_fields: fields });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             if (data && String(data).indexOf('approval') !== -1) alert(data);
             cancelClaimEdit();
             fetchClaimsFromCloud();
@@ -1419,7 +1419,7 @@
             const claimId = `${idPrefix()}${String(claims.length + 1).padStart(settings.claimDigits, '0')}`;
             const payload = Object.assign({ claim_id: claimId, company_code: claimCo }, fields);
             const { error } = await supabaseClient.rpc('create_claim', { p_actor: currentUsername, p_fields: payload });
-            if (error) { alert('Error saving claim: ' + error.message); return; }
+            if (error) { alert(t('err_saving_claim') + error.message); return; }
             document.getElementById('claim-form').reset();
             document.getElementById('cEmployee').value = '';
             fetchClaimsFromCloud();
@@ -1790,7 +1790,7 @@
     // ---- Print: whole statement for the selected employee ---------------
     function printStatement() {
         const empId = document.getElementById('statement-emp-select').value;
-        if (!empId) { alert('Select an employee first.'); return; }
+        if (!empId) { alert(t('a_select_emp_first')); return; }
         const content = document.getElementById('statement-content');
         const statsGrid = document.getElementById('statement-stats-grid');
         const emp = employees.find(e => e.id === empId);

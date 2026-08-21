@@ -349,7 +349,7 @@
             } catch (e) {
                 failed++;
                 console.error('attachment upload:', e);
-                alert('Could not upload: ' + (e && e.message ? e.message : e));
+                alert(t('err_could_not_upload') + (e && e.message ? e.message : e));
             }
         }
         prog.textContent = failed ? `${done} uploaded, ${failed} failed.` : `${done} file${done === 1 ? '' : 's'} uploaded.`;
@@ -366,14 +366,14 @@
     async function renameAttachmentUi(id, current) {
         if (!canEdit()) return;
         const { base, ext } = splitExt(current);
-        const next = prompt('Rename file', base);
+        const next = prompt(t('p_rename_file'), base);
         if (next === null) return;
         const finalName = sanitizeAttachName(next) + (ext ? '.' + ext : '');
         if (finalName === current) return;
         const { error } = await supabaseClient.rpc('rename_attachment', {
             p_actor: currentUsername, p_id: id, p_file_name: finalName
         });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         loadAttachmentsList();
     }
 
@@ -654,9 +654,9 @@
 
     async function deleteAttachmentUi(id, path) {
         if (!canEdit()) return;
-        if (!confirm('Delete this file? This cannot be undone.')) return;
+        if (!confirm(t('c_del_file'))) return;
         const { data, error } = await supabaseClient.rpc('delete_attachment', { p_actor: currentUsername, p_id: id });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         try { await efAttach({ action: 'delete-object', path: data || path }); } catch (e) { console.warn('storage object cleanup:', e); }
         attachDirty = true;
         loadAttachmentsList();
@@ -699,9 +699,9 @@
 
     async function deleteClaim(id) {
         if (!canEdit()) return;
-        if(confirm("Delete claim " + id + "?")) {
+        if(confirm(t('c_del_claim').replace('{id}', id))) {
             const { error } = await supabaseClient.rpc('delete_claim', { p_actor: currentUsername, p_id: id });
-            if (error) alert('Error: ' + error.message);
+            if (error) alert(t('err_prefix') + error.message);
             fetchClaimsFromCloud();
         }
     }
@@ -970,7 +970,7 @@
     }
 
     async function importChargesExcel(event) {
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const wb = await readWorkbookFromEvent(event); if (!wb) return;
         const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('charge')) || wb.SheetNames[0]) || [];
         const res = await processChargeRows(rows);
@@ -1035,7 +1035,7 @@
     async function importWeekInDepositExcel(event) {
         const file = event.target.files[0];
         if (!file) return;
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const co = requireWriteCompany();
         if (!co) { event.target.value = ''; return; }
         const reader = new FileReader();
@@ -1045,7 +1045,7 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const ws = workbook.Sheets[sheetName];
-                if (!ws['!ref']) { alert('The file appears to be empty.'); return; }
+                if (!ws['!ref']) { alert(t('a_file_empty')); return; }
                 const range = XLSX.utils.decode_range(ws['!ref']);
 
                 // Date columns: column B (index 1) onward, for as long as the
@@ -1056,7 +1056,7 @@
                     if (!cell || cell.t !== 'n') break;
                     dateColCount++;
                 }
-                if (dateColCount < 1) { alert('Could not find any week/date columns starting at column B — check the file format.'); return; }
+                if (dateColCount < 1) { alert(t('a_no_date_cols')); return; }
 
                 // Locate the goal ("cantidad final") column among the summary
                 // headers after the date block by text match, not a fixed
@@ -1068,7 +1068,7 @@
                     const h = cell ? String(cell.v || '').toLowerCase() : '';
                     if (h.includes('final') || h.includes('goal') || h.includes('meta')) { goalCol = c; break; }
                 }
-                if (goalCol < 0) { alert('Could not find the goal amount column (expected a header containing "final" or "goal") after the date columns.'); return; }
+                if (goalCol < 0) { alert(t('a_no_goal_col')); return; }
 
                 // Rebuild the week dates from column B's date, stepping +7
                 // days per column, rather than trusting every stored date —
@@ -1079,7 +1079,7 @@
                 const baseCell = ws[XLSX.utils.encode_cell({ r: 0, c: 1 })];
                 const excelEpoch = new Date(Date.UTC(1899, 11, 30));
                 const baseDate = new Date(excelEpoch.getTime() + baseCell.v * 86400000);
-                if (isNaN(baseDate)) { alert("Could not read the first week's date in column B."); return; }
+                if (isNaN(baseDate)) { alert(t('a_no_first_week')); return; }
                 const dateStrs = [];
                 for (let i = 0; i < dateColCount; i++) {
                     const d = new Date(baseDate);
@@ -1203,7 +1203,7 @@
                 alert(msg);
                 event.target.value = '';
             } catch (err) {
-                alert('Error importing file: ' + err.message);
+                alert(t('err_importing_file') + err.message);
             }
         };
         reader.readAsArrayBuffer(file);
@@ -1224,7 +1224,7 @@
     }
 
     async function importIncomeExcel(event) {
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const wb = await readWorkbookFromEvent(event); if (!wb) return;
         const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('income')) || wb.SheetNames[0]) || [];
         const res = await processIncomeRows(rows);
@@ -1233,7 +1233,7 @@
         fetchIncomeFromCloud();
     }
     async function importVehiclesExcel(event) {
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const wb = await readWorkbookFromEvent(event); if (!wb) return;
         const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('vehicle')) || wb.SheetNames[0]) || [];
         const res = await processVehicleRows(rows);
@@ -1242,7 +1242,7 @@
         fetchVehiclesFromCloud();
     }
     async function importProviderPayExcel(event) {
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const wb = await readWorkbookFromEvent(event); if (!wb) return;
         const rows = sheetRows(wb, wb.SheetNames.find(n => n.toLowerCase().includes('provider')) || wb.SheetNames[0]) || [];
         const res = await processProviderPayRows(rows);
@@ -1257,7 +1257,7 @@
     // handling (SSN/ITIN blank-means-unchanged) that a generic combined
     // pass shouldn't risk overwriting carelessly.
     async function importAllData(event) {
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const statusEl = document.getElementById('import-all-status');
         statusEl.textContent = 'Reading file…';
         let wb;
@@ -1292,7 +1292,7 @@
     async function importDailyPayExcel(event) {
         const file = event.target.files[0];
         if (!file) return;
-        if (!canEdit()) { alert('You do not have permission to import.'); event.target.value = ''; return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); event.target.value = ''; return; }
         const co = requireWriteCompany();
         if (!co) { event.target.value = ''; return; }
         const reader = new FileReader();
@@ -1314,7 +1314,7 @@
                 sel.value = workbook.SheetNames[workbook.SheetNames.length - 1];
                 document.getElementById('dailypay-sheet-picker-overlay').style.display = 'flex';
             } catch (err) {
-                alert('Error parsing file: ' + err.message);
+                alert(t('err_parsing_file') + err.message);
             } finally {
                 event.target.value = '';
             }
@@ -1353,7 +1353,7 @@
     async function runDailyPayImportForSheet(workbook, sheetName) {
         try {
             const ws = workbook.Sheets[sheetName];
-            if (!ws['!ref']) { alert('That sheet appears to be empty.'); return; }
+            if (!ws['!ref']) { alert(t('a_sheet_empty')); return; }
 
             const dayCols = [3, 4, 5, 6, 7, 8, 9]; // D..J = Sun..Sat (C is the flat "DIA" day-rate column, not a weekday)
             const readDate = (r, c) => {
@@ -1365,7 +1365,7 @@
             };
             const dates = dayCols.map(c => readDate(1, c)); // row 2
             if (dates.some(d => !d)) {
-                alert(`Could not find 7 day dates in row 2 (columns D–J) of "${sheetName}". Make sure this matches the Daily Pay registry format.`);
+                alert(t('a_no_7days').replace('{sheet}', sheetName));
                 return;
             }
 
@@ -1419,12 +1419,12 @@
                 r++;
             }
 
-            if (!entries.length && !unmatched.length) { alert('No importable daily pay rows found in this sheet.'); return; }
+            if (!entries.length && !unmatched.length) { alert(t('a_no_dailypay_rows')); return; }
 
             let msg = '';
             if (entries.length) {
                 const { data: result, error } = await supabaseClient.rpc('import_daily_pay_batch', { p_actor: currentUsername, p_entries: entries });
-                if (error) { alert('Error importing: ' + error.message); return; }
+                if (error) { alert(t('err_importing') + error.message); return; }
                 const res = (result && result[0]) || { imported: 0, skipped: 0 };
                 msg = `Imported ${res.imported} daily pay entries for Week ${wk.week}, ${wk.year} (from "${sheetName}").`;
             } else {
@@ -1439,7 +1439,7 @@
             dailyView = { sunday };
             await fetchAllDataFromCloud();
         } catch (err) {
-            alert('Error parsing sheet: ' + err.message);
+            alert(t('err_parsing_sheet') + err.message);
         }
     }
 
@@ -1467,7 +1467,7 @@
         const file = event.target.files && event.target.files[0];
         event.target.value = '';
         if (!file) return;
-        if (!canEdit()) { alert('You do not have permission to import.'); return; }
+        if (!canEdit()) { alert(t('a_no_import_perm')); return; }
         const co = requireWriteCompany();
         if (!co) return;
 
@@ -1483,7 +1483,7 @@
 
             const headerRow = findClaimsHeaderRow(sheet);
             const rows = XLSX.utils.sheet_to_json(sheet, { range: headerRow, defval: '' });
-            if (!rows.length) { alert(`No data rows found in the "${sheetName}" tab.`); return; }
+            if (!rows.length) { alert(t('a_no_data_rows').replace('{sheet}', sheetName)); return; }
 
             const col = (row, names) => {
                 const keys = Object.keys(row);
@@ -1545,7 +1545,7 @@
                 });
             });
 
-            if (!newClaims.length) { alert(`Found ${rows.length} row(s) in "${sheetName}" but none had data in the Employee or Internal RefClaim columns — double-check the sheet has those column headers.`); return; }
+            if (!newClaims.length) { alert(t('a_no_matching_cols').replace('{n}', rows.length).replace('{sheet}', sheetName)); return; }
 
             if (newDamageTypes.length) {
                 await Promise.all(newDamageTypes.map(name => supabaseClient.rpc('add_type_value', { p_actor: currentUsername, p_kind: 'damage', p_value: name })));
@@ -1575,7 +1575,7 @@
                 (notesSummary ? `\nRows flagged for review:\n${notesSummary}` : '')
             );
         } catch (err) {
-            alert('Error importing file: ' + err.message);
+            alert(t('err_importing_file') + err.message);
         }
     }
 
@@ -1584,7 +1584,7 @@
         e.preventDefault();
         if (!canEdit()) return;
         const chargeEmpId = document.getElementById('ci-employee').value;
-        if (!chargeEmpId) { alert('Select an employee at the top of the tab first.'); return; }
+        if (!chargeEmpId) { alert(t('a_select_emp_top')); return; }
         const fields = {
             employee_id: chargeEmpId,
             charge_type: document.getElementById('gChargeType').value,
@@ -1598,7 +1598,7 @@
 
         if (editingChargeId) {
             const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: editingChargeId, p_fields: fields });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             if (data) alert(data);
             cancelChargeEdit();
             fetchChargesFromCloud();
@@ -1608,7 +1608,7 @@
             const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
             const payload = Object.assign({ charge_id: chargeId, company_code: chargeCo }, fields);
             const { error } = await supabaseClient.rpc('create_charge', { p_actor: currentUsername, p_fields: payload });
-            if (error) { alert('Error saving charge: ' + error.message); return; }
+            if (error) { alert(t('err_saving_charge') + error.message); return; }
             document.getElementById('charge-form').reset();
             fetchChargesFromCloud();
             document.getElementById('next-charge-id-display').textContent = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
@@ -1644,9 +1644,9 @@
 
     async function deleteCharge(id) {
         if (!canEdit()) return;
-        if(confirm("Delete charge " + id + "?")) {
+        if(confirm(t('c_del_charge').replace('{id}', id))) {
             const { error } = await supabaseClient.rpc('delete_charge', { p_actor: currentUsername, p_id: id });
-            if (error) alert('Error: ' + error.message);
+            if (error) alert(t('err_prefix') + error.message);
             fetchChargesFromCloud();
         }
     }
@@ -1683,7 +1683,7 @@
             notes: document.getElementById('wd-notes').value.trim()
         };
         const { data, error } = await supabaseClient.rpc('edit_charge', { p_actor: currentUsername, p_id: editingWeekDepositId, p_fields: fields });
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         if (data) alert(data);
         cancelWeekDepositEdit();
         await fetchChargesFromCloud();
@@ -1814,9 +1814,9 @@
     }
 
     function pullLastDateWorkedFromDailyPay() {
-        if (!editingEmpId) { alert('Save this employee first, then edit them to pull from Daily Pay.'); return; }
+        if (!editingEmpId) { alert(t('a_save_emp_first')); return; }
         const found = lastDailyPayWorked[editingEmpId];
-        if (!found) { alert('No Daily Pay entries found for this employee.'); return; }
+        if (!found) { alert(t('a_no_dailypay_emp')); return; }
         document.getElementById('emp-lastworked').value = found;
     }
 
@@ -1913,7 +1913,7 @@
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
         const name = `${emp.first_name} ${emp.last_name}`;
-        if (!confirm(`Mark ${name} as Inactive? This locks in today as their departure date (if not already set) and holds their Week in Deposit savings (90 days) and last paycheck (30 days) per the release rules.`)) return;
+        if (!confirm(t('c_mark_inactive').replace('{name}', name))) return;
         await setEmployeeStatus(empId, 'Inactive');
         dismissedInactivityFlags.delete(empId);
         renderInactivityFlagsBanner();
@@ -2106,14 +2106,14 @@
         const eligibleDate = weekDepositEligibleDate(stmt.charge.employee_id);
         if (!isEarly) {
             if (eligibleDate && todayStr() < eligibleDate) {
-                alert(`This account can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}. Use "Early Release" instead if this needs to happen sooner.`);
+                alert(t('a_not_releasable').replace('{date}', eligibleDate));
                 return;
             }
             if (!eligibleDate) {
-                if (!confirm('This employee has no Last Date Worked on file, so the 90-day eligibility rule can\'t be checked. Continue anyway?')) return;
+                if (!confirm(t('c_no_ldw_90'))) return;
             }
         } else {
-            if (!confirm(`This is an EARLY release — the normal eligible date is ${eligibleDate || 'unknown (no Last Date Worked on file)'}. ${currentUserRole === 'Medium' ? 'This will be sent to an Administrator for approval.' : 'Continue?'}`)) return;
+            if (!confirm(t('a_early_release_date').replace('{date}', eligibleDate || t('a_ldw_unknown')).replace('{tail}', currentUserRole === 'Medium' ? t('a_will_send_admin') : t('a_continue_q')))) return;
         }
 
         currentReleaseMode = 'wd';
@@ -2172,18 +2172,18 @@
         const emp = employees.find(e => e.id === empId);
         if (!emp) return;
         const d = getEmpDetail(empId);
-        if (d.last_paycheck_released_at) { alert('This employee\'s last paycheck has already been released.'); return; }
+        if (d.last_paycheck_released_at) { alert(t('a_paycheck_released')); return; }
         const eligibleDate = lastWeekPayEligibleDate(empId);
         if (!isEarly) {
             if (eligibleDate && todayStr() < eligibleDate) {
-                alert(`This can't be released yet. Based on this employee's Last Date Worked, the earliest eligible date is ${eligibleDate}. Use "Early Release" instead if this needs to happen sooner.`);
+                alert(t('a_not_releasable2').replace('{date}', eligibleDate));
                 return;
             }
             if (!eligibleDate) {
-                if (!confirm('This employee has no Last Date Worked on file, so the 30-day eligibility rule can\'t be checked. Continue anyway?')) return;
+                if (!confirm(t('c_no_ldw_30'))) return;
             }
         } else {
-            if (!confirm(`This is an EARLY release — the normal eligible date is ${eligibleDate || 'unknown (no Last Date Worked on file)'}. ${currentUserRole === 'Medium' ? 'This will be sent to an Administrator for approval.' : 'Continue?'}`)) return;
+            if (!confirm(t('a_early_release_date').replace('{date}', eligibleDate || t('a_ldw_unknown')).replace('{tail}', currentUserRole === 'Medium' ? t('a_will_send_admin') : t('a_continue_q')))) return;
         }
 
         currentReleaseMode = 'paycheck';
@@ -2305,8 +2305,8 @@
         if (currentReleaseMode === 'paycheck' && !currentReleaseEmployeeId) return;
         const stmt = currentReleaseStatement;
         const totals = releaseTotals(stmt);
-        if (totals.overCommitted) { alert('Uncheck something first — the selected total is more than what\'s available.'); return; }
-        if (currentReleaseMode === 'paycheck' && stmt.saved <= 0) { alert('Enter the paycheck amount first.'); return; }
+        if (totals.overCommitted) { alert(t('a_over_committed')); return; }
+        if (currentReleaseMode === 'paycheck' && stmt.saved <= 0) { alert(t('a_enter_paycheck')); return; }
         const settle = stmt.items.filter(i => i.selected).map(i => ({ type: i.type, id: i.id, amount: i.amount }));
         // Last Paycheck is never the final stage — an Inactive employee's
         // Week in Deposit release, if they have one, is still coming —
@@ -2355,9 +2355,9 @@
                 p_prepay: prepay, p_net_release: totals.netRelease, p_is_early: currentReleaseIsEarly
             });
             btn.disabled = false; btn.textContent = originalLabel;
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             closeReleaseStatement();
-            alert('Sent for Administrator approval — nothing has been released yet. You\'ll see it move once it\'s been acted on.');
+            alert(t('a_sent_approval'));
             return;
         }
 
@@ -2374,7 +2374,7 @@
                 p_base_pay_amount: stmt.basePay ?? null, p_additional_income_amount: stmt.additionalIncome ?? null
             });
         btn.disabled = false; btn.textContent = originalLabel;
-        if (error) { alert('Error: ' + error.message); return; }
+        if (error) { alert(t('err_prefix') + error.message); return; }
         const mode = currentReleaseMode;
         closeReleaseStatement();
         await fetchChargesFromCloud();

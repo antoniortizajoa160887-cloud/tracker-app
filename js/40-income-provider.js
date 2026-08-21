@@ -45,11 +45,11 @@
     document.getElementById('income-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         if (!canEdit()) return;
-        if (incomeTableMissing) { alert('The additional_income table is not set up yet. Run the income setup SQL first.'); return; }
+        if (incomeTableMissing) { alert(t('a_income_table_missing')); return; }
         const incomeCo = requireWriteCompany();
         if (!incomeCo) return;
         const empId = document.getElementById('i-employee').value;
-        if (!empId) { alert('Select an employee at the top of the tab first.'); return; }
+        if (!empId) { alert(t('a_select_emp_top')); return; }
 
         if (editingIncomeId) {
             const { error } = await supabaseClient.rpc('edit_income', {
@@ -59,7 +59,7 @@
                 p_start_date: document.getElementById('iStartDate').value || null,
                 p_status: document.getElementById('iStatus').value, p_notes: document.getElementById('iNotes').value.trim()
             });
-            if (error) { alert('Error: ' + error.message); return; }
+            if (error) { alert(t('err_prefix') + error.message); return; }
             cancelIncomeEdit();
             fetchIncomeFromCloud();
             return;
@@ -79,7 +79,7 @@
             notes: document.getElementById('iNotes').value.trim()
         };
         const { error } = await supabaseClient.rpc('create_income', { p_actor: currentUsername, p_fields: payload });
-        if (error) { alert('Error saving income: ' + error.message); return; }
+        if (error) { alert(t('err_saving_income') + error.message); return; }
         document.getElementById('income-form').reset();
         fetchIncomeFromCloud();
     });
@@ -237,10 +237,10 @@
 
     async function deleteIncome(id) {
         if (!canEdit()) return;
-        if (!id) { alert('Error: could not identify which income entry to delete — try refreshing the page.'); return; }
-        if (confirm('Delete income ' + id + '?')) {
+        if (!id) { alert(t('a_no_income_id')); return; }
+        if (confirm(t('c_del_income').replace('{id}', id))) {
             const { error } = await supabaseClient.rpc('delete_income', { p_actor: currentUsername, p_id: id });
-            if (error) alert('Error: ' + error.message);
+            if (error) alert(t('err_prefix') + error.message);
             fetchIncomeFromCloud();
         }
     }
@@ -575,8 +575,8 @@
             });
             if (error) {
                 payTypes[empId] = previous;    // roll back — the save didn't actually happen
-                if (isMissingTable(error)) { dailyTableMissing = true; alert('Daily-pay tables are not set up yet. See the yellow note in the Daily Pay tab.'); }
-                else alert('Could not save pay type: ' + error.message);
+                if (isMissingTable(error)) { dailyTableMissing = true; alert(t('a_dailypay_missing')); }
+                else alert(t('err_save_paytype') + error.message);
                 renderEmployees();
             }
         } catch (e) {
@@ -595,7 +595,7 @@
         const nextLabel = next === 'Daily' ? 'Daily Rate' : next === 'Provider' ? 'Provider (variable)' : 'Weekly Salary';
         const co = requireWriteCompany();
         if (!co) return;
-        if (!confirm(`Set ${emp.first_name} ${emp.last_name} to ${nextLabel}?`)) return;
+        if (!confirm(t('c_set_emp_status').replace('{name}', emp.first_name + ' ' + emp.last_name).replace('{status}', nextLabel))) return;
         await setPayType(empId, next, co);
         renderEmployees();
         if (document.getElementById('tab-dailypay').classList.contains('active')) renderDailyPay();
@@ -694,7 +694,7 @@
                 p_actor: currentUsername, p_employee_id: empId, p_year: k.year, p_week: k.week,
                 p_amount: amount, p_notes: notes
             });
-            if (error) { alert('Error saving: ' + error.message); return; }
+            if (error) { alert(t('err_saving') + error.message); return; }
             flashSaved('providerpay-saveflash');
             // Keep Payroll's current-week cache in sync when editing this week
             const thisWeek = weekKeyFromSunday(weekStartSunday(new Date()));
@@ -753,18 +753,18 @@
     async function payProviderSelectedBills(empId) {
         if (!canEdit()) return;
         const checked = [...document.querySelectorAll(`.prov-bill-cb[data-emp="${CSS.escape(empId)}"]:checked`)];
-        if (!checked.length) { alert('Tick at least one bill to pay.'); return; }
+        if (!checked.length) { alert(t('a_tick_bill')); return; }
         const ids = checked.map(cb => cb.getAttribute('data-bill'));
         const selected = (bills || []).filter(b => ids.includes(b.bill_id));
         const sum = selected.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
-        if (!confirm(`Mark ${selected.length} bill(s) as Paid (${formatMoney(sum)}) and add that to this week's provider pay?`)) return;
+        if (!confirm(t('c_mark_bills_paid').replace('{n}', selected.length).replace('{amount}', formatMoney(sum)))) return;
         for (const b of selected) {
             const { error } = await supabaseClient.rpc('update_bill', {
                 p_actor: currentUsername, p_id: b.bill_id, p_vendor_name: b.vendor_name,
                 p_bill_number: b.bill_number, p_bill_date: b.bill_date, p_due_date: b.due_date,
                 p_amount: b.amount, p_status: 'Paid', p_notes: b.notes
             });
-            if (error) { alert('Error paying bill ' + (b.bill_number || b.bill_id) + ': ' + error.message); return; }
+            if (error) { alert(t('err_paying_bill').replace('{bill}', (b.bill_number || b.bill_id)) + error.message); return; }
         }
         const existing = providerGrid[empId] || { amount: 0, notes: '' };
         const newAmount = (parseFloat(existing.amount) || 0) + sum;
@@ -1163,7 +1163,7 @@
                 });
                 if (error) {
                     if (isMissingTable(error)) { dailyTableMissing = true; renderDailyPay(); }
-                    else { console.error('saveDailyCell:', error); alert('Could not save: ' + error.message); }
+                    else { console.error('saveDailyCell:', error); alert(t('err_could_not_save') + error.message); }
                     return;
                 }
                 flashSaved();
@@ -1219,7 +1219,7 @@
     // one combined document with a single summary header up top.
     function printAllPayroll() {
         const qualifying = lastPayrollCalc.filter(c => c.net > 0);
-        if (!qualifying.length) { alert('No one in the current view has a net amount to pay for this week.'); return; }
+        if (!qualifying.length) { alert(t('a_no_net_pay')); return; }
         const weekLabel = fmtWeekLabel(payrollSunday());
         const printedDate = new Date().toLocaleDateString();
         const sections = qualifying.map((c, idx) => {
