@@ -515,7 +515,7 @@
                 p_insurance_policy: payload.insurance_policy, p_insurance_expiry: payload.insurance_expiry, p_notes: payload.notes
             }));
         } else {
-            const id = `${idPrefix()}${String(vehicles.length + 1).padStart(4, '0')}V`;
+            const id = `${idPrefix()}${String(nextRecordNumber(vehicles, 'id')).padStart(4, '0')}V`;
             ({ error } = await supabaseClient.rpc('create_vehicle', {
                 p_actor: currentUsername, p_id: id, p_company: payload.company_code, p_truck_number: payload.truck_number,
                 p_year: payload.year, p_make: payload.make, p_model: payload.model, p_plate: payload.plate,
