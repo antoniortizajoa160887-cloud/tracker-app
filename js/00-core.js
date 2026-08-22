@@ -118,8 +118,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.79';
+    const APP_VERSION = 'v3.80';
     const CHANGELOG = [
+        { version: 'v3.80', date: '2026-08-22', notes: 'Data Sync now lives in the Admin section (next to Settings, Log and Changelog) instead of Operations — it is maintenance, not day-to-day work. Also new: slim, rounded scrollbars everywhere on PC instead of the chunky gray bars, and the tab strips now scroll by swipe with no scrollbar at all (this also removes the stray little scrollbars that appeared inside the tab bar).' },
         { version: 'v3.79', date: '2026-08-22', notes: 'Compact Payroll screens (4.1 layout, final round): Payroll, Daily Pay, Provider Pay and Week in Deposit fold their print/report/export/import buttons into the same "⋯" menu used everywhere else, leaving just the week arrows and filters on screen. The totals on Payroll, Week in Deposit and Statement now show as slim chips instead of tile walls. Every button works exactly as before — just tucked into the menu.' },
         { version: 'v3.78', date: '2026-08-22', notes: 'Compact Route Tracker & Companies (4.1 layout, continued): both tabs open with the slim section bar and their data first. On Route Tracker the routes table is right below the bar and the Log New Route form hides behind "+ Log New Route" (editing a route still opens it). On Companies the company list is first and the Add Company form hides behind "+ Add Company" — editing a company opens the same form prefilled, exactly as before.' },
         { version: 'v3.77', date: '2026-08-22', notes: 'Compact Fleet (4.1 layout, continued): the Fleet tab opens with the slim section bar — title, fleet totals as chips, and "+ Add Vehicle" — with the truck list right below. The Add Vehicle form hides until you tap the + button (editing a truck still opens it automatically), Export/Import moved into the "⋯" menu, and sorting sits on the search line. Schedule Maintenance and its upcoming list are unchanged.' },
@@ -1067,13 +1068,13 @@
     // still acts on the individual btn-tab-* buttons, wherever they live.
     const HUB_TABS = {
         'hub-home': ['tab-home', 'tab-notifications'],
-        'hub-operations': ['tab-tracker', 'tab-report', 'tab-vehicles', 'tab-data'],
+        'hub-operations': ['tab-tracker', 'tab-report', 'tab-vehicles'],
         'hub-people': ['tab-employees', 'tab-users'],
         'hub-payroll': ['tab-payroll', 'tab-dailypay', 'tab-providerpay', 'tab-weekdeposit', 'tab-savingsreport', 'tab-releasehistory', 'tab-statement'],
         'hub-finance': ['tab-claims', 'tab-income', 'tab-invoices', 'tab-bills'],
         'hub-documents': ['tab-expiring'],
         'hub-messages': ['tab-messages'],
-        'hub-admin': ['tab-settings', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-changelog']
+        'hub-admin': ['tab-settings', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-changelog', 'tab-data']
     };
     function hubForTab(tabName) {
         for (const h in HUB_TABS) if (HUB_TABS[h].includes(tabName)) return h;
