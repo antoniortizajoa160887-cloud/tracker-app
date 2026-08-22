@@ -772,6 +772,26 @@
     h3 { letter-spacing: -0.005em; }
     .money, .stat-value, .id-cell, td, .attach-ind { font-variant-numeric: tabular-nums; }
 
+    /* ---- Tracker 4.0 P2 (v3.69): the command bar. One compact row — brand,
+       search front-and-center, sync, company switcher, account. Replaces the
+       old three-row header without touching any element id or handler. */
+    .cmd-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; box-shadow: var(--shadow-sm); }
+    .cmd-title { font-size: 0.98rem; font-weight: 800; letter-spacing: -0.01em; border: none; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; max-width: 30%; }
+    .cmd-search { flex: 1 1 220px; min-width: 170px; margin: 0; }
+    .cmd-search input { min-height: 40px; }
+    .cmd-sync { display: inline-flex; align-items: center; white-space: nowrap; }
+    .cmd-bar .header-user-avatar { margin-right: 0; display: inline-flex; }
+    .menu-identity { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 0.78rem; line-height: 1.6; color: var(--text-muted); background: var(--surface-2); }
+    .menu-identity strong { color: var(--text); }
+    @media (max-width: 700px) {
+        .cmd-title { display: none; }           /* phone: brand mark + search carry the bar */
+        #sync-text { display: none; }           /* the dot alone tells the story */
+        .cmd-search { flex-basis: 100%; order: 10; }  /* search drops to its own full-width row */
+        #user-menu-wrap { margin-left: auto; }  /* avatar + menu pin to the right of row 1 */
+        #company-switcher-wrap span { display: none; }  /* the select shows the value itself */
+        #company-switcher-wrap select { min-height: 36px; font-size: 0.72rem; padding: 0.25rem 0.4rem; max-width: 130px; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .card, .panel, .btn, .btn-small, input, select, textarea, tbody tr, .theme-swatch { transition: none !important; }
         .btn:hover, .btn-small:hover { transform: none; }

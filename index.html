@@ -394,14 +394,17 @@
 
 <!-- MAIN APP CONTAINER -->
 <div class="container" id="app-container">
-    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 0.75rem;">
-        <div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <button type="button" id="mobile-hamburger-btn" onclick="toggleMobileDrawer()" title="Menu">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <div class="app-logo-icon" id="header-logo-icon" style="width:38px; height:38px; min-width:38px; border-radius:9px; background:linear-gradient(155deg,#14b8a6,#0b1f1c); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
-                    <svg width="66%" height="66%" viewBox="0 0 24 24" fill="none">
+    <!-- Tracker 4.0 P2: one compact command bar — brand, prominent search,
+         sync, company switcher and the account menu on a single row. Every
+         element id, handler and i18n span from the old three-row header is
+         preserved; the welcome/role/company line now lives at the top of the
+         account dropdown. -->
+    <div class="cmd-bar">
+        <button type="button" id="mobile-hamburger-btn" onclick="toggleMobileDrawer()" title="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="app-logo-icon" id="header-logo-icon" style="width:36px; height:36px; min-width:36px; border-radius:9px; background:linear-gradient(155deg,#14b8a6,#0b1f1c); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <svg width="66%" height="66%" viewBox="0 0 24 24" fill="none">
                 <path d="M12 1.8l8.2 2.7v6.7c0 5.1-3.3 9.2-8.2 11-4.9-1.8-8.2-5.9-8.2-11V4.5L12 1.8z" fill="#08201d"/>
                 <path d="M12 1.8l8.2 2.7v6.7c0 5.1-3.3 9.2-8.2 11-4.9-1.8-8.2-5.9-8.2-11V4.5L12 1.8z" stroke="#2dd4bf" stroke-width="0.9" fill="none" opacity="0.55"/>
                 <path d="M6.3 12.6a5.7 5.7 0 0111.4 0" stroke="#2dd4bf" stroke-width="2" fill="none" stroke-linecap="round"/>
@@ -410,27 +413,22 @@
                 <circle cx="12" cy="12.6" r="1.2" fill="#fff"/>
                 <circle cx="12" cy="16.6" r="1.05" fill="#2dd4bf"/>
             </svg>
-                </div>
-                <h1 id="app-title" style="margin:0;">Tracker — Unified Logistics · HR · Claims</h1>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;"><span id="header-user-avatar" class="header-user-avatar"></span><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong> · <span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></p>
         </div>
-        <div class="global-search-wrap">
+        <h1 id="app-title" class="cmd-title" style="margin:0;">Tracker — Unified Logistics · HR · Claims</h1>
+        <div class="global-search-wrap cmd-search">
             <span class="global-search-icon">🔍</span>
             <input type="text" id="global-search-input" placeholder="Search employees, claims, charges, fleet..." onkeydown="if(event.key==='Enter'){runGlobalSearch();}">
         </div>
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <span style="display:inline-flex; align-items:center;"><span class="sync-status" id="sync-dot"></span><span id="sync-text" data-i18n="synchronized" style="font-size: 0.75rem; color: var(--text-muted);">Synchronized</span></span>
-                <div id="company-switcher-wrap" style="display:none; align-items:center; gap:4px;">
-                    <span data-i18n="company_label" style="font-size:0.7rem; color:var(--text-muted);">Company:</span>
-                    <select id="company-switcher" onchange="onCompanySwitch()" style="width:auto; min-height:40px; padding:0.4rem 0.5rem; font-size:0.8rem; border-radius:6px;"></select>
-                </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
+        <span class="cmd-sync"><span class="sync-status" id="sync-dot"></span><span id="sync-text" data-i18n="synchronized" style="font-size: 0.72rem; color: var(--text-muted);">Synchronized</span></span>
+        <div id="company-switcher-wrap" style="display:none; align-items:center; gap:4px;">
+            <span data-i18n="company_label" style="font-size:0.7rem; color:var(--text-muted);">Company:</span>
+            <select id="company-switcher" onchange="onCompanySwitch()" style="width:auto; min-height:40px; padding:0.4rem 0.5rem; font-size:0.8rem; border-radius:6px;"></select>
+        </div>
             <div id="user-menu-wrap" style="display:flex; align-items:center; gap:8px; position:relative;">
+                <span id="header-user-avatar" class="header-user-avatar" onclick="toggleUserMenu(event)" style="cursor:pointer;"></span>
                 <button class="btn-small" id="user-menu-btn" style="margin:0; width:40px; height:40px; min-height:40px; padding:0; font-size:18px; line-height:1;" onclick="toggleUserMenu(event)" title="More options">⋮</button>
-                <div id="user-menu-dropdown" style="display:none; position:absolute; top:46px; right:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.18); min-width:180px; z-index:600; overflow:hidden;">
+                <div id="user-menu-dropdown" style="display:none; position:absolute; top:46px; right:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.18); min-width:220px; z-index:600; overflow:hidden;">
+                    <div class="menu-identity"><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong><br><span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></div>
                     <div style="display:flex; gap:8px; justify-content:center; padding:12px 14px; border-bottom:1px solid var(--border);">
                         <button type="button" class="header-theme-swatch" id="header-theme-btn-light" onclick="setTheme('light')" style="background:#10b981;" title="Light"></button>
                         <button type="button" class="header-theme-swatch" id="header-theme-btn-ocean" onclick="setTheme('dark')" style="background:#2dd4bf;" title="Ocean"></button>
@@ -452,8 +450,6 @@
                     <button type="button" class="acct-hdr acct-danger" onclick="logout()"><span class="sbicon ic-signout"></span> <span data-i18n="sign_out_btn">Sign Out</span></button>
                 </div>
             </div>
-            </div>
-        </div>
     </div>
 
     <div class="card" id="change-password-card" style="display:none; max-width:420px;">
