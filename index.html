@@ -438,12 +438,18 @@
             <button type="button" class="header-theme-swatch" id="header-theme-btn-indigo" onclick="setTheme('indigo')" style="background:#6366f1;" title="Indigo"></button>
             <button type="button" class="header-theme-swatch" id="header-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
                     </div>
-                    <button type="button" id="menu-change-photo" onclick="changeMyPhoto(); toggleUserMenu();" style="display:none; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">📷 <span data-i18n="photo_change">Change photo</span></button>
-                    <button type="button" id="menu-remove-photo" onclick="removeMyPhoto(); toggleUserMenu();" style="display:none; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
-                    <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-                    <button type="button" onclick="openTwofaManage(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
-                    <button type="button" onclick="signOutOtherDevices(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
-                    <button type="button" onclick="logout()" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:#ef4444; font-size:0.85rem; cursor:pointer; font-weight:700;" data-i18n="sign_out_btn">Sign Out</button>
+                    <button type="button" id="menu-photo-hdr" class="acct-hdr" style="display:none;" onclick="toggleAcctSection('menu-photo-sub', this)">🖼️ <span data-i18n="acct_photo">Profile photo</span> <span class="acct-caret">▸</span></button>
+                    <div id="menu-photo-sub" class="acct-sub" style="display:none;">
+                        <button type="button" class="acct-row" onclick="changeMyPhoto(); toggleUserMenu();">📷 <span data-i18n="photo_change">Change photo</span></button>
+                        <button type="button" id="menu-remove-photo" class="acct-row" style="display:none;" onclick="removeMyPhoto(); toggleUserMenu();">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
+                    </div>
+                    <button type="button" class="acct-hdr" onclick="toggleAcctSection('menu-security-sub', this)">🔒 <span data-i18n="acct_security">Security</span> <span class="acct-caret">▸</span></button>
+                    <div id="menu-security-sub" class="acct-sub" style="display:none;">
+                        <button type="button" class="acct-row" onclick="toggleChangePasswordCard(); toggleUserMenu();">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+                        <button type="button" class="acct-row" onclick="openTwofaManage(); toggleUserMenu();">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
+                        <button type="button" class="acct-row" onclick="signOutOtherDevices(); toggleUserMenu();">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
+                    </div>
+                    <button type="button" class="acct-hdr acct-danger" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
                 </div>
             </div>
             </div>
@@ -555,11 +561,17 @@
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-indigo" onclick="setTheme('indigo')" style="background:#6366f1;" title="Indigo"></button>
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
         </div>
-        <button type="button" class="sidebar-account-btn" id="sidebar-change-photo" style="display:none;" onclick="changeMyPhoto()">📷 <span data-i18n="photo_change">Change photo</span></button>
-        <button type="button" class="sidebar-account-btn" id="sidebar-remove-photo" style="display:none;" onclick="removeMyPhoto()">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
-        <button type="button" class="sidebar-account-btn" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-        <button type="button" class="sidebar-account-btn" onclick="openTwofaManage()">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
-        <button type="button" class="sidebar-account-btn" onclick="signOutOtherDevices()">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
+        <button type="button" class="sidebar-account-btn acct-hdr" id="sidebar-photo-hdr" style="display:none;" onclick="toggleAcctSection('sidebar-photo-sub', this)">🖼️ <span data-i18n="acct_photo">Profile photo</span> <span class="acct-caret">▸</span></button>
+        <div id="sidebar-photo-sub" class="acct-sub" style="display:none;">
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="changeMyPhoto()">📷 <span data-i18n="photo_change">Change photo</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" id="sidebar-remove-photo" style="display:none;" onclick="removeMyPhoto()">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
+        </div>
+        <button type="button" class="sidebar-account-btn acct-hdr" onclick="toggleAcctSection('sidebar-security-sub', this)">🔒 <span data-i18n="acct_security">Security</span> <span class="acct-caret">▸</span></button>
+        <div id="sidebar-security-sub" class="acct-sub" style="display:none;">
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="openTwofaManage()">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="signOutOtherDevices()">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
+        </div>
         <button type="button" class="sidebar-account-btn" id="sidebar-account-btn-signout" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
     </div>
 </div>
