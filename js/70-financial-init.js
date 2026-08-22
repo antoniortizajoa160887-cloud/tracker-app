@@ -548,6 +548,7 @@
         document.getElementById('vNotes').value = v.notes || '';
         document.getElementById('vehicle-save-btn').textContent = 'Save Changes';
         document.getElementById('vehicle-cancel-btn').style.display = 'inline-block';
+        openFinForm('vehicle-form-panel');
         document.getElementById('vehicle-form-panel').scrollIntoView({ behavior: 'smooth' });
     }
 

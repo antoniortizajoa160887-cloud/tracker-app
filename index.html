@@ -705,7 +705,22 @@
 
 <!-- TAB: VEHICLES -->
 <div id="tab-vehicles" class="tab-content">
-    <div class="panel" id="vehicle-form-panel">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_vehicles">Fleet</h2>
+        <div class="stat-grid sec-chips" id="vehicle-stats-grid"></div>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="vehicle-form-panel" onclick="toggleFinForm('vehicle-form-panel')">＋ <span data-i18n="add_vehicle_title">Add Vehicle</span></button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportVehiclesExcel()" data-i18n="export_btn">⬇️ Export</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('vehicles-import-input').click()" data-i18n="import_btn">⬆️ Import</button>
+                    <input type="file" id="vehicles-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importVehiclesExcel(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel" id="vehicle-form-panel" style="display:none;">
         <h2 data-i18n="add_vehicle_title">Add Vehicle</h2>
         <form id="vehicle-form">
             <div class="form-row">
@@ -742,24 +757,20 @@
     </div>
 
     <div class="panel">
-        <div class="stat-grid" id="vehicle-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="vehicle-search" placeholder="Search truck #, year, make, model, plate, VIN..." data-i18n-placeholder="vehicle_search_ph" oninput="renderVehicles()"></div>
+            <div class="rec-toolbar">
+                <label data-i18n="sort_by">Sort by</label>
+                <select id="sort-select-vehicles" onchange="setSortField('vehicles', this.value)">
+                    <option value="truck" data-i18n="truck_num">Truck #</option>
+                    <option value="vehicle" data-i18n="opt_vehicle">Vehicle</option>
+                    <option value="plate" data-i18n="opt_plate">Plate</option>
+                    <option value="regexp" data-i18n="opt_reg_exp">Reg. Expiry</option>
+                    <option value="insexp" data-i18n="ins_expiry">Insurance Expiry</option>
+                </select>
+                <button type="button" class="btn-small rec-dir-btn" id="sort-dir-vehicles" onclick="flipSortDir('vehicles')">▲</button>
+            </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('vehicles')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportVehiclesExcel()" data-i18n="export_btn">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('vehicles-import-input').click()" data-i18n="import_btn">⬆️ Import</button>
-            <input type="file" id="vehicles-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importVehiclesExcel(event)">
-        </div>
-        <div class="rec-toolbar">
-            <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-vehicles" onchange="setSortField('vehicles', this.value)">
-                <option value="truck" data-i18n="truck_num">Truck #</option>
-                <option value="vehicle" data-i18n="opt_vehicle">Vehicle</option>
-                <option value="plate" data-i18n="opt_plate">Plate</option>
-                <option value="regexp" data-i18n="opt_reg_exp">Reg. Expiry</option>
-                <option value="insexp" data-i18n="ins_expiry">Insurance Expiry</option>
-            </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-vehicles" onclick="flipSortDir('vehicles')">▲</button>
         </div>
         <div id="vehicles-tbody" class="record-grid"></div>
     </div>
