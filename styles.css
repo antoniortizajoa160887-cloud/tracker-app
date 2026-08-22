@@ -578,10 +578,13 @@
     .acct-caret { color: var(--text-muted); font-size: 11px; }
     #sidebar-account-bar .acct-hdr { display: flex; align-items: center; gap: 9px; }
     #sidebar-account-bar .acct-hdr .acct-caret { margin-left: auto; }
-    #sidebar-account-bar .acct-subitem { padding-left: 26px; font-size: 0.8rem; opacity: 0.9; }
+    #sidebar-account-bar .acct-subitem { font-size: 0.8rem; opacity: 0.92; }
+    /* Expanded sub-options sit indented under their header, with a spine, so
+       each one clearly belongs to Profile photo / Security above it. */
+    .acct-sub { margin-left: 16px; border-left: 2px solid var(--border); }
     #user-menu-dropdown .acct-hdr, #user-menu-dropdown .acct-row { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; border-top: 1px solid var(--border); color: var(--text); font-size: 0.85rem; cursor: pointer; }
     #user-menu-dropdown .acct-hdr .acct-caret { margin-left: auto; }
-    #user-menu-dropdown .acct-sub .acct-row { padding-left: 32px; font-size: 0.82rem; border-top: 1px solid var(--border); }
+    #user-menu-dropdown .acct-sub .acct-row { padding-left: 20px; font-size: 0.82rem; border-top: 1px solid var(--border); }
     #user-menu-dropdown .acct-danger { color: #ef4444; font-weight: 700; }
     /* Labeled document slots (Driver License, Medical Card, Registration,
        Insurance) shown on an employee/vehicle. Dashed = nothing uploaded yet. */
