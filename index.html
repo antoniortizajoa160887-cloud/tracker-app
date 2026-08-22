@@ -800,6 +800,21 @@
 <!-- TAB 3: EMPLOYEES -->
 <div id="tab-employees" class="tab-content">
     <div id="inactivity-flags-banner" style="display:none; margin-bottom:12px;"></div>
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_employees">Employees</h2>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="employee-form-wrap" onclick="toggleFinForm('employee-form-wrap')">＋ <span data-i18n="new_contact">New Contact</span></button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()" data-i18n="export_csv">Export CSV</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()" data-i18n="import_csv">Import CSV</button>
+                    <input type="file" id="emp-csv-input" accept=".csv,text/csv" style="display:none;" onchange="importEmployeesCsv(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="employee-form-wrap" style="display:none;">
     <div class="panel">
         <h2 id="employee-form-title" class="panel-head" onclick="toggleCollapse(this)"><span id="employee-form-titletext" data-i18n="new_contact">New Contact</span> <span class="caret">&#9662;</span></h2>
         <div class="id-banner">
@@ -852,6 +867,7 @@
             </div>
         </form>
     </div>
+    </div>
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px; align-items:center; gap:8px;">
             <div class="field field-wide"><input type="text" id="employee-search" placeholder="Search name, ID, department, type..." oninput="renderEmployees()" data-i18n-placeholder="search_employees_ph"></div>
@@ -862,22 +878,19 @@
                     <option value="">All statuses</option>
                 </select>
             </div>
+            <div class="rec-toolbar">
+                <label data-i18n="sort_by">Sort by</label>
+                <select id="sort-select-employees" onchange="setSortField('employees', this.value)">
+                    <option value="name" data-i18n="th_name">Name</option>
+                    <option value="id" data-i18n="th_id">ID</option>
+                    <option value="type" data-i18n="type_label">Type</option>
+                    <option value="department" data-i18n="department">Department</option>
+                    <option value="start" data-i18n="start_date">Start date</option>
+                    <option value="status" data-i18n="status_field">Status</option>
+                </select>
+                <button type="button" class="btn-small rec-dir-btn" id="sort-dir-employees" onclick="flipSortDir('employees')">▲</button>
+            </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('employees')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportEmployeesCsv()" data-i18n="export_csv">Export CSV</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('emp-csv-input').click()" data-i18n="import_csv">Import CSV</button>
-            <input type="file" id="emp-csv-input" accept=".csv,text/csv" style="display:none;" onchange="importEmployeesCsv(event)">
-        </div>
-        <div class="rec-toolbar">
-            <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-employees" onchange="setSortField('employees', this.value)">
-                <option value="name" data-i18n="th_name">Name</option>
-                <option value="id" data-i18n="th_id">ID</option>
-                <option value="type" data-i18n="type_label">Type</option>
-                <option value="department" data-i18n="department">Department</option>
-                <option value="start" data-i18n="start_date">Start date</option>
-                <option value="status" data-i18n="status_field">Status</option>
-            </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-employees" onclick="flipSortDir('employees')">▲</button>
         </div>
         <div id="employees-tbody" class="record-grid"></div>
     </div>
@@ -1635,6 +1648,13 @@
 
 <!-- TAB 8: USERS -->
 <div id="tab-users" class="tab-content">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_users">Users</h2>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="user-form-wrap" onclick="toggleFinForm('user-form-wrap')">＋ <span data-i18n="sec_new_user">New User</span></button>
+        </div>
+    </div>
+    <div id="user-form-wrap" style="display:none;">
     <div class="panel">
         <h2 data-i18n="create_user_title">Create New User Profile</h2>
         <form id="create-user-form">
@@ -1650,7 +1670,8 @@
             <button type="submit" class="btn" style="margin-top:0.5rem;" id="create-user-btn" data-i18n="create_user_btn">+ Create User</button>
         </form>
     </div>
-    <div class="panel collapsed">
+    </div>
+    <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)"><span data-i18n="system_users">System Users</span> <span class="caret">&#9662;</span></h2>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>

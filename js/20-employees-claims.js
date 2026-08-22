@@ -860,6 +860,9 @@
         document.getElementById('emp-save-btn').textContent = 'Save changes';
         document.getElementById('emp-cancel-btn').style.display = 'inline-block';
         document.getElementById('employee-form').classList.add('editing');
+        openFinForm('employee-form-wrap');
+        const formPanel = document.getElementById('employee-form').closest('.panel');
+        if (formPanel) formPanel.classList.remove('collapsed');
         updateNextEmpId();
         document.getElementById('tab-employees').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
