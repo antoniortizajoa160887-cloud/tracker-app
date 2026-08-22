@@ -3,93 +3,22 @@
    Split out of the original single-file index.html for maintainability; classic
    script, loaded in order with its siblings and sharing one global scope. */
     // ===== Two-level nav: which tabs live under which group =====
-    const TAB_GROUPS = {
-        'grp-logistics': ['tab-tracker', 'tab-report', 'tab-vehicles'],
-        'grp-hr': ['tab-employees', 'tab-claims', 'tab-income', 'tab-weekdeposit', 'tab-dailypay', 'tab-providerpay', 'tab-statement', 'tab-payroll', 'tab-savingsreport', 'tab-releasehistory'],
-        'grp-expiring': ['tab-expiring'],
-        'grp-financial': ['tab-invoices', 'tab-bills'],
-        'grp-admin': ['tab-settings', 'tab-users', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-data', 'tab-changelog']
-    };
-
-    // Open a group: show its sub-tab row, hide the others, and switch to its
-    // first tab that's actually visible for this role.
-    function openGroup(groupId) {
-        // #grp-notifications/#grp-messages share the .tabs.sub-tabs class
-        // for visual styling but are NOT part of the toggle system — they're
-        // permanently-open standalone sections above the account bar, so
-        // they're excluded here to avoid getting closed by this sweep.
-        document.querySelectorAll('.tabs.sub-tabs:not(#grp-notifications):not(#grp-messages)').forEach(g => g.classList.remove('open'));
-        document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
-        const g = document.getElementById(groupId);
-        if (g) g.classList.add('open');
-        const gbtn = document.getElementById('btn-' + groupId);
-        if (gbtn) gbtn.classList.add('active');
-
-        // On the mobile drawer (<900px — the same breakpoint the sidebar's
-        // own CSS switches on), tapping a group header should only reveal
-        // its sub-tab list so the person can then pick one. Auto-navigating
-        // into the first sub-tab here was closing the whole drawer before
-        // they ever got a chance to see or tap any of the other options,
-        // since openTab() always closes the drawer as its very first step.
-        // Desktop keeps the auto-select-first-tab behavior below — there's
-        // no drawer to lose there, and it gives a sensible default view.
-        if (!window.matchMedia('(min-width: 900px)').matches) return;
-
-        const tabs = TAB_GROUPS[groupId] || [];
-        const firstVisible = tabs.find(t => {
-            const b = document.getElementById('btn-' + t);
-            return b && b.style.display !== 'none';
-        });
-        if (firstVisible) {
-            const btnEl = document.getElementById('btn-' + firstVisible);
-            openTab({ currentTarget: btnEl }, firstVisible);
-        }
-    }
-
-    // Run after role-based tab visibility is decided: hide any group with no
-    // visible tabs, and expand whichever group holds the currently active tab
-    // (so a role-driven landing tab, like View Only's Employees, opens under
-    // the right group automatically).
+    // Tracker 4.0 (P3): the old group / sub-tab machinery is replaced by the
+    // hub navigation (HUB_TABS / openHub / syncHubUI in 00-core.js). This
+    // keeps its original name because initAppSession calls it after the
+    // role gating has decided tab visibility: hide any hub (and bottom-bar
+    // item) with no visible screens for this role, then light up the hub
+    // that owns whatever tab is actually active.
     function refreshGroupVisibility() {
-        // If Home is the tab actually showing, leave it alone entirely —
-        // it isn't part of TAB_GROUPS, so without this check the fallback
-        // below (which always picks SOME group to highlight when it can't
-        // find the active tab in any group's list) would strip Home's own
-        // active highlight and incorrectly light up Logistics instead,
-        // even though Logistics' content isn't what's on screen. Same
-        // bug shape as #13 in memory — a new element not accounted for by
-        // an existing sweep/fallback written before it existed.
-        const homeContent = document.getElementById('tab-home');
-        if (homeContent && homeContent.classList.contains('active')) return;
-
-        let activeGroup = null;
-        Object.keys(TAB_GROUPS).forEach(groupId => {
-            const tabs = TAB_GROUPS[groupId];
-            const anyVisible = tabs.some(t => {
-                const b = document.getElementById('btn-' + t);
-                return b && b.style.display !== 'none';
-            });
-            const gbtn = document.getElementById('btn-' + groupId);
-            if (gbtn) gbtn.style.display = anyVisible ? 'inline-block' : 'none';
-            tabs.forEach(t => {
-                const content = document.getElementById(t);
-                if (content && content.classList.contains('active')) activeGroup = groupId;
-            });
+        document.querySelectorAll('.hub-btn').forEach(hb => {
+            const tabs = HUB_TABS[hb.id] || [];
+            const any = tabs.some(t => { const b = document.getElementById('btn-' + t); return b && b.style.display !== 'none'; });
+            hb.style.display = any ? '' : 'none';
+            const mt = document.getElementById('mtab-' + hb.id.slice(4));
+            if (mt) mt.style.display = any ? '' : 'none';
         });
-        if (!activeGroup) {
-            activeGroup = Object.keys(TAB_GROUPS).find(gid => {
-                const b = document.getElementById('btn-' + gid);
-                return b && b.style.display !== 'none';
-            });
-        }
-        if (activeGroup) {
-            document.querySelectorAll('.tabs.sub-tabs:not(#grp-notifications):not(#grp-messages)').forEach(g => g.classList.remove('open'));
-            document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
-            const g = document.getElementById(activeGroup);
-            if (g) g.classList.add('open');
-            const gbtn = document.getElementById('btn-' + activeGroup);
-            if (gbtn) gbtn.classList.add('active');
-        }
+        const active = document.querySelector('.tab-content.active');
+        if (active) syncHubUI(active.id);
     }
 
     // Show/hide the login password. Swaps the input type and the eye icon
@@ -289,8 +218,7 @@
     // Jump to Administration -> Users and open the failed sign-ins panel.
     function openFailedSignins() {
         try {
-            openGroup('grp-admin');
-            openTab({ currentTarget: document.getElementById('btn-tab-users') }, 'tab-users');
+            openTab({ currentTarget: document.getElementById('btn-tab-users') }, 'tab-users'); // syncHubUI lights the Admin hub
         } catch (e) { console.error(e); }
         setTimeout(() => {
             const bodyEl = document.getElementById('login-attempts-body');

@@ -788,16 +788,10 @@
             card(t('d_home_unread'), unreadNotifs, '', "openHomeShortcut('tab-notifications')");
     }
 
-    // Home's stat cards jump to a real group's tab — reuses the same
-    // group-lookup TAB_GROUPS already has, so a card always opens through
-    // the right group (marking that group's header active, expanding its
-    // sub-tab row) instead of just switching tab-content in isolation.
+    // Home's stat cards jump straight to a tab — openTab now highlights the
+    // right tab button itself and syncHubUI lights the owning hub + strip.
     function openHomeShortcut(tabName) {
-        const groupId = Object.keys(TAB_GROUPS).find(g => TAB_GROUPS[g].includes(tabName));
-        if (groupId) { openGroup(groupId); }
         openTab(null, tabName);
-        const btn = document.getElementById('btn-' + tabName);
-        if (btn) btn.classList.add('active');
     }
 
     function renderVehicles() {

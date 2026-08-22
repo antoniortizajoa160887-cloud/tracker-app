@@ -496,55 +496,21 @@
             </div>
         </div>
 <div id="sidebar-scroll-area">
-<button class="group-btn active" onclick="openHomeTab(event)" id="btn-tab-home" style="border-top:1px solid rgba(255,255,255,0.08); margin-bottom:4px; padding-bottom:0.85rem;">Home</button>
-<div class="tab-groups" id="tab-groups">
-    <button class="group-btn" onclick="openGroup('grp-logistics')" id="btn-grp-logistics" data-i18n="group_logistics">Logistics</button>
-    <button class="group-btn" onclick="openGroup('grp-hr')" id="btn-grp-hr" data-i18n="group_hr">HR &amp; Payroll</button>
-    <button class="group-btn" onclick="openGroup('grp-expiring')" id="btn-grp-expiring">Expiring Documents</button>
-    <button class="group-btn" onclick="openGroup('grp-financial')" id="btn-grp-financial">Financial</button>
-    <button class="group-btn" onclick="openGroup('grp-admin')" id="btn-grp-admin" data-i18n="group_admin">Administration</button>
-</div>
-<div class="tabs sub-tabs open" id="grp-logistics">
-    <button class="tab-btn active" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker" data-i18n="tab_tracker">Route Tracker</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report" data-i18n="tab_report">Daily Report</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Fleet</button>
-</div>
-<div class="tabs sub-tabs" id="grp-hr">
-    <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims &amp; Charges</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income" data-i18n="tab_income">Income</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-weekdeposit')" id="btn-tab-weekdeposit">Week in Deposit</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">Savings &amp; Release Eligibility</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">Release History</button>
-</div>
-<div class="tabs sub-tabs" id="grp-expiring">
-    <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
-</div>
-<div class="tabs sub-tabs" id="grp-financial">
-    <button class="tab-btn" onclick="openTab(event, 'tab-invoices')" id="btn-tab-invoices">Invoices</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-bills')" id="btn-tab-bills">Bills Payable</button>
-</div>
-<div class="tabs sub-tabs" id="grp-admin">
-    <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;" data-i18n="tab_users">Users</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;" data-i18n="tab_companies">Companies</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;" data-i18n="tab_approvals">Approvals</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;" data-i18n="tab_log">Log</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
-    <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
+<!-- Tracker 4.0 P3: the sidebar is now eight hubs. Each hub's screens
+     appear as a horizontal tab strip above the content (see #hub-strips
+     further down) — every original tab button lives there, unchanged. -->
+<div class="hub-nav" id="hub-nav">
+    <button type="button" class="hub-btn active" id="hub-home" onclick="openHub('hub-home')"><span data-i18n="hub_home">Home</span><span id="hub-home-badge" class="hub-badge" style="display:none;">0</span></button>
+    <button type="button" class="hub-btn" id="hub-operations" onclick="openHub('hub-operations')"><span data-i18n="hub_operations">Operations</span></button>
+    <button type="button" class="hub-btn" id="hub-people" onclick="openHub('hub-people')"><span data-i18n="hub_people">People</span></button>
+    <button type="button" class="hub-btn" id="hub-payroll" onclick="openHub('hub-payroll')"><span data-i18n="hub_payroll">Payroll</span></button>
+    <button type="button" class="hub-btn" id="hub-finance" onclick="openHub('hub-finance')"><span data-i18n="hub_finance">Finance</span></button>
+    <button type="button" class="hub-btn" id="hub-documents" onclick="openHub('hub-documents')"><span data-i18n="hub_documents">Documents</span></button>
+    <button type="button" class="hub-btn" id="hub-messages" onclick="openHub('hub-messages')"><span data-i18n="hub_messages">Messages</span><span id="hub-messages-badge" class="hub-badge" style="display:none;">0</span></button>
+    <button type="button" class="hub-btn" id="hub-admin" onclick="openHub('hub-admin')"><span data-i18n="hub_admin">Admin</span></button>
 </div>
 </div>
 <div id="sidebar-pinned-bottom">
-<div class="tabs sub-tabs open" id="grp-notifications" style="border-top:1px solid rgba(255,255,255,0.08); margin-top:6px; padding-top:6px;">
-    <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
-</div>
-<div class="tabs sub-tabs open" id="grp-messages">
-    <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages <span id="msg-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
-</div>
     <!-- Desktop-only: individual account actions anchored to the bottom of
          the sidebar. Mobile keeps the original ⋮ header dropdown, hidden
          here, fully untouched — see #user-menu-wrap's display:none rule
@@ -573,6 +539,65 @@
 </div>
     </nav>
     <div id="mobile-drawer-scrim" onclick="toggleMobileDrawer()"></div>
+
+<!-- Tracker 4.0 P3: each hub's screens as a horizontal tab strip above the
+     content. These are the ORIGINAL tab buttons (same ids, handlers, badges,
+     role-gating inline styles) relocated out of the sidebar. A strip with
+     fewer than two visible tabs hides itself (.solo). -->
+<div id="hub-strips">
+    <div class="tabs hub-tabs active" id="strip-hub-home">
+        <button class="tab-btn active" onclick="openTab(event, 'tab-home')" id="btn-tab-home" data-i18n="tab_overview">Overview</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-notifications')" id="btn-tab-notifications"><span data-i18n="tab_notifications">Notifications</span> <span id="notif-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-operations">
+        <button class="tab-btn" onclick="openTab(event, 'tab-tracker')" id="btn-tab-tracker" data-i18n="tab_tracker">Route Tracker</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-report')" id="btn-tab-report" data-i18n="tab_report">Daily Report</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-vehicles')" id="btn-tab-vehicles" data-i18n="tab_vehicles">Fleet</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-data')" id="btn-tab-data" data-i18n="tab_data">Data Sync</button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-people">
+        <button class="tab-btn" onclick="openTab(event, 'tab-employees')" id="btn-tab-employees" data-i18n="tab_employees">Employees</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-users')" id="btn-tab-users" style="display:none;" data-i18n="tab_users">Users</button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-payroll">
+        <button class="tab-btn" onclick="openTab(event, 'tab-payroll')" id="btn-tab-payroll" data-i18n="tab_payroll">Payroll</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-dailypay')" id="btn-tab-dailypay" data-i18n="tab_dailypay">Daily Pay</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-providerpay')" id="btn-tab-providerpay">Provider Pay</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-weekdeposit')" id="btn-tab-weekdeposit">Week in Deposit</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-savingsreport')" id="btn-tab-savingsreport">Savings &amp; Release Eligibility</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-releasehistory')" id="btn-tab-releasehistory">Release History</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-statement')" id="btn-tab-statement" data-i18n="tab_statement">Statement</button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-finance">
+        <button class="tab-btn" onclick="openTab(event, 'tab-claims')" id="btn-tab-claims" data-i18n="tab_claims">Claims &amp; Charges</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-income')" id="btn-tab-income" data-i18n="tab_income">Income</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-invoices')" id="btn-tab-invoices">Invoices</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-bills')" id="btn-tab-bills">Bills Payable</button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-documents">
+        <button class="tab-btn" onclick="openTab(event, 'tab-expiring')" id="btn-tab-expiring">Expiring Documents</button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-messages">
+        <button class="tab-btn" onclick="openTab(event, 'tab-messages')" id="btn-tab-messages">Messages <span id="msg-badge" style="display:none; background:#dc2626; color:#fff; border-radius:10px; font-size:10px; padding:1px 6px; margin-left:4px; font-weight:700;">0</span></button>
+    </div>
+    <div class="tabs hub-tabs" id="strip-hub-admin">
+        <button class="tab-btn" onclick="openTab(event, 'tab-settings')" id="btn-tab-settings" data-i18n="tab_settings">Settings</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-companies')" id="btn-tab-companies" style="display:none;" data-i18n="tab_companies">Companies</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-approvals')" id="btn-tab-approvals" style="display:none;" data-i18n="tab_approvals">Approvals</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-log')" id="btn-tab-log" style="display:none;" data-i18n="tab_log">Log</button>
+        <button class="tab-btn" onclick="openTab(event, 'tab-changelog')" id="btn-tab-changelog" style="display:none;" data-i18n="tab_changelog">Changelog</button>
+    </div>
+</div>
+
+<!-- Tracker 4.0 P3: phone bottom bar — the four most-used hubs plus More
+     (which opens the full hub drawer). Hidden on desktop. -->
+<div id="mobile-tabbar">
+    <button type="button" class="mtab active" id="mtab-home" onclick="openHub('hub-home')"><span data-i18n="hub_home">Home</span></button>
+    <button type="button" class="mtab" id="mtab-people" onclick="openHub('hub-people')"><span data-i18n="hub_people">People</span></button>
+    <button type="button" class="mtab" id="mtab-payroll" onclick="openHub('hub-payroll')"><span data-i18n="hub_payroll">Payroll</span></button>
+    <button type="button" class="mtab" id="mtab-messages" onclick="openHub('hub-messages')"><span data-i18n="hub_messages">Messages</span><span id="bb-msg-badge" class="hub-badge" style="display:none;">0</span></button>
+    <button type="button" class="mtab" id="mtab-more" onclick="toggleMobileDrawer()"><span data-i18n="hub_more">More</span></button>
+</div>
 
 <!-- TAB: HOME -->
 <div id="tab-home" class="tab-content active">
