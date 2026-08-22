@@ -174,11 +174,11 @@
 
     function refreshIdPreviews() {
         const cd = document.getElementById('next-claim-id-display');
-        if (cd) cd.textContent = idPrefix() ? `${idPrefix()}${String(claims.length + 1).padStart(settings.claimDigits, '0')}` : '— select company —';
+        if (cd) cd.textContent = idPrefix() ? `${idPrefix()}${String(nextRecordNumber(claims, 'claim_id')).padStart(settings.claimDigits, '0')}` : '— select company —';
         const gd = document.getElementById('next-charge-id-display');
-        if (gd) gd.textContent = idPrefix() ? `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}` : '— select company —';
+        if (gd) gd.textContent = idPrefix() ? `${idPrefix()}${String(nextRecordNumber(charges, 'charge_id')).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}` : '— select company —';
         const idisp = document.getElementById('next-income-id-display');
-        if (idisp) idisp.textContent = idPrefix() ? `${idPrefix()}${String(additionalIncome.length + 1).padStart(settings.chargeDigits, '0')}I` : '— select company —';
+        if (idisp) idisp.textContent = idPrefix() ? `${idPrefix()}${String(nextRecordNumber(additionalIncome, 'income_id')).padStart(settings.chargeDigits, '0')}I` : '— select company —';
     }
 
     let editingCompanyCode = null;
@@ -661,6 +661,24 @@
     // manual setting. Falls back to any legacy settings.prefix, else ''.
     function idPrefix() {
         return String(writeCompany() || settings.prefix || '').toUpperCase();
+    }
+
+    // Next free record number for the current company: the HIGHEST existing
+    // number + 1 — never the row count. Counting rows falls behind as soon as
+    // any record is deleted, and the "next" ID then collides with a surviving
+    // higher ID (the "duplicate key value violates charges_pkey" save error).
+    // Only IDs carrying the active company prefix are considered, so a
+    // SuperAdmin browsing all companies still gets the right sequence.
+    function nextRecordNumber(rows, idField) {
+        const pre = idPrefix();
+        let max = 0;
+        (rows || []).forEach(r => {
+            const id = String((r && r[idField]) || '');
+            if (!pre || !id.startsWith(pre)) return;
+            const m = id.slice(pre.length).match(/^\d+/);
+            if (m) max = Math.max(max, parseInt(m[0], 10));
+        });
+        return max + 1;
     }
 
     // Fill the route-form Company dropdown (and any others) from the
@@ -1428,7 +1446,7 @@
             // ----- CREATE -----
             const claimCo = requireWriteCompany();
             if (!claimCo) return;
-            const claimId = `${idPrefix()}${String(claims.length + 1).padStart(settings.claimDigits, '0')}`;
+            const claimId = `${idPrefix()}${String(nextRecordNumber(claims, 'claim_id')).padStart(settings.claimDigits, '0')}`;
             const payload = Object.assign({ claim_id: claimId, company_code: claimCo }, fields);
             const { error } = await supabaseClient.rpc('create_claim', { p_actor: currentUsername, p_fields: payload });
             if (error) { alert(t('err_saving_claim') + error.message); return; }

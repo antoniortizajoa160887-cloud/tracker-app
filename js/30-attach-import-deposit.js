@@ -1758,13 +1758,13 @@
         } else {
             const chargeCo = requireWriteCompany();
             if (!chargeCo) return;
-            const chargeId = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
+            const chargeId = `${idPrefix()}${String(nextRecordNumber(charges, 'charge_id')).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
             const payload = Object.assign({ charge_id: chargeId, company_code: chargeCo }, fields);
             const { error } = await supabaseClient.rpc('create_charge', { p_actor: currentUsername, p_fields: payload });
             if (error) { alert(t('err_saving_charge') + error.message); return; }
             document.getElementById('charge-form').reset();
             fetchChargesFromCloud();
-            document.getElementById('next-charge-id-display').textContent = `${idPrefix()}${String(charges.length + 1).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
+            document.getElementById('next-charge-id-display').textContent = `${idPrefix()}${String(nextRecordNumber(charges, 'charge_id')).padStart(settings.chargeDigits, '0')}${settings.chargeSuffix}`;
         }
     });
 

@@ -65,7 +65,7 @@
             return;
         }
 
-        const incomeId = `${idPrefix()}${String(additionalIncome.length + 1).padStart(settings.chargeDigits, '0')}I`;
+        const incomeId = `${idPrefix()}${String(nextRecordNumber(additionalIncome, 'income_id')).padStart(settings.chargeDigits, '0')}I`;
         const payload = {
             income_id: incomeId,
             company_code: incomeCo,
