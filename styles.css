@@ -1074,3 +1074,73 @@
     .attn-head { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
     .attn-num { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; font-variant-numeric: tabular-nums; }
     .attn-link { font-size: 11.5px; font-weight: 700; color: var(--primary); }
+
+    /* =====================================================================
+       Tracker 4.0 — P5 (v3.72): quiet professional data tables & tiles.
+       The Excel-blue header retires: headers become uppercase muted labels
+       on a raised surface; zebra stripes go (row borders + hover carry the
+       scanning); KPI tiles lose the left accent stripe and pick up the
+       redesign's radius and type. CSS-only — cascade overrides. */
+    th { background: var(--surface-2); background-image: none; color: var(--text-muted); font-weight: 800; letter-spacing: 0.06em; }
+    tr:nth-child(even) { background-color: transparent; }
+    .table-wrapper { background: var(--surface); box-shadow: var(--shadow-sm); }
+    @media(max-width: 700px) {
+        .table-wrapper::after { background: var(--surface-2); color: var(--text-muted); }
+    }
+    .stat-card { border-left: 1px solid var(--border); border-radius: var(--radius); padding: 11px 14px; }
+    .stat-card .stat-label { font-size: 10px; letter-spacing: 0.06em; }
+    .stat-card .stat-value { font-size: 17px; font-weight: 800; font-family: inherit; }
+
+    /* ---- Tracker 4.0 (v3.72): full mission-control Home per the approved
+       sample — payroll snapshot + activity feed panels, attention captions,
+       and the phone floating quick-add. */
+    .attn-foot { display: flex; align-items: center; gap: 8px; }
+    .attn-cap { font-size: 11px; color: var(--text-muted); }
+    .attn-foot .attn-link { margin-left: auto; white-space: nowrap; }
+    .home-lower { display: grid; grid-template-columns: 1.45fr 1fr; gap: 14px; margin-top: 14px; }
+    .hpanel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; display: flex; flex-direction: column; }
+    .hp-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+    .hp-title { font-size: 13.5px; font-weight: 800; color: var(--text); }
+    .hp-chip { font-size: 10.5px; font-weight: 700; color: var(--primary); background: var(--active-bg); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+    .hp-open { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--primary); cursor: pointer; white-space: nowrap; }
+    .hp-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--border); cursor: pointer; }
+    .hp-row:hover { background: var(--row-hover); }
+    .hp-who { min-width: 0; flex: 1.4; display: flex; flex-direction: column; }
+    .hp-name { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hp-id { font-size: 9.5px; color: var(--text-muted); font-family: var(--mono); }
+    .hp-type { flex: 0.9; font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+    .hp-pay { flex: 0.7; }
+    .hp-net { flex: 0.9; text-align: right; font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .hp-status { flex: 0.8; display: flex; justify-content: flex-end; }
+    .hp-foot { margin-top: auto; display: flex; align-items: center; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--surface-2); font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+    .hp-foot .hp-total { margin-left: auto; font-size: 15px; font-weight: 800; letter-spacing: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+    .hp-empty { padding: 16px 14px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
+    .ra-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--border); cursor: pointer; }
+    .ra-row:hover { background: var(--row-hover); }
+    .ra-text { flex: 1; min-width: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; }
+    .ra-text b { color: var(--text); font-weight: 700; }
+    .ra-amt { font-family: var(--mono); font-size: 11px; color: var(--text); }
+    .ra-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    @media (max-width: 899px) {
+        .home-lower { grid-template-columns: 1fr; }
+        .hp-type { display: none; }
+    }
+    @media (max-width: 700px) {
+        /* the sample's phone layout: full-width attention rows, number right */
+        .attn-grid { grid-template-columns: 1fr; }
+        .attn-card { flex-direction: row; align-items: center; gap: 11px; }
+        .attn-card .attn-head { flex: 1; min-width: 0; }
+        .attn-card .attn-num { font-size: 21px; }
+        .attn-card .attn-foot .attn-cap { display: none; }
+        .attn-card .attn-foot .attn-link { display: none; }
+        .home-quick { display: none; }   /* the floating + carries these */
+        .hp-pay { display: none; }
+    }
+    /* Floating quick-add: phones only, editing roles only (.can from JS). */
+    #home-fab-wrap { display: none; }
+    @media (max-width: 899px) {
+        body.logged-in #home-fab-wrap.can { display: block; position: fixed; right: 16px; bottom: 96px; z-index: 520; }
+        #home-fab { width: 54px; height: 54px; border-radius: 50%; border: none; background: var(--primary); color: #06251c; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 24px -8px rgba(16,185,129,0.6); }
+        #home-fab-menu { display: none; flex-direction: column; gap: 8px; position: absolute; right: 0; bottom: 64px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; box-shadow: var(--shadow-lg); min-width: 180px; }
+        #home-fab-menu .btn-small { width: 100%; text-align: left; }
+    }

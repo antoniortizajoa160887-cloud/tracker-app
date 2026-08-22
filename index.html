@@ -608,12 +608,22 @@
         <div class="home-head">
             <div>
                 <h2 id="home-welcome" style="margin-bottom:2px;">Welcome</h2>
-                <div style="font-size:12px; color:var(--text-muted);" data-i18n="home_subtitle">Here's where things stand right now.</div>
+                <div id="home-subline" style="font-size:12px; color:var(--text-muted);">Here's what needs your attention.</div>
             </div>
             <div id="home-quick" class="home-quick"></div>
         </div>
         <div id="home-attention" class="attn-grid"></div>
         <div class="stat-grid" id="home-stats-grid"></div>
+        <div class="home-lower">
+            <div class="hpanel" id="home-payroll"></div>
+            <div class="hpanel" id="home-activity"></div>
+        </div>
+    </div>
+    <!-- Phone-only floating quick-add (the sample's + button). Gated to
+         editing roles by renderHomeDashboard via the .can class. -->
+    <div id="home-fab-wrap">
+        <div id="home-fab-menu" style="display:none;"></div>
+        <button type="button" id="home-fab" onclick="toggleHomeFab()" aria-label="Quick add"><svg width="22" height="22" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></g></svg></button>
     </div>
 </div>
 

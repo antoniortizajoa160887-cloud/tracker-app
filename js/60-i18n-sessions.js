@@ -325,7 +325,14 @@
             // v3.71 (Tracker 4.0 P4): mission-control home
             greet_morning: 'Good morning', greet_afternoon: 'Good afternoon', greet_evening: 'Good evening',
             attn_review: 'Review', attn_paychecks: 'Paycheck decisions', attn_msgs: 'Unread messages',
-            qa_new_claim: 'New claim', qa_add_person: 'Add person', qa_new_invoice: 'New invoice'
+            qa_new_claim: 'New claim', qa_add_person: 'Add person', qa_new_invoice: 'New invoice',
+            // v3.72 (Tracker 4.0 final): full mission-control home
+            home_needs_attention: 'Here\'s what needs your attention.', qa_upload_doc: 'Upload document',
+            attn_approvals: 'Approvals pending', attn_capt_approvals: 'Releases waiting on you',
+            attn_capt_paychecks: 'Last-paycheck holds', attn_capt_expiring: 'Within the next 30 days',
+            attn_capt_msgs: 'In your conversations', attn_capt_notifs: 'Since you last checked',
+            hp_title: 'This week\'s payroll', hp_open: 'Open payroll', hp_net: 'Net to pay', hp_week: 'Week', hp_inprog: 'in progress',
+            ra_title: 'Recent activity', ra_viewall: 'View all', ra_today: 'Today', ra_events: 'events'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -642,7 +649,14 @@
             // v3.71 (Tracker 4.0 P4): inicio tipo "centro de control"
             greet_morning: 'Buenos días', greet_afternoon: 'Buenas tardes', greet_evening: 'Buenas noches',
             attn_review: 'Revisar', attn_paychecks: 'Decisiones de cheque', attn_msgs: 'Mensajes sin leer',
-            qa_new_claim: 'Nuevo reclamo', qa_add_person: 'Agregar persona', qa_new_invoice: 'Nueva factura'
+            qa_new_claim: 'Nuevo reclamo', qa_add_person: 'Agregar persona', qa_new_invoice: 'Nueva factura',
+            // v3.72 (Tracker 4.0 final): inicio "centro de control" completo
+            home_needs_attention: 'Esto es lo que necesita tu atención.', qa_upload_doc: 'Subir documento',
+            attn_approvals: 'Aprobaciones pendientes', attn_capt_approvals: 'Liberaciones esperando por ti',
+            attn_capt_paychecks: 'Últimos cheques retenidos', attn_capt_expiring: 'En los próximos 30 días',
+            attn_capt_msgs: 'En tus conversaciones', attn_capt_notifs: 'Desde tu última visita',
+            hp_title: 'Nómina de esta semana', hp_open: 'Abrir nómina', hp_net: 'Neto a pagar', hp_week: 'Semana', hp_inprog: 'en curso',
+            ra_title: 'Actividad reciente', ra_viewall: 'Ver todo', ra_today: 'Hoy', ra_events: 'eventos'
         }
     };
 
