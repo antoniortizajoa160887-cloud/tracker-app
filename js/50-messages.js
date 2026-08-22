@@ -73,11 +73,15 @@
     }
 
     function refreshDmBadge() {
-        const badge = document.getElementById('msg-badge');
-        if (!badge) return;
         const total = dmThreads.reduce((n, t) => n + (parseInt(t.unread, 10) || 0), 0);
-        if (total > 0) { badge.textContent = total > 99 ? '99+' : String(total); badge.style.display = 'inline-block'; }
-        else { badge.style.display = 'none'; }
+        // The strip tab badge plus its mirrors on the Messages hub button and
+        // the phone bottom bar, so unread counts are never out of sight.
+        ['msg-badge', 'hub-messages-badge', 'bb-msg-badge'].forEach(id => {
+            const badge = document.getElementById(id);
+            if (!badge) return;
+            if (total > 0) { badge.textContent = total > 99 ? '99+' : String(total); badge.style.display = 'inline-block'; }
+            else { badge.style.display = 'none'; }
+        });
     }
 
     async function fetchDmThreads() {

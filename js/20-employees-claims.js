@@ -1476,11 +1476,15 @@
     }
 
     function updateNotifBadge() {
-        const badge = document.getElementById('notif-badge');
-        if (!badge) return;
         const unread = notifications.filter(n => !n.read_at).length;
-        if (unread > 0) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.style.display = 'inline-block'; }
-        else { badge.style.display = 'none'; }
+        // The strip tab badge plus its mirror on the Home hub button, so
+        // unread notifications stay visible even when another hub is open.
+        ['notif-badge', 'hub-home-badge'].forEach(id => {
+            const badge = document.getElementById(id);
+            if (!badge) return;
+            if (unread > 0) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.style.display = 'inline-block'; }
+            else { badge.style.display = 'none'; }
+        });
     }
 
     function flipNotifDir() {

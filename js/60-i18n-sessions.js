@@ -319,7 +319,9 @@
             // v3.64: emoji picker
             em_search_ph: 'Search emoji', em_no_recent: 'No recent emojis yet', em_no_match: 'No emojis found',
             // v3.65: condensed account menu
-            acct_photo: 'Profile photo', acct_security: 'Security'
+            acct_photo: 'Profile photo', acct_security: 'Security',
+            // v3.70 (Tracker 4.0 P3): hub navigation
+            hub_home: 'Home', hub_operations: 'Operations', hub_people: 'People', hub_payroll: 'Payroll', hub_finance: 'Finance', hub_documents: 'Documents', hub_messages: 'Messages', hub_admin: 'Admin', hub_more: 'More', tab_overview: 'Overview'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -630,7 +632,9 @@
             // v3.64: selector de emojis
             em_search_ph: 'Buscar emoji', em_no_recent: 'Aún no hay emojis recientes', em_no_match: 'No se encontraron emojis',
             // v3.65: menú de cuenta condensado
-            acct_photo: 'Foto de perfil', acct_security: 'Seguridad'
+            acct_photo: 'Foto de perfil', acct_security: 'Seguridad',
+            // v3.70 (Tracker 4.0 P3): navegación por secciones
+            hub_home: 'Inicio', hub_operations: 'Operaciones', hub_people: 'Personas', hub_payroll: 'Nómina', hub_finance: 'Finanzas', hub_documents: 'Documentos', hub_messages: 'Mensajes', hub_admin: 'Admin', hub_more: 'Más', tab_overview: 'Resumen'
         }
     };
 

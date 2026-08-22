@@ -118,8 +118,9 @@
     // lives in the file itself so it's correct even across sessions/devices.
     // Newest entry first. Bump APP_VERSION and prepend an entry on every
     // delivered change.
-    const APP_VERSION = 'v3.69';
+    const APP_VERSION = 'v3.70';
     const CHANGELOG = [
+        { version: 'v3.70', date: '2026-08-22', notes: 'Tracker 4.0 — phase 3: the new hub navigation. The side menu’s 26 entries are now eight clear hubs — Home, Operations, People, Payroll, Finance, Documents, Messages and Admin — each with its own colorful icon. Open a hub and its screens appear as tabs across the top of the page (a hub with a single screen opens it directly). Nothing was removed: every screen kept all of its features, only where you find it changed. On phones there’s a new bottom bar with Home, People, Payroll, Messages and More — one tap to the places you use most — and unread message and notification counts now show on the hubs themselves.' },
         { version: 'v3.69', date: '2026-08-22', notes: 'Tracker 4.0 — phase 2: the new command bar. The old three-row header (title, welcome line, search, sync, company, menu) is now one compact bar: the logo and title on the left, the search box front and center, then the sync dot, the company switcher and your avatar. Your name, role and company moved into the account menu — tap your photo or the ⋮ button to see them. On phones the search gets its own full-width row and the bar stays slim. Everything works exactly as before.' },
         { version: 'v3.68', date: '2026-08-22', notes: 'Tracker 4.0 — phase 1 of the approved redesign: the foundations. Refined color palette in both Light and Dark (calmer backgrounds, crisper text, softer borders), gently rounder cards and buttons, softer shadows, crisper headings, and lined-up numbers everywhere amounts appear in columns. Purely visual — every screen works exactly as before. More phases of the redesign follow: the new top bar, the simplified hub menu, and the new Home dashboard.' },
         { version: 'v3.67', date: '2026-08-22', notes: 'The colorful icon style now runs across the whole app. The account menu (Profile photo, Change/Remove photo, Security, Change Password, Two-Factor, Sign out other devices, Sign Out), the main action buttons (Add Employee, Save Claim, Save Invoice, Create User, Sign In, and the rest), the photo buttons on a person’s record, and the “Files” buttons all now use the same purpose-drawn colorful icons as the side menu. The only emojis left are the ones inside the Messages chat and its emoji picker, which are meant to be emojis. The Tracker logo and the language flags are unchanged.' },
@@ -1050,6 +1051,47 @@
         scrim.classList.toggle('show', shouldOpen);
     }
 
+    // ---- Tracker 4.0 hub navigation (P3) --------------------------------
+    // Which screens belong to which sidebar hub. The hub buttons live in the
+    // sidebar; each hub's screens render as a horizontal tab strip above the
+    // content (#hub-strips). Role-based visibility keeps working because it
+    // still acts on the individual btn-tab-* buttons, wherever they live.
+    const HUB_TABS = {
+        'hub-home': ['tab-home', 'tab-notifications'],
+        'hub-operations': ['tab-tracker', 'tab-report', 'tab-vehicles', 'tab-data'],
+        'hub-people': ['tab-employees', 'tab-users'],
+        'hub-payroll': ['tab-payroll', 'tab-dailypay', 'tab-providerpay', 'tab-weekdeposit', 'tab-savingsreport', 'tab-releasehistory', 'tab-statement'],
+        'hub-finance': ['tab-claims', 'tab-income', 'tab-invoices', 'tab-bills'],
+        'hub-documents': ['tab-expiring'],
+        'hub-messages': ['tab-messages'],
+        'hub-admin': ['tab-settings', 'tab-companies', 'tab-approvals', 'tab-log', 'tab-changelog']
+    };
+    function hubForTab(tabName) {
+        for (const h in HUB_TABS) if (HUB_TABS[h].includes(tabName)) return h;
+        return null;
+    }
+    // Light up the hub owning tabName, show its strip, hide the others, and
+    // collapse the strip entirely when the hub has fewer than two visible
+    // screens (a one-tab strip is noise — the hub button IS the screen).
+    function syncHubUI(tabName) {
+        const hub = hubForTab(tabName);
+        if (!hub) return;
+        document.querySelectorAll('.hub-btn').forEach(b => b.classList.toggle('active', b.id === hub));
+        document.querySelectorAll('.mtab').forEach(b => b.classList.toggle('active', b.id === 'mtab-' + hub.slice(4)));
+        document.querySelectorAll('.hub-tabs').forEach(s => s.classList.toggle('active', s.id === 'strip-' + hub));
+        const strip = document.getElementById('strip-' + hub);
+        if (strip) {
+            const visible = HUB_TABS[hub].filter(t => { const b = document.getElementById('btn-' + t); return b && b.style.display !== 'none'; });
+            strip.classList.toggle('solo', visible.length < 2);
+        }
+    }
+    // A hub click opens its first screen that's visible for this role.
+    function openHub(hubId) {
+        const first = (HUB_TABS[hubId] || []).find(t => { const b = document.getElementById('btn-' + t); return b && b.style.display !== 'none'; });
+        if (!first) return;
+        openTab({ currentTarget: document.getElementById('btn-' + first) }, first);
+    }
+
     function openTab(evt, tabName) {
         toggleMobileDrawer(true); // picking a tab always closes the drawer, whether it was open or not — a no-op on desktop since drawer-open is never set there
         // View Only users may only open their 6 permitted tabs.
@@ -1062,6 +1104,8 @@
         if (tabName !== 'tab-messages') stopMessagePolling();
         document.getElementById(tabName).classList.add('active');
         if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        else { const nb = document.getElementById('btn-' + tabName); if (nb) nb.classList.add('active'); } // programmatic jumps (search, links) still highlight the right tab
+        syncHubUI(tabName); // keep the sidebar hub + strip in step with whatever tab is showing
         if(tabName === 'tab-notifications') renderNotifications();
         if(tabName === 'tab-vehicles') renderVehicles();
         if(tabName === 'tab-messages') renderMessagesTab();
@@ -1100,8 +1144,7 @@
     // sub-tab row was open, so Home always leaves the nav in a clean,
     // unambiguous state.
     function openHomeTab(evt) {
-        document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
-        if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-        document.querySelectorAll('.tabs.sub-tabs:not(#grp-notifications):not(#grp-messages)').forEach(g => g.classList.remove('open'));
+        // Tracker 4.0: the group machinery is gone — Home is just a tab in
+        // the Home hub, and openTab/syncHubUI keep the nav state clean.
         openTab(evt, 'tab-home');
     }
