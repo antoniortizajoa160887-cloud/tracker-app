@@ -130,78 +130,117 @@
             const refArg = t.ref_id ? `'${escJsAttr(t.ref_id)}'` : 'null';
             return `
                 <div class="msg-convo-item${active ? ' active' : ''}" onclick="selectDmThread('${escJsAttr(t.other_username)}','${escJsAttr(t.topic)}',${refArg})">
-                    <div class="msg-convo-meta">
-                        <span class="msg-convo-name">${escHtml(dmThreadLabel(t))}${unread ? ` <span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:0 6px;font-weight:700;">${unread}</span>` : ''}</span>
-                        <span class="msg-convo-time">${t.last_at ? fmtMsgTime(t.last_at) : ''}</span>
+                    ${dmAvatarHtmlFor(t.other_username, 38)}
+                    <div class="msg-convo-main">
+                        <div class="msg-convo-meta">
+                            <span class="msg-convo-name">${escHtml(dmThreadLabel(t))}${unread ? ` <span style="background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:0 6px;font-weight:700;">${unread}</span>` : ''}</span>
+                            <span class="msg-convo-time">${t.last_at ? fmtMsgTime(t.last_at) : ''}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin:2px 0;">${dmTopicBadge(t.topic)}${refLabel ? `<span style="font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(refLabel)}</span>` : ''}</div>
+                        <div class="msg-convo-snippet">${pre}${snippet}</div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px; margin:2px 0;">${dmTopicBadge(t.topic)}${refLabel ? `<span style="font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(refLabel)}</span>` : ''}</div>
-                    <div class="msg-convo-snippet">${pre}${snippet}</div>
                 </div>`;
         }).join('');
     }
 
-    // "+ New" — pick a person, a topic, and (for record topics) the specific
-    // record, or (for Missing Day) a date. Each opens its own thread.
+    // "+ New" — a WhatsApp-style contact picker: search plus people rows with
+    // their photo; tapping a person opens (or returns to) your General chat.
+    // Topic / record conversations are started from the switcher ("⌄") in the
+    // chat header, so picking a person is always one tap.
     async function startNewDmConversation() {
         if (!dmContacts.length) await fetchDmContacts();
-        const people = dmContacts.slice().sort((a, b) => dmContactLabel(a).localeCompare(dmContactLabel(b), undefined, { sensitivity: 'base' }));
-        const peopleOpts = people.map(c => `<option value="${escHtml(c.username)}">${escHtml(dmContactLabel(c))}</option>`).join('');
-        const topicOpts = DM_TOPICS.map(t => `<option value="${t}">${t}</option>`).join('');
         const list = document.getElementById('dm-thread-list');
         if (!list) return;
-        list.insertAdjacentHTML('afterbegin', `
-            <div id="dm-new-picker" style="padding:10px 12px; border-bottom:1px solid var(--border); background:var(--surface-2); display:flex; flex-direction:column; gap:6px;">
-                <div style="font-size:11px; font-weight:700; color:var(--text-muted);">${t('d_new_conversation')}</div>
-                <select id="dm-new-person" onchange="dmNewPickerUpdate()"><option value="">${t('d_pick_person')}</option>${peopleOpts}</select>
-                <select id="dm-new-topic" onchange="dmNewPickerUpdate()">${topicOpts}</select>
-                <div id="dm-new-ref-wrap"></div>
-                <div style="display:flex; gap:6px;">
-                    <button type="button" class="btn-small" style="margin:0; background:var(--primary);" onclick="openNewDmConversation()">${t('d_open_chat')}</button>
-                    <button type="button" class="btn-small" style="margin:0; background:#64748b;" onclick="(function(){var e=document.getElementById('dm-new-picker'); if(e) e.remove(); renderDmThreads();})()">${t('cancel')}</button>
+        if (document.getElementById('dm-new-picker')) { dmCancelNewChat(); return; } // second tap closes
+        list.innerHTML = `
+            <div id="dm-new-picker">
+                <div class="dm-picker-head">
+                    <button type="button" class="msg-back" style="display:inline-flex;" onclick="dmCancelNewChat()" title="${escHtml(t('dm_back'))}" aria-label="${escHtml(t('dm_back'))}">←</button>
+                    <span>${t('dm_new_chat')}</span>
                 </div>
-            </div>`);
-        dmNewPickerUpdate();
+                <div style="padding:4px 10px 8px;"><input type="text" id="dm-new-search" placeholder="${escHtml(t('d_pick_person'))}" oninput="dmRenderContactRows()" autocomplete="off"></div>
+                <div id="dm-new-rows"></div>
+            </div>`;
+        dmRenderContactRows();
+        const si = document.getElementById('dm-new-search');
+        if (si) si.focus();
     }
 
-    // Rebuild the third control based on the chosen topic: a record dropdown
-    // for Claims/Charges/Income, a date for Missing Day, nothing for General.
-    function dmNewPickerUpdate() {
-        const person = document.getElementById('dm-new-person')?.value || '';
-        const topic = document.getElementById('dm-new-topic')?.value || 'General';
-        const wrap = document.getElementById('dm-new-ref-wrap');
-        if (!wrap) return;
-        if (topic === 'Missing Day') {
-            wrap.innerHTML = `<label style="font-size:11px; color:var(--text-muted);">Pick a date</label><input type="date" id="dm-new-ref" value="${todayStr()}">`;
-        } else if (topic === 'Claims' || topic === 'Charges' || topic === 'Income') {
-            if (!person) { wrap.innerHTML = `<div style="font-size:11px; color:var(--text-muted);">Pick a person to list their ${topic.toLowerCase()}.</div>`; return; }
-            const recs = dmRecordsFor(topic, dmConversationEmpId(person));
-            if (!recs.length) { wrap.innerHTML = `<div style="font-size:11px; color:var(--text-muted);">No ${topic.toLowerCase()} on file for this person.</div>`; return; }
-            const noun = topic === 'Income' ? 'record' : topic.slice(0, -1).toLowerCase();
-            wrap.innerHTML = `<select id="dm-new-ref"><option value="">— Pick a ${noun} —</option>${recs.map(r => `<option value="${escHtml(r.id)}">${escHtml(r.label)}</option>`).join('')}</select>`;
-        } else {
-            wrap.innerHTML = ''; // General
-        }
+    function dmCancelNewChat() {
+        const e = document.getElementById('dm-new-picker');
+        if (e) e.remove();
+        renderDmThreads();
     }
 
-    function openNewDmConversation() {
-        const person = document.getElementById('dm-new-person')?.value;
-        const topic = document.getElementById('dm-new-topic')?.value;
-        if (!person) { alert(t('a_pick_person')); return; }
-        if (!topic) { alert(t('a_pick_topic')); return; }
-        let ref = null;
-        if (topic === 'Missing Day') {
-            ref = document.getElementById('dm-new-ref')?.value || '';
-            if (!ref) { alert(t('a_pick_date')); return; }
-        } else if (topic === 'Claims' || topic === 'Charges' || topic === 'Income') {
-            ref = document.getElementById('dm-new-ref')?.value || '';
-            if (!ref) { alert(t('a_pick_which').replace('{kind}', topic.toLowerCase().replace(/s$/, ''))); return; }
+    function dmRenderContactRows() {
+        const box = document.getElementById('dm-new-rows');
+        if (!box) return;
+        const q = (document.getElementById('dm-new-search')?.value || '').toLowerCase();
+        let people = dmContacts.slice().sort((a, b) => dmContactLabel(a).localeCompare(dmContactLabel(b), undefined, { sensitivity: 'base' }));
+        if (q) people = people.filter(c => `${dmContactLabel(c)} ${c.username} ${c.role}`.toLowerCase().includes(q));
+        if (!people.length) {
+            box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.8rem;">${t('em_no_match')}</div>`;
+            return;
         }
-        const picker = document.getElementById('dm-new-picker'); if (picker) picker.remove();
-        selectDmThread(person, topic, ref || null);
+        box.innerHTML = people.map(c => `
+            <div class="msg-convo-item" onclick="dmPickContact('${escJsAttr(c.username)}')">
+                ${dmAvatarHtmlFor(c.username, 38)}
+                <div class="msg-convo-main">
+                    <div class="msg-convo-name">${escHtml(dmContactLabel(c))}</div>
+                    <div class="msg-convo-snippet">${escHtml(dmRoleLabel(c.role))}${dmContactLabel(c) !== c.username ? ' · ' + escHtml(c.username) : ''}</div>
+                </div>
+            </div>`).join('');
+    }
+
+    function dmPickContact(username) {
+        const e = document.getElementById('dm-new-picker');
+        if (e) e.remove();
+        selectDmThread(username, 'General', null);
+    }
+
+    // The chat header's "⌄" menu: every conversation with this person, then
+    // one-tap starters for whatever doesn't have a thread yet — General, each
+    // of their claims/charges/income records, and a Missing Day date.
+    function dmThreadSwitcherMenu() {
+        const u = dmActiveUser;
+        const mine = dmThreads.filter(x => x.other_username === u);
+        const has = (topic, ref) => mine.some(x => x.topic === topic && (x.ref_id || null) === (ref || null)) ||
+            (dmActiveTopic === topic && (dmActiveRef || null) === (ref || null));
+        const row = (topic, ref, extra) => {
+            const active = topic === dmActiveTopic && (ref || null) === (dmActiveRef || null);
+            const refArg = ref ? `'${escJsAttr(ref)}'` : 'null';
+            return `<button type="button" class="btn-small" onclick="selectDmThread('${escJsAttr(u)}','${escJsAttr(topic)}',${refArg})">${active ? '✓ ' : ''}${dmTopicBadge(topic)}${extra ? ` <span style="font-size:11px;">${escHtml(extra)}</span>` : ''}</button>`;
+        };
+        let html = `<div class="dm-menu-label">${t('dm_convos_with')}</div>`;
+        const convoRows = mine.map(x => row(x.topic, x.ref_id, dmRefLabel(x.topic, x.ref_id))).join('');
+        html += convoRows || row(dmActiveTopic, dmActiveRef, dmRefLabel(dmActiveTopic, dmActiveRef));
+        let starters = '';
+        if (!has('General', null)) starters += row('General', null, '');
+        const empId = dmConversationEmpId(u);
+        ['Claims', 'Charges', 'Income'].forEach(topic => {
+            dmRecordsFor(topic, empId).filter(r => !has(topic, r.id)).forEach(r => { starters += row(topic, r.id, r.label); });
+        });
+        starters += `
+            <div class="dm-menu-dayrow" onclick="event.stopPropagation()">
+                ${dmTopicBadge('Missing Day')}
+                <input type="date" id="dm-md-date" value="${todayStr()}">
+                <button type="button" class="dm-md-go" onclick="dmStartMissingDay()">${t('dm_go')}</button>
+            </div>`;
+        html += `<div class="dm-menu-label">${t('dm_start_new')}</div>` + starters;
+        return html;
+    }
+
+    function dmStartMissingDay() {
+        const d = document.getElementById('dm-md-date')?.value;
+        if (!d) return;
+        document.querySelectorAll('.more-wrap.open').forEach(w => w.classList.remove('open'));
+        selectDmThread(dmActiveUser, 'Missing Day', d);
     }
 
     async function selectDmThread(username, topic, ref) {
         dmActiveUser = username; dmActiveTopic = topic; dmActiveRef = ref || null;
+        const shell = document.querySelector('.msg-shell');
+        if (shell) shell.classList.add('convo-open');
         // Anything staged but not sent belongs to the previous conversation.
         chatStage = [];
         renderChatStage();
@@ -229,6 +268,31 @@
         return c ? dmContactLabel(c) : dmActiveUser;
     }
 
+    // Avatar for the person behind a conversation: their employee photo when
+    // one is on file, else the same coloured-initials badge used app-wide.
+    // dm_threads has no employee id, so the username → employee mapping comes
+    // from dmContacts (fetched whenever the Messages tab opens); a contact
+    // from another company falls back to initials built from the name.
+    function dmAvatarHtmlFor(username, size) {
+        const c = dmContacts.find(x => x.username === username);
+        const empId = c && c.employee_id;
+        let emp = empId ? (employees || []).find(e => e.id === empId) : null;
+        if (!emp) {
+            const th = dmThreads.find(x => x.other_username === username);
+            const label = (c && dmContactLabel(c)) || (th && dmThreadLabel(th)) || username;
+            const parts = String(label).trim().split(/\s+/);
+            emp = { id: empId || username, first_name: parts[0] || username, last_name: parts.slice(1).join(' ') };
+        }
+        return (typeof personAvatarHtml === 'function') ? personAvatarHtml(emp, size || 38, 'msg-ava') : '';
+    }
+
+    // Phone flow: the thread list and the open chat are two screens; the ←
+    // button in the chat header returns to the list (CSS hides it on PC).
+    function dmBackToList() {
+        const shell = document.querySelector('.msg-shell');
+        if (shell) shell.classList.remove('convo-open');
+    }
+
     function renderDmThread(force) {
         const header = document.getElementById('dm-thread-header');
         const body = document.getElementById('dm-thread-body');
@@ -245,7 +309,20 @@
         const label = dmActivePersonLabel();
         const refLabel = dmRefLabel(dmActiveTopic, dmActiveRef);
         if (empty) empty.style.display = 'none';
-        if (header) { header.style.display = 'flex'; header.style.flexWrap = 'wrap'; header.innerHTML = `<span class="type-pill">${escHtml(label)}</span> ${dmTopicBadge(dmActiveTopic)}${refLabel ? ` <span style="font-size:11px; color:var(--text-muted);">${escHtml(refLabel)}</span>` : ''}`; }
+        if (header) {
+            header.style.display = 'flex';
+            header.innerHTML = `
+                <button type="button" class="msg-back" onclick="dmBackToList()" title="${escHtml(t('dm_back'))}" aria-label="${escHtml(t('dm_back'))}">←</button>
+                ${dmAvatarHtmlFor(dmActiveUser, 34)}
+                <div class="msg-head-txt">
+                    <div class="msg-head-name">${escHtml(label)}</div>
+                    <div class="msg-head-sub">${dmTopicBadge(dmActiveTopic)}${refLabel ? `<span>${escHtml(refLabel)}</span>` : ''}</div>
+                </div>
+                <div class="more-wrap msg-thread-menu">
+                    <button type="button" class="msg-icon-btn" onclick="toggleMoreMenu(this)" title="${escHtml(t('dm_switch'))}" aria-label="${escHtml(t('dm_switch'))}">⌄</button>
+                    <div class="more-menu">${dmThreadSwitcherMenu()}</div>
+                </div>`;
+        }
         if (composer) composer.style.display = 'flex';
 
         const key = dmThreadKey(dmActiveUser, dmActiveTopic, dmActiveRef);
@@ -385,26 +462,30 @@
         const si = document.getElementById('dm-emoji-search-input');
         if (si) si.value = '';
         document.querySelectorAll('.dm-emoji-cat').forEach(b => b.classList.toggle('active', b.getAttribute('data-cat') === id));
+        const ti = document.getElementById('dm-emoji-title');
+        if (ti) ti.textContent = t('emcat_' + id);
         dmRenderEmojiGrid();
     }
     function dmEmojiOnSearch(v) {
         dmEmojiQuery = v || '';
-        const active = dmEmojiQuery.trim() ? '__none__' : dmEmojiCat;
+        const searching = !!dmEmojiQuery.trim();
+        const active = searching ? '__none__' : dmEmojiCat;
         document.querySelectorAll('.dm-emoji-cat').forEach(b => b.classList.toggle('active', b.getAttribute('data-cat') === active));
+        const ti = document.getElementById('dm-emoji-title');
+        if (ti) ti.textContent = searching ? t('em_results') : t('emcat_' + dmEmojiCat);
         dmRenderEmojiGrid();
     }
+    // WhatsApp layout: category tabs on top (active = underline), search
+    // below them, then the current section's name over a dense grid.
     function renderDmEmojiPanel() {
         const p = document.getElementById('dm-emoji-panel');
         if (!p) return;
-        p.style.flexDirection = 'column';
-        p.style.flexWrap = 'nowrap';
-        p.style.maxHeight = '300px';
-        p.style.overflow = 'hidden';
         if (dmEmojiCat === 'recent' && !dmEmojiRecent().length) dmEmojiCat = 'smileys';
-        const cats = EMOJI_CATS.map(c => `<button type="button" class="dm-emoji-cat${c.id === dmEmojiCat ? ' active' : ''}" data-cat="${c.id}" title="${escHtml(c.id)}" onclick="dmSetEmojiCat('${c.id}')">${c.icon}</button>`).join('');
+        const cats = EMOJI_CATS.map(c => `<button type="button" class="dm-emoji-cat${c.id === dmEmojiCat ? ' active' : ''}" data-cat="${c.id}" title="${escHtml(t('emcat_' + c.id))}" onclick="dmSetEmojiCat('${c.id}')">${c.icon}</button>`).join('');
         p.innerHTML =
-            `<div class="dm-emoji-search"><input id="dm-emoji-search-input" type="text" placeholder="${escHtml(t('em_search_ph'))}" oninput="dmEmojiOnSearch(this.value)" autocomplete="off"></div>` +
             `<div class="dm-emoji-cats">${cats}</div>` +
+            `<div class="dm-emoji-search"><input id="dm-emoji-search-input" type="text" placeholder="${escHtml(t('em_search_ph'))}" oninput="dmEmojiOnSearch(this.value)" autocomplete="off"></div>` +
+            `<div id="dm-emoji-title" class="dm-emoji-title">${escHtml(t('emcat_' + dmEmojiCat))}</div>` +
             `<div id="dm-emoji-grid" class="dm-emoji-grid"></div>`;
         dmEmojiQuery = '';
         dmRenderEmojiGrid();
@@ -587,6 +668,7 @@
 
     async function renderMessagesTab() {
         dmActiveUser = null; dmActiveTopic = null; dmActiveRef = null; dmRenderedKey = null;
+        dmBackToList(); // phones land on the conversation list, not an old chat
         const search = document.getElementById('dm-search');
         if (search) search.value = '';
         await fetchDmThreads();

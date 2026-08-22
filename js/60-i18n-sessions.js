@@ -336,7 +336,15 @@
 
             // ---- 4.1 Compact: section bars ----
             sec_new_income: 'New Income', sec_invoices: 'Invoices', sec_bills: 'Bills Payable',
-            more_actions: 'More actions', sec_new_user: 'New User'
+            more_actions: 'More actions', sec_new_user: 'New User',
+
+            // ---- Messages redesign ----
+            dm_back: 'Back', em_results: 'Search results',
+            dm_new_chat: 'New chat', dm_convos_with: 'Conversations', dm_start_new: 'Start new',
+            dm_switch: 'Switch conversation', dm_go: 'Open',
+            emcat_recent: 'Recently used', emcat_smileys: 'Smileys & People', emcat_animals: 'Animals & Nature',
+            emcat_food: 'Food & Drink', emcat_activities: 'Activities', emcat_travel: 'Travel & Places',
+            emcat_objects: 'Objects', emcat_symbols: 'Symbols', emcat_flags: 'Flags'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -664,7 +672,15 @@
 
             // ---- 4.1 Compact: section bars ----
             sec_new_income: 'Nuevo Ingreso', sec_invoices: 'Facturas', sec_bills: 'Cuentas por Pagar',
-            more_actions: 'Más acciones', sec_new_user: 'Nuevo Usuario'
+            more_actions: 'Más acciones', sec_new_user: 'Nuevo Usuario',
+
+            // ---- Messages redesign ----
+            dm_back: 'Atrás', em_results: 'Resultados de búsqueda',
+            dm_new_chat: 'Nuevo chat', dm_convos_with: 'Conversaciones', dm_start_new: 'Iniciar nueva',
+            dm_switch: 'Cambiar de conversación', dm_go: 'Abrir',
+            emcat_recent: 'Recientes', emcat_smileys: 'Caritas y Personas', emcat_animals: 'Animales y Naturaleza',
+            emcat_food: 'Comida y Bebida', emcat_activities: 'Actividades', emcat_travel: 'Viajes y Lugares',
+            emcat_objects: 'Objetos', emcat_symbols: 'Símbolos', emcat_flags: 'Banderas'
         }
     };
 

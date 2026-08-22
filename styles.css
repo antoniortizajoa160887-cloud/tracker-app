@@ -363,11 +363,8 @@
     .msg-composer-input-row { display: flex; gap: 8px; align-items: center; }
     .msg-composer-input-row input[type="text"] { margin: 0; flex: 1; min-height: 40px; }
     .msg-empty-state { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px; }
-    @media (max-width: 700px) {
-        .msg-shell { flex-direction: column; height: auto; max-height: none; }
-        .msg-list-pane { width: 100%; max-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
-        .msg-thread-pane { min-height: 400px; }
-    }
+    /* (Mobile messaging behavior lives in the "Messages 4.2" block at the
+       end of this file: full-height shell, list ↔ chat two-screen flow.) */
 
     /* Layouts & Forms */
     .global-search-wrap { position: relative; margin: 4px 0 2px; }
@@ -1235,3 +1232,60 @@
     .dp-card-head .dp-total { color: var(--text); }
     .dp-day { background: var(--surface-2); }
     @media (min-width: 900px) { .dp-days { grid-template-columns: repeat(7, 1fr); } }
+
+    /* ===================================================================
+       Messages 4.2 — the chat fills the working area like every other
+       screen, conversations and the chat header show the person's photo,
+       the composer is a round pill bar, and the emoji picker is a
+       WhatsApp-style popover: category tabs on top (active = underline),
+       search below, section name, then a dense grid of big emojis.
+       =================================================================== */
+    .msg-shell { height: calc(100vh - 150px); height: calc(100dvh - 150px); max-height: none; min-height: 460px; border-radius: var(--radius-lg); }
+    .msg-list-pane { width: 300px; }
+    .msg-convo-item { display: flex; gap: 10px; align-items: flex-start; }
+    .msg-convo-item .msg-ava { margin-top: 2px; }
+    .msg-convo-main { flex: 1; min-width: 0; }
+
+    .msg-thread-header { gap: 10px; padding: 10px 14px; background: var(--surface); }
+    .msg-head-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .msg-head-name { font-weight: 800; font-size: 0.95rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-head-sub { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); font-weight: 400; }
+    .msg-back { display: none; align-items: center; justify-content: center; width: 34px; height: 34px; flex: none; border: none; border-radius: 50%; background: var(--surface-2); color: var(--text); font-size: 16px; cursor: pointer; }
+
+    .msg-thread-body { background: var(--bg); }
+
+    .msg-composer { position: relative; background: var(--surface); }
+    .msg-composer-input-row input[type="text"] { border-radius: 999px; padding-left: 16px; }
+    .msg-icon-btn { width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface-2); color: var(--text); font-size: 17px; cursor: pointer; padding: 0; }
+    .msg-icon-btn:hover { background: var(--border); }
+    .msg-send-btn { width: 42px; height: 42px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: var(--primary); color: #06251c; font-size: 16px; font-weight: 700; cursor: pointer; padding: 0; box-shadow: var(--shadow-sm); }
+    .msg-send-btn:hover { filter: brightness(1.06); }
+
+    .dm-emoji-pop { position: absolute; left: 10px; bottom: calc(100% + 8px); width: min(372px, calc(100% - 20px)); flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 18px 44px rgba(15, 30, 45, 0.24); padding: 10px 10px 6px; z-index: 70; }
+    .dm-emoji-cats { display: flex; gap: 0; flex-wrap: nowrap; justify-content: space-between; padding-bottom: 4px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .dm-emoji-cat { flex: 1; font-size: 17px; padding: 6px 0 8px; border-radius: 0; }
+    .dm-emoji-cat.active { background: transparent; box-shadow: inset 0 -2.5px 0 var(--primary); }
+    .dm-emoji-search input { border-radius: 999px; padding: 8px 14px; }
+    .dm-emoji-title { font-size: 11px; font-weight: 700; color: var(--text-muted); margin: 8px 2px 4px; }
+    .dm-emoji-grid { grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 296px; }
+    .dm-emoji-grid button { font-size: 24px; height: 40px; padding: 0; }
+
+    /* Phones: list and chat are two full-width screens; ← returns. */
+    @media (max-width: 899px) {
+        .msg-shell { height: calc(100vh - 235px); height: calc(100dvh - 235px); min-height: 420px; }
+        .msg-list-pane { width: 100%; border-right: none; }
+        .msg-shell.convo-open .msg-list-pane { display: none; }
+        .msg-shell:not(.convo-open) .msg-thread-pane { display: none; }
+        .msg-back { display: inline-flex; }
+        .dm-emoji-pop { left: 8px; right: 8px; width: auto; }
+    }
+
+    /* Conversation switcher ("⌄" in the chat header) + new-chat picker */
+    .msg-thread-menu { margin-left: auto; }
+    .msg-thread-menu .more-menu { max-height: 340px; overflow-y: auto; min-width: 262px; }
+    .dm-menu-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 6px 10px 2px; }
+    .dm-menu-dayrow { display: flex; align-items: center; gap: 6px; padding: 6px 10px; }
+    .dm-menu-dayrow input[type="date"] { flex: 1; margin: 0; min-height: 34px; padding: 4px 8px; font-size: 12px; }
+    .dm-md-go { border: none; border-radius: var(--radius-sm); background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; padding: 8px 12px; cursor: pointer; flex: none; }
+    .dm-picker-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; font-weight: 800; font-size: 0.9rem; }
+    #dm-new-picker #dm-new-search { margin: 0; width: 100%; border-radius: 999px; padding: 8px 14px; }
