@@ -366,8 +366,25 @@
         if (el) el.innerHTML = personAvatarHtml(meEmp, 30);
         const hasRecord = !!id;
         const hasPhoto = hasRecord && !!employeePhotos[id];
-        ['menu-change-photo', 'sidebar-change-photo'].forEach(mid => { const b = document.getElementById(mid); if (b) b.style.display = hasRecord ? 'block' : 'none'; });
-        ['menu-remove-photo', 'sidebar-remove-photo'].forEach(mid => { const b = document.getElementById(mid); if (b) b.style.display = hasPhoto ? 'block' : 'none'; });
+        // The "Profile photo" section only exists for a user linked to a person
+        // record; "Remove photo" only when they actually have one.
+        ['menu-photo-hdr', 'sidebar-photo-hdr'].forEach(mid => { const b = document.getElementById(mid); if (b) b.style.display = hasRecord ? '' : 'none'; });
+        if (!hasRecord) ['menu-photo-sub', 'sidebar-photo-sub'].forEach(mid => { const e = document.getElementById(mid); if (e) e.style.display = 'none'; });
+        ['menu-remove-photo', 'sidebar-remove-photo'].forEach(mid => { const b = document.getElementById(mid); if (b) b.style.display = hasPhoto ? '' : 'none'; });
+    }
+
+    // Expand/collapse one section of the condensed account menu (Profile photo,
+    // Security). Flips the caret on its header.
+    function toggleAcctSection(subId, hdr) {
+        const el = document.getElementById(subId);
+        if (!el) return;
+        const open = el.style.display === 'block';
+        el.style.display = open ? 'none' : 'block';
+        if (hdr) {
+            const c = hdr.querySelector('.acct-caret');
+            if (c) c.textContent = open ? '▸' : '▾';
+            hdr.classList.toggle('open', !open);
+        }
     }
 
     // Picking files no longer uploads straight away: the files are staged with

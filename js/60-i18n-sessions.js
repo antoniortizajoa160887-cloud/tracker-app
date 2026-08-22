@@ -317,7 +317,9 @@
             // v3.63: profile photos (optional)
             photo_change: 'Change photo', photo_remove: 'Remove photo', photo_optional: 'Optional — a photo is never required.', c_remove_photo: 'Remove this profile photo?', err_photo_not_image: 'Please choose an image file.', err_photo_save: 'Could not save the photo: ', err_photo_remove: 'Could not remove the photo: ',
             // v3.64: emoji picker
-            em_search_ph: 'Search emoji', em_no_recent: 'No recent emojis yet', em_no_match: 'No emojis found'
+            em_search_ph: 'Search emoji', em_no_recent: 'No recent emojis yet', em_no_match: 'No emojis found',
+            // v3.65: condensed account menu
+            acct_photo: 'Profile photo', acct_security: 'Security'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -626,7 +628,9 @@
             // v3.63: fotos de perfil (opcional)
             photo_change: 'Cambiar foto', photo_remove: 'Quitar foto', photo_optional: 'Opcional — nunca se exige una foto.', c_remove_photo: '¿Quitar esta foto de perfil?', err_photo_not_image: 'Elige un archivo de imagen.', err_photo_save: 'No se pudo guardar la foto: ', err_photo_remove: 'No se pudo quitar la foto: ',
             // v3.64: selector de emojis
-            em_search_ph: 'Buscar emoji', em_no_recent: 'Aún no hay emojis recientes', em_no_match: 'No se encontraron emojis'
+            em_search_ph: 'Buscar emoji', em_no_recent: 'Aún no hay emojis recientes', em_no_match: 'No se encontraron emojis',
+            // v3.65: menú de cuenta condensado
+            acct_photo: 'Foto de perfil', acct_security: 'Seguridad'
         }
     };
 
