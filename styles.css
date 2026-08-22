@@ -1186,3 +1186,18 @@
     /* A chip strip living inside a regular panel (e.g. the payroll totals)
        keeps a little air below it; inside a .sec-bar the bar's gap handles it. */
     .panel:not(.sec-bar) > .sec-chips { margin-bottom: 10px; }
+
+    /* ===================================================================
+       Scrollbars — slim, rounded, theme-neutral everywhere (the classic
+       chunky desktop bars looked out of place next to the 4.x surfaces),
+       and completely hidden on the tab strips + mobile bar, which scroll
+       by swipe/wheel like every messaging app's chip rows do.
+       =================================================================== */
+    * { scrollbar-width: thin; scrollbar-color: rgba(100, 116, 139, 0.55) transparent; }
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.45); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.75); border: 2px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    .tabs, .hub-tabs.active, #mobile-tabbar { overflow-y: hidden; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar, #mobile-tabbar::-webkit-scrollbar { display: none; }
