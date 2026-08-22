@@ -1201,3 +1201,37 @@
     ::-webkit-scrollbar-corner { background: transparent; }
     .tabs, .hub-tabs.active, #mobile-tabbar { overflow-y: hidden; scrollbar-width: none; }
     .tabs::-webkit-scrollbar, #mobile-tabbar::-webkit-scrollbar { display: none; }
+
+    /* ===================================================================
+       Route Tracker · Daily Report · Daily Pay — visual refresh.
+       Brings the last Excel-era pieces (white slicer boxes, blue card
+       banners, hardcoded grays) onto the 4.x token system, and gives the
+       two big tables sticky headers inside their own scroll area so the
+       header row never disappears while reading.
+       =================================================================== */
+    /* Daily Report slicers: quiet cards, small-caps headers, navy selection */
+    .slicer-box { background: var(--surface); border-radius: var(--radius); }
+    .slicer-header { background: transparent; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .slicer-items { max-height: 138px; padding: 6px; gap: 3px; }
+    .slicer-item { background: transparent; border-radius: var(--radius-sm); font-weight: 600; }
+    .slicer-item:hover { background: var(--surface-2); }
+    .slicer-item.selected { background: var(--navy); color: #fff; }
+    /* Pivot expand/collapse buttons follow the tokens too */
+    .toggle-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); border-radius: var(--radius-sm); }
+    .toggle-btn:hover { background: var(--surface-2); color: var(--text); }
+
+    /* The two big tables: own scroll area + sticky header (and sticky
+       totals row on the report), so long lists stay readable. */
+    #tab-tracker .table-wrapper, #tab-report .table-wrapper { max-height: calc(100vh - 250px); overflow: auto; }
+    #tab-tracker thead th, #tab-report thead th { position: sticky; top: 0; z-index: 2; background-color: var(--surface-2); }
+    #tab-report tfoot td { position: sticky; bottom: 0; background-color: var(--surface-2); }
+    #tab-tracker tbody tr:hover, #tab-report tbody tr:hover { background-color: var(--surface-2); }
+
+    /* Daily Pay: quiet card headers (no more solid blue banner), tokened
+       day cells, and the full week as one row on desktop. */
+    .dp-card { border-radius: var(--radius); }
+    .dp-card-head { background: var(--surface-2); color: var(--text); border-bottom: 1px solid var(--border); }
+    .dp-card-head .dp-id { color: var(--text-muted); opacity: 1; }
+    .dp-card-head .dp-total { color: var(--text); }
+    .dp-day { background: var(--surface-2); }
+    @media (min-width: 900px) { .dp-days { grid-template-columns: repeat(7, 1fr); } }
