@@ -1144,3 +1144,41 @@
         #home-fab-menu { display: none; flex-direction: column; gap: 8px; position: absolute; right: 0; bottom: 64px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; box-shadow: var(--shadow-lg); min-width: 180px; }
         #home-fab-menu .btn-small { width: 100%; text-align: left; }
     }
+
+    /* ===================================================================
+       4.1 Compact — section bars, stat chips, "⋯" overflow menus.
+       One slim bar per section: title + live stat chips + primary "+ New"
+       buttons, with export/report/import actions folded into a dropdown.
+       =================================================================== */
+    .panel.sec-bar { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; padding: 10px 14px; }
+    .sec-bar .sec-title { margin: 0; font-size: 16px; white-space: nowrap; }
+    .sec-bar .sec-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+    .sec-bar .sec-actions .btn-small { margin: 0; white-space: nowrap; }
+    .sec-actions .sec-new { background: var(--navy); }
+    /* "This form is open" state on a + New button. */
+    .sec-actions .btn-small.sec-on { box-shadow: inset 0 0 0 2px rgba(255,255,255,0.45); filter: brightness(0.88); }
+
+    /* Stat tiles become slim inline chips when the grid sits in a section bar.
+       The renderers are untouched — this restyles the same .stat-card markup. */
+    .sec-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; flex: 1 1 auto; min-width: 0; }
+    .sec-chips .stat-card { display: flex; align-items: baseline; gap: 7px; padding: 4px 11px; border: 1px solid var(--border); border-left: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); }
+    .sec-chips .stat-card .stat-label { margin-bottom: 0; white-space: nowrap; }
+    .sec-chips .stat-card .stat-value { font-size: 13px; font-weight: 800; }
+    .sec-chips .stat-card > div:nth-child(n+3) { white-space: nowrap; }
+
+    /* "⋯" overflow menu: the original action buttons live inside, unchanged,
+       restyled as plain menu rows (inline background colors overridden). */
+    .more-wrap { position: relative; }
+    .more-btn { font-weight: 800; letter-spacing: 1px; }
+    .more-menu { position: absolute; right: 0; top: calc(100% + 6px); display: none; flex-direction: column; gap: 2px; min-width: 235px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 14px 34px rgba(15, 30, 45, 0.18); padding: 6px; z-index: 90; }
+    .more-wrap.open .more-menu { display: flex; }
+    .more-menu .btn-small { display: block; width: 100%; text-align: left; margin: 0; background: transparent !important; color: var(--text); font-weight: 600; box-shadow: none; }
+    .more-menu .btn-small:hover { background: var(--surface-2) !important; transform: none; }
+
+    /* Sort controls now sit inside the same filter row as search + filters. */
+    .form-row > .rec-toolbar { margin: 0; }
+
+    @media (max-width: 600px) {
+        .panel.sec-bar { padding: 10px 12px; }
+        .sec-chips { order: 3; flex-basis: 100%; }
+    }

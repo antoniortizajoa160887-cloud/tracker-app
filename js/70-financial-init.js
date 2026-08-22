@@ -134,6 +134,7 @@
         document.getElementById('invoice-form-title').textContent = t('edit_invoice_title');
         document.getElementById('invoice-save-btn').textContent = t('update_invoice_btn');
         document.getElementById('invoice-cancel-btn').style.display = 'inline-block';
+        openFinForm('invoice-form-panel');
         document.getElementById('invoice-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -360,6 +361,7 @@
         document.getElementById('bill-form-title').textContent = t('edit_bill_title');
         document.getElementById('bill-save-btn').textContent = t('update_bill_btn');
         document.getElementById('bill-cancel-btn').style.display = 'inline-block';
+        openFinForm('bill-form-panel');
         document.getElementById('bill-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 

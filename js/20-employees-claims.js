@@ -499,6 +499,46 @@
         if (panel) panel.classList.toggle('collapsed');
     }
 
+    // ---- Compact section bars: on-demand create forms + "⋯" overflow menus ----
+    // A "+ New" button carries data-finform="<wrap id>" so the open/closed state
+    // can be reflected on it even when a form is opened programmatically (edit).
+    function openFinForm(wrapId) {
+        const w = document.getElementById(wrapId);
+        if (!w) return;
+        w.style.display = '';
+        const btn = document.querySelector(`[data-finform="${wrapId}"]`);
+        if (btn) btn.classList.add('sec-on');
+    }
+
+    function toggleFinForm(wrapId) {
+        const w = document.getElementById(wrapId);
+        if (!w) return;
+        if (w.style.display !== 'none') {
+            w.style.display = 'none';
+            const btn = document.querySelector(`[data-finform="${wrapId}"]`);
+            if (btn) btn.classList.remove('sec-on');
+        } else {
+            openFinForm(wrapId);
+        }
+    }
+
+    function toggleMoreMenu(btn) {
+        const wrap = btn.closest('.more-wrap');
+        if (!wrap) return;
+        const wasOpen = wrap.classList.contains('open');
+        document.querySelectorAll('.more-wrap.open').forEach(w => w.classList.remove('open'));
+        if (!wasOpen) wrap.classList.add('open');
+    }
+
+    // Any click outside an open "⋯" menu closes it; a click on one of the menu's
+    // own actions closes it too (the toggle button itself is handled above).
+    document.addEventListener('click', (e) => {
+        const inWrap = e.target.closest ? e.target.closest('.more-wrap') : null;
+        document.querySelectorAll('.more-wrap.open').forEach(w => {
+            if (w !== inWrap || e.target.closest('.more-menu')) w.classList.remove('open');
+        });
+    });
+
     // Reorder a <select>'s options alphabetically, keeping the first
     // (placeholder) option pinned and preserving the current value.
     function sortSelectAZ(sel, pinFirst = true) {
@@ -1617,16 +1657,29 @@
     };
 
     // Show the New Claim form or the New Charge form (they add separate records).
-    function showCCForm(kind) {
-        const on = kind === 'charge' ? 'charge' : 'claim';
+    // Both create forms live behind the section bar's "+ New" buttons and start
+    // hidden; only one of the two can be open at a time (null closes both).
+    function setCCFormOpen(on) {
         const cw = document.getElementById('cc-claim-form-wrap');
         const gw = document.getElementById('cc-charge-form-wrap');
         const cb = document.getElementById('cc-seg-claim');
         const gb = document.getElementById('cc-seg-charge');
         if (cw) cw.style.display = on === 'claim' ? '' : 'none';
         if (gw) gw.style.display = on === 'charge' ? '' : 'none';
-        if (cb) cb.style.background = on === 'claim' ? '' : '#64748b';
-        if (gb) gb.style.background = on === 'charge' ? '' : '#64748b';
+        if (cb) cb.classList.toggle('sec-on', on === 'claim');
+        if (gb) gb.classList.toggle('sec-on', on === 'charge');
+    }
+
+    // Edit flows call this: it always ends with the requested form on screen.
+    function showCCForm(kind) {
+        setCCFormOpen(kind === 'charge' ? 'charge' : 'claim');
+    }
+
+    // The section-bar buttons call this: a second tap closes the open form.
+    function toggleCCForm(kind) {
+        const on = kind === 'charge' ? 'charge' : 'claim';
+        const wrap = document.getElementById(on === 'charge' ? 'cc-charge-form-wrap' : 'cc-claim-form-wrap');
+        setCCFormOpen(wrap && wrap.style.display !== 'none' ? null : on);
     }
 
     function renderClaimsCharges() {
