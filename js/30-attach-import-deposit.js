@@ -43,7 +43,7 @@
     };
 
     function attachBtnHtml(type, id) {
-        return `<button type="button" class="btn-small" style="background:var(--excel-blue); margin:0;" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')">📎 Files</button>`;
+        return `<button type="button" class="btn-small" style="background:var(--excel-blue); margin:0;" onclick="event.stopPropagation(); openAttachments('${type}','${escJsAttr(String(id))}')"><span class="sbicon ic-files"></span> Files</button>`;
     }
 
     // One labeled document slot. Solid+blue once something is uploaded,
