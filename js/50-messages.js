@@ -1009,6 +1009,7 @@
         document.getElementById('route-form-titletext').textContent = `Editing ${r.route_id || id}`;
         document.getElementById('route-save-btn').textContent = 'Save changes';
         document.getElementById('route-cancel-btn').style.display = '';
+        openFinForm('tracker-form-card');
         const panel = document.getElementById('tracker-form-card');
         if (panel) panel.classList.remove('collapsed');
         window.scrollTo({ top: 0, behavior: 'smooth' });

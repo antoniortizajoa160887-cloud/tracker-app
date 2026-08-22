@@ -187,9 +187,13 @@
         const container = document.getElementById('companies-tbody');
         if (!container) return;
         // Administrators only ever see their own company here (loadCompanies
-        // already scopes the list), and never get the create-new-company form.
+        // already scopes the list) and can't create companies: the "+ Add
+        // Company" button is SuperAdmin-only, and for everyone else the form
+        // only shows while editing (editCompany opens it, cancel closes it).
+        const newCompanyBtn = document.querySelector('[data-finform="company-form-panel"]');
+        if (newCompanyBtn) newCompanyBtn.style.display = (currentUserRole === 'SuperAdmin') ? '' : 'none';
         const formPanel = document.getElementById('company-form-panel');
-        if (formPanel) formPanel.style.display = (currentUserRole === 'SuperAdmin' || editingCompanyCode) ? 'block' : 'none';
+        if (formPanel && currentUserRole !== 'SuperAdmin' && !editingCompanyCode) formPanel.style.display = 'none';
 
         const list = applySort(companies, 'companies', {
             name: c => c.name || '', code: c => c.code || '',
@@ -262,7 +266,7 @@
         const c = companies.find(x => x.code === code);
         if (!c) return;
         editingCompanyCode = code;
-        document.getElementById('company-form-panel').style.display = 'block';
+        openFinForm('company-form-panel');
         document.getElementById('new-company-code').value = c.code;
         document.getElementById('new-company-code').disabled = true; // code can't change once created
         document.getElementById('new-company-name').value = c.name || '';
@@ -288,7 +292,11 @@
         document.getElementById('company-form-titletext').textContent = t('add_company_title');
         document.getElementById('company-save-btn').textContent = t('add_company_btn');
         document.getElementById('company-cancel-btn').style.display = 'none';
-        if (currentUserRole !== 'SuperAdmin') document.getElementById('company-form-panel').style.display = 'none';
+        if (currentUserRole !== 'SuperAdmin') {
+            document.getElementById('company-form-panel').style.display = 'none';
+            const nb = document.querySelector('[data-finform="company-form-panel"]');
+            if (nb) nb.classList.remove('sec-on');
+        }
     }
 
     async function createCompany() {
