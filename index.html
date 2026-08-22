@@ -629,7 +629,13 @@
 
 <!-- TAB 1: ROUTE TRACKER -->
 <div id="tab-tracker" class="tab-content">
-    <div class="card" id="tracker-form-card">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_tracker">Route Tracker</h2>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="tracker-form-card" onclick="toggleFinForm('tracker-form-card')">＋ <span data-i18n="log_new_route">Log New Route</span></button>
+        </div>
+    </div>
+    <div class="card" id="tracker-form-card" style="display:none;">
         <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="route-form-titletext" data-i18n="log_new_route">Log New Route</span> <span class="caret">&#9662;</span></h2>
         <form id="route-form">
             <div class="grid-form">
@@ -1748,7 +1754,13 @@
 
 <!-- TAB: COMPANIES -->
 <div id="tab-companies" class="tab-content">
-    <div class="panel" id="company-form-panel" style="margin-bottom:12px;">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_companies">Companies</h2>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="company-form-panel" onclick="toggleFinForm('company-form-panel')">＋ <span data-i18n="add_company_title">Add Company</span></button>
+        </div>
+    </div>
+    <div class="panel" id="company-form-panel" style="margin-bottom:12px; display:none;">
         <h2 id="company-form-titletext" data-i18n="add_company_title">Add Company</h2>
         <div class="form-section-label" data-i18n="company_section">Company</div>
         <div class="grid-form">
@@ -1767,7 +1779,6 @@
         <button type="button" class="btn-small" id="company-cancel-btn" style="display:none;background:#64748b;margin-top:0.75rem;" onclick="cancelCompanyEdit()" data-i18n="cancel">Cancel</button>
     </div>
     <div class="panel">
-        <h2 data-i18n="companies_title">Companies</h2>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-companies" onchange="setSortField('companies', this.value)">
