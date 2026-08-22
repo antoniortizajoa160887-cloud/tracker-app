@@ -603,8 +603,16 @@
 <div id="tab-home" class="tab-content active">
     <div id="release-decision-reminder" style="display:none; margin-bottom:12px;"></div>
     <div class="panel">
-        <h2 id="home-welcome" style="margin-bottom:2px;">Welcome</h2>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;" data-i18n="home_subtitle">Here's where things stand right now.</div>
+        <!-- Tracker 4.0 P4: mission-control home — greeting + quick actions,
+             an attention row (what needs you), then the KPI grid. -->
+        <div class="home-head">
+            <div>
+                <h2 id="home-welcome" style="margin-bottom:2px;">Welcome</h2>
+                <div style="font-size:12px; color:var(--text-muted);" data-i18n="home_subtitle">Here's where things stand right now.</div>
+            </div>
+            <div id="home-quick" class="home-quick"></div>
+        </div>
+        <div id="home-attention" class="attn-grid"></div>
         <div class="stat-grid" id="home-stats-grid"></div>
     </div>
 </div>

@@ -321,7 +321,11 @@
             // v3.65: condensed account menu
             acct_photo: 'Profile photo', acct_security: 'Security',
             // v3.70 (Tracker 4.0 P3): hub navigation
-            hub_home: 'Home', hub_operations: 'Operations', hub_people: 'People', hub_payroll: 'Payroll', hub_finance: 'Finance', hub_documents: 'Documents', hub_messages: 'Messages', hub_admin: 'Admin', hub_more: 'More', tab_overview: 'Overview'
+            hub_home: 'Home', hub_operations: 'Operations', hub_people: 'People', hub_payroll: 'Payroll', hub_finance: 'Finance', hub_documents: 'Documents', hub_messages: 'Messages', hub_admin: 'Admin', hub_more: 'More', tab_overview: 'Overview',
+            // v3.71 (Tracker 4.0 P4): mission-control home
+            greet_morning: 'Good morning', greet_afternoon: 'Good afternoon', greet_evening: 'Good evening',
+            attn_review: 'Review', attn_paychecks: 'Paycheck decisions', attn_msgs: 'Unread messages',
+            qa_new_claim: 'New claim', qa_add_person: 'Add person', qa_new_invoice: 'New invoice'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -634,7 +638,11 @@
             // v3.65: menú de cuenta condensado
             acct_photo: 'Foto de perfil', acct_security: 'Seguridad',
             // v3.70 (Tracker 4.0 P3): navegación por secciones
-            hub_home: 'Inicio', hub_operations: 'Operaciones', hub_people: 'Personas', hub_payroll: 'Nómina', hub_finance: 'Finanzas', hub_documents: 'Documentos', hub_messages: 'Mensajes', hub_admin: 'Admin', hub_more: 'Más', tab_overview: 'Resumen'
+            hub_home: 'Inicio', hub_operations: 'Operaciones', hub_people: 'Personas', hub_payroll: 'Nómina', hub_finance: 'Finanzas', hub_documents: 'Documentos', hub_messages: 'Mensajes', hub_admin: 'Admin', hub_more: 'Más', tab_overview: 'Resumen',
+            // v3.71 (Tracker 4.0 P4): inicio tipo "centro de control"
+            greet_morning: 'Buenos días', greet_afternoon: 'Buenas tardes', greet_evening: 'Buenas noches',
+            attn_review: 'Revisar', attn_paychecks: 'Decisiones de cheque', attn_msgs: 'Mensajes sin leer',
+            qa_new_claim: 'Nuevo reclamo', qa_add_person: 'Agregar persona', qa_new_invoice: 'Nueva factura'
         }
     };
 

@@ -1062,3 +1062,15 @@
         body.logged-in #mobile-tabbar { display: flex; gap: 4px; }
         body.logged-in #app-container { padding-bottom: 84px; }
     }
+
+    /* =====================================================================
+       Tracker 4.0 — P4 (v3.71): mission-control Home. Greeting + quick
+       actions on one line, then the attention row, then the KPI grid. */
+    .home-head { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .home-quick { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    .attn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .attn-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; box-shadow: var(--shadow-sm); transition: box-shadow 0.18s ease, transform 0.14s ease; }
+    .attn-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+    .attn-head { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .attn-num { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; font-variant-numeric: tabular-nums; }
+    .attn-link { font-size: 11.5px; font-weight: 700; color: var(--primary); }

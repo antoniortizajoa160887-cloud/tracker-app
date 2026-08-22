@@ -737,14 +737,38 @@
             </div>`;
     }
 
+    // Tracker 4.0 P4: the coloured attention-card icon — same Style-B glyph
+    // treatment as the hubs, inlined so no CSS round trip is needed.
+    function attnIcon(key, color) {
+        const G = {
+            wallet: "<rect x='2.5' y='6' width='19' height='12.5' rx='2'/><circle cx='12' cy='12.3' r='2.6'/><path d='M6 6v-.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V6'/>",
+            clock: "<circle cx='12' cy='12' r='9'/><path d='M12 8v5l-2.5 2M8 3.5l2 2M16 3.5l-2 2'/>",
+            bell: "<path d='M12 3a5 5 0 0 0-5 5v3.4c0 .6-.2 1.2-.6 1.7L5 15h14l-1.4-1.9a2.7 2.7 0 0 1-.6-1.7V8a5 5 0 0 0-5-5z'/><path d='M9.5 18a2.5 2.5 0 0 0 5 0'/>",
+            chat: "<path d='M4 5.5h16v11H9l-4 3.5v-3.5H4z'/><path d='M8 10h8M8 13h5'/>"
+        };
+        return `<svg width='24' height='24' viewBox='0 0 24 24' style='flex:none;'><circle cx='12' cy='12' r='11.3' fill='${color}' fill-opacity='0.16'></circle><g fill='none' stroke='${color}' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' transform='translate(3.1 3.1) scale(0.74)'>${G[key]}</g></svg>`;
+    }
+
     function renderHomeDashboard() {
         renderReleaseDecisionReminder();
         const grid = document.getElementById('home-stats-grid');
         if (!grid) return;
 
+        // Time-of-day greeting, like the approved mockup.
         const welcomeName = (currentUser && currentUser.first_name) ? currentUser.first_name : currentUsername;
+        const hr = new Date().getHours();
+        const greet = hr < 12 ? t('greet_morning') : hr < 19 ? t('greet_afternoon') : t('greet_evening');
         const welcomeEl = document.getElementById('home-welcome');
-        if (welcomeEl) welcomeEl.textContent = `${t('welcome_prefix')} ${welcomeName}`;
+        if (welcomeEl) welcomeEl.textContent = `${greet}, ${welcomeName}`;
+
+        // Quick actions — only for roles that can create records.
+        const quick = document.getElementById('home-quick');
+        if (quick) {
+            quick.innerHTML = canEdit() ? `
+                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="openHomeShortcut('tab-claims')">${t('qa_new_claim')}</button>
+                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="openHomeShortcut('tab-employees')">${t('qa_add_person')}</button>
+                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="openHomeShortcut('tab-invoices')">${t('qa_new_invoice')}</button>` : '';
+        }
 
         const activeEmployees = employees.filter(e => e.status === 'Active').length;
 
@@ -769,6 +793,24 @@
 
         const expiringSoon = (typeof buildExpiringDocumentsList === 'function' ? buildExpiringDocumentsList() : []).filter(d => d.days !== null && d.days <= 30).length;
         const unreadNotifs = notifications.filter(n => !n.read_at).length;
+        const unreadMsgs = (typeof dmThreads !== 'undefined' ? dmThreads : []).reduce((n, th) => n + (parseInt(th.unread, 10) || 0), 0);
+
+        // Attention row: the things waiting on a person, before the numbers.
+        const attn = document.getElementById('home-attention');
+        if (attn) {
+            const acard = (icon, color, label, n, tab) => `
+                <div class="attn-card" onclick="openHomeShortcut('${tab}')">
+                    <div class="attn-head">${attnIcon(icon, color)}<span>${label}</span></div>
+                    <div class="attn-num">${n}</div>
+                    <div class="attn-link">${t('attn_review')} &rarr;</div>
+                </div>`;
+            let cards = '';
+            if (canEdit()) cards += acard('wallet', '#f59e0b', t('attn_paychecks'), getOverdueReleaseDecisions().length, 'tab-savingsreport');
+            cards += acard('clock', '#f97316', t('d_home_expiring'), expiringSoon, 'tab-expiring');
+            cards += acard('chat', '#16a34a', t('attn_msgs'), unreadMsgs, 'tab-messages');
+            cards += acard('bell', '#eab308', t('d_home_unread'), unreadNotifs, 'tab-notifications');
+            attn.innerHTML = cards;
+        }
 
         const card = (label, value, sub, onclick) => `
             <div class="stat-card"${onclick ? ` style="cursor:pointer;" onclick="${onclick}"` : ''}>
@@ -783,9 +825,9 @@
             card(t('d_home_active_charges'), openCharges.length, formatMoney(openChargesTotal) + ' outstanding', "openHomeShortcut('tab-claims')") +
             card('Semana de Fondo', savingsInProgress + ' in progress', formatMoney(savingsSavedTotal) + ' saved so far', "openHomeShortcut('tab-weekdeposit')") +
             card(t('d_home_income_week'), formatMoney(incomeThisWeekTotal), incomeThisWeek.length + ' record(s)', "openHomeShortcut('tab-income')") +
-            card(t('d_stat_fleet'), vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')") +
-            card(t('d_home_expiring'), expiringSoon, 'within 30 days', "openHomeShortcut('tab-expiring')") +
-            card(t('d_home_unread'), unreadNotifs, '', "openHomeShortcut('tab-notifications')");
+            card(t('d_stat_fleet'), vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')");
+        // Expiring documents and unread notifications now live in the
+        // attention row above — repeating them here would be noise.
     }
 
     // Home's stat cards jump straight to a tab — openTab now highlights the
