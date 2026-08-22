@@ -744,9 +744,48 @@
             wallet: "<rect x='2.5' y='6' width='19' height='12.5' rx='2'/><circle cx='12' cy='12.3' r='2.6'/><path d='M6 6v-.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V6'/>",
             clock: "<circle cx='12' cy='12' r='9'/><path d='M12 8v5l-2.5 2M8 3.5l2 2M16 3.5l-2 2'/>",
             bell: "<path d='M12 3a5 5 0 0 0-5 5v3.4c0 .6-.2 1.2-.6 1.7L5 15h14l-1.4-1.9a2.7 2.7 0 0 1-.6-1.7V8a5 5 0 0 0-5-5z'/><path d='M9.5 18a2.5 2.5 0 0 0 5 0'/>",
-            chat: "<path d='M4 5.5h16v11H9l-4 3.5v-3.5H4z'/><path d='M8 10h8M8 13h5'/>"
+            chat: "<path d='M4 5.5h16v11H9l-4 3.5v-3.5H4z'/><path d='M8 10h8M8 13h5'/>",
+            check: "<circle cx='12' cy='12' r='9'/><path d='M8 12.5l2.5 2.5L16 9.5'/>",
+            upload: "<rect x='2.5' y='6.5' width='19' height='11' rx='2'/><path d='M12 14.8V9.2M9.5 11.7 12 9.2l2.5 2.5'/>",
+            dollar: "<path d='M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5s-5 1.4-5 3.2c0 1.9 2.2 2.7 5 3.3s5 1.4 5 3.3c0 1.8-2.2 3.2-5 3.2s-5-1.6-5-3.5'/>"
         };
         return `<svg width='24' height='24' viewBox='0 0 24 24' style='flex:none;'><circle cx='12' cy='12' r='11.3' fill='${color}' fill-opacity='0.16'></circle><g fill='none' stroke='${color}' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' transform='translate(3.1 3.1) scale(0.74)'>${G[key]}</g></svg>`;
+    }
+
+    // Pending release approvals for the attention card. Fetched async so the
+    // dashboard never waits on it; the count fills into the card in place.
+    let homeApprovalsCount = null;
+    async function refreshHomeApprovals() {
+        try {
+            const { data, error } = await supabaseClient.rpc('get_pending_release_requests', { p_actor: currentUsername, p_company: currentCompany });
+            if (error) return;
+            homeApprovalsCount = (data || []).length;
+            const el = document.getElementById('attn-approvals-n');
+            if (el) el.textContent = String(homeApprovalsCount);
+        } catch (e) { /* card just keeps its last value */ }
+    }
+
+    // "12m / 3h / 2d" style relative time for the activity feed.
+    function relTime(ts) {
+        const ms = Date.now() - new Date(ts).getTime();
+        const m = Math.floor(ms / 60000);
+        if (m < 1) return 'now';
+        if (m < 60) return m + 'm';
+        const h = Math.floor(m / 60);
+        if (h < 24) return h + 'h';
+        const d = Math.floor(h / 24);
+        if (d < 7) return d + 'd';
+        return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+    function weekNumber(d) {
+        const jan1 = new Date(d.getFullYear(), 0, 1);
+        return Math.ceil((((d - jan1) / 86400000) + jan1.getDay() + 1) / 7);
+    }
+    // The phone floating + button: toggles its little action menu.
+    function toggleHomeFab(forceClose) {
+        const m = document.getElementById('home-fab-menu');
+        if (!m) return;
+        m.style.display = (forceClose === true || m.style.display !== 'none') ? 'none' : 'flex';
     }
 
     function renderHomeDashboard() {
@@ -754,20 +793,33 @@
         const grid = document.getElementById('home-stats-grid');
         if (!grid) return;
 
-        // Time-of-day greeting, like the approved mockup.
+        // Time-of-day greeting + the date line, like the approved mockup.
         const welcomeName = (currentUser && currentUser.first_name) ? currentUser.first_name : currentUsername;
-        const hr = new Date().getHours();
+        const now = new Date();
+        const hr = now.getHours();
         const greet = hr < 12 ? t('greet_morning') : hr < 19 ? t('greet_afternoon') : t('greet_evening');
         const welcomeEl = document.getElementById('home-welcome');
         if (welcomeEl) welcomeEl.textContent = `${greet}, ${welcomeName}`;
+        const subEl = document.getElementById('home-subline');
+        if (subEl) {
+            let dateStr = now.toLocaleDateString(currentLang() === 'es' ? 'es' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+            subEl.textContent = `${dateStr} · ${t('home_needs_attention')}`;
+        }
 
-        // Quick actions — only for roles that can create records.
+        // Quick actions — only for roles that can create records. On phones
+        // the row hides and the floating + button carries the same actions.
+        const qaBtns = `
+                <button type="button" class="btn-small" style="margin:0;background:var(--primary);" onclick="toggleHomeFab(true); openHomeShortcut('tab-claims')">${t('qa_new_claim')}</button>
+                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="toggleHomeFab(true); openHomeShortcut('tab-employees')">${t('qa_add_person')}</button>
+                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="toggleHomeFab(true); openHomeShortcut('tab-expiring')">${t('qa_upload_doc')}</button>`;
         const quick = document.getElementById('home-quick');
-        if (quick) {
-            quick.innerHTML = canEdit() ? `
-                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="openHomeShortcut('tab-claims')">${t('qa_new_claim')}</button>
-                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="openHomeShortcut('tab-employees')">${t('qa_add_person')}</button>
-                <button type="button" class="btn-small" style="margin:0;background:var(--navy);" onclick="openHomeShortcut('tab-invoices')">${t('qa_new_invoice')}</button>` : '';
+        if (quick) quick.innerHTML = canEdit() ? qaBtns : '';
+        const fabWrap = document.getElementById('home-fab-wrap');
+        if (fabWrap) {
+            fabWrap.classList.toggle('can', canEdit());
+            const fabMenu = document.getElementById('home-fab-menu');
+            if (fabMenu) fabMenu.innerHTML = qaBtns;
         }
 
         const activeEmployees = employees.filter(e => e.status === 'Active').length;
@@ -798,17 +850,24 @@
         // Attention row: the things waiting on a person, before the numbers.
         const attn = document.getElementById('home-attention');
         if (attn) {
-            const acard = (icon, color, label, n, tab) => `
+            const acard = (icon, color, label, cap, n, tab, numId) => `
                 <div class="attn-card" onclick="openHomeShortcut('${tab}')">
                     <div class="attn-head">${attnIcon(icon, color)}<span>${label}</span></div>
-                    <div class="attn-num">${n}</div>
-                    <div class="attn-link">${t('attn_review')} &rarr;</div>
+                    <div class="attn-num"${numId ? ` id="${numId}"` : ''}>${n}</div>
+                    <div class="attn-foot"><span class="attn-cap">${cap}</span><span class="attn-link">${t('attn_review')} &rarr;</span></div>
                 </div>`;
             let cards = '';
-            if (canEdit()) cards += acard('wallet', '#f59e0b', t('attn_paychecks'), getOverdueReleaseDecisions().length, 'tab-savingsreport');
-            cards += acard('clock', '#f97316', t('d_home_expiring'), expiringSoon, 'tab-expiring');
-            cards += acard('chat', '#16a34a', t('attn_msgs'), unreadMsgs, 'tab-messages');
-            cards += acard('bell', '#eab308', t('d_home_unread'), unreadNotifs, 'tab-notifications');
+            // Approvals pending — only where the Approvals screen itself is
+            // visible; the count arrives async and fills in.
+            const apprBtn = document.getElementById('btn-tab-approvals');
+            if (apprBtn && apprBtn.style.display !== 'none') {
+                cards += acard('check', '#8b5cf6', t('attn_approvals'), t('attn_capt_approvals'), homeApprovalsCount === null ? '…' : homeApprovalsCount, 'tab-approvals', 'attn-approvals-n');
+                refreshHomeApprovals();
+            }
+            if (canEdit()) cards += acard('wallet', '#f59e0b', t('attn_paychecks'), t('attn_capt_paychecks'), getOverdueReleaseDecisions().length, 'tab-savingsreport');
+            cards += acard('clock', '#f97316', t('d_home_expiring'), t('attn_capt_expiring'), expiringSoon, 'tab-expiring');
+            cards += acard('chat', '#16a34a', t('attn_msgs'), t('attn_capt_msgs'), unreadMsgs, 'tab-messages');
+            cards += acard('bell', '#eab308', t('d_home_unread'), t('attn_capt_notifs'), unreadNotifs, 'tab-notifications');
             attn.innerHTML = cards;
         }
 
@@ -828,6 +887,68 @@
             card(t('d_stat_fleet'), vehicles.length, 'truck(s)', "openHomeShortcut('tab-vehicles')");
         // Expiring documents and unread notifications now live in the
         // attention row above — repeating them here would be noise.
+
+        // ---- "This week's payroll" — the SAME math renderPayroll uses
+        // (base per pay type + route pay + income − active deductions), for
+        // the current week that fetchAllDataFromCloud already loaded. ----
+        const payPanel = document.getElementById('home-payroll');
+        if (payPanel) {
+            const active = employees.filter(e => e.status === 'Active');
+            const rows = active.map(emp => {
+                const payType = getPayType(emp.id);
+                const base = payType === 'Daily' ? (currentWeekDaily[emp.id] || 0) : payType === 'Provider' ? (currentWeekProvider[emp.id] || 0) : (parseFloat(emp.pay_rate) || 0);
+                const gross = base + currentWeekRoutePay(emp) + activeWeeklyIncome(emp.id);
+                const ded = activeWeeklyDeductions(emp.id, gross);
+                return { emp, payType, ded, net: gross - ded };
+            });
+            const totNet = rows.reduce((a, r) => a + r.net, 0);
+            const top = rows.sort((a, b) => b.net - a.net).slice(0, 6);
+            const wkChip = `<span class="hp-chip">${t('hp_week')} ${weekNumber(new Date())} · ${t('hp_inprog')}</span>`;
+            const rowHtml = top.map(r => `
+                <div class="hp-row" onclick="openHomeShortcut('tab-payroll')">
+                    ${personAvatarHtml(r.emp, 26)}
+                    <span class="hp-who"><span class="hp-name">${escHtml(r.emp.first_name)} ${escHtml(r.emp.last_name)}</span><span class="hp-id">${r.emp.id}</span></span>
+                    <span class="hp-type">${enumLabel(r.emp.person_type)}</span>
+                    <span class="hp-pay"><span class="pay-pill ${r.payType === 'Daily' ? 'pay-daily' : r.payType === 'Provider' ? 'pay-provider' : 'pay-weekly'}">${enumLabel(r.payType)}</span></span>
+                    <span class="hp-net">${formatMoney(r.net)}</span>
+                    <span class="hp-status">${r.ded > 0.004 ? statusBadge('Deducting') : statusBadge(r.emp.status)}</span>
+                </div>`).join('');
+            payPanel.innerHTML = `
+                <div class="hp-head"><span class="hp-title">${t('hp_title')}</span>${wkChip}<span class="hp-open" onclick="openHomeShortcut('tab-payroll')">${t('hp_open')} &rarr;</span></div>
+                ${rowHtml || `<div class="hp-empty">${t('d_no_people_match')}</div>`}
+                <div class="hp-foot"><span>${t('hp_net')}</span><span class="hp-total">${formatMoney(totNet)}</span></div>`;
+        }
+
+        // ---- "Recent activity" — the latest notifications as a feed. ----
+        const actPanel = document.getElementById('home-activity');
+        if (actPanel) {
+            const feed = [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 7);
+            const iconFor = (n) => {
+                const s = `${n.kind || ''} ${n.label || ''}`.toLowerCase();
+                if (/releas|approv/.test(s)) return ['check', '#8b5cf6'];
+                if (/upload|document|license|permit|medical/.test(s)) return ['upload', '#0ea5e9'];
+                if (/expir/.test(s)) return ['clock', '#f97316'];
+                if (/message|chat/.test(s)) return ['chat', '#16a34a'];
+                if (/pay|claim|charge|invoice|bill|deposit|income/.test(s)) return ['dollar', '#f59e0b'];
+                return ['bell', '#eab308'];
+            };
+            const todayCount = notifications.filter(n => new Date(n.created_at).toDateString() === new Date().toDateString()).length;
+            const items = feed.map(n => {
+                const [ic, col] = iconFor(n);
+                const emp = employees.find(e => e.id === n.employee_id);
+                const who = emp ? `<b>${escHtml(`${emp.first_name} ${emp.last_name}`.trim())}</b> · ` : '';
+                return `
+                <div class="ra-row" onclick="openHomeShortcut('tab-notifications')">
+                    ${attnIcon(ic, col)}
+                    <span class="ra-text">${who}${escHtml(n.label || n.kind || '')}${n.amount ? ` <span class="ra-amt">${formatMoney(n.amount)}</span>` : ''}</span>
+                    <span class="ra-time">${relTime(n.created_at)}</span>
+                </div>`;
+            }).join('');
+            actPanel.innerHTML = `
+                <div class="hp-head"><span class="hp-title">${t('ra_title')}</span></div>
+                ${items || `<div class="hp-empty">${t('d_no_notifs')}</div>`}
+                <div class="hp-foot"><span>${t('ra_today')} · ${todayCount} ${t('ra_events')}</span><span class="hp-open" onclick="openHomeShortcut('tab-notifications')">${t('ra_viewall')} &rarr;</span></div>`;
+        }
     }
 
     // Home's stat cards jump straight to a tab — openTab now highlights the
