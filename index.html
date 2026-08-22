@@ -1796,13 +1796,15 @@
 
 <!-- TAB 9: DATA SYNC -->
 <div id="tab-data" class="tab-content">
-    <div class="panel">
-        <h2 data-i18n="export_data_title">Export Data</h2>
-        <button class="btn" style="background:#2563eb;" onclick="exportExcel()" data-i18n="download_excel_backup">⬇️ Download Excel Backup (Route Tracker only)</button>
-        <button class="btn" style="background:#0f766e; margin-top:8px;" onclick="exportAllData(event)" data-i18n="export_all_data">⬇️ Export All Data (single file)</button>
-        <div class="note-box" style="margin-top:8px;" data-i18n="export_all_note">One .xlsx file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything you have access to, in one download. Employee SSN/ITIN is never included in any export.</div>
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_data">Data Sync</h2>
+        <div class="sec-actions">
+            <button class="btn-small" style="background:#2563eb;" onclick="exportExcel()" data-i18n="download_excel_backup">⬇️ Download Excel Backup (Route Tracker only)</button>
+            <button class="btn-small" style="background:#0f766e;" onclick="exportAllData(event)" data-i18n="export_all_data">⬇️ Export All Data (single file)</button>
+        </div>
     </div>
-    <div class="panel">
+    <div class="note-box" style="margin-bottom:12px;" data-i18n="export_all_note">One .xlsx file with a separate sheet for Employees, Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay — everything you have access to, in one download. Employee SSN/ITIN is never included in any export.</div>
+    <div class="panel collapsed">
         <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="import_all_title">Import All Data (single file) <span class="caret">&#9662;</span></h2>
         <div class="note-box" data-i18n="import_all_note">Upload a file exported from <strong>Export All Data</strong> above (or hand-edited to match its column layout) to restore Claims, Charges, Additional Income, Vehicles, Routes, Daily Pay, and Provider Pay in one pass — matched to existing employees by Employee ID. Doesn't touch Employees themselves; use Import CSV on the Employees tab for that.</div>
         <div style="border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 6px; background: var(--surface-2); margin-top:8px;">
@@ -1810,16 +1812,17 @@
         </div>
         <div id="import-all-status" style="margin-top:8px; font-size:0.85rem;"></div>
     </div>
-    <div class="panel">
+    <div class="panel collapsed">
         <h2 class="panel-head" onclick="toggleCollapse(this)" data-i18n="import_sync_routes_title">Import & Sync Routes from Excel (Tab: Tracker) <span class="caret">&#9662;</span></h2>
         <div style="border: 2px dashed var(--border); padding: 1.5rem; text-align: center; border-radius: 6px; background: var(--surface-2);">
             <input type="file" id="file-upload" accept=".xlsx, .xls, .csv">
         </div>
     </div>
 
-    <!-- RESTRICTED ADMINISTRATOR DANGER ZONE -->
-    <div class="panel" id="admin-danger-zone" style="border-color: #ef4444; display: none;">
-        <h2 style="color: #ef4444; border-bottom-color: #fca5a5;" data-i18n="admin_danger_title">Administrator Management & Reset Zone</h2>
+    <!-- RESTRICTED ADMINISTRATOR DANGER ZONE — quiet, collapsed accordion:
+         the destructive buttons only appear after a deliberate tap on the head. -->
+    <div class="panel collapsed" id="admin-danger-zone" style="display: none;">
+        <h2 class="panel-head" style="color: #ef4444;" onclick="toggleCollapse(this)" data-i18n="admin_danger_title">Administrator Management & Reset Zone <span class="caret">&#9662;</span></h2>
         <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="admin_danger_note">These actions are restricted to <strong>Administrator</strong> users only.</p>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem;">
             <button class="btn" style="background: #dc2626;" onclick="adminDeleteAllRoutes()" data-i18n="del_all_routes">🗑️ Delete All Routes</button>
@@ -1833,8 +1836,8 @@
             <p style="font-size:0.78rem; color:var(--text-muted); margin:6px 0 0;" data-i18n="gso_signout_note">Gives everyone a countdown warning, then signs them out of all devices. Administrators affect their own company; Super Admin affects everyone.</p>
         </div>
     </div>
-    <div class="panel" id="superadmin-danger-zone" style="border-color: #7f1d1d; display: none; background: rgba(127,29,29,0.04);">
-        <h2 style="color: #7f1d1d; border-bottom-color: #7f1d1d;" data-i18n="sysreset_title">System Reset — Super Admin Only</h2>
+    <div class="panel collapsed" id="superadmin-danger-zone" style="display: none;">
+        <h2 class="panel-head" style="color: #b91c1c;" onclick="toggleCollapse(this)" data-i18n="sysreset_title">System Reset — Super Admin Only <span class="caret">&#9662;</span></h2>
         <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="sysreset_note">Removes every user account except Super Admins, and clears the audit Log and pending Approvals. Companies and everything that belongs to them — employees, claims, charges, routes, income — are <strong>not</strong> touched. Cannot be undone.</p>
         <button class="btn" style="background: #7f1d1d; margin-top: 0.75rem;" onclick="superAdminResetSystem()" data-i18n="reset_system_btn">☢️ Reset System (Keep Companies & Super Admin)</button>
     </div>
