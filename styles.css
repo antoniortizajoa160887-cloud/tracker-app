@@ -4,11 +4,11 @@
         --secondary: #0f172a;
         --excel-blue: #0f4c81;
         --slicer-bg: #e2e8f0;
-        --bg: #f4f6f8;
+        --bg: #f4f6f9;
         --surface: #ffffff;
-        --text: #16232E;
-        --text-muted: #5A6B7A;
-        --border: #E1E6EA;
+        --text: #172430;
+        --text-muted: #5c6e7e;
+        --border: #e3e9ef;
         --navy: #1F4E78;
         --navy-dark: #163A5A;
         --active: #1E7A46;
@@ -19,7 +19,7 @@
         --amber-bg: #FCF0DA;
         --purple: #5B3A99;
         --purple-bg: #EEE6FA;
-        --surface-2: #FAFBFC;
+        --surface-2: #eef2f6;
         --mono: "JetBrains Mono", "SF Mono", "Roboto Mono", Consolas, Menlo, monospace;
     }
     /* ===== Dark theme (optional) — toggle in Settings > Appearance.
@@ -35,8 +35,8 @@
         --bg: #0a1420;
         --surface: #101d2e;
         --surface-2: #16283a;
-        --text: #dbe4ec;
-        --text-muted: #8095a8;
+        --text: #e2eaf2;
+        --text-muted: #8ea2b3;
         --border: #22384a;
         --navy: #0d4a5c;
         --navy-dark: #082e3b;
@@ -688,12 +688,12 @@
        CSS variables, so Light / Ocean / Emerald all benefit equally.
        ===================================================================== */
     :root {
-        --radius-sm: 7px;
-        --radius: 10px;
-        --radius-lg: 14px;
-        --shadow-sm: 0 1px 2px rgba(16,35,46,0.06);
-        --shadow: 0 4px 16px -6px rgba(16,35,46,0.14), 0 1px 3px rgba(16,35,46,0.06);
-        --shadow-lg: 0 18px 40px -12px rgba(16,35,46,0.22);
+        --radius-sm: 9px;
+        --radius: 12px;
+        --radius-lg: 16px;
+        --shadow-sm: 0 1px 2px rgba(23,36,48,0.05);
+        --shadow: 0 8px 24px -18px rgba(23,36,48,0.28), 0 1px 3px rgba(23,36,48,0.05);
+        --shadow-lg: 0 18px 40px -12px rgba(23,36,48,0.22);
         --zebra: rgba(15,23,42,0.022);
         --row-hover: rgba(16,185,129,0.07);
         --ring: 0 0 0 3px rgba(16,185,129,0.28);
@@ -761,6 +761,16 @@
 
     /* Pills & badges: a touch more breathing room. */
     .type-pill, .status-badge { padding: 3px 10px; letter-spacing: 0.01em; }
+
+    /* =====================================================================
+       Tracker 4.0 — Phase 1 foundations (v3.68). Token-level refinements
+       from the approved redesign: crisper heading rhythm and tabular
+       numerals wherever digits line up. CSS-only by design — the golden
+       master stays byte-identical because no markup changes.
+       ===================================================================== */
+    h1, h2 { letter-spacing: -0.01em; font-weight: 800; }
+    h3 { letter-spacing: -0.005em; }
+    .money, .stat-value, .id-cell, td, .attach-ind { font-variant-numeric: tabular-nums; }
 
     @media (prefers-reduced-motion: reduce) {
         .card, .panel, .btn, .btn-small, input, select, textarea, tbody tr, .theme-swatch { transition: none !important; }
