@@ -413,7 +413,7 @@
                 </div>
                 <h1 id="app-title" style="margin:0;">Tracker — Unified Logistics · HR · Claims</h1>
             </div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;"><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong> · <span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin:0;"><span id="header-user-avatar" class="header-user-avatar"></span><span data-i18n="welcome_prefix">Welcome,</span> <strong id="user-name-display"></strong> · <span data-i18n="role_label">Role:</span> <strong id="user-role-display" style="color:var(--primary);"></strong> · <span data-i18n="company_label">Company:</span> <strong id="user-company-display"></strong></p>
         </div>
         <div class="global-search-wrap">
             <span class="global-search-icon">🔍</span>
@@ -438,7 +438,9 @@
             <button type="button" class="header-theme-swatch" id="header-theme-btn-indigo" onclick="setTheme('indigo')" style="background:#6366f1;" title="Indigo"></button>
             <button type="button" class="header-theme-swatch" id="header-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
                     </div>
-                    <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
+                    <button type="button" id="menu-change-photo" onclick="changeMyPhoto(); toggleUserMenu();" style="display:none; width:100%; text-align:left; padding:10px 14px; background:none; border:none; color:var(--text); font-size:0.85rem; cursor:pointer;">📷 <span data-i18n="photo_change">Change photo</span></button>
+                    <button type="button" id="menu-remove-photo" onclick="removeMyPhoto(); toggleUserMenu();" style="display:none; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
+                    <button type="button" onclick="toggleChangePasswordCard(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
                     <button type="button" onclick="openTwofaManage(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
                     <button type="button" onclick="signOutOtherDevices(); toggleUserMenu();" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:var(--text); font-size:0.85rem; cursor:pointer;">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
                     <button type="button" onclick="logout()" style="display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; border-top:1px solid var(--border); color:#ef4444; font-size:0.85rem; cursor:pointer; font-weight:700;" data-i18n="sign_out_btn">Sign Out</button>
@@ -553,6 +555,8 @@
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-indigo" onclick="setTheme('indigo')" style="background:#6366f1;" title="Indigo"></button>
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
         </div>
+        <button type="button" class="sidebar-account-btn" id="sidebar-change-photo" style="display:none;" onclick="changeMyPhoto()">📷 <span data-i18n="photo_change">Change photo</span></button>
+        <button type="button" class="sidebar-account-btn" id="sidebar-remove-photo" style="display:none;" onclick="removeMyPhoto()">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
         <button type="button" class="sidebar-account-btn" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
         <button type="button" class="sidebar-account-btn" onclick="openTwofaManage()">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
         <button type="button" class="sidebar-account-btn" onclick="signOutOtherDevices()">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>

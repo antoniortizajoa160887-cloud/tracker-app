@@ -551,6 +551,21 @@
     .attach-ind:hover { background: rgba(59,130,246,0.24); }
     .rec-card.open .rec-card-head .attach-ind { color: #fff; background: rgba(255,255,255,0.22); }
     td .attach-ind { line-height: 1.5; }
+    /* ---- Optional profile photos ----------------------------------------
+       One avatar element, two forms: a real photo (<img>) or a coloured
+       initials badge (span.person-ava-ini). Sizes come inline from
+       personAvatarHtml(); these rules only fix shape, fit and colour. */
+    .person-ava { display: inline-block; border-radius: 50%; object-fit: cover; vertical-align: middle; flex: none; background: var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
+    .person-ava-ini { display: inline-flex; align-items: center; justify-content: center; color: #f2f7fb; font-weight: 700; line-height: 1; text-transform: uppercase; letter-spacing: 0.01em; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+    .rec-card-head .rec-head-ava { margin: -1px 0; }
+    .rec-card.open .rec-card-head .person-ava { box-shadow: 0 0 0 2px rgba(255,255,255,0.55); }
+    /* The signed-in user's own avatar in the header — a subtle accent ring. */
+    .header-user-avatar { display: inline-block; margin-right: 7px; vertical-align: middle; }
+    .header-user-avatar .person-ava { box-shadow: 0 0 0 2px var(--primary); }
+    /* Photo controls inside an expanded person record. */
+    .rec-photo-row { display: flex; align-items: center; gap: 14px; margin: 2px 0 12px; flex-wrap: wrap; }
+    .rec-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rec-photo-note { flex-basis: 100%; font-size: 11px; color: var(--text-muted); }
     /* Labeled document slots (Driver License, Medical Card, Registration,
        Insurance) shown on an employee/vehicle. Dashed = nothing uploaded yet. */
     .doc-slot-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }

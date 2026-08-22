@@ -454,7 +454,9 @@
         else { employees = data || []; }
         await loadEmployeeDetails();
         if (canEdit()) await loadEmployeeUserLinks();
+        if (typeof loadEmployeePhotos === 'function') await loadEmployeePhotos();
         renderEmployees();
+        if (typeof updateMyAvatar === 'function') updateMyAvatar();
         populateEmployeeDropdowns();
         if (typeof updateNextEmpId === 'function') updateNextEmpId();
     }
@@ -952,7 +954,16 @@
         const wpExp = d.work_permit_exp ? d.work_permit_exp + expBadge(d.work_permit_exp, 90) : '—';
         const med = (d.medical_card === 'Yes') ? 'Yes' : '<span style="color:var(--text-muted);">No</span>';
         const medExp = d.medical_card_exp ? d.medical_card_exp + expBadge(d.medical_card_exp, 60) : '—';
-        return `<div class="rec-detail-grid">
+        const canPhoto = canUploadTo('employee', emp.id);
+        const photoRow = `<div class="rec-photo-row">
+                ${personAvatarHtml(emp, 72, 'rec-photo-ava')}
+                ${canPhoto ? `<div class="rec-photo-actions">
+                    <button class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); pickAndSetPhoto('${emp.id}')">📷 <span data-i18n="photo_change">Change photo</span></button>
+                    ${employeePhotos[emp.id] ? `<button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); removePersonPhoto('${emp.id}')">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>` : ''}
+                    <span class="rec-photo-note" data-i18n="photo_optional">Optional — a photo is never required.</span>
+                </div>` : ''}
+            </div>`;
+        return `${photoRow}<div class="rec-detail-grid">
                 <div><div class="k" data-i18n="d_phone">Phone</div><div class="v">${d.phone ? escHtml(d.phone) : '-'}</div></div>
                 <div><div class="k" data-i18n="d_email">Email</div><div class="v">${d.email ? escHtml(d.email) : '-'}</div></div>
                 <div><div class="k"><span data-i18n="d_ssn_itin">SSN / ITIN</span> (${escHtml(d.id_type || 'SSN')})</div><div class="v id-cell">${ssn}</div></div>
@@ -1103,7 +1114,7 @@
                 const open = recExpanded.employees.has(emp.id);
                 rows += `<tr style="cursor:pointer;" onclick="toggleRecCard('employees','${emp.id}')">
                     <td class="id-cell"><span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span> ${emp.id} ${attachInd('employee', emp.id)}</td>
-                    <td>${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
+                    <td>${personAvatarHtml(emp, 26)} ${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</td>
                     <td>${enumLabel(emp.person_type)}</td>
                     <td>${escHtml(emp.department) || '-'}</td>
                     <td>${emp.start_date || '-'}</td>
@@ -1140,6 +1151,7 @@
                 <div class="rec-card${open ? ' open' : ''}" id="rec-employees-${emp.id}">
                     <div class="rec-card-head" onclick="toggleRecCard('employees','${emp.id}')">
                         <span class="rec-caret" data-caret="employees-${emp.id}">${open ? '▾' : '▸'}</span>
+                        ${personAvatarHtml(emp, 34, 'rec-head-ava')}
                         <span class="rec-title">${escHtml(emp.first_name)} ${escHtml(emp.last_name)}</span>
                         <span class="rec-sub">${emp.id}</span>
                         ${attachInd('employee', emp.id)}
