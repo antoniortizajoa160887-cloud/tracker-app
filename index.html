@@ -1465,14 +1465,14 @@
             <div id="dm-thread-header" class="msg-thread-header" style="display:none;"></div>
             <div id="dm-thread-body" class="msg-thread-body"></div>
             <div id="dm-composer" class="msg-composer" style="display:none;">
-                <div id="dm-emoji-panel" style="display:none; flex-wrap:wrap; gap:2px; max-height:120px; overflow-y:auto; padding:6px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); margin-bottom:6px;"></div>
+                <div id="dm-emoji-panel" class="dm-emoji-pop" style="display:none;"></div>
                 <div id="dm-stage-panel"></div>
                 <div class="msg-composer-input-row">
-                    <button type="button" class="btn-small" title="Emoji" onclick="toggleDmEmojiPanel()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">😊</button>
-                    <button type="button" class="btn-small" id="dm-attach-btn" title="Attach a photo, video or document" onclick="document.getElementById('dm-file-input').click()" style="margin:0; background:var(--surface-2); color:var(--text); min-height:40px; padding:0 8px;">📎</button>
+                    <button type="button" class="msg-icon-btn" title="Emoji" onclick="toggleDmEmojiPanel()">😊</button>
+                    <button type="button" class="msg-icon-btn" id="dm-attach-btn" title="Attach a photo, video or document" onclick="document.getElementById('dm-file-input').click()">📎</button>
                     <input type="file" id="dm-file-input" style="display:none;" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="stageChatFiles(this.files)">
                     <input type="text" id="dm-compose-text" placeholder="Type a message..." data-i18n-placeholder="dm_compose_ph" onkeydown="if(event.key==='Enter'){sendDirectMessage();}">
-                    <button type="button" class="btn-small" style="margin:0; background:var(--primary); min-height:40px;" onclick="sendDirectMessage()">➤</button>
+                    <button type="button" class="msg-send-btn" title="Send" onclick="sendDirectMessage()">➤</button>
                 </div>
             </div>
             <div id="dm-empty-state" class="msg-empty-state" data-i18n="dm_empty_state">Select a person on the left to start a conversation.</div>
