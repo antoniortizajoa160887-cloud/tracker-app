@@ -1182,3 +1182,7 @@
         .panel.sec-bar { padding: 10px 12px; }
         .sec-chips { order: 3; flex-basis: 100%; }
     }
+
+    /* A chip strip living inside a regular panel (e.g. the payroll totals)
+       keeps a little air below it; inside a .sec-bar the bar's gap handles it. */
+    .panel:not(.sec-bar) > .sec-chips { margin-bottom: 10px; }
