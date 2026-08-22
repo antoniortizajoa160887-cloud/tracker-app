@@ -958,8 +958,8 @@
         const photoRow = `<div class="rec-photo-row">
                 ${personAvatarHtml(emp, 72, 'rec-photo-ava')}
                 ${canPhoto ? `<div class="rec-photo-actions">
-                    <button class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); pickAndSetPhoto('${emp.id}')">📷 <span data-i18n="photo_change">Change photo</span></button>
-                    ${employeePhotos[emp.id] ? `<button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); removePersonPhoto('${emp.id}')">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>` : ''}
+                    <button class="btn-small" style="margin:0;background:var(--navy);" onclick="event.stopPropagation(); pickAndSetPhoto('${emp.id}')"><span class="sbicon ic-camera"></span> <span data-i18n="photo_change">Change photo</span></button>
+                    ${employeePhotos[emp.id] ? `<button class="btn-small" style="margin:0;" onclick="event.stopPropagation(); removePersonPhoto('${emp.id}')"><span class="sbicon ic-trash"></span> <span data-i18n="photo_remove">Remove photo</span></button>` : ''}
                     <span class="rec-photo-note" data-i18n="photo_optional">Optional — a photo is never required.</span>
                 </div>` : ''}
             </div>`;

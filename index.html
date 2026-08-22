@@ -267,7 +267,7 @@
         <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
             <span data-i18n="idle_pre">You'll be signed out in</span> <span id="idle-countdown" style="font-weight:700; color:#b45309;">30</span><span data-i18n="idle_post">s due to inactivity. Any unsaved changes could be lost.</span>
         </div>
-        <button type="button" class="btn" style="width:100%;" onclick="staySignedIn()" data-i18n="idle_stay">Stay signed in</button>
+        <button type="button" class="btn" style="width:100%;" onclick="staySignedIn()" id="idle-stay-btn" data-i18n="idle_stay">Stay signed in</button>
     </div>
 </div>
 
@@ -438,18 +438,18 @@
             <button type="button" class="header-theme-swatch" id="header-theme-btn-indigo" onclick="setTheme('indigo')" style="background:#6366f1;" title="Indigo"></button>
             <button type="button" class="header-theme-swatch" id="header-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
                     </div>
-                    <button type="button" id="menu-photo-hdr" class="acct-hdr" style="display:none;" onclick="toggleAcctSection('menu-photo-sub', this)">🖼️ <span data-i18n="acct_photo">Profile photo</span> <span class="acct-caret">▸</span></button>
+                    <button type="button" id="menu-photo-hdr" class="acct-hdr" style="display:none;" onclick="toggleAcctSection('menu-photo-sub', this)"><span class="sbicon ic-photo"></span> <span data-i18n="acct_photo">Profile photo</span> <span class="acct-caret">▸</span></button>
                     <div id="menu-photo-sub" class="acct-sub" style="display:none;">
-                        <button type="button" class="acct-row" onclick="changeMyPhoto(); toggleUserMenu();">📷 <span data-i18n="photo_change">Change photo</span></button>
-                        <button type="button" id="menu-remove-photo" class="acct-row" style="display:none;" onclick="removeMyPhoto(); toggleUserMenu();">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
+                        <button type="button" class="acct-row" onclick="changeMyPhoto(); toggleUserMenu();"><span class="sbicon ic-camera"></span> <span data-i18n="photo_change">Change photo</span></button>
+                        <button type="button" id="menu-remove-photo" class="acct-row" style="display:none;" onclick="removeMyPhoto(); toggleUserMenu();"><span class="sbicon ic-trash"></span> <span data-i18n="photo_remove">Remove photo</span></button>
                     </div>
-                    <button type="button" class="acct-hdr" onclick="toggleAcctSection('menu-security-sub', this)">🔒 <span data-i18n="acct_security">Security</span> <span class="acct-caret">▸</span></button>
+                    <button type="button" class="acct-hdr" onclick="toggleAcctSection('menu-security-sub', this)"><span class="sbicon ic-security"></span> <span data-i18n="acct_security">Security</span> <span class="acct-caret">▸</span></button>
                     <div id="menu-security-sub" class="acct-sub" style="display:none;">
-                        <button type="button" class="acct-row" onclick="toggleChangePasswordCard(); toggleUserMenu();">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-                        <button type="button" class="acct-row" onclick="openTwofaManage(); toggleUserMenu();">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
-                        <button type="button" class="acct-row" onclick="signOutOtherDevices(); toggleUserMenu();">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
+                        <button type="button" class="acct-row" onclick="toggleChangePasswordCard(); toggleUserMenu();"><span class="sbicon ic-key"></span> <span data-i18n="change_password_btn">Change Password</span></button>
+                        <button type="button" class="acct-row" onclick="openTwofaManage(); toggleUserMenu();"><span class="sbicon ic-twofa"></span> <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
+                        <button type="button" class="acct-row" onclick="signOutOtherDevices(); toggleUserMenu();"><span class="sbicon ic-devices"></span> <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
                     </div>
-                    <button type="button" class="acct-hdr acct-danger" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
+                    <button type="button" class="acct-hdr acct-danger" onclick="logout()"><span class="sbicon ic-signout"></span> <span data-i18n="sign_out_btn">Sign Out</span></button>
                 </div>
             </div>
             </div>
@@ -561,18 +561,18 @@
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-indigo" onclick="setTheme('indigo')" style="background:#6366f1;" title="Indigo"></button>
             <button type="button" class="theme-swatch" id="sidebar-theme-btn-carbon" onclick="setTheme('carbon')" style="background:#f59e0b;" title="Carbon"></button>
         </div>
-        <button type="button" class="sidebar-account-btn acct-hdr" id="sidebar-photo-hdr" style="display:none;" onclick="toggleAcctSection('sidebar-photo-sub', this)">🖼️ <span data-i18n="acct_photo">Profile photo</span> <span class="acct-caret">▸</span></button>
+        <button type="button" class="sidebar-account-btn acct-hdr" id="sidebar-photo-hdr" style="display:none;" onclick="toggleAcctSection('sidebar-photo-sub', this)"><span class="sbicon ic-photo"></span> <span data-i18n="acct_photo">Profile photo</span> <span class="acct-caret">▸</span></button>
         <div id="sidebar-photo-sub" class="acct-sub" style="display:none;">
-            <button type="button" class="sidebar-account-btn acct-subitem" onclick="changeMyPhoto()">📷 <span data-i18n="photo_change">Change photo</span></button>
-            <button type="button" class="sidebar-account-btn acct-subitem" id="sidebar-remove-photo" style="display:none;" onclick="removeMyPhoto()">🗑️ <span data-i18n="photo_remove">Remove photo</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="changeMyPhoto()"><span class="sbicon ic-camera"></span> <span data-i18n="photo_change">Change photo</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" id="sidebar-remove-photo" style="display:none;" onclick="removeMyPhoto()"><span class="sbicon ic-trash"></span> <span data-i18n="photo_remove">Remove photo</span></button>
         </div>
-        <button type="button" class="sidebar-account-btn acct-hdr" onclick="toggleAcctSection('sidebar-security-sub', this)">🔒 <span data-i18n="acct_security">Security</span> <span class="acct-caret">▸</span></button>
+        <button type="button" class="sidebar-account-btn acct-hdr" onclick="toggleAcctSection('sidebar-security-sub', this)"><span class="sbicon ic-security"></span> <span data-i18n="acct_security">Security</span> <span class="acct-caret">▸</span></button>
         <div id="sidebar-security-sub" class="acct-sub" style="display:none;">
-            <button type="button" class="sidebar-account-btn acct-subitem" onclick="toggleChangePasswordCard()">🔑 <span data-i18n="change_password_btn">Change Password</span></button>
-            <button type="button" class="sidebar-account-btn acct-subitem" onclick="openTwofaManage()">🔐 <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
-            <button type="button" class="sidebar-account-btn acct-subitem" onclick="signOutOtherDevices()">📱 <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="toggleChangePasswordCard()"><span class="sbicon ic-key"></span> <span data-i18n="change_password_btn">Change Password</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="openTwofaManage()"><span class="sbicon ic-twofa"></span> <span data-i18n="twofa_menu">Two-Factor Authentication</span></button>
+            <button type="button" class="sidebar-account-btn acct-subitem" onclick="signOutOtherDevices()"><span class="sbicon ic-devices"></span> <span data-i18n="signout_other_devices">Sign out my other devices</span></button>
         </div>
-        <button type="button" class="sidebar-account-btn" id="sidebar-account-btn-signout" onclick="logout()">🚪 <span data-i18n="sign_out_btn">Sign Out</span></button>
+        <button type="button" class="sidebar-account-btn" id="sidebar-account-btn-signout" onclick="logout()"><span class="sbicon ic-signout"></span> <span data-i18n="sign_out_btn">Sign Out</span></button>
     </div>
 </div>
     </nav>
@@ -1493,7 +1493,7 @@
         </div>
         <div class="detail-subhead" style="margin-top:6px;" data-i18n="line_items">Line Items</div>
         <div id="inv-line-items-editor"></div>
-        <button type="button" class="btn-small" style="background:var(--navy);" onclick="addInvoiceLineItemRow()" data-i18n="add_line">+ Add Line</button>
+        <button type="button" class="btn-small" style="background:var(--navy);" onclick="addInvoiceLineItemRow()" id="addline-btn" data-i18n="add_line">+ Add Line</button>
         <div style="text-align:right; font-weight:700; margin-top:8px; font-family:var(--mono);" id="inv-line-items-total">Total: $ 0.00</div>
         <div style="margin-top:10px;">
             <button type="button" class="btn" id="invoice-save-btn" onclick="saveInvoice()" data-i18n="save_invoice_btn">+ Save Invoice</button>
@@ -1580,7 +1580,7 @@
                 </div>
                 <div class="field"><label data-i18n="assign_employee">Assign to Employee</label><select id="new-user-employee" required><option value="" data-i18n="select_employee_opt">— Select employee —</option></select></div>
             </div>
-            <button type="submit" class="btn" style="margin-top:0.5rem;" data-i18n="create_user_btn">+ Create User</button>
+            <button type="submit" class="btn" style="margin-top:0.5rem;" id="create-user-btn" data-i18n="create_user_btn">+ Create User</button>
         </form>
     </div>
     <div class="panel collapsed">
@@ -1608,7 +1608,7 @@
         </div>
         <div>
             <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadSessions()" data-i18n="refresh_btn">↻ Refresh</button>
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadSessions()" id="refresh-btn" data-i18n="refresh_btn">↻ Refresh</button>
                 <span style="font-size:11px; color:var(--text-muted);" data-i18n="session_signout_note">Signing a session out takes effect immediately.</span>
             </div>
             <div id="sessions-body" class="record-grid"></div>
@@ -1624,7 +1624,7 @@
         </div>
         <div>
             <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadLoginAttempts()" data-i18n="refresh_btn">↻ Refresh</button>
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadLoginAttempts()" id="refresh-btn" data-i18n="refresh_btn">↻ Refresh</button>
                 <span style="font-size:11px; color:var(--text-muted);" data-i18n="failed_signins_note">Last 7 days. An account locks for 5 minutes after 5 failures; a network locks for 15 minutes after 30.</span>
             </div>
             <div id="login-attempts-body" class="record-grid"></div>
@@ -1639,7 +1639,7 @@
         </div>
         <div>
             <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadGlobalSignoutHistory()" data-i18n="refresh_btn">↻ Refresh</button>
+                <button type="button" class="btn-small" style="margin:0; background:var(--navy);" onclick="loadGlobalSignoutHistory()" id="refresh-btn" data-i18n="refresh_btn">↻ Refresh</button>
                 <span style="font-size:11px; color:var(--text-muted);" data-i18n="gso_history_note">Every 'Sign Out All Users' action: who started it, when, why, and how many were affected.</span>
             </div>
             <div id="gso-history-body" class="record-grid"></div>
