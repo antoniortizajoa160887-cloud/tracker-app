@@ -1193,7 +1193,7 @@
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisStatementWeek()" data-i18n="this_week">This week</button>
             <button class="btn-small" style="background:var(--navy);" onclick="printStatement()" data-i18n="print_btn">🖨 Print</button>
         </div>
-        <div class="stat-grid" id="statement-stats-grid" style="margin-top:10px;"></div>
+        <div class="stat-grid sec-chips" id="statement-stats-grid" style="margin-top:10px;"></div>
     </div>
     <div id="statement-content"></div>
 </div>
@@ -1209,8 +1209,14 @@
             <span class="wk-label" id="dailypay-week-label">—</span>
             <button class="btn-small" onclick="shiftPayWeek(1)" data-i18n="next_btn">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayWeek()" data-i18n="this_week">This week</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('dailypay-xlsx-input').click()" data-i18n="import_registry">Import Registry</button>
-            <input type="file" id="dailypay-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importDailyPayExcel(event)">
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportDailyPayExcel()" data-i18n="export_btn">⬇️ Export</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('dailypay-xlsx-input').click()" data-i18n="import_registry">Import Registry</button>
+                    <input type="file" id="dailypay-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importDailyPayExcel(event)">
+                </div>
+            </div>
             <span class="save-flash" id="dailypay-saveflash" data-i18n="saved_flash">Saved ✓</span>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
@@ -1236,7 +1242,6 @@
                 <input type="text" id="dailypay-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderDailyPay()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('dailypay')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportDailyPayExcel()" data-i18n="export_btn">⬇️ Export</button>
         </div>
         <div class="note-box" style="margin-top:10px;" data-i18n="dailypay_note">
             Enter each person's pay for the days they worked (Sun–Sat). Tap <strong>OFF</strong> for days off — those are skipped in the week total. Entries save automatically and are kept per week, so you can browse any past week with the arrows. Only people set to <strong>Daily Rate</strong> appear here (change a person's pay type in the Employees tab).
@@ -1267,7 +1272,7 @@
             <button type="button" class="btn-small" id="wd-cancel-btn" style="background:#64748b;" onclick="cancelWeekDepositEdit()" data-i18n="cancel">Cancel</button>
         </form>
     </div>
-    <div class="stat-grid" id="weekdeposit-stats-grid" style="margin-bottom:12px;"></div>
+    <div class="stat-grid sec-chips" id="weekdeposit-stats-grid" style="margin-bottom:12px;"></div>
     <div class="panel">
         <div class="form-row" style="margin-bottom:10px;">
             <div class="field"><label data-i18n="status_field">Status</label>
@@ -1280,8 +1285,13 @@
             </div>
             <div class="field field-wide"><input type="text" id="weekdeposit-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderWeekDeposit()"></div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('weekdeposit')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildWeekDepositSummaryReport(), 'week_in_deposit_summary.xlsx')" data-i18n="summary_report_excel">📊 Summary Report (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildWeekDepositSummaryReport())" data-i18n="summary_report_pdf">📊 Summary Report (PDF)</button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildWeekDepositSummaryReport(), 'week_in_deposit_summary.xlsx')" data-i18n="summary_report_excel">📊 Summary Report (Excel)</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildWeekDepositSummaryReport())" data-i18n="summary_report_pdf">📊 Summary Report (PDF)</button>
+                </div>
+            </div>
         </div>
         <div id="weekdeposit-tbody"></div>
     </div>
@@ -1296,6 +1306,14 @@
             <span class="wk-label" id="providerpay-week-label">—</span>
             <button class="btn-small" onclick="shiftProviderWeek(1)" data-i18n="next_btn">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisProviderWeek()" data-i18n="this_week">This week</button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportProviderPayExcel()" data-i18n="export_btn">⬇️ Export</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('providerpay-import-input').click()" data-i18n="import_btn">⬆️ Import</button>
+                    <input type="file" id="providerpay-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importProviderPayExcel(event)">
+                </div>
+            </div>
             <span class="save-flash" id="providerpay-saveflash" data-i18n="saved_flash">Saved ✓</span>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
@@ -1311,9 +1329,6 @@
                 <input type="text" id="providerpay-search" placeholder="Search name or ID..." data-i18n-placeholder="search_name_id_ph" oninput="renderProviderPay()">
             </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('providerpay')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportProviderPayExcel()" data-i18n="export_btn">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('providerpay-import-input').click()" data-i18n="import_btn">⬆️ Import</button>
-            <input type="file" id="providerpay-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importProviderPayExcel(event)">
         </div>
         <div class="note-box" style="margin-top:10px;" data-i18n="providerpay_note">
             Enter each provider's pay for the week — a single amount, since providers aren't on a flat rate. Saves automatically and is kept per week, so you can browse any past week with the arrows. Only people set to <strong>Provider</strong> pay type appear here (change a person's pay type in the Employees tab). Feeds into Payroll the same way Daily Pay does. <strong>Linked to Bills Payable:</strong> any unpaid bill whose vendor matches a provider's name shows under that provider — tick one or more and tap “Pay selected” to mark those bills Paid and add their total to this week's amount.
@@ -1332,9 +1347,14 @@
             <span class="wk-label" id="payroll-week-label">—</span>
             <button class="btn-small" onclick="shiftPayrollWeek(1)" data-i18n="next_btn">Next ▶</button>
             <button class="btn-small" style="background:var(--navy);" onclick="goToThisPayrollWeek()" data-i18n="this_week">This week</button>
-            <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()" data-i18n="print_all">🖨 Print All</button>
-            <button class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildPayrollSummaryReport(), 'payroll_summary.xlsx')" data-i18n="summary_report_excel">📊 Summary Report (Excel)</button>
-            <button class="btn-small" style="background:#0f766e;" onclick="printReport(buildPayrollSummaryReport())" data-i18n="summary_report_pdf">📊 Summary Report (PDF)</button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button class="btn-small" style="background:var(--navy);" onclick="printAllPayroll()" data-i18n="print_all">🖨 Print All</button>
+                    <button class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildPayrollSummaryReport(), 'payroll_summary.xlsx')" data-i18n="summary_report_excel">📊 Summary Report (Excel)</button>
+                    <button class="btn-small" style="background:#0f766e;" onclick="printReport(buildPayrollSummaryReport())" data-i18n="summary_report_pdf">📊 Summary Report (PDF)</button>
+                </div>
+            </div>
         </div>
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field">
@@ -1365,7 +1385,7 @@
     </div>
 
     <div class="panel">
-        <div class="stat-grid" id="payroll-stats-grid"></div>
+        <div class="stat-grid sec-chips" id="payroll-stats-grid"></div>
         <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-payroll" onchange="setSortField('payroll', this.value)">
