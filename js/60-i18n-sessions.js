@@ -332,7 +332,11 @@
             attn_capt_paychecks: 'Last-paycheck holds', attn_capt_expiring: 'Within the next 30 days',
             attn_capt_msgs: 'In your conversations', attn_capt_notifs: 'Since you last checked',
             hp_title: 'This week\'s payroll', hp_open: 'Open payroll', hp_net: 'Net to pay', hp_week: 'Week', hp_inprog: 'in progress',
-            ra_title: 'Recent activity', ra_viewall: 'View all', ra_today: 'Today', ra_events: 'events'
+            ra_title: 'Recent activity', ra_viewall: 'View all', ra_today: 'Today', ra_events: 'events',
+
+            // ---- 4.1 Compact: section bars ----
+            sec_new_income: 'New Income', sec_invoices: 'Invoices', sec_bills: 'Bills Payable',
+            more_actions: 'More actions'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -656,7 +660,11 @@
             attn_capt_paychecks: 'Últimos cheques retenidos', attn_capt_expiring: 'En los próximos 30 días',
             attn_capt_msgs: 'En tus conversaciones', attn_capt_notifs: 'Desde tu última visita',
             hp_title: 'Nómina de esta semana', hp_open: 'Abrir nómina', hp_net: 'Neto a pagar', hp_week: 'Semana', hp_inprog: 'en curso',
-            ra_title: 'Actividad reciente', ra_viewall: 'Ver todo', ra_today: 'Hoy', ra_events: 'eventos'
+            ra_title: 'Actividad reciente', ra_viewall: 'Ver todo', ra_today: 'Hoy', ra_events: 'eventos',
+
+            // ---- 4.1 Compact: section bars ----
+            sec_new_income: 'Nuevo Ingreso', sec_invoices: 'Facturas', sec_bills: 'Cuentas por Pagar',
+            more_actions: 'Más acciones'
         }
     };
 
@@ -707,6 +715,10 @@
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             const val = t(el.getAttribute('data-i18n-placeholder'));
             if (val !== undefined) el.placeholder = val;
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const val = t(el.getAttribute('data-i18n-title'));
+            if (val !== undefined) { el.title = val; el.setAttribute('aria-label', val); }
         });
     }
 

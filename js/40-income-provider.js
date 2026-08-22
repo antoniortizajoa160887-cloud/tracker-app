@@ -222,6 +222,7 @@
         document.getElementById('income-form-titletext').textContent = `${t('editing_prefix')} ${id}`;
         document.getElementById('income-save-btn').textContent = t('save_changes_plain');
         document.getElementById('income-cancel-btn').style.display = '';
+        openFinForm('income-form-wrap');
         const panel = document.getElementById('income-form').closest('.panel');
         if (panel) panel.classList.remove('collapsed');
         window.scrollTo({ top: 0, behavior: 'smooth' });

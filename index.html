@@ -885,14 +885,32 @@
 
 <!-- TAB 4: CLAIMS & CHARGES (two separate record types, shown together) -->
 <div id="tab-claims" class="tab-content">
-    <div class="panel" style="padding:10px 12px;">
-        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-            <span style="font-size:12px; color:var(--text-muted); font-weight:700; margin-right:2px;">Add:</span>
-            <button type="button" id="cc-seg-claim" class="btn-small" onclick="showCCForm('claim')">＋ New Claim</button>
-            <button type="button" id="cc-seg-charge" class="btn-small" style="background:#64748b;" onclick="showCCForm('charge')">＋ New Charge</button>
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_claims">Claims &amp; Charges</h2>
+        <div class="stat-grid sec-chips" id="claim-stats-grid"></div>
+        <div class="sec-actions">
+            <button type="button" id="cc-seg-claim" class="btn-small sec-new" onclick="toggleCCForm('claim')">＋ <span data-i18n="new_claim">New Claim</span></button>
+            <button type="button" id="cc-seg-charge" class="btn-small sec-new" onclick="toggleCCForm('charge')">＋ <span data-i18n="new_charge">New Charge</span></button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportClaimsExcel()">⬇️ Export Claims</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportChargesExcel()">⬇️ Export Charges</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildClaimsSummaryReport(), 'claims_summary.xlsx')">📊 Claims (Excel)</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildClaimsSummaryReport())">📊 Claims (PDF)</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildChargesSummaryReport(), 'charges_summary.xlsx')">📊 Charges (Excel)</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildChargesSummaryReport())">📊 Charges (PDF)</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()">⬆️ Import Claims</button>
+                    <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import Charges</button>
+                    <input type="file" id="charges-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importChargesExcel(event)">
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="document.getElementById('week-deposit-import-input').click()">⬆️ Import Semana de Fondo</button>
+                    <input type="file" id="week-deposit-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importWeekInDepositExcel(event)">
+                </div>
+            </div>
         </div>
     </div>
-    <div id="cc-claim-form-wrap">
+    <div id="cc-claim-form-wrap" style="display:none;">
     <div class="panel">
         <h2 class="panel-head" onclick="toggleCollapse(this)"><span id="claim-form-titletext" data-i18n="new_claim">New Claim</span> <span class="caret">&#9662;</span></h2>
         <div class="id-preview">
@@ -1008,42 +1026,27 @@
     </div>
 
     <div class="panel">
-        <div class="stat-grid" id="claim-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="cc-search" placeholder="Search ID, employee, account, company, type, status..." oninput="renderClaimsCharges()"></div>
             <div class="field"><select id="cc-kind" onchange="renderClaimsCharges()"><option value="">Claims &amp; Charges</option><option value="claim">Claims only</option><option value="charge">Charges only</option></select></div>
             <div class="field"><select id="cc-emp" onchange="renderClaimsCharges()"><option value="">All employees</option></select></div>
             <div class="field"><select id="cc-type" onchange="renderClaimsCharges()"><option value="">All types</option></select></div>
             <div class="field"><select id="cc-status" onchange="renderClaimsCharges()"><option value="">All statuses</option></select></div>
+            <div class="rec-toolbar">
+                <label data-i18n="sort_by">Sort by</label>
+                <select id="sort-select-cc" onchange="setSortField('cc', this.value)">
+                    <option value="employee" data-i18n="employee_field">Employee</option>
+                    <option value="kind" data-i18n="sort_kind">Kind</option>
+                    <option value="id" data-i18n="th_id">ID</option>
+                    <option value="type" data-i18n="type_label">Type</option>
+                    <option value="amount" data-i18n="amount_label">Amount</option>
+                    <option value="balance" data-i18n="th_balance">Balance</option>
+                    <option value="status" data-i18n="status_field">Status</option>
+                    <option value="start" data-i18n="sort_start_ded">Start ded.</option>
+                </select>
+                <button type="button" class="btn-small rec-dir-btn" id="sort-dir-cc" onclick="flipSortDir('cc')">▲</button>
+            </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('cc')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-        </div>
-        <div class="form-row" style="margin-bottom:10px; gap:6px; flex-wrap:wrap;">
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportClaimsExcel()">⬇️ Export Claims</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportChargesExcel()">⬇️ Export Charges</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildClaimsSummaryReport(), 'claims_summary.xlsx')">📊 Claims (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildClaimsSummaryReport())">📊 Claims (PDF)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildChargesSummaryReport(), 'charges_summary.xlsx')">📊 Charges (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildChargesSummaryReport())">📊 Charges (PDF)</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('claim-xlsx-input').click()">⬆️ Import Claims</button>
-            <input type="file" id="claim-xlsx-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importClaimsExcel(event)">
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('charges-import-input').click()">⬆️ Import Charges</button>
-            <input type="file" id="charges-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importChargesExcel(event)">
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="document.getElementById('week-deposit-import-input').click()">⬆️ Import Semana de Fondo</button>
-            <input type="file" id="week-deposit-import-input" accept=".xlsx,.xls" style="display:none;" onchange="importWeekInDepositExcel(event)">
-        </div>
-        <div class="rec-toolbar">
-            <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-cc" onchange="setSortField('cc', this.value)">
-                <option value="employee" data-i18n="employee_field">Employee</option>
-                <option value="kind" data-i18n="sort_kind">Kind</option>
-                <option value="id" data-i18n="th_id">ID</option>
-                <option value="type" data-i18n="type_label">Type</option>
-                <option value="amount" data-i18n="amount_label">Amount</option>
-                <option value="balance" data-i18n="th_balance">Balance</option>
-                <option value="status" data-i18n="status_field">Status</option>
-                <option value="start" data-i18n="sort_start_ded">Start ded.</option>
-            </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-cc" onclick="flipSortDir('cc')">▲</button>
         </div>
         <div id="cc-tbody" class="record-grid"></div>
     </div>
@@ -1051,6 +1054,23 @@
 
 <!-- TAB: ADDITIONAL INCOME (its own tab) -->
 <div id="tab-income" class="tab-content">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="tab_income">Income</h2>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="income-form-wrap" onclick="toggleFinForm('income-form-wrap')">＋ <span data-i18n="sec_new_income">New Income</span></button>
+            <div class="more-wrap">
+                <button type="button" class="btn-small more-btn" onclick="toggleMoreMenu(this)" title="More actions" data-i18n-title="more_actions" aria-label="More actions">⋯</button>
+                <div class="more-menu">
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportIncomeExcel()">⬇️ Export</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildIncomeSummaryReport(), 'income_summary.xlsx')">📊 Summary Report (Excel)</button>
+                    <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildIncomeSummaryReport())">📊 Summary Report (PDF)</button>
+                    <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('income-import-input').click()">⬆️ Import</button>
+                    <input type="file" id="income-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importIncomeExcel(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="income-form-wrap" style="display:none;">
     <div class="panel" style="padding-top:14px; padding-bottom:14px;">
         <div class="form-row" style="margin-bottom:0; align-items:flex-end;">
             <div class="field field-wide"><label>Employee <span style="color:var(--text-muted); font-weight:400;">— for the additional-income form below</span></label><select id="i-employee"><option value="">— Select employee —</option></select></div>
@@ -1079,18 +1099,12 @@
             <button type="button" class="btn-small" id="income-cancel-btn" style="display:none;background:#64748b;" onclick="cancelIncomeEdit()" data-i18n="cancel_edit">Cancel edit</button>
         </form>
     </div>
+    </div>
 
     <div class="panel">
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="income-search" placeholder="Search income ID, employee, type, status..." oninput="renderIncome()" data-i18n-placeholder="search_income_ph"></div>
-            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="exportIncomeExcel()">⬇️ Export</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="downloadReportExcel(buildIncomeSummaryReport(), 'income_summary.xlsx')">📊 Summary Report (Excel)</button>
-            <button type="button" class="btn-small" style="background:#0f766e;" onclick="printReport(buildIncomeSummaryReport())">📊 Summary Report (PDF)</button>
-            <button type="button" class="btn-small" style="background:var(--navy);" onclick="document.getElementById('income-import-input').click()">⬆️ Import</button>
-            <input type="file" id="income-import-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importIncomeExcel(event)">
-        </div>
-        <div class="rec-toolbar">
+            <div class="rec-toolbar">
             <label data-i18n="sort_by">Sort by</label>
             <select id="sort-select-income" onchange="setSortField('income', this.value)">
                 <option value="employee" data-i18n="employee_field">Employee</option>
@@ -1102,6 +1116,8 @@
                 <option value="start" data-i18n="sort_start">Start</option>
             </select>
             <button type="button" class="btn-small rec-dir-btn" id="sort-dir-income" onclick="flipSortDir('income')">▲</button>
+            </div>
+            <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('income')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
         </div>
         <div id="income-tbody" class="record-grid"></div>
     </div>
@@ -1517,7 +1533,14 @@
 
 <!-- TAB: INVOICES -->
 <div id="tab-invoices" class="tab-content">
-    <div class="panel" id="invoice-form-panel">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="sec_invoices">Invoices</h2>
+        <div class="stat-grid sec-chips" id="invoice-stats-grid"></div>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="invoice-form-panel" onclick="toggleFinForm('invoice-form-panel')">＋ <span data-i18n="new_invoice_title">New Invoice</span></button>
+        </div>
+    </div>
+    <div class="panel" id="invoice-form-panel" style="display:none;">
         <h2 id="invoice-form-title" data-i18n="new_invoice_title">New Invoice</h2>
         <div class="form-row">
             <div class="field"><label data-i18n="inv_number">Invoice #</label><input type="text" id="inv-number" placeholder="e.g. 0169" data-i18n-placeholder="inv_number_ph"></div>
@@ -1541,24 +1564,23 @@
     </div>
 
     <div class="panel">
-        <div class="stat-grid" id="invoice-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="invoice-search" placeholder="Search invoice #, customer, notes..." data-i18n-placeholder="invoice_search_ph" oninput="renderInvoices()"></div>
             <div class="field"><select id="invoice-status-filter" onchange="renderInvoices()"><option value="" data-i18n="all_statuses">All statuses</option><option value="Unpaid" data-i18n="unpaid_opt">Unpaid</option><option value="Paid" data-i18n="paid_opt">Paid</option><option value="Void" data-i18n="void_opt">Void</option></select></div>
             <div class="field"><select id="invoice-customer-filter" onchange="renderInvoices()"><option value="" data-i18n="all_customers">All customers</option></select></div>
+            <div class="rec-toolbar">
+                <label data-i18n="sort_by">Sort by</label>
+                <select id="sort-select-invoices" onchange="setSortField('invoices', this.value)">
+                    <option value="date" data-i18n="inv_date">Invoice date</option>
+                    <option value="number" data-i18n="inv_number">Invoice #</option>
+                    <option value="customer" data-i18n="inv_customer">Customer</option>
+                    <option value="due" data-i18n="due_date">Due date</option>
+                    <option value="amount" data-i18n="amount_label">Amount</option>
+                    <option value="status" data-i18n="status_field">Status</option>
+                </select>
+                <button type="button" class="btn-small rec-dir-btn" id="sort-dir-invoices" onclick="flipSortDir('invoices')">▲</button>
+            </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('invoices')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-        </div>
-        <div class="rec-toolbar">
-            <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-invoices" onchange="setSortField('invoices', this.value)">
-                <option value="date" data-i18n="inv_date">Invoice date</option>
-                <option value="number" data-i18n="inv_number">Invoice #</option>
-                <option value="customer" data-i18n="inv_customer">Customer</option>
-                <option value="due" data-i18n="due_date">Due date</option>
-                <option value="amount" data-i18n="amount_label">Amount</option>
-                <option value="status" data-i18n="status_field">Status</option>
-            </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-invoices" onclick="flipSortDir('invoices')">▲</button>
         </div>
         <div id="invoices-tbody" class="record-grid"></div>
     </div>
@@ -1566,7 +1588,14 @@
 
 <!-- TAB: BILLS PAYABLE -->
 <div id="tab-bills" class="tab-content">
-    <div class="panel" id="bill-form-panel">
+    <div class="panel sec-bar">
+        <h2 class="sec-title" data-i18n="sec_bills">Bills Payable</h2>
+        <div class="stat-grid sec-chips" id="bill-stats-grid"></div>
+        <div class="sec-actions">
+            <button type="button" class="btn-small sec-new" data-finform="bill-form-panel" onclick="toggleFinForm('bill-form-panel')">＋ <span data-i18n="new_bill_title">New Bill</span></button>
+        </div>
+    </div>
+    <div class="panel" id="bill-form-panel" style="display:none;">
         <h2 id="bill-form-title" data-i18n="new_bill_title">New Bill</h2>
         <div class="form-row">
             <div class="field"><label data-i18n="vendor">Vendor</label><input type="text" id="bill-vendor" list="bill-vendor-providers" placeholder="e.g. ABC Fuel Co, or pick a provider" data-i18n-placeholder="bill_vendor_ph"><datalist id="bill-vendor-providers"></datalist></div>
@@ -1582,24 +1611,23 @@
     </div>
 
     <div class="panel">
-        <div class="stat-grid" id="bill-stats-grid"></div>
         <div class="form-row" style="margin-bottom: 10px;">
             <div class="field field-wide"><input type="text" id="bill-search" placeholder="Search vendor, bill #, notes..." data-i18n-placeholder="bill_search_ph" oninput="renderBills()"></div>
             <div class="field"><select id="bill-status-filter" onchange="renderBills()"><option value="" data-i18n="all_statuses">All statuses</option><option value="Unpaid" data-i18n="unpaid_opt">Unpaid</option><option value="Paid" data-i18n="paid_opt">Paid</option><option value="Void" data-i18n="void_opt">Void</option></select></div>
             <div class="field"><select id="bill-vendor-filter" onchange="renderBills()"><option value="" data-i18n="all_vendors">All vendors</option></select></div>
+            <div class="rec-toolbar">
+                <label data-i18n="sort_by">Sort by</label>
+                <select id="sort-select-bills" onchange="setSortField('bills', this.value)">
+                    <option value="due" data-i18n="due_date">Due date</option>
+                    <option value="date" data-i18n="bill_date">Bill date</option>
+                    <option value="vendor" data-i18n="vendor">Vendor</option>
+                    <option value="number" data-i18n="sort_bill_num">Bill #</option>
+                    <option value="amount" data-i18n="amount_label">Amount</option>
+                    <option value="status" data-i18n="status_field">Status</option>
+                </select>
+                <button type="button" class="btn-small rec-dir-btn" id="sort-dir-bills" onclick="flipSortDir('bills')">▲</button>
+            </div>
             <button type="button" class="btn-small" style="background:#64748b;" onclick="clearFilters('bills')"><span data-i18n="clear_filters">✕ Clear filters</span></button>
-        </div>
-        <div class="rec-toolbar">
-            <label data-i18n="sort_by">Sort by</label>
-            <select id="sort-select-bills" onchange="setSortField('bills', this.value)">
-                <option value="due" data-i18n="due_date">Due date</option>
-                <option value="date" data-i18n="bill_date">Bill date</option>
-                <option value="vendor" data-i18n="vendor">Vendor</option>
-                <option value="number" data-i18n="sort_bill_num">Bill #</option>
-                <option value="amount" data-i18n="amount_label">Amount</option>
-                <option value="status" data-i18n="status_field">Status</option>
-            </select>
-            <button type="button" class="btn-small rec-dir-btn" id="sort-dir-bills" onclick="flipSortDir('bills')">▲</button>
         </div>
         <div id="bills-tbody" class="record-grid"></div>
     </div>
