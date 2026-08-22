@@ -234,6 +234,142 @@
         } catch (e) { return file; }
     }
 
+    // ===== Profile photos (optional) =======================================
+    // Every person (employee, staff, contractor, provider…) MAY have a small
+    // profile photo. It is optional everywhere — a person without one shows a
+    // coloured initials badge instead. The photo is a square, downscaled JPEG
+    // kept as a data: URL, delivered by a token-guarded, company-scoped RPC and
+    // rendered inline (never a signed-URL round trip), so avatars display
+    // reliably on every device and under any cached CSP/service worker — the
+    // same lesson the file viewer learned. Permission mirrors the file system
+    // exactly (set_employee_photo → _attach_scope_ok): a person can always set
+    // THEIR OWN photo, and admins can set anyone's in their company.
+    let employeePhotos = {};   // employee_id -> data: URL
+
+    async function loadEmployeePhotos() {
+        if (!currentUsername) { employeePhotos = {}; return; }
+        try {
+            const { data, error } = await supabaseClient.rpc('list_employee_photos', { p_actor: currentUsername });
+            if (error) { console.warn('list_employee_photos:', error.message); return; }
+            const map = {};
+            (data || []).forEach(r => { if (r && r.employee_id && r.data_url) map[r.employee_id] = r.data_url; });
+            employeePhotos = map;
+        } catch (e) { console.warn('list_employee_photos:', e); }
+    }
+
+    // Square-crop, downscale and re-encode a picked image to a compact JPEG
+    // data: URL for use as an avatar. Returns { dataUrl, mime, size }.
+    async function compressAvatarDataUrl(file) {
+        const bmp = await createImageBitmap(file);
+        const side = Math.min(bmp.width, bmp.height);
+        const sx = (bmp.width - side) / 2, sy = (bmp.height - side) / 2;
+        const out = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = out; canvas.height = out;
+        canvas.getContext('2d').drawImage(bmp, sx, sy, side, side, 0, 0, out, out);
+        bmp.close && bmp.close();
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const size = Math.round((dataUrl.length - (dataUrl.indexOf(',') + 1)) * 3 / 4);
+        return { dataUrl, mime: 'image/jpeg', size };
+    }
+
+    function personInitials(emp) {
+        const a = String((emp && emp.first_name) || '').trim();
+        const b = String((emp && emp.last_name) || '').trim();
+        let ini = (a.charAt(0) || '') + (b.charAt(0) || '');
+        if (!ini) ini = String((emp && emp.id) || '?').charAt(0) || '?';
+        return ini.toUpperCase();
+    }
+
+    // Stable hue from a seed so the same person always gets the same colour.
+    function avatarHue(seed) {
+        let h = 0; const s = String(seed || '');
+        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+        return h;
+    }
+
+    // One avatar: the person's photo if they have one, else a coloured initials
+    // badge. `size` is the pixel diameter. Used in the header, the roster, and
+    // the expanded record card.
+    function personAvatarHtml(emp, size, extraClass) {
+        size = size || 40;
+        const id = emp && emp.id;
+        const url = id ? employeePhotos[id] : null;
+        const nm = escHtml(`${(emp && emp.first_name) || ''} ${(emp && emp.last_name) || ''}`.trim() || String(id || ''));
+        const cls = 'person-ava' + (extraClass ? ' ' + extraClass : '');
+        const dim = `width:${size}px;height:${size}px;`;
+        if (typeof url === 'string' && /^data:image\//.test(url)) {
+            return `<img class="${cls}" src="${url}" alt="${nm}" title="${nm}" style="${dim}" loading="lazy">`;
+        }
+        const fs = Math.round(size * 0.4);
+        return `<span class="${cls} person-ava-ini" title="${nm}" aria-label="${nm}" style="${dim}background:hsl(${avatarHue(id || nm)} 42% 34%); font-size:${fs}px;">${escHtml(personInitials(emp))}</span>`;
+    }
+
+    // Re-render the surfaces that show avatars after a photo is added/removed.
+    function afterPhotoChange() {
+        if (typeof renderEmployees === 'function') { try { renderEmployees(); } catch (e) {} }
+        if (typeof updateMyAvatar === 'function') updateMyAvatar();
+    }
+
+    let _photoBusy = false;
+    // Pick an image and set it as the given person's photo. Gated client-side
+    // by canUploadTo (the server re-checks _attach_scope_ok).
+    function pickAndSetPhoto(empId) {
+        if (!empId || _photoBusy || !canUploadTo('employee', empId)) return;
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'image/*';
+        inp.onchange = async () => {
+            const file = inp.files && inp.files[0];
+            if (!file) return;
+            if (!file.type || !file.type.startsWith('image/')) { alert(t('err_photo_not_image')); return; }
+            _photoBusy = true;
+            try {
+                const { dataUrl, mime, size } = await compressAvatarDataUrl(file);
+                const { error } = await supabaseClient.rpc('set_employee_photo', {
+                    p_actor: currentUsername, p_employee_id: empId,
+                    p_data_url: dataUrl, p_mime: mime, p_size: size
+                });
+                if (error) throw new Error(error.message);
+                employeePhotos[empId] = dataUrl;
+                afterPhotoChange();
+            } catch (e) {
+                console.error('set_employee_photo:', e);
+                alert(t('err_photo_save') + (e && e.message ? e.message : e));
+            } finally { _photoBusy = false; }
+        };
+        inp.click();
+    }
+
+    async function removePersonPhoto(empId) {
+        if (!empId || !canUploadTo('employee', empId) || !employeePhotos[empId]) return;
+        if (!confirm(t('c_remove_photo'))) return;
+        const { error } = await supabaseClient.rpc('clear_employee_photo', { p_actor: currentUsername, p_employee_id: empId });
+        if (error) { alert(t('err_photo_remove') + error.message); return; }
+        delete employeePhotos[empId];
+        afterPhotoChange();
+    }
+
+    // ----- The signed-in user's own photo -----
+    function myPhotoEmpId() { return (currentUser && currentUser.employee_id) || null; }
+    function changeMyPhoto() { const id = myPhotoEmpId(); if (id) pickAndSetPhoto(id); }
+    function removeMyPhoto() { const id = myPhotoEmpId(); if (id) removePersonPhoto(id); }
+
+    // Refresh the header avatar and the account-menu photo actions. Called at
+    // sign-in, after photos load, and whenever the user's photo changes.
+    function updateMyAvatar() {
+        if (!currentUser) return;
+        const id = myPhotoEmpId();
+        const meEmp = (id && employees.find(e => e.id === id)) || {
+            id: id, first_name: currentUser.first_name || currentUser.username, last_name: currentUser.last_name || ''
+        };
+        const el = document.getElementById('header-user-avatar');
+        if (el) el.innerHTML = personAvatarHtml(meEmp, 30);
+        const hasRecord = !!id;
+        const hasPhoto = hasRecord && !!employeePhotos[id];
+        ['menu-change-photo', 'sidebar-change-photo'].forEach(mid => { const b = document.getElementById(mid); if (b) b.style.display = hasRecord ? 'block' : 'none'; });
+        ['menu-remove-photo', 'sidebar-remove-photo'].forEach(mid => { const b = document.getElementById(mid); if (b) b.style.display = hasPhoto ? 'block' : 'none'; });
+    }
+
     // Picking files no longer uploads straight away: the files are staged with
     // an editable, pre-filled name so a camera's "IMG_20260819_223344_1.jpg"
     // can become something readable before it lands. Nothing is sent until

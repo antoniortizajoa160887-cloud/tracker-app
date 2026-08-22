@@ -685,6 +685,7 @@
         const companyLabel = (currentUser && currentUser.company_name) ? currentUser.company_name : (currentUserRole === 'SuperAdmin' ? 'All companies' : (currentUser && currentUser.company_code) || '—');
         document.getElementById('user-company-display').textContent = companyLabel;
         updateAppTitle();
+        if (typeof updateMyAvatar === 'function') updateMyAvatar();  // header avatar + account-menu photo actions
 
         // Company scope: non-super users are locked to their own company.
         // SuperAdmin starts on "All" (null) and can switch via the dropdown.
