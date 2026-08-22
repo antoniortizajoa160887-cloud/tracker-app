@@ -336,7 +336,7 @@
 
             // ---- 4.1 Compact: section bars ----
             sec_new_income: 'New Income', sec_invoices: 'Invoices', sec_bills: 'Bills Payable',
-            more_actions: 'More actions'
+            more_actions: 'More actions', sec_new_user: 'New User'
         },
         es: {
             welcome_prefix: 'Bienvenido,', role_label: 'Rol:', company_label: 'Compañía:',
@@ -664,7 +664,7 @@
 
             // ---- 4.1 Compact: section bars ----
             sec_new_income: 'Nuevo Ingreso', sec_invoices: 'Facturas', sec_bills: 'Cuentas por Pagar',
-            more_actions: 'Más acciones'
+            more_actions: 'Más acciones', sec_new_user: 'Nuevo Usuario'
         }
     };
 
